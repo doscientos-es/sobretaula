@@ -10,22 +10,25 @@ Convenciones: claves `uuid` con `gen_random_uuid()`; `created_at`/`updated_at`
 
 ## Plataforma (sin `tenant_id`)
 
-| Tabla                                | Contenido                                                                                 |
-| ------------------------------------ | ----------------------------------------------------------------------------------------- |
-| `tenants`                            | `slug` único, nombre, estado (`trial`,`active`,`suspended`), `default_locale`, `timezone` |
-| `tenant_slug_history`                | Slugs anteriores para redirección                                                         |
-| `platform_members`                   | Operadores Doscientos y su rol global                                                     |
-| `support_access_log`                 | Acceso de soporte a un tenant: quién, cuándo, motivo, caducidad                           |
-| `plans` / `plan_entitlements`        | Planes y módulos habilitados por plan                                                     |
-| `subscriptions`                      | Plan del tenant, estado, periodo, vencimiento y gracia                                    |
-| `platform_billing_customers`         | Titular y dirección fiscal a quien SobreTaula factura el SaaS                             |
-| `platform_payment_methods`           | Referencia Redsys cifrada, nunca PAN/CVV ni disponible al cliente                         |
-| `platform_discount_codes`            | Campañas/códigos, vigencia, cupo y aprobación manual                                      |
-| `platform_discount_redemptions`      | Uso auditable y limitado por suscripción                                                  |
-| `platform_subscription_price_phases` | Precio fijo o descuento porcentual por tramo; soporta Founders perpetuo                   |
-| `platform_billing_invoices`          | Recibos SaaS neto/IVA/total y su período                                                  |
-| `platform_payment_attempts`          | Intentos Redsys idempotentes y resultado normalizado                                      |
-| `platform_payment_provider_events`   | Notificaciones Redsys deduplicadas sin payload sensible                                   |
+| Tabla                                | Contenido                                                                                                 |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| `tenants`                            | `slug` único, nombre, estado (`setup_pending`,`trial`,`active`,`suspended`), `default_locale`, `timezone` |
+| `tenant_slug_history`                | Slugs anteriores para redirección                                                                         |
+| `platform_members`                   | Operadores Doscientos y su rol global                                                                     |
+| `support_access_log`                 | Acceso de soporte a un tenant: quién, cuándo, motivo, caducidad                                           |
+| `plans` / `plan_entitlements`        | Planes y módulos habilitados por plan                                                                     |
+| `subscriptions`                      | Plan del tenant, estado, periodo, vencimiento y gracia                                                    |
+| `platform_billing_customers`         | Titular y dirección fiscal a quien SobreTaula factura el SaaS                                             |
+| `platform_payment_methods`           | Referencia Redsys cifrada, nunca PAN/CVV ni disponible al cliente                                         |
+| `platform_discount_codes`            | Campañas/códigos, vigencia, cupo y aprobación manual                                                      |
+| `platform_discount_redemptions`      | Uso auditable y limitado por suscripción                                                                  |
+| `platform_subscription_price_phases` | Precio fijo o descuento porcentual por tramo; soporta Founders perpetuo                                   |
+| `platform_billing_invoices`          | Recibos SaaS neto/IVA/total y su período                                                                  |
+| `platform_payment_attempts`          | Intentos Redsys idempotentes y resultado normalizado                                                      |
+| `platform_payment_provider_events`   | Notificaciones Redsys deduplicadas sin payload sensible                                                   |
+| `platform_fiscal_settings`           | Emisor, serie y contador propios de las facturas SaaS de SobreTaula                                       |
+| `platform_fiscal_invoices`           | Factura fiscal de SobreTaula al restaurante, con snapshots y revisión de incidencias                      |
+| `platform_fiscal_outbox`             | Entrega VERI*FACTU del emisor de plataforma; no comparte cadena con ningún tenant                         |
 
 ## Identidad de tenant
 

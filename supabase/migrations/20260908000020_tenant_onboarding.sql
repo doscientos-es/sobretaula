@@ -65,6 +65,12 @@ begin
   insert into public.subscriptions (tenant_id, plan_id, status)
   values (v_tenant_id, v_plan_id, 'trialing');
 
+  insert into public.platform_subscription_price_phases (
+    subscription_id, kind, starts_on, ends_on, fixed_amount_cents
+  )
+  select id, 'fixed_amount', current_date, (current_date + interval '12 months')::date, 9900
+  from public.subscriptions where tenant_id = v_tenant_id;
+
   return query select v_tenant_id, p_tenant_slug;
 end;
 $$;
