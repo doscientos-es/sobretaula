@@ -17,3 +17,14 @@ export function parseVenueSlug(value: string | null | undefined): string | null 
   const normalized = value.trim().toLowerCase()
   return isValidVenueSlug(normalized) ? normalized : null
 }
+
+/** Produces a valid starting point, while server validation remains authoritative. */
+export function venueSlugCandidate(name: string): string {
+  return name
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 50)
+}

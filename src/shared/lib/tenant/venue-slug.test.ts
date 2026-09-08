@@ -1,6 +1,21 @@
 import { describe, expect, it } from 'vitest'
 
-import { isValidVenueSlug, parseVenueSlug } from './venue-slug'
+  it('returns null for absent or invalid values', () => {
+    expect(parseVenueSlug(undefined)).toBeNull()
+    expect(parseVenueSlug('')).toBeNull()
+    expect(parseVenueSlug('nuevo')).toBeNull()
+  })
+})
+
+describe('venueSlugCandidate', () => {
+  it('strips accents and collapses separators', () => {
+    expect(venueSlugCandidate('El Racó · Gràcia')).toBe('el-raco-gracia')
+  })
+
+  it('trims the result to the accepted length', () => {
+    expect(venueSlugCandidate('a'.repeat(80))).toHaveLength(50)
+  })
+})
 
 describe('isValidVenueSlug', () => {
   it('accepts lowercase kebab slugs', () => {
