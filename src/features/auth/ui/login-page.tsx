@@ -1,8 +1,20 @@
-import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Field, FieldLabel, FormFeedback, Input, useFormFeedback } from '@doscientos/ui'
+import {
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Field,
+  FieldLabel,
+  FormFeedback,
+  Input,
+  useFormFeedback,
+} from '@doscientos/ui'
 import { useState, type FormEvent } from 'react'
 
-import { isSafeInternalRedirect } from '../domain/auth'
 import { login } from '../application/authentication'
+import { isSafeInternalRedirect } from '../domain/auth'
 
 export function LoginPage({ redirectTo }: { redirectTo?: string }) {
   const [email, setEmail] = useState('')

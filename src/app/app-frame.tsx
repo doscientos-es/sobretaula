@@ -8,9 +8,9 @@ import {
 import { Link } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
 
+import { LogoutButton } from '@/features/auth'
 import type { Locale } from '@/shared/lib/i18n/locale'
 import { createTranslator } from '@/shared/lib/i18n/messages'
-import { LogoutButton } from '@/features/auth'
 
 export function AppFrame({
   children,

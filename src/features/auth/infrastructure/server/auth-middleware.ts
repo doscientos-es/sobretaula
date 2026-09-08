@@ -20,7 +20,9 @@ export const authMiddleware = createMiddleware({ type: 'function' }).server(asyn
   const supabase = createAnonSupabaseClient()
 
   if (current.expiresAt <= Math.floor(Date.now() / 1000) + TOKEN_REFRESH_SKEW_SECONDS) {
-    const { data, error } = await supabase.auth.refreshSession({ refresh_token: current.refreshToken })
+    const { data, error } = await supabase.auth.refreshSession({
+      refresh_token: current.refreshToken,
+    })
     if (error || !data.session) {
       await session.clear()
       throw new Response('Unauthenticated', { status: 401 })

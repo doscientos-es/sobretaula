@@ -1,8 +1,8 @@
 import { createMiddleware, createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 
-import { authMiddleware } from '@/features/auth/infrastructure/server/auth-middleware'
 import type { AuthPrincipal } from '@/features/auth'
+import { authMiddleware } from '@/features/auth/infrastructure/server/auth-middleware'
 import { createRequestSupabaseClient } from '@/shared/lib/supabase/server/create-server-client'
 
 import { TENANT_ROLES, type TenantRole } from '../domain/tenant'

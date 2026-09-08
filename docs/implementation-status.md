@@ -22,15 +22,15 @@ reproducible (comando ejecutado y su resultado).
 
 ## Puerta de adopción de TanStack Start (ADR-0001)
 
-| #   | Evidencia                                                            | Estado    |
-| --- | -------------------------------------------------------------------- | --------- |
-| 1   | Instalación limpia, tipos, lint, tests y build del artefacto Node    | Hecho     |
-| 2   | Login/logout/expiración y refresh sin caché compartida               | Pendiente |
-| 3   | Endpoint directo: tenant ajeno → 403, anónimo → 401                  | Pendiente |
-| 4   | Listado con URL, loader, pending/error, reintento, invalidación      | Pendiente |
-| 5   | Emisión concurrente idempotente sin números duplicados               | Pendiente |
-| 6   | PDF privado; descarga cruzada denegada; fiscalidad fuera del cliente | Pendiente |
-| 7   | Integración fiscal en `mock`/`test` y compatibilidad del runtime     | Pendiente |
+| #   | Evidencia                                                            | Estado                                                      |
+| --- | -------------------------------------------------------------------- | ----------------------------------------------------------- |
+| 1   | Instalación limpia, tipos, lint, tests y build del artefacto Node    | Hecho                                                       |
+| 2   | Login/logout/expiración y refresh sin caché compartida               | Implementado; pendiente de smoke contra Supabase de pruebas |
+| 3   | Endpoint directo: tenant ajeno → 403, anónimo → 401                  | Implementado; pendiente de smoke contra Supabase de pruebas |
+| 4   | Listado con URL, loader, pending/error, reintento, invalidación      | Pendiente                                                   |
+| 5   | Emisión concurrente idempotente sin números duplicados               | Pendiente                                                   |
+| 6   | PDF privado; descarga cruzada denegada; fiscalidad fuera del cliente | Pendiente                                                   |
+| 7   | Integración fiscal en `mock`/`test` y compatibilidad del runtime     | Pendiente                                                   |
 
 ## Checklist previa a VERI\*FACTU `prod` (ADR-0005)
 
@@ -54,3 +54,8 @@ hasta que un asesor fiscal valide el reparto de responsabilidad.
 
 Desde F1 se añaden pruebas de RLS y concurrencia contra una base Supabase de
 pruebas. Nunca contra producción. Ningún smoke test emite facturas reales.
+
+La integración de RLS (`tenant-rls.integration.test.ts`) se activa únicamente
+con `SUPABASE_TEST_URL`, `SUPABASE_TEST_PUBLISHABLE_KEY` y
+`SUPABASE_TEST_SECRET_KEY`. El fichero `.env.test.example` documenta el
+contrato y evita ejecutar escrituras de fixtures contra otro entorno.
