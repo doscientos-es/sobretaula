@@ -42,6 +42,14 @@ export function AppFrame({
             {t('nav.floorPlan')}
           </Link>
           <Link
+            to="/t/$slug/reservas"
+            params={{ slug }}
+            activeProps={{ className: 'bg-muted text-foreground' }}
+            className="text-muted-foreground hover:bg-muted block rounded-md px-3 py-2 text-sm"
+          >
+            {t('nav.reservations')}
+          </Link>
+          <Link
             to="/t/$slug/facturas"
             params={{ slug }}
             activeProps={{ className: 'bg-muted text-foreground' }}

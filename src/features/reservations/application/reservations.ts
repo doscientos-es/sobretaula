@@ -34,6 +34,7 @@ export interface ReservationService {
   id: string
   name: string
   startsAtTime: string
+  venueId: string
   weekday: number
 }
 
@@ -42,7 +43,7 @@ function requireReservationEditor(role: string): void {
 }
 
 function serviceBoundary(date: Date, time: string): Date {
-  const [hours, minutes] = time.split(':').map(Number)
+  const [hours = 0, minutes = 0] = time.split(':').map(Number)
   const boundary = new Date(date)
   boundary.setUTCHours(hours, minutes, 0, 0)
   return boundary
@@ -50,6 +51,7 @@ function serviceBoundary(date: Date, time: string): Date {
 
 function parsePeriod(period: string): { endsAt: Date; startsAt: Date } {
   const [startsAt, endsAt] = period.slice(1, -1).split(',')
+  if (!startsAt || !endsAt) throw new Error('invalid_reservation_period')
   return { endsAt: new Date(endsAt), startsAt: new Date(startsAt) }
 }
 
@@ -61,7 +63,7 @@ export const getReservationServices = createServerFn({ method: 'GET' })
       context.tenantMembership.accessToken,
     )
       .from('services')
-      .select('ends_at_time, id, name, starts_at_time, weekday')
+      .select('ends_at_time, id, name, starts_at_time, venue_id, weekday')
       .eq('tenant_id', data.tenantId)
       .eq('is_active', true)
       .order('name')
@@ -71,6 +73,7 @@ export const getReservationServices = createServerFn({ method: 'GET' })
       id: service.id,
       name: service.name,
       startsAtTime: service.starts_at_time,
+      venueId: service.venue_id,
       weekday: service.weekday,
     }))
   })
