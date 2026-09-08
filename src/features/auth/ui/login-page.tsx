@@ -32,6 +32,7 @@ export function LoginPage({ redirectTo }: { redirectTo?: string }) {
         return
       }
 
+      // `/` resolves the authenticated principal to platform or tenant context.
       window.location.assign(isSafeInternalRedirect(redirectTo) ? redirectTo : '/')
     } catch {
       feedback.setError('No se ha podido iniciar sesión. Inténtalo de nuevo.')

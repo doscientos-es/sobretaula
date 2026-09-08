@@ -14,7 +14,7 @@ reproducible (comando ejecutado y su resultado).
 | F0 · Esqueleto         | Proyecto Start, `@doscientos/configs`, CI, `.env.example`    | Hecho     |
 | F1 · Tenancy + Auth    | Migraciones, RLS, `/t/:slug`, perfiles global y tenant       | Parcial   |
 | F2 · Diseñador de sala | Editor SVG, snap, historial, elementos y layouts versionados | Hecho     |
-| F3 · Motor de reservas | Turnos, pacing, disponibilidad, best-fit, EXCLUDE            | Pendiente |
+| F3 · Motor de reservas | Turnos, pacing, disponibilidad, best-fit, EXCLUDE            | Hecho     |
 | F4 · Vista de servicio | Plano en vivo, sentar/mover/unir, walk-ins, espera           | Pendiente |
 | F5 · Cuenta de mesa    | Catálogo, líneas, dividir, cerrar, cobrar                    | Pendiente |
 | F6 · Facturación       | Ajustes fiscales, series, ledger/outbox, PDF, modo test      | Pendiente |
