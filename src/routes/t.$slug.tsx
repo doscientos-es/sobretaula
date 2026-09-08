@@ -16,7 +16,8 @@ export const Route = createFileRoute('/t/$slug')({
 
     try {
       await getTenantMembership({ data: { tenantId: tenant.id } })
-    } catch {
+    } catch (error) {
+      if (error instanceof Response && error.status === 403) throw error
       throw redirect({ to: '/login', search: { redirect: `/t/${tenant.slug}` } })
     }
 

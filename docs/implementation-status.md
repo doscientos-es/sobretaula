@@ -55,7 +55,7 @@ hasta que un asesor fiscal valide el reparto de responsabilidad.
 Desde F1 se añaden pruebas de RLS y concurrencia contra una base Supabase de
 pruebas. Nunca contra producción. Ningún smoke test emite facturas reales.
 
-La integración de RLS (`tenant-rls.integration.test.ts`) se activa únicamente
+La integración de RLS (`tenant-rls.test.ts`) se activa únicamente
 con `SUPABASE_TEST_URL`, `SUPABASE_TEST_PUBLISHABLE_KEY` y
 `SUPABASE_TEST_SECRET_KEY`. El fichero `.env.test.example` documenta el
 contrato y evita ejecutar escrituras de fixtures contra otro entorno.

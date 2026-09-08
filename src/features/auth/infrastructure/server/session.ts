@@ -14,7 +14,8 @@ export function authSessionConfig() {
       secure: process.env.NODE_ENV === 'production',
     },
     maxAge: SESSION_MAX_AGE_SECONDS,
-    name: 'sobretaula-session',
+    name:
+      process.env.NODE_ENV === 'production' ? '__Host-sobretaula-session' : 'sobretaula-session',
     password,
   }
 }
