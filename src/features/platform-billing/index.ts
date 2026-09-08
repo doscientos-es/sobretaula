@@ -3,6 +3,14 @@ export type { PlatformSubscriptionOverview } from './application/get-platform-bi
 export { getTenantBillingStatus } from './application/get-tenant-billing-status'
 export type { TenantBillingStatus } from './application/get-tenant-billing-status'
 export {
+  getPlatformFiscalInvoices,
+  getTenantPlatformFiscalInvoices,
+} from './application/get-platform-fiscal-invoices'
+export type {
+  PlatformFiscalInvoice,
+  PlatformFiscalInvoiceStatus,
+} from './application/get-platform-fiscal-invoices'
+export {
   PAYMENT_GRACE_DAYS,
   subscriptionActionAfterPaymentFailure,
   tenantStatusAfterSuccessfulPayment,
@@ -22,3 +30,4 @@ export {
 export type { SubscriptionPrice } from './domain/subscription-pricing'
 export { PlatformBillingOverview } from './ui/platform-billing-overview'
 export { TenantBillingNotice } from './ui/tenant-billing-notice'
+export { PlatformFiscalInvoiceList } from './ui/platform-fiscal-invoice-list'

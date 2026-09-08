@@ -43,9 +43,13 @@ function TenantLayout() {
               : 'Este restaurante está temporalmente en pausa por un cobro pendiente. Su información se conserva y se reactivará automáticamente al confirmarse el pago.'}
           </DataViewStateDescription>
           {setupPending && (
-            <Link className="text-primary mt-5 inline-block text-sm underline" to="/onboarding">
-              Revisar configuración de alta
-            </Link>
+            <div className="mt-5 flex gap-4 text-sm">
+              <Link className="text-primary underline" to="/onboarding">Revisar configuración de alta</Link>
+              <Link className="text-primary underline" params={{ slug: tenant.slug }} to="/t/$slug/suscripcion/facturas">Ver facturas de SobreTaula</Link>
+            </div>
+          )}
+          {!setupPending && (
+            <Link className="text-primary mt-5 inline-block text-sm underline" params={{ slug: tenant.slug }} to="/t/$slug/suscripcion/facturas">Ver facturas de SobreTaula</Link>
           )}
         </DataViewState>
       </main>

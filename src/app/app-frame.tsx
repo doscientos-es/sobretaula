@@ -81,7 +81,7 @@ export function AppFrame({
             </>
           )}
           <Link
-            to="/t/$slug/facturas"
+            to="/t/$slug/suscripcion/facturas"
             params={{ slug }}
             activeProps={{ className: 'bg-muted text-foreground' }}
             className="text-muted-foreground hover:bg-secondary hover:text-foreground flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors"
@@ -106,7 +106,7 @@ export function AppFrame({
             className="text-muted-foreground hover:bg-secondary hover:text-foreground flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors"
           >
             <Settings2 className="size-4" />
-            {t('nav.settings')}
+            Facturas de SobreTaula
           </Link>
         </nav>
       </AppShellSidebar>

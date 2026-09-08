@@ -34,9 +34,16 @@ import {
   movePlacement,
 } from '../domain/geometry'
 
-export function FloorPlanPage({ data, tenantId }: { data: FloorPlanData; tenantId: string }) {
+export function FloorPlanPage({
+  data,
+  tenantId,
+  venueId,
+}: {
+  data: FloorPlanData
+  tenantId: string
+  venueId: string
+}) {
   const feedback = useFormFeedback()
-  const [venueName, setVenueName] = useState('Mi restaurante')
   const [areaName, setAreaName] = useState('Sala principal')
   const [widthCm, setWidthCm] = useState(800)
   const [heightCm, setHeightCm] = useState(600)
@@ -68,7 +75,7 @@ export function FloorPlanPage({ data, tenantId }: { data: FloorPlanData; tenantI
 
     try {
       await createInitialFloorPlan({
-        data: { areaName, heightCm, tenantId, venueName, widthCm },
+        data: { areaName, heightCm, tenantId, venueId, widthCm },
       })
       window.location.reload()
     } catch {
@@ -90,7 +97,7 @@ export function FloorPlanPage({ data, tenantId }: { data: FloorPlanData; tenantI
           maxSeats: tableSeats,
           minSeats: 1,
           tenantId,
-          venueId: activeArea.venueId,
+          venueId,
           versionId: activeVersion.id,
           widthCm: 100,
           xCm: tableXCm,
@@ -185,6 +192,7 @@ export function FloorPlanPage({ data, tenantId }: { data: FloorPlanData; tenantI
           placements,
           sourceVersionId: activeVersion.id,
           tenantId,
+          venueId,
         },
       })
       window.location.reload()
@@ -203,7 +211,7 @@ export function FloorPlanPage({ data, tenantId }: { data: FloorPlanData; tenantI
           <CardHeader>
             <CardTitle>Crea tu primer plano</CardTitle>
             <CardDescription>
-              Define el local y su primera área. Después podrás colocar mesas y guardar nuevas
+              Define la primera área del local. Después podrás colocar mesas y guardar nuevas
               versiones.
             </CardDescription>
           </CardHeader>
@@ -212,15 +220,6 @@ export function FloorPlanPage({ data, tenantId }: { data: FloorPlanData; tenantI
               className="grid gap-4 sm:grid-cols-2"
               onSubmit={(event) => void createPlan(event)}
             >
-              <Field>
-                <FieldLabel htmlFor="venue-name">Nombre del local</FieldLabel>
-                <Input
-                  id="venue-name"
-                  onChange={(event) => setVenueName(event.target.value)}
-                  required
-                  value={venueName}
-                />
-              </Field>
               <Field>
                 <FieldLabel htmlFor="area-name">Área</FieldLabel>
                 <Input
