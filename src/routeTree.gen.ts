@@ -9,11 +9,11 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as TSlugRouteImport } from './routes/t.$slug'
-import { Route as TSlugFacturasRouteImport } from './routes/t.$slug.facturas'
 import { Route as TSlugIndexRouteImport } from './routes/t.$slug.index'
+import { Route as TSlugFacturasRouteImport } from './routes/t.$slug.facturas'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -67,7 +67,13 @@ export interface FileRouteTypes {
   fullPaths: '/' | '/t/$slug' | '/admin/' | '/t/$slug/facturas' | '/t/$slug/'
   fileRoutesByTo: FileRoutesByTo
   to: '/' | '/admin' | '/t/$slug/facturas' | '/t/$slug'
-  id: '__root__' | '/' | '/t/$slug' | '/admin/' | '/t/$slug/facturas' | '/t/$slug/'
+  id:
+    | '__root__'
+    | '/'
+    | '/t/$slug'
+    | '/admin/'
+    | '/t/$slug/facturas'
+    | '/t/$slug/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -137,9 +143,8 @@ export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
 
-import type { createStart } from '@tanstack/react-start'
-
 import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
 declare module '@tanstack/react-start' {
   interface Register {
     ssr: true

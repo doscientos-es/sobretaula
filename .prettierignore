@@ -1,0 +1,4 @@
+# Generado por TanStack Router en cada `pnpm dev` / `pnpm build`.
+# El formato exacto lo decide el generador, no oxfmt: excluido para que
+# `format:check` no falle tras arrancar el servidor de desarrollo.
+src/routeTree.gen.ts
