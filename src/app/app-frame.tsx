@@ -5,11 +5,12 @@ import {
   AppShellMain,
   AppShellSidebar,
 } from '@doscientos/ui'
-import { Link } from '@tanstack/react-router'
+import { Link, useParams } from '@tanstack/react-router'
 import { CalendarDays, FileText, LayoutDashboard, Map, Settings2, Utensils } from 'lucide-react'
 import type { ReactNode } from 'react'
 
 import { LogoutButton } from '@/features/auth'
+import { resolveVenue, VenueSwitcher, type Venue } from '@/features/venues'
 import type { Locale } from '@/shared/lib/i18n/locale'
 import { createTranslator } from '@/shared/lib/i18n/messages'
 
@@ -18,13 +19,17 @@ export function AppFrame({
   locale,
   slug,
   title,
+  venues,
 }: {
   children: ReactNode
   locale: Locale
   slug: string
   title: string
+  venues: readonly Venue[]
 }) {
   const t = createTranslator(locale)
+  const params = useParams({ strict: false })
+  const activeVenue = resolveVenue(venues, params.venue ?? null)
 
   return (
     <AppShell className="flex min-h-svh">
@@ -52,25 +57,29 @@ export function AppFrame({
             <LayoutDashboard className="size-4" />
             Resumen
           </Link>
-          <Link
-            to="/t/$slug/plano"
-            params={{ slug }}
-            activeOptions={{ exact: true }}
-            activeProps={{ className: 'bg-muted text-foreground' }}
-            className="text-muted-foreground hover:bg-secondary hover:text-foreground flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors"
-          >
-            <Map className="size-4" />
-            {t('nav.floorPlan')}
-          </Link>
-          <Link
-            to="/t/$slug/reservas"
-            params={{ slug }}
-            activeProps={{ className: 'bg-muted text-foreground' }}
-            className="text-muted-foreground hover:bg-secondary hover:text-foreground flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors"
-          >
-            <CalendarDays className="size-4" />
-            {t('nav.reservations')}
-          </Link>
+          {activeVenue && (
+            <>
+              <Link
+                to="/t/$slug/l/$venue/plano"
+                params={{ slug, venue: activeVenue.slug }}
+                activeOptions={{ exact: true }}
+                activeProps={{ className: 'bg-muted text-foreground' }}
+                className="text-muted-foreground hover:bg-secondary hover:text-foreground flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors"
+              >
+                <Map className="size-4" />
+                {t('nav.floorPlan')}
+              </Link>
+              <Link
+                to="/t/$slug/l/$venue/reservas"
+                params={{ slug, venue: activeVenue.slug }}
+                activeProps={{ className: 'bg-muted text-foreground' }}
+                className="text-muted-foreground hover:bg-secondary hover:text-foreground flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors"
+              >
+                <CalendarDays className="size-4" />
+                {t('nav.reservations')}
+              </Link>
+            </>
+          )}
           <Link
             to="/t/$slug/facturas"
             params={{ slug }}
@@ -81,6 +90,12 @@ export function AppFrame({
             {t('nav.invoices')}
           </Link>
         </nav>
+        <VenueSwitcher
+          activeVenueSlug={activeVenue?.slug ?? null}
+          locale={locale}
+          tenantSlug={slug}
+          venues={venues}
+        />
         <p className="text-muted-foreground mt-8 px-2 text-[11px] font-semibold tracking-[0.16em] uppercase">
           Espacio
         </p>
