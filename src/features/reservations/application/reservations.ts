@@ -15,17 +15,17 @@ import {
 } from '../domain/availability'
 
 const tenantInput = z.object({ tenantId: z.string().uuid() })
-const serviceInput = tenantInput.extend({
+const venueInput = tenantInput.extend({ venueId: z.string().uuid() })
+const serviceInput = venueInput.extend({
   endsAtTime: z.string().regex(/^([01][0-9]|2[0-3]):[0-5][0-9]$/),
   maxCoversPerSlot: z.number().int().positive().nullable(),
   maxReservationsPerSlot: z.number().int().positive().nullable(),
   name: z.string().trim().min(1).max(100),
   slotMinutes: z.number().int().min(5).max(120),
   startsAtTime: z.string().regex(/^([01][0-9]|2[0-3]):[0-5][0-9]$/),
-  venueId: z.string().uuid(),
   weekday: z.number().int().min(0).max(6),
 })
-const reservationInput = tenantInput.extend({
+const reservationInput = venueInput.extend({
   guestName: z.string().trim().min(1).max(200).optional(),
   partySize: z.number().int().min(1).max(50),
   serviceId: z.string().uuid(),
@@ -60,7 +60,7 @@ function parsePeriod(period: string): { endsAt: Date; startsAt: Date } {
 
 export const getReservationServices = createServerFn({ method: 'GET' })
   .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
-  .validator(tenantInput)
+  .validator(venueInput)
   .handler(async ({ context, data }): Promise<ReservationService[]> => {
     const { data: services, error } = await createRequestSupabaseClient(
       context.tenantMembership.accessToken,
@@ -68,6 +68,7 @@ export const getReservationServices = createServerFn({ method: 'GET' })
       .from('services')
       .select('ends_at_time, id, name, starts_at_time, venue_id, weekday')
       .eq('tenant_id', data.tenantId)
+      .eq('venue_id', data.venueId)
       .eq('is_active', true)
       .order('name')
     if (error) throw new Error(`reservation_services_load_failed:${error.code}`)
@@ -129,6 +130,7 @@ export const createReservation = createServerFn({ method: 'POST' })
       .select('ends_at_time, id, starts_at_time, venue_id, weekday')
       .eq('id', data.serviceId)
       .eq('tenant_id', data.tenantId)
+      .eq('venue_id', data.venueId)
       .eq('is_active', true)
       .single()
     if (serviceError || !service) throw new Response('Not found', { status: 404 })
