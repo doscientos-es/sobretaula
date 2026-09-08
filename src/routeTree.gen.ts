@@ -13,6 +13,8 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as TSlugRouteImport } from './routes/t.$slug'
+import { Route as ApiPlatformBillingReconcileRouteImport } from './routes/api.platform-billing.reconcile'
+import { Route as ApiWebhooksRedsysRouteImport } from './routes/api.webhooks.redsys'
 import { Route as TSlugIndexRouteImport } from './routes/t.$slug.index'
 import { Route as TSlugFacturasRouteImport } from './routes/t.$slug.facturas'
 import { Route as TSlugPlanoRouteImport } from './routes/t.$slug.plano'
@@ -36,6 +38,17 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
 const TSlugRoute = TSlugRouteImport.update({
   id: '/t/$slug',
   path: '/t/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPlatformBillingReconcileRoute =
+  ApiPlatformBillingReconcileRouteImport.update({
+    id: '/api/platform-billing/reconcile',
+    path: '/api/platform-billing/reconcile',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiWebhooksRedsysRoute = ApiWebhooksRedsysRouteImport.update({
+  id: '/api/webhooks/redsys',
+  path: '/api/webhooks/redsys',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TSlugIndexRoute = TSlugIndexRouteImport.update({
@@ -64,6 +77,8 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/t/$slug': typeof TSlugRouteWithChildren
   '/admin/': typeof AdminIndexRoute
+  '/api/platform-billing/reconcile': typeof ApiPlatformBillingReconcileRoute
+  '/api/webhooks/redsys': typeof ApiWebhooksRedsysRoute
   '/t/$slug/facturas': typeof TSlugFacturasRoute
   '/t/$slug/plano': typeof TSlugPlanoRoute
   '/t/$slug/reservas': typeof TSlugReservasRoute
@@ -73,6 +88,8 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/admin': typeof AdminIndexRoute
+  '/api/platform-billing/reconcile': typeof ApiPlatformBillingReconcileRoute
+  '/api/webhooks/redsys': typeof ApiWebhooksRedsysRoute
   '/t/$slug/facturas': typeof TSlugFacturasRoute
   '/t/$slug/plano': typeof TSlugPlanoRoute
   '/t/$slug/reservas': typeof TSlugReservasRoute
@@ -84,6 +101,8 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/t/$slug': typeof TSlugRouteWithChildren
   '/admin/': typeof AdminIndexRoute
+  '/api/platform-billing/reconcile': typeof ApiPlatformBillingReconcileRoute
+  '/api/webhooks/redsys': typeof ApiWebhooksRedsysRoute
   '/t/$slug/facturas': typeof TSlugFacturasRoute
   '/t/$slug/plano': typeof TSlugPlanoRoute
   '/t/$slug/reservas': typeof TSlugReservasRoute
@@ -96,6 +115,8 @@ export interface FileRouteTypes {
     | '/login'
     | '/t/$slug'
     | '/admin/'
+    | '/api/platform-billing/reconcile'
+    | '/api/webhooks/redsys'
     | '/t/$slug/facturas'
     | '/t/$slug/plano'
     | '/t/$slug/reservas'
@@ -105,6 +126,8 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/admin'
+    | '/api/platform-billing/reconcile'
+    | '/api/webhooks/redsys'
     | '/t/$slug/facturas'
     | '/t/$slug/plano'
     | '/t/$slug/reservas'
@@ -115,6 +138,8 @@ export interface FileRouteTypes {
     | '/login'
     | '/t/$slug'
     | '/admin/'
+    | '/api/platform-billing/reconcile'
+    | '/api/webhooks/redsys'
     | '/t/$slug/facturas'
     | '/t/$slug/plano'
     | '/t/$slug/reservas'
@@ -126,6 +151,8 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   TSlugRoute: typeof TSlugRouteWithChildren
   AdminIndexRoute: typeof AdminIndexRoute
+  ApiPlatformBillingReconcileRoute: typeof ApiPlatformBillingReconcileRoute
+  ApiWebhooksRedsysRoute: typeof ApiWebhooksRedsysRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -156,6 +183,20 @@ declare module '@tanstack/react-router' {
       path: '/t/$slug'
       fullPath: '/t/$slug'
       preLoaderRoute: typeof TSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/platform-billing/reconcile': {
+      id: '/api/platform-billing/reconcile'
+      path: '/api/platform-billing/reconcile'
+      fullPath: '/api/platform-billing/reconcile'
+      preLoaderRoute: typeof ApiPlatformBillingReconcileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/webhooks/redsys': {
+      id: '/api/webhooks/redsys'
+      path: '/api/webhooks/redsys'
+      fullPath: '/api/webhooks/redsys'
+      preLoaderRoute: typeof ApiWebhooksRedsysRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/t/$slug/': {
@@ -210,6 +251,8 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   TSlugRoute: TSlugRouteWithChildren,
   AdminIndexRoute: AdminIndexRoute,
+  ApiPlatformBillingReconcileRoute: ApiPlatformBillingReconcileRoute,
+  ApiWebhooksRedsysRoute: ApiWebhooksRedsysRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

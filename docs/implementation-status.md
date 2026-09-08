@@ -13,6 +13,7 @@ reproducible (comando ejecutado y su resultado).
 | F0 · Papeleo           | `project-design.md`, `data-model.md`, ADR 0001–0007          | Hecho     |
 | F0 · Esqueleto         | Proyecto Start, `@doscientos/configs`, CI, `.env.example`    | Hecho     |
 | F1 · Tenancy + Auth    | Migraciones, RLS, `/t/:slug`, perfiles global y tenant       | Parcial   |
+| F1b · Billing SaaS     | Precios, Founders, cobro Redsys, gracia y suspensión segura  | Parcial   |
 | F2 · Diseñador de sala | Editor SVG, snap, historial, elementos y layouts versionados | Hecho     |
 | F3 · Motor de reservas | Turnos, pacing, disponibilidad, best-fit, EXCLUDE            | Hecho     |
 | F4 · Vista de servicio | Plano en vivo, sentar/mover/unir, walk-ins, espera           | Pendiente |
@@ -46,6 +47,7 @@ hasta que un asesor fiscal valide el reparto de responsabilidad.
 | Proyecto Supabase                                               | Creado; migraciones 0001–0015 aplicadas  | Advisors de seguridad y rendimiento revisados: sin hallazgos accionables pendientes                                                                                                                                |
 | Helpers `SECURITY DEFINER` visibles para `authenticated`        | Advisor los marca como WARN              | Es intencionado: `is_member_of`, `has_tenant_role`, `is_platform_*` y `reserve_invoice_number` deben ser invocables para que las políticas RLS funcionen. Solo devuelven booleanos o reservan número validando rol |
 | `tenant_public_by_slug` visible para `anon`                     | Advisor lo marca como WARN               | Es intencionado: la resolución de `/t/:slug` ocurre antes de haber sesión. Exige el slug exacto y devuelve solo marca (nombre, estado, idioma, zona horaria), así que no permite enumerar tenants                  |
+| Redsys recurrente                                               | Adaptador pendiente de terminal propio   | El esquema guarda sólo referencias cifradas e intentos idempotentes. Antes de activar cobros se debe confirmar MIT/tokenización y configurar secretos exclusivos de SobreTaula.                                    |
 
 ## Comandos de validación
 

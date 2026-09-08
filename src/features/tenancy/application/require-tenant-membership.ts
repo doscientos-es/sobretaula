@@ -46,20 +46,19 @@ export const tenantMembershipMiddleware = createMiddleware({ type: 'function' })
 
 /** Blocks operational server functions after the billing grace period expires. */
 export const operationalTenantMiddleware = createMiddleware({ type: 'function' }).server(
-  ({ context, next }) => {
-    const tenantMembership = (context as { tenantMembership?: TenantMembership }).tenantMembership
+  async ({ context, next }) => {
+    const tenantMembership = (context as unknown as { tenantMembership?: TenantMembership })
+      .tenantMembership
     if (!tenantMembership) throw new Response('Unauthenticated', { status: 401 })
 
-    return createRequestSupabaseClient(tenantMembership.accessToken)
+    const { data: tenant, error } = await createRequestSupabaseClient(tenantMembership.accessToken)
       .from('tenants')
       .select('status')
       .eq('id', tenantMembership.tenantId)
       .single()
-      .then(({ data: tenant, error }) => {
-        if (error || !tenant) throw new Response('Forbidden', { status: 403 })
-        if (tenant.status === 'suspended') throw new Response('Tenant suspended', { status: 423 })
-        return next()
-      })
+    if (error || !tenant) throw new Response('Forbidden', { status: 403 })
+    if (tenant.status === 'suspended') throw new Response('Tenant suspended', { status: 423 })
+    return next()
   },
 )
 

@@ -2,8 +2,8 @@ import { DataViewState, DataViewStateDescription, DataViewStateTitle } from '@do
 import { createFileRoute, notFound, Outlet, redirect } from '@tanstack/react-router'
 
 import { AppFrame } from '@/app/app-frame'
+import { getTenantBillingStatus, TenantBillingNotice } from '@/features/platform-billing'
 import { getTenantMembership, isTenantOperational, tenantBySlugQuery } from '@/features/tenancy'
-import { createTranslator } from '@/shared/lib/i18n/messages'
 import { parseTenantSlug } from '@/shared/lib/tenant/tenant-slug'
 
 export const Route = createFileRoute('/t/$slug')({
@@ -21,22 +21,25 @@ export const Route = createFileRoute('/t/$slug')({
       throw redirect({ to: '/login', search: { redirect: `/t/${tenant.slug}` } })
     }
 
-    return { tenant }
+    const billingStatus = await getTenantBillingStatus({ data: { tenantId: tenant.id } })
+    return { billingStatus, tenant }
   },
   component: TenantLayout,
   notFoundComponent: TenantNotFound,
 })
 
 function TenantLayout() {
-  const { tenant } = Route.useLoaderData()
-  const t = createTranslator(tenant.defaultLocale)
+  const { billingStatus, tenant } = Route.useLoaderData()
 
   if (!isTenantOperational(tenant.status)) {
     return (
       <main className="mx-auto max-w-2xl p-6">
         <DataViewState>
           <DataViewStateTitle>{tenant.name}</DataViewStateTitle>
-          <DataViewStateDescription>{t('error.description')}</DataViewStateDescription>
+          <DataViewStateDescription>
+            Este restaurante está temporalmente en pausa por un cobro pendiente. Su información se
+            conserva y se reactivará automáticamente al confirmarse el pago.
+          </DataViewStateDescription>
         </DataViewState>
       </main>
     )
@@ -44,19 +47,20 @@ function TenantLayout() {
 
   return (
     <AppFrame locale={tenant.defaultLocale} slug={tenant.slug} title={tenant.name}>
+      <TenantBillingNotice status={billingStatus} />
       <Outlet />
     </AppFrame>
   )
 }
 
 function TenantNotFound() {
-  const t = createTranslator('es')
-
   return (
     <main className="mx-auto max-w-2xl p-6">
       <DataViewState>
-        <DataViewStateTitle>{t('tenant.notFound.title')}</DataViewStateTitle>
-        <DataViewStateDescription>{t('tenant.notFound.description')}</DataViewStateDescription>
+        <DataViewStateTitle>Restaurante no encontrado</DataViewStateTitle>
+        <DataViewStateDescription>
+          No existe un restaurante con esta dirección.
+        </DataViewStateDescription>
       </DataViewState>
     </main>
   )
