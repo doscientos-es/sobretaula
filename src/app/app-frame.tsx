@@ -33,7 +33,7 @@ export function AppFrame({
         </Link>
         <nav aria-label="Principal" className="mt-8 space-y-1">
           <Link
-            to="/t/$slug"
+            to="/t/$slug/plano"
             params={{ slug }}
             activeOptions={{ exact: true }}
             activeProps={{ className: 'bg-muted text-foreground' }}

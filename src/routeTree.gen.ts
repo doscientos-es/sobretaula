@@ -15,6 +15,7 @@ import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as TSlugRouteImport } from './routes/t.$slug'
 import { Route as TSlugIndexRouteImport } from './routes/t.$slug.index'
 import { Route as TSlugFacturasRouteImport } from './routes/t.$slug.facturas'
+import { Route as TSlugPlanoRouteImport } from './routes/t.$slug.plano'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -46,6 +47,11 @@ const TSlugFacturasRoute = TSlugFacturasRouteImport.update({
   path: '/facturas',
   getParentRoute: () => TSlugRoute,
 } as any)
+const TSlugPlanoRoute = TSlugPlanoRouteImport.update({
+  id: '/plano',
+  path: '/plano',
+  getParentRoute: () => TSlugRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -53,6 +59,7 @@ export interface FileRoutesByFullPath {
   '/t/$slug': typeof TSlugRouteWithChildren
   '/admin/': typeof AdminIndexRoute
   '/t/$slug/facturas': typeof TSlugFacturasRoute
+  '/t/$slug/plano': typeof TSlugPlanoRoute
   '/t/$slug/': typeof TSlugIndexRoute
 }
 export interface FileRoutesByTo {
@@ -60,6 +67,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/admin': typeof AdminIndexRoute
   '/t/$slug/facturas': typeof TSlugFacturasRoute
+  '/t/$slug/plano': typeof TSlugPlanoRoute
   '/t/$slug': typeof TSlugIndexRoute
 }
 export interface FileRoutesById {
@@ -69,14 +77,27 @@ export interface FileRoutesById {
   '/t/$slug': typeof TSlugRouteWithChildren
   '/admin/': typeof AdminIndexRoute
   '/t/$slug/facturas': typeof TSlugFacturasRoute
+  '/t/$slug/plano': typeof TSlugPlanoRoute
   '/t/$slug/': typeof TSlugIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/login' | '/t/$slug' | '/admin/' | '/t/$slug/facturas' | '/t/$slug/'
+    | '/'
+    | '/login'
+    | '/t/$slug'
+    | '/admin/'
+    | '/t/$slug/facturas'
+    | '/t/$slug/plano'
+    | '/t/$slug/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/admin' | '/t/$slug/facturas' | '/t/$slug'
+  to:
+    | '/'
+    | '/login'
+    | '/admin'
+    | '/t/$slug/facturas'
+    | '/t/$slug/plano'
+    | '/t/$slug'
   id:
     | '__root__'
     | '/'
@@ -84,6 +105,7 @@ export interface FileRouteTypes {
     | '/t/$slug'
     | '/admin/'
     | '/t/$slug/facturas'
+    | '/t/$slug/plano'
     | '/t/$slug/'
   fileRoutesById: FileRoutesById
 }
@@ -138,16 +160,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TSlugFacturasRouteImport
       parentRoute: typeof TSlugRoute
     }
+    '/t/$slug/plano': {
+      id: '/t/$slug/plano'
+      path: '/plano'
+      fullPath: '/t/$slug/plano'
+      preLoaderRoute: typeof TSlugPlanoRouteImport
+      parentRoute: typeof TSlugRoute
+    }
   }
 }
 
 interface TSlugRouteChildren {
   TSlugFacturasRoute: typeof TSlugFacturasRoute
+  TSlugPlanoRoute: typeof TSlugPlanoRoute
   TSlugIndexRoute: typeof TSlugIndexRoute
 }
 
 const TSlugRouteChildren: TSlugRouteChildren = {
   TSlugFacturasRoute: TSlugFacturasRoute,
+  TSlugPlanoRoute: TSlugPlanoRoute,
   TSlugIndexRoute: TSlugIndexRoute,
 }
 

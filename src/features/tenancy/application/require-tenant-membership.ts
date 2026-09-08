@@ -10,8 +10,10 @@ import { TENANT_ROLES, type TenantRole } from '../domain/tenant'
 const tenantMembershipInput = z.object({ tenantId: z.string().uuid() })
 
 interface TenantMembership {
+  accessToken: string
   role: TenantRole
   tenantId: string
+  userId: string
 }
 
 export const tenantMembershipMiddleware = createMiddleware({ type: 'function' })
@@ -34,8 +36,10 @@ export const tenantMembershipMiddleware = createMiddleware({ type: 'function' })
     }
 
     const tenantMembership: TenantMembership = {
+      accessToken: principal.accessToken,
       role: membership.role as TenantRole,
       tenantId: membership.tenant_id,
+      userId: principal.userId,
     }
     return next({ context: { tenantMembership } })
   })

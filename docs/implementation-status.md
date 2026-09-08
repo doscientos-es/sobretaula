@@ -8,17 +8,17 @@ reproducible (comando ejecutado y su resultado).
 
 ## Fases
 
-| Fase                   | Entregable                                                | Estado    |
-| ---------------------- | --------------------------------------------------------- | --------- |
-| F0 · Papeleo           | `project-design.md`, `data-model.md`, ADR 0001–0007       | Hecho     |
-| F0 · Esqueleto         | Proyecto Start, `@doscientos/configs`, CI, `.env.example` | Hecho     |
-| F1 · Tenancy + Auth    | Migraciones, RLS, `/t/:slug`, perfiles global y tenant    | Parcial   |
-| F2 · Diseñador de sala | Editor SVG, áreas, layouts versionados, vista accesible   | Pendiente |
-| F3 · Motor de reservas | Turnos, pacing, disponibilidad, best-fit, EXCLUDE         | Pendiente |
-| F4 · Vista de servicio | Plano en vivo, sentar/mover/unir, walk-ins, espera        | Pendiente |
-| F5 · Cuenta de mesa    | Catálogo, líneas, dividir, cerrar, cobrar                 | Pendiente |
-| F6 · Facturación       | Ajustes fiscales, series, ledger/outbox, PDF, modo test   | Pendiente |
-| F7 · Entrega           | Documentación operativa, smoke, despliegue autorizado     | Pendiente |
+| Fase                   | Entregable                                                   | Estado    |
+| ---------------------- | ------------------------------------------------------------ | --------- |
+| F0 · Papeleo           | `project-design.md`, `data-model.md`, ADR 0001–0007          | Hecho     |
+| F0 · Esqueleto         | Proyecto Start, `@doscientos/configs`, CI, `.env.example`    | Hecho     |
+| F1 · Tenancy + Auth    | Migraciones, RLS, `/t/:slug`, perfiles global y tenant       | Parcial   |
+| F2 · Diseñador de sala | Editor SVG, snap, historial, elementos y layouts versionados | Hecho     |
+| F3 · Motor de reservas | Turnos, pacing, disponibilidad, best-fit, EXCLUDE            | Pendiente |
+| F4 · Vista de servicio | Plano en vivo, sentar/mover/unir, walk-ins, espera           | Pendiente |
+| F5 · Cuenta de mesa    | Catálogo, líneas, dividir, cerrar, cobrar                    | Pendiente |
+| F6 · Facturación       | Ajustes fiscales, series, ledger/outbox, PDF, modo test      | Pendiente |
+| F7 · Entrega           | Documentación operativa, smoke, despliegue autorizado        | Pendiente |
 
 ## Puerta de adopción de TanStack Start (ADR-0001)
 
