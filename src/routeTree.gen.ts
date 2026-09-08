@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as TSlugRouteImport } from './routes/t.$slug'
 import { Route as TSlugIndexRouteImport } from './routes/t.$slug.index'
@@ -18,6 +19,11 @@ import { Route as TSlugFacturasRouteImport } from './routes/t.$slug.facturas'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
@@ -43,6 +49,7 @@ const TSlugFacturasRoute = TSlugFacturasRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
   '/t/$slug': typeof TSlugRouteWithChildren
   '/admin/': typeof AdminIndexRoute
   '/t/$slug/facturas': typeof TSlugFacturasRoute
@@ -50,6 +57,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
   '/admin': typeof AdminIndexRoute
   '/t/$slug/facturas': typeof TSlugFacturasRoute
   '/t/$slug': typeof TSlugIndexRoute
@@ -57,6 +65,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
   '/t/$slug': typeof TSlugRouteWithChildren
   '/admin/': typeof AdminIndexRoute
   '/t/$slug/facturas': typeof TSlugFacturasRoute
@@ -64,12 +73,14 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/t/$slug' | '/admin/' | '/t/$slug/facturas' | '/t/$slug/'
+  fullPaths:
+    '/' | '/login' | '/t/$slug' | '/admin/' | '/t/$slug/facturas' | '/t/$slug/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/t/$slug/facturas' | '/t/$slug'
+  to: '/' | '/login' | '/admin' | '/t/$slug/facturas' | '/t/$slug'
   id:
     | '__root__'
     | '/'
+    | '/login'
     | '/t/$slug'
     | '/admin/'
     | '/t/$slug/facturas'
@@ -78,6 +89,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  LoginRoute: typeof LoginRoute
   TSlugRoute: typeof TSlugRouteWithChildren
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -89,6 +101,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/': {
@@ -136,6 +155,7 @@ const TSlugRouteWithChildren = TSlugRoute._addFileChildren(TSlugRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  LoginRoute: LoginRoute,
   TSlugRoute: TSlugRouteWithChildren,
   AdminIndexRoute: AdminIndexRoute,
 }

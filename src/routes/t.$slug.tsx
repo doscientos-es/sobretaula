@@ -1,8 +1,8 @@
 import { DataViewState, DataViewStateDescription, DataViewStateTitle } from '@doscientos/ui'
-import { createFileRoute, notFound, Outlet } from '@tanstack/react-router'
+import { createFileRoute, notFound, Outlet, redirect } from '@tanstack/react-router'
 
 import { AppFrame } from '@/app/app-frame'
-import { isTenantOperational, tenantBySlugQuery } from '@/features/tenancy'
+import { getTenantMembership, isTenantOperational, tenantBySlugQuery } from '@/features/tenancy'
 import { createTranslator } from '@/shared/lib/i18n/messages'
 import { parseTenantSlug } from '@/shared/lib/tenant/tenant-slug'
 
@@ -13,6 +13,12 @@ export const Route = createFileRoute('/t/$slug')({
 
     const tenant = await context.queryClient.ensureQueryData(tenantBySlugQuery(slug))
     if (!tenant) throw notFound()
+
+    try {
+      await getTenantMembership({ data: { tenantId: tenant.id } })
+    } catch {
+      throw redirect({ to: '/login', search: { redirect: `/t/${tenant.slug}` } })
+    }
 
     return { tenant }
   },

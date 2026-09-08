@@ -10,6 +10,7 @@ import type { ReactNode } from 'react'
 
 import type { Locale } from '@/shared/lib/i18n/locale'
 import { createTranslator } from '@/shared/lib/i18n/messages'
+import { LogoutButton } from '@/features/auth'
 
 export function AppFrame({
   children,
@@ -53,7 +54,10 @@ export function AppFrame({
       <AppShellMain className="min-w-0 flex-1">
         <AppShellHeader className="flex h-14 items-center justify-between px-4">
           <span className="text-sm font-medium">{title}</span>
-          <span className="text-muted-foreground text-xs">{t('invoices.env.test')}</span>
+          <div className="flex items-center gap-3">
+            <span className="text-muted-foreground text-xs">{t('invoices.env.test')}</span>
+            <LogoutButton />
+          </div>
         </AppShellHeader>
         <AppShellContent className="mx-auto max-w-6xl p-4 sm:p-6">{children}</AppShellContent>
       </AppShellMain>
