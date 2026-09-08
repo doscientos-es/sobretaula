@@ -33,6 +33,7 @@ export const provisionTenantOnboarding = createServerFn({ method: 'POST' })
       throw new Error(`tenant_onboarding_failed:${error.code}`)
     }
 
-    const [tenant] = onboardingResult.parse(result)
+    const tenant = onboardingResult.parse(result)[0]
+    if (!tenant) throw new Error('tenant_onboarding_result_missing')
     return { slug: tenant.tenant_slug, tenantId: tenant.tenant_id }
   })

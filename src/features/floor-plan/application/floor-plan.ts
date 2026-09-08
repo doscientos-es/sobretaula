@@ -12,13 +12,13 @@ import type { FloorPlanData } from '../domain/floor-plan'
 import { findPlacementCollisions, isPlacementWithinBounds } from '../domain/geometry'
 
 const tenantInput = z.object({ tenantId: z.string().uuid() })
-const initialFloorPlanInput = tenantInput.extend({
+const venueInput = tenantInput.extend({ venueId: z.string().uuid() })
+const initialFloorPlanInput = venueInput.extend({
   areaName: z.string().trim().min(1).max(100),
   heightCm: z.number().int().min(100).max(10_000),
-  venueName: z.string().trim().min(1).max(100),
   widthCm: z.number().int().min(100).max(10_000),
 })
-const createTableInput = tenantInput
+const createTableInput = venueInput
   .extend({
     areaId: z.string().uuid(),
     code: z.string().trim().min(1).max(20),
@@ -27,7 +27,6 @@ const createTableInput = tenantInput
     minSeats: z.number().int().min(1).max(50),
     rotationDeg: z.number().int().min(0).max(359).default(0),
     shape: z.enum(['square', 'rectangle', 'round', 'oval', 'custom']).default('square'),
-    venueId: z.string().uuid(),
     versionId: z.string().uuid(),
     widthCm: z.number().int().min(25).max(500),
     xCm: z.number().int().min(0).max(10_000),
@@ -54,7 +53,7 @@ const planElementInput = z.object({
   xCm: z.number().int().min(0).max(10_000),
   yCm: z.number().int().min(0).max(10_000),
 })
-const saveFloorPlanVersionInput = tenantInput.extend({
+const saveFloorPlanVersionInput = venueInput.extend({
   activeFrom: z.string().datetime({ offset: true }),
   elements: z.array(planElementInput).max(100),
   name: z.string().trim().min(1).max(100),
@@ -68,45 +67,52 @@ function requireManager(role: string): void {
 
 export const getFloorPlan = createServerFn({ method: 'GET' })
   .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
-  .validator(tenantInput)
+  .validator(venueInput)
   .handler(async ({ context, data }): Promise<FloorPlanData> => {
     const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
-    const [areasResult, versionsResult, tablesResult, placementsResult, elementsResult] =
-      await Promise.all([
-        supabase
-          .from('areas')
-          .select('id, is_online_bookable, name, venue_id')
-          .eq('tenant_id', data.tenantId)
-          .order('name'),
-        supabase
-          .from('floor_plan_versions')
-          .select('area_id, height_cm, id, name, width_cm')
-          .eq('tenant_id', data.tenantId)
-          .lte('active_from', new Date().toISOString())
-          .or(`active_to.is.null,active_to.gt.${new Date().toISOString()}`)
-          .order('active_from', { ascending: false }),
-        supabase.from('tables').select('code, id').eq('tenant_id', data.tenantId),
-        supabase
-          .from('table_placements')
-          .select(
-            'floor_plan_version_id, height_cm, id, rotation_deg, table_id, width_cm, x_cm, y_cm',
-          )
-          .eq('tenant_id', data.tenantId),
-        supabase
-          .from('plan_elements')
-          .select(
-            'floor_plan_version_id, height_cm, id, kind, label, rotation_deg, width_cm, x_cm, y_cm',
-          )
-          .eq('tenant_id', data.tenantId),
-      ])
+    const areasResult = await supabase
+      .from('areas')
+      .select('id, is_online_bookable, name, venue_id')
+      .eq('tenant_id', data.tenantId)
+      .eq('venue_id', data.venueId)
+      .order('name')
+    if (areasResult.error) throw new Error(`floor_plan_load_failed:${areasResult.error.code}`)
+    const areaIds = (areasResult.data ?? []).map((area) => area.id)
 
-    const error = [
-      areasResult.error,
-      versionsResult.error,
-      tablesResult.error,
-      placementsResult.error,
-      elementsResult.error,
-    ].find(Boolean)
+    const now = new Date().toISOString()
+    const versionsResult = await supabase
+      .from('floor_plan_versions')
+      .select('area_id, height_cm, id, name, width_cm')
+      .eq('tenant_id', data.tenantId)
+      .in('area_id', areaIds)
+      .lte('active_from', now)
+      .or(`active_to.is.null,active_to.gt.${now}`)
+      .order('active_from', { ascending: false })
+    if (versionsResult.error) throw new Error(`floor_plan_load_failed:${versionsResult.error.code}`)
+    const versionIds = (versionsResult.data ?? []).map((version) => version.id)
+
+    const [tablesResult, placementsResult, elementsResult] = await Promise.all([
+      supabase.from('tables').select('code, id').eq('tenant_id', data.tenantId).eq(
+        'venue_id',
+        data.venueId,
+      ),
+      supabase
+        .from('table_placements')
+        .select(
+          'floor_plan_version_id, height_cm, id, rotation_deg, table_id, width_cm, x_cm, y_cm',
+        )
+        .eq('tenant_id', data.tenantId)
+        .in('floor_plan_version_id', versionIds),
+      supabase
+        .from('plan_elements')
+        .select(
+          'floor_plan_version_id, height_cm, id, kind, label, rotation_deg, width_cm, x_cm, y_cm',
+        )
+        .eq('tenant_id', data.tenantId)
+        .in('floor_plan_version_id', versionIds),
+    ])
+
+    const error = [tablesResult.error, placementsResult.error, elementsResult.error].find(Boolean)
     if (error) throw new Error(`floor_plan_load_failed:${error.code}`)
 
     const tableCodes = new Map((tablesResult.data ?? []).map((table) => [table.id, table.code]))
@@ -155,17 +161,9 @@ export const createInitialFloorPlan = createServerFn({ method: 'POST' })
   .handler(async ({ context, data }) => {
     requireManager(context.tenantMembership.role)
     const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
-    const { data: venue, error: venueError } = await supabase
-      .from('venues')
-      .insert({ name: data.venueName, tenant_id: data.tenantId })
-      .select('id')
-      .single()
-    if (venueError || !venue)
-      throw new Error(`floor_plan_venue_create_failed:${venueError?.code ?? 'unknown'}`)
-
     const { data: area, error: areaError } = await supabase
       .from('areas')
-      .insert({ name: data.areaName, tenant_id: data.tenantId, venue_id: venue.id })
+      .insert({ name: data.areaName, tenant_id: data.tenantId, venue_id: data.venueId })
       .select('id')
       .single()
     if (areaError || !area)
@@ -198,10 +196,11 @@ export const createFloorPlanTable = createServerFn({ method: 'POST' })
     const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
     const { data: version, error: versionError } = await supabase
       .from('floor_plan_versions')
-      .select('height_cm, width_cm')
+      .select('height_cm, width_cm, areas!inner(venue_id)')
       .eq('id', data.versionId)
       .eq('tenant_id', data.tenantId)
       .eq('area_id', data.areaId)
+      .eq('areas.venue_id', data.venueId)
       .single()
     if (versionError || !version) throw new Response('Not found', { status: 404 })
 
