@@ -2,7 +2,10 @@ import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 
 import { authMiddleware } from '@/features/auth/infrastructure/server/auth-middleware'
-import { tenantMembershipMiddleware } from '@/features/tenancy/application/require-tenant-membership'
+import {
+  operationalTenantMiddleware,
+  tenantMembershipMiddleware,
+} from '@/features/tenancy/application/require-tenant-membership'
 import { createRequestSupabaseClient } from '@/shared/lib/supabase/server/create-server-client'
 
 import type { FloorPlanData } from '../domain/floor-plan'
@@ -64,7 +67,7 @@ function requireManager(role: string): void {
 }
 
 export const getFloorPlan = createServerFn({ method: 'GET' })
-  .middleware([authMiddleware, tenantMembershipMiddleware])
+  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
   .validator(tenantInput)
   .handler(async ({ context, data }): Promise<FloorPlanData> => {
     const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
@@ -147,7 +150,7 @@ export const getFloorPlan = createServerFn({ method: 'GET' })
   })
 
 export const createInitialFloorPlan = createServerFn({ method: 'POST' })
-  .middleware([authMiddleware, tenantMembershipMiddleware])
+  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
   .validator(initialFloorPlanInput)
   .handler(async ({ context, data }) => {
     requireManager(context.tenantMembership.role)
@@ -188,7 +191,7 @@ export const createInitialFloorPlan = createServerFn({ method: 'POST' })
   })
 
 export const createFloorPlanTable = createServerFn({ method: 'POST' })
-  .middleware([authMiddleware, tenantMembershipMiddleware])
+  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
   .validator(createTableInput)
   .handler(async ({ context, data }) => {
     requireManager(context.tenantMembership.role)
@@ -271,7 +274,7 @@ export const createFloorPlanTable = createServerFn({ method: 'POST' })
 
 /** Saves the editor state as a new version instead of mutating a published layout. */
 export const saveFloorPlanVersion = createServerFn({ method: 'POST' })
-  .middleware([authMiddleware, tenantMembershipMiddleware])
+  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
   .validator(saveFloorPlanVersionInput)
   .handler(async ({ context, data }) => {
     requireManager(context.tenantMembership.role)

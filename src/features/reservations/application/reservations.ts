@@ -2,7 +2,10 @@ import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 
 import { authMiddleware } from '@/features/auth/infrastructure/server/auth-middleware'
-import { tenantMembershipMiddleware } from '@/features/tenancy/application/require-tenant-membership'
+import {
+  operationalTenantMiddleware,
+  tenantMembershipMiddleware,
+} from '@/features/tenancy/application/require-tenant-membership'
 import { createRequestSupabaseClient } from '@/shared/lib/supabase/server/create-server-client'
 
 import {
@@ -56,7 +59,7 @@ function parsePeriod(period: string): { endsAt: Date; startsAt: Date } {
 }
 
 export const getReservationServices = createServerFn({ method: 'GET' })
-  .middleware([authMiddleware, tenantMembershipMiddleware])
+  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
   .validator(tenantInput)
   .handler(async ({ context, data }): Promise<ReservationService[]> => {
     const { data: services, error } = await createRequestSupabaseClient(
@@ -79,7 +82,7 @@ export const getReservationServices = createServerFn({ method: 'GET' })
   })
 
 export const createReservationService = createServerFn({ method: 'POST' })
-  .middleware([authMiddleware, tenantMembershipMiddleware])
+  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
   .validator(serviceInput)
   .handler(async ({ context, data }) => {
     requireReservationEditor(context.tenantMembership.role)
@@ -115,7 +118,7 @@ export const createReservationService = createServerFn({ method: 'POST' })
   })
 
 export const createReservation = createServerFn({ method: 'POST' })
-  .middleware([authMiddleware, tenantMembershipMiddleware])
+  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
   .validator(reservationInput)
   .handler(async ({ context, data }) => {
     requireReservationEditor(context.tenantMembership.role)

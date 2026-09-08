@@ -2,7 +2,10 @@ import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 
 import { authMiddleware } from '@/features/auth/infrastructure/server/auth-middleware'
-import { tenantMembershipMiddleware } from '@/features/tenancy/application/require-tenant-membership'
+import {
+  operationalTenantMiddleware,
+  tenantMembershipMiddleware,
+} from '@/features/tenancy/application/require-tenant-membership'
 import { createRequestSupabaseClient } from '@/shared/lib/supabase/server/create-server-client'
 
 const seatReservationInput = z.object({
@@ -17,7 +20,7 @@ function requireServiceEditor(role: string): void {
 
 /** Opens the live table session and converts its pending reservation into seated. */
 export const seatReservation = createServerFn({ method: 'POST' })
-  .middleware([authMiddleware, tenantMembershipMiddleware])
+  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
   .validator(seatReservationInput)
   .handler(async ({ context, data }) => {
     requireServiceEditor(context.tenantMembership.role)
