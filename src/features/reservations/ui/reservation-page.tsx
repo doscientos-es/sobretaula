@@ -30,7 +30,7 @@ export function ReservationPage({
 }: {
   services: readonly ReservationService[]
   tenantId: string
-  venueId: string | undefined
+  venueId: string
 }) {
   const feedback = useFormFeedback()
   const [serviceName, setServiceName] = useState('Comida')
@@ -42,7 +42,6 @@ export function ReservationPage({
 
   async function configureService(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!venueId) return
     feedback.setPending()
     try {
       await createReservationService({
@@ -80,6 +79,7 @@ export function ReservationPage({
           serviceId,
           startsAt: date.toISOString(),
           tenantId,
+          venueId,
         },
       })
       feedback.setSuccess('Reserva creada y mesa asignada automáticamente.')
@@ -102,41 +102,35 @@ export function ReservationPage({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {!venueId ? (
-              <p className="text-muted-foreground text-sm">
-                Crea primero un local y sus mesas desde Plano.
-              </p>
-            ) : (
-              <form className="grid gap-4" onSubmit={(event) => void configureService(event)}>
-                <Field>
-                  <FieldLabel htmlFor="service-name">Nombre del turno</FieldLabel>
-                  <Input
-                    id="service-name"
-                    onChange={(event) => setServiceName(event.target.value)}
-                    required
-                    value={serviceName}
-                  />
-                </Field>
-                <Field>
-                  <FieldLabel htmlFor="service-weekday">Día de la semana</FieldLabel>
-                  <select
-                    id="service-weekday"
-                    onChange={(event) => setWeekday(Number(event.target.value))}
-                    value={weekday}
-                  >
-                    {weekdays.map((name, index) => (
-                      <option key={name} value={index}>
-                        {name}
-                      </option>
-                    ))}
-                  </select>
-                </Field>
-                <FormFeedback pendingLabel="Creando turno…" state={feedback.state} />
-                <Button disabled={feedback.pending} type="submit">
-                  Crear turno
-                </Button>
-              </form>
-            )}
+            <form className="grid gap-4" onSubmit={(event) => void configureService(event)}>
+              <Field>
+                <FieldLabel htmlFor="service-name">Nombre del turno</FieldLabel>
+                <Input
+                  id="service-name"
+                  onChange={(event) => setServiceName(event.target.value)}
+                  required
+                  value={serviceName}
+                />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="service-weekday">Día de la semana</FieldLabel>
+                <select
+                  id="service-weekday"
+                  onChange={(event) => setWeekday(Number(event.target.value))}
+                  value={weekday}
+                >
+                  {weekdays.map((name, index) => (
+                    <option key={name} value={index}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <FormFeedback pendingLabel="Creando turno…" state={feedback.state} />
+              <Button disabled={feedback.pending} type="submit">
+                Crear turno
+              </Button>
+            </form>
           </CardContent>
         </Card>
       ) : (
