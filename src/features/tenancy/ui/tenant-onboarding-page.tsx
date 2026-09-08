@@ -1,0 +1,117 @@
+import {
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Field,
+  FieldLabel,
+  FormFeedback,
+  Input,
+  useFormFeedback,
+} from '@doscientos/ui'
+import { useState, type FormEvent } from 'react'
+
+import { provisionTenantOnboarding } from '../application/provision-tenant-onboarding'
+import { tenantSlugCandidate } from '../application/onboarding-schema'
+
+export function TenantOnboardingPage() {
+  const feedback = useFormFeedback()
+  const [name, setName] = useState('')
+  const [slug, setSlug] = useState('')
+  const [slugEdited, setSlugEdited] = useState(false)
+  const [legalName, setLegalName] = useState('')
+  const [taxId, setTaxId] = useState('')
+  const [email, setEmail] = useState('')
+  const [addressLine, setAddressLine] = useState('')
+  const [city, setCity] = useState('')
+  const [postalCode, setPostalCode] = useState('')
+
+  function changeName(value: string) {
+    setName(value)
+    if (!slugEdited) setSlug(tenantSlugCandidate(value))
+  }
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    feedback.setPending()
+    try {
+      const tenant = await provisionTenantOnboarding({
+        data: {
+          addressLine,
+          city,
+          defaultLocale: 'es',
+          email,
+          legalName,
+          name,
+          postalCode,
+          slug,
+          taxId,
+          timezone: 'Europe/Madrid',
+        },
+      })
+      window.location.assign(`/t/${tenant.slug}`)
+    } catch (error) {
+      feedback.setError(
+        error instanceof Response && error.status === 409
+          ? 'Esta dirección de restaurante ya está en uso.'
+          : 'No se ha podido guardar el alta. Revisa los datos e inténtalo de nuevo.',
+      )
+    }
+  }
+
+  return (
+    <main className="mx-auto max-w-2xl p-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Configura tu restaurante</CardTitle>
+          <CardDescription>
+            El primer año cuesta 99 € al mes, sin IVA. Después serán 300 € al mes, sin IVA.
+            Antes de activar el restaurante te solicitaremos la autorización segura de pago.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form className="space-y-5" onSubmit={(event) => void submit(event)}>
+            <div className="grid gap-5 sm:grid-cols-2">
+              <Field>
+                <FieldLabel htmlFor="tenant-name">Nombre comercial</FieldLabel>
+                <Input id="tenant-name" onChange={(event) => changeName(event.target.value)} required value={name} />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="tenant-slug">Dirección de SobreTaula</FieldLabel>
+                <Input id="tenant-slug" onChange={(event) => { setSlugEdited(true); setSlug(event.target.value) }} pattern="[a-z0-9][a-z0-9-]{1,48}[a-z0-9]" required value={slug} />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="legal-name">Razón social</FieldLabel>
+                <Input id="legal-name" onChange={(event) => setLegalName(event.target.value)} required value={legalName} />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="tax-id">NIF/CIF</FieldLabel>
+                <Input id="tax-id" onChange={(event) => setTaxId(event.target.value)} required value={taxId} />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="billing-email">Correo de facturación</FieldLabel>
+                <Input autoComplete="email" id="billing-email" onChange={(event) => setEmail(event.target.value)} required type="email" value={email} />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="address">Dirección fiscal</FieldLabel>
+                <Input id="address" onChange={(event) => setAddressLine(event.target.value)} required value={addressLine} />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="city">Ciudad</FieldLabel>
+                <Input id="city" onChange={(event) => setCity(event.target.value)} required value={city} />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="postal-code">Código postal</FieldLabel>
+                <Input id="postal-code" onChange={(event) => setPostalCode(event.target.value)} required value={postalCode} />
+              </Field>
+            </div>
+            <FormFeedback pendingLabel="Guardando configuración…" state={feedback.state} />
+            <Button disabled={feedback.pending} type="submit">Continuar con el pago</Button>
+          </form>
+        </CardContent>
+      </Card>
+    </main>
+  )
+}

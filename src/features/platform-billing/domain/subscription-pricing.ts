@@ -2,6 +2,8 @@ export const INTRODUCTORY_MONTHS = 12
 export const INTRODUCTORY_MONTHLY_NET_CENTS = 9_900
 export const FOUNDERS_DISCOUNT_BPS = 5_000
 export const DEFAULT_VAT_RATE_BPS = 2_100
+export const VENUES_INCLUDED_IN_PLAN = 1
+export const EXTRA_VENUE_MONTHLY_NET_CENTS = 10_000
 
 export interface SubscriptionPrice {
   netCents: number
@@ -11,6 +13,10 @@ export interface SubscriptionPrice {
 
 function requirePositiveInteger(value: number, field: string): void {
   if (!Number.isSafeInteger(value) || value <= 0) throw new Error(`invalid_${field}`)
+}
+
+function requireNonNegativeInteger(value: number, field: string): void {
+  if (!Number.isSafeInteger(value) || value < 0) throw new Error(`invalid_${field}`)
 }
 
 /** Returns the net monthly amount for the currently agreed commercial policy. */
@@ -29,6 +35,42 @@ export function monthlyNetCentsForCycle({
   return hasFoundersBenefit
     ? Math.round((standardMonthlyNetCents * (10_000 - FOUNDERS_DISCOUNT_BPS)) / 10_000)
     : standardMonthlyNetCents
+}
+
+/** Surcharge for the venues that the plan price does not already cover. */
+export function extraVenueNetCents({
+  extraVenueMonthlyNetCents = EXTRA_VENUE_MONTHLY_NET_CENTS,
+  venueCount,
+}: {
+  extraVenueMonthlyNetCents?: number
+  venueCount: number
+}): number {
+  requirePositiveInteger(venueCount, 'venue_count')
+  requireNonNegativeInteger(extraVenueMonthlyNetCents, 'extra_venue_monthly_net_cents')
+  return Math.max(0, venueCount - VENUES_INCLUDED_IN_PLAN) * extraVenueMonthlyNetCents
+}
+
+/**
+ * Net monthly amount billed to the company. Introductory and Founders benefits
+ * only affect the plan price: every additional venue is charged in full.
+ */
+export function subscriptionMonthlyNetCents({
+  cycle,
+  extraVenueMonthlyNetCents = EXTRA_VENUE_MONTHLY_NET_CENTS,
+  hasFoundersBenefit,
+  standardMonthlyNetCents,
+  venueCount,
+}: {
+  cycle: number
+  extraVenueMonthlyNetCents?: number
+  hasFoundersBenefit: boolean
+  standardMonthlyNetCents: number
+  venueCount: number
+}): number {
+  return (
+    monthlyNetCentsForCycle({ cycle, hasFoundersBenefit, standardMonthlyNetCents }) +
+    extraVenueNetCents({ extraVenueMonthlyNetCents, venueCount })
+  )
 }
 
 /** Taxes are calculated from integer cents, never floats. */

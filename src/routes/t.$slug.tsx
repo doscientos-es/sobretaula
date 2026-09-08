@@ -1,5 +1,5 @@
 import { DataViewState, DataViewStateDescription, DataViewStateTitle } from '@doscientos/ui'
-import { createFileRoute, notFound, Outlet, redirect } from '@tanstack/react-router'
+import { createFileRoute, Link, notFound, Outlet, redirect } from '@tanstack/react-router'
 
 import { AppFrame } from '@/app/app-frame'
 import { getTenantBillingStatus, TenantBillingNotice } from '@/features/platform-billing'
@@ -32,14 +32,21 @@ function TenantLayout() {
   const { billingStatus, tenant } = Route.useLoaderData()
 
   if (!isTenantOperational(tenant.status)) {
+    const setupPending = tenant.status === 'setup_pending'
     return (
       <main className="mx-auto max-w-2xl p-6">
         <DataViewState>
           <DataViewStateTitle>{tenant.name}</DataViewStateTitle>
           <DataViewStateDescription>
-            Este restaurante está temporalmente en pausa por un cobro pendiente. Su información se
-            conserva y se reactivará automáticamente al confirmarse el pago.
+            {setupPending
+              ? 'Tus datos de facturación se han guardado. Falta autorizar el método de pago seguro para activar el restaurante.'
+              : 'Este restaurante está temporalmente en pausa por un cobro pendiente. Su información se conserva y se reactivará automáticamente al confirmarse el pago.'}
           </DataViewStateDescription>
+          {setupPending && (
+            <Link className="text-primary mt-5 inline-block text-sm underline" to="/onboarding">
+              Revisar configuración de alta
+            </Link>
+          )}
         </DataViewState>
       </main>
     )

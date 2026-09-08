@@ -9,11 +9,15 @@ export {
 } from './domain/subscription-lifecycle'
 export {
   DEFAULT_VAT_RATE_BPS,
+  EXTRA_VENUE_MONTHLY_NET_CENTS,
+  extraVenueNetCents,
   FOUNDERS_DISCOUNT_BPS,
   INTRODUCTORY_MONTHLY_NET_CENTS,
   INTRODUCTORY_MONTHS,
   monthlyNetCentsForCycle,
   priceWithVat,
+  subscriptionMonthlyNetCents,
+  VENUES_INCLUDED_IN_PLAN,
 } from './domain/subscription-pricing'
 export type { SubscriptionPrice } from './domain/subscription-pricing'
 export { PlatformBillingOverview } from './ui/platform-billing-overview'

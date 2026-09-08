@@ -34,9 +34,14 @@ function TenantPicker() {
         </DataViewStateTitle>
         <DataViewStateDescription>
           {tenants.length === 0
-            ? 'Tu cuenta existe, pero todavía no tiene una membresía activa.'
+            ? 'Crea y configura tu primer restaurante para empezar.'
             : 'Selecciona el restaurante que quieres gestionar.'}
         </DataViewStateDescription>
+        {tenants.length === 0 && (
+          <Link className="text-primary mt-5 inline-block underline" to="/onboarding">
+            Configurar mi restaurante
+          </Link>
+        )}
         {tenants.length > 1 && (
           <ul className="mt-5 space-y-2">
             {tenants.map((tenant) => (

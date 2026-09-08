@@ -1,6 +1,6 @@
 import type { Locale } from '@/shared/lib/i18n/locale'
 
-export const TENANT_STATUSES = ['trial', 'active', 'suspended'] as const
+export const TENANT_STATUSES = ['setup_pending', 'trial', 'active', 'suspended'] as const
 export type TenantStatus = (typeof TENANT_STATUSES)[number]
 
 export const TENANT_ROLES = ['owner', 'manager', 'host', 'waiter', 'accountant'] as const
