@@ -1,9 +1,17 @@
 import { DataViewState, DataViewStateDescription, DataViewStateTitle } from '@doscientos/ui'
-import { createFileRoute, Link, notFound, Outlet, redirect } from '@tanstack/react-router'
+import {
+  createFileRoute,
+  Link,
+  notFound,
+  Outlet,
+  redirect,
+  useRouterState,
+} from '@tanstack/react-router'
 
 import { AppFrame } from '@/app/app-frame'
 import { getTenantBillingStatus, TenantBillingNotice } from '@/features/platform-billing'
 import { getTenantMembership, isTenantOperational, tenantBySlugQuery } from '@/features/tenancy'
+import { getTenantVenues } from '@/features/venues'
 import { parseTenantSlug } from '@/shared/lib/tenant/tenant-slug'
 
 export const Route = createFileRoute('/t/$slug')({
@@ -22,16 +30,23 @@ export const Route = createFileRoute('/t/$slug')({
     }
 
     const billingStatus = await getTenantBillingStatus({ data: { tenantId: tenant.id } })
-    return { billingStatus, tenant }
+    const venues = isTenantOperational(tenant.status)
+      ? await getTenantVenues({ data: { tenantId: tenant.id } })
+      : []
+    return { billingStatus, tenant, venues }
   },
   component: TenantLayout,
   notFoundComponent: TenantNotFound,
 })
 
 function TenantLayout() {
-  const { billingStatus, tenant } = Route.useLoaderData()
+  const { billingStatus, tenant, venues } = Route.useLoaderData()
+  const pathname = useRouterState({ select: (state) => state.location.pathname })
+  const isSubscriptionInvoicesRoute = pathname === `/t/${tenant.slug}/suscripcion/facturas`
 
   if (!isTenantOperational(tenant.status)) {
+    if (isSubscriptionInvoicesRoute) return <Outlet />
+
     const setupPending = tenant.status === 'setup_pending'
     return (
       <main className="mx-auto max-w-2xl p-6">
@@ -57,7 +72,12 @@ function TenantLayout() {
   }
 
   return (
-    <AppFrame locale={tenant.defaultLocale} slug={tenant.slug} title={tenant.name}>
+    <AppFrame
+      locale={tenant.defaultLocale}
+      slug={tenant.slug}
+      title={tenant.name}
+      venues={venues}
+    >
       <TenantBillingNotice status={billingStatus} />
       <Outlet />
     </AppFrame>

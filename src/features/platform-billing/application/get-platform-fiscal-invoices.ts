@@ -5,6 +5,8 @@ import { authMiddleware } from '@/features/auth/infrastructure/server/auth-middl
 import { tenantMembershipMiddleware } from '@/features/tenancy/application/require-tenant-membership'
 import { createRequestSupabaseClient } from '@/shared/lib/supabase/server/create-server-client'
 
+import { canViewPlatformFiscalInvoices } from '../domain/platform-fiscal-invoice-access'
+
 const tenantInput = z.object({ tenantId: z.string().uuid() })
 
 export type PlatformFiscalInvoiceStatus = 'issued' | 'pending_review' | 'registered'
@@ -52,6 +54,10 @@ export const getTenantPlatformFiscalInvoices = createServerFn({ method: 'GET' })
   .middleware([authMiddleware, tenantMembershipMiddleware])
   .validator(tenantInput)
   .handler(async ({ context, data }): Promise<PlatformFiscalInvoice[]> => {
+    if (!canViewPlatformFiscalInvoices(context.tenantMembership.role)) {
+      throw new Response('Forbidden', { status: 403 })
+    }
+
     const { data: invoices, error } = await createRequestSupabaseClient(
       context.tenantMembership.accessToken,
     )

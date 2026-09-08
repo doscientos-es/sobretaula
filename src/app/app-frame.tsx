@@ -6,7 +6,7 @@ import {
   AppShellSidebar,
 } from '@doscientos/ui'
 import { Link, useParams } from '@tanstack/react-router'
-import { CalendarDays, FileText, LayoutDashboard, Map, Settings2, Utensils } from 'lucide-react'
+import { CalendarDays, FileText, LayoutDashboard, Map, Utensils } from 'lucide-react'
 import type { ReactNode } from 'react'
 
 import { LogoutButton } from '@/features/auth'
@@ -81,7 +81,7 @@ export function AppFrame({
             </>
           )}
           <Link
-            to="/t/$slug/suscripcion/facturas"
+            to="/t/$slug/facturas"
             params={{ slug }}
             activeProps={{ className: 'bg-muted text-foreground' }}
             className="text-muted-foreground hover:bg-secondary hover:text-foreground flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors"
@@ -97,15 +97,15 @@ export function AppFrame({
           venues={venues}
         />
         <p className="text-muted-foreground mt-8 px-2 text-[11px] font-semibold tracking-[0.16em] uppercase">
-          Espacio
+          Cuenta
         </p>
         <nav className="mt-3">
           <Link
-            to="/t/$slug/facturas"
+            to="/t/$slug/suscripcion/facturas"
             params={{ slug }}
             className="text-muted-foreground hover:bg-secondary hover:text-foreground flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors"
           >
-            <Settings2 className="size-4" />
+            <FileText className="size-4" />
             Facturas de SobreTaula
           </Link>
         </nav>

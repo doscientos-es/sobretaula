@@ -19,9 +19,12 @@ import { Route as ApiPlatformBillingReconcileRouteImport } from './routes/api.pl
 import { Route as ApiWebhooksRedsysRouteImport } from './routes/api.webhooks.redsys'
 import { Route as TSlugIndexRouteImport } from './routes/t.$slug.index'
 import { Route as TSlugFacturasRouteImport } from './routes/t.$slug.facturas'
-import { Route as TSlugPlanoRouteImport } from './routes/t.$slug.plano'
-import { Route as TSlugReservasRouteImport } from './routes/t.$slug.reservas'
+import { Route as TSlugLVenueRouteImport } from './routes/t.$slug.l.$venue'
+import { Route as TSlugLNuevoRouteImport } from './routes/t.$slug.l.nuevo'
 import { Route as TSlugSuscripcionFacturasRouteImport } from './routes/t.$slug.suscripcion.facturas'
+import { Route as TSlugLVenueIndexRouteImport } from './routes/t.$slug.l.$venue.index'
+import { Route as TSlugLVenuePlanoRouteImport } from './routes/t.$slug.l.$venue.plano'
+import { Route as TSlugLVenueReservasRouteImport } from './routes/t.$slug.l.$venue.reservas'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -74,14 +77,14 @@ const TSlugFacturasRoute = TSlugFacturasRouteImport.update({
   path: '/facturas',
   getParentRoute: () => TSlugRoute,
 } as any)
-const TSlugPlanoRoute = TSlugPlanoRouteImport.update({
-  id: '/plano',
-  path: '/plano',
+const TSlugLVenueRoute = TSlugLVenueRouteImport.update({
+  id: '/l/$venue',
+  path: '/l/$venue',
   getParentRoute: () => TSlugRoute,
 } as any)
-const TSlugReservasRoute = TSlugReservasRouteImport.update({
-  id: '/reservas',
-  path: '/reservas',
+const TSlugLNuevoRoute = TSlugLNuevoRouteImport.update({
+  id: '/l/nuevo',
+  path: '/l/nuevo',
   getParentRoute: () => TSlugRoute,
 } as any)
 const TSlugSuscripcionFacturasRoute =
@@ -90,6 +93,21 @@ const TSlugSuscripcionFacturasRoute =
     path: '/suscripcion/facturas',
     getParentRoute: () => TSlugRoute,
   } as any)
+const TSlugLVenueIndexRoute = TSlugLVenueIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => TSlugLVenueRoute,
+} as any)
+const TSlugLVenuePlanoRoute = TSlugLVenuePlanoRouteImport.update({
+  id: '/plano',
+  path: '/plano',
+  getParentRoute: () => TSlugLVenueRoute,
+} as any)
+const TSlugLVenueReservasRoute = TSlugLVenueReservasRouteImport.update({
+  id: '/reservas',
+  path: '/reservas',
+  getParentRoute: () => TSlugLVenueRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -101,10 +119,13 @@ export interface FileRoutesByFullPath {
   '/api/platform-billing/reconcile': typeof ApiPlatformBillingReconcileRoute
   '/api/webhooks/redsys': typeof ApiWebhooksRedsysRoute
   '/t/$slug/facturas': typeof TSlugFacturasRoute
-  '/t/$slug/plano': typeof TSlugPlanoRoute
-  '/t/$slug/reservas': typeof TSlugReservasRoute
   '/t/$slug/': typeof TSlugIndexRoute
+  '/t/$slug/l/$venue': typeof TSlugLVenueRouteWithChildren
+  '/t/$slug/l/nuevo': typeof TSlugLNuevoRoute
   '/t/$slug/suscripcion/facturas': typeof TSlugSuscripcionFacturasRoute
+  '/t/$slug/l/$venue/plano': typeof TSlugLVenuePlanoRoute
+  '/t/$slug/l/$venue/reservas': typeof TSlugLVenueReservasRoute
+  '/t/$slug/l/$venue/': typeof TSlugLVenueIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -115,10 +136,12 @@ export interface FileRoutesByTo {
   '/api/platform-billing/reconcile': typeof ApiPlatformBillingReconcileRoute
   '/api/webhooks/redsys': typeof ApiWebhooksRedsysRoute
   '/t/$slug/facturas': typeof TSlugFacturasRoute
-  '/t/$slug/plano': typeof TSlugPlanoRoute
-  '/t/$slug/reservas': typeof TSlugReservasRoute
   '/t/$slug': typeof TSlugIndexRoute
+  '/t/$slug/l/nuevo': typeof TSlugLNuevoRoute
   '/t/$slug/suscripcion/facturas': typeof TSlugSuscripcionFacturasRoute
+  '/t/$slug/l/$venue/plano': typeof TSlugLVenuePlanoRoute
+  '/t/$slug/l/$venue/reservas': typeof TSlugLVenueReservasRoute
+  '/t/$slug/l/$venue': typeof TSlugLVenueIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -131,10 +154,13 @@ export interface FileRoutesById {
   '/api/platform-billing/reconcile': typeof ApiPlatformBillingReconcileRoute
   '/api/webhooks/redsys': typeof ApiWebhooksRedsysRoute
   '/t/$slug/facturas': typeof TSlugFacturasRoute
-  '/t/$slug/plano': typeof TSlugPlanoRoute
-  '/t/$slug/reservas': typeof TSlugReservasRoute
   '/t/$slug/': typeof TSlugIndexRoute
+  '/t/$slug/l/$venue': typeof TSlugLVenueRouteWithChildren
+  '/t/$slug/l/nuevo': typeof TSlugLNuevoRoute
   '/t/$slug/suscripcion/facturas': typeof TSlugSuscripcionFacturasRoute
+  '/t/$slug/l/$venue/plano': typeof TSlugLVenuePlanoRoute
+  '/t/$slug/l/$venue/reservas': typeof TSlugLVenueReservasRoute
+  '/t/$slug/l/$venue/': typeof TSlugLVenueIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -148,10 +174,13 @@ export interface FileRouteTypes {
     | '/api/platform-billing/reconcile'
     | '/api/webhooks/redsys'
     | '/t/$slug/facturas'
-    | '/t/$slug/plano'
-    | '/t/$slug/reservas'
     | '/t/$slug/'
+    | '/t/$slug/l/$venue'
+    | '/t/$slug/l/nuevo'
     | '/t/$slug/suscripcion/facturas'
+    | '/t/$slug/l/$venue/plano'
+    | '/t/$slug/l/$venue/reservas'
+    | '/t/$slug/l/$venue/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -162,10 +191,12 @@ export interface FileRouteTypes {
     | '/api/platform-billing/reconcile'
     | '/api/webhooks/redsys'
     | '/t/$slug/facturas'
-    | '/t/$slug/plano'
-    | '/t/$slug/reservas'
     | '/t/$slug'
+    | '/t/$slug/l/nuevo'
     | '/t/$slug/suscripcion/facturas'
+    | '/t/$slug/l/$venue/plano'
+    | '/t/$slug/l/$venue/reservas'
+    | '/t/$slug/l/$venue'
   id:
     | '__root__'
     | '/'
@@ -177,10 +208,13 @@ export interface FileRouteTypes {
     | '/api/platform-billing/reconcile'
     | '/api/webhooks/redsys'
     | '/t/$slug/facturas'
-    | '/t/$slug/plano'
-    | '/t/$slug/reservas'
     | '/t/$slug/'
+    | '/t/$slug/l/$venue'
+    | '/t/$slug/l/nuevo'
     | '/t/$slug/suscripcion/facturas'
+    | '/t/$slug/l/$venue/plano'
+    | '/t/$slug/l/$venue/reservas'
+    | '/t/$slug/l/$venue/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -266,18 +300,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TSlugFacturasRouteImport
       parentRoute: typeof TSlugRoute
     }
-    '/t/$slug/plano': {
-      id: '/t/$slug/plano'
-      path: '/plano'
-      fullPath: '/t/$slug/plano'
-      preLoaderRoute: typeof TSlugPlanoRouteImport
+    '/t/$slug/l/$venue': {
+      id: '/t/$slug/l/$venue'
+      path: '/l/$venue'
+      fullPath: '/t/$slug/l/$venue'
+      preLoaderRoute: typeof TSlugLVenueRouteImport
       parentRoute: typeof TSlugRoute
     }
-    '/t/$slug/reservas': {
-      id: '/t/$slug/reservas'
-      path: '/reservas'
-      fullPath: '/t/$slug/reservas'
-      preLoaderRoute: typeof TSlugReservasRouteImport
+    '/t/$slug/l/nuevo': {
+      id: '/t/$slug/l/nuevo'
+      path: '/l/nuevo'
+      fullPath: '/t/$slug/l/nuevo'
+      preLoaderRoute: typeof TSlugLNuevoRouteImport
       parentRoute: typeof TSlugRoute
     }
     '/t/$slug/suscripcion/facturas': {
@@ -287,22 +321,59 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TSlugSuscripcionFacturasRouteImport
       parentRoute: typeof TSlugRoute
     }
+    '/t/$slug/l/$venue/': {
+      id: '/t/$slug/l/$venue/'
+      path: '/'
+      fullPath: '/t/$slug/l/$venue/'
+      preLoaderRoute: typeof TSlugLVenueIndexRouteImport
+      parentRoute: typeof TSlugLVenueRoute
+    }
+    '/t/$slug/l/$venue/plano': {
+      id: '/t/$slug/l/$venue/plano'
+      path: '/plano'
+      fullPath: '/t/$slug/l/$venue/plano'
+      preLoaderRoute: typeof TSlugLVenuePlanoRouteImport
+      parentRoute: typeof TSlugLVenueRoute
+    }
+    '/t/$slug/l/$venue/reservas': {
+      id: '/t/$slug/l/$venue/reservas'
+      path: '/reservas'
+      fullPath: '/t/$slug/l/$venue/reservas'
+      preLoaderRoute: typeof TSlugLVenueReservasRouteImport
+      parentRoute: typeof TSlugLVenueRoute
+    }
   }
 }
 
+interface TSlugLVenueRouteChildren {
+  TSlugLVenuePlanoRoute: typeof TSlugLVenuePlanoRoute
+  TSlugLVenueReservasRoute: typeof TSlugLVenueReservasRoute
+  TSlugLVenueIndexRoute: typeof TSlugLVenueIndexRoute
+}
+
+const TSlugLVenueRouteChildren: TSlugLVenueRouteChildren = {
+  TSlugLVenuePlanoRoute: TSlugLVenuePlanoRoute,
+  TSlugLVenueReservasRoute: TSlugLVenueReservasRoute,
+  TSlugLVenueIndexRoute: TSlugLVenueIndexRoute,
+}
+
+const TSlugLVenueRouteWithChildren = TSlugLVenueRoute._addFileChildren(
+  TSlugLVenueRouteChildren,
+)
+
 interface TSlugRouteChildren {
   TSlugFacturasRoute: typeof TSlugFacturasRoute
-  TSlugPlanoRoute: typeof TSlugPlanoRoute
-  TSlugReservasRoute: typeof TSlugReservasRoute
   TSlugIndexRoute: typeof TSlugIndexRoute
+  TSlugLVenueRoute: typeof TSlugLVenueRouteWithChildren
+  TSlugLNuevoRoute: typeof TSlugLNuevoRoute
   TSlugSuscripcionFacturasRoute: typeof TSlugSuscripcionFacturasRoute
 }
 
 const TSlugRouteChildren: TSlugRouteChildren = {
   TSlugFacturasRoute: TSlugFacturasRoute,
-  TSlugPlanoRoute: TSlugPlanoRoute,
-  TSlugReservasRoute: TSlugReservasRoute,
   TSlugIndexRoute: TSlugIndexRoute,
+  TSlugLVenueRoute: TSlugLVenueRouteWithChildren,
+  TSlugLNuevoRoute: TSlugLNuevoRoute,
   TSlugSuscripcionFacturasRoute: TSlugSuscripcionFacturasRoute,
 }
 

@@ -10,6 +10,7 @@ export type {
   PlatformFiscalInvoice,
   PlatformFiscalInvoiceStatus,
 } from './application/get-platform-fiscal-invoices'
+export { canViewPlatformFiscalInvoices } from './domain/platform-fiscal-invoice-access'
 export {
   PAYMENT_GRACE_DAYS,
   subscriptionActionAfterPaymentFailure,

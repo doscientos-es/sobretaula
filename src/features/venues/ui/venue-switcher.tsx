@@ -1,5 +1,15 @@
-import { Link } from '@tanstack/react-router'
-import { Store } from 'lucide-react'
+          ))}
+        </nav>
+      )}
+      <Link
+        to="/t/$slug/l/nuevo"
+        params={{ slug: tenantSlug }}
+        className="text-muted-foreground hover:bg-secondary hover:text-foreground mt-1 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors"
+      >
+        <Plus className="size-4" />
+        {t('venue.create.title')}
+      </Link>
+    </div>
 
 import type { Locale } from '@/shared/lib/i18n/locale'
 import { createTranslator } from '@/shared/lib/i18n/messages'
