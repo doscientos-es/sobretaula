@@ -1,0 +1,14 @@
+@import 'tailwindcss';
+@import '@doscientos/ui/styles.css';
+
+:root {
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  color: var(--foreground);
+  background: var(--background);
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+}

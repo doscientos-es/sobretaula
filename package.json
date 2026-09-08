@@ -1,0 +1,48 @@
+{
+  "name": "sobretaula",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev",
+    "build": "pnpm typecheck && vite build",
+    "format": "oxfmt -c node_modules/@doscientos/configs/oxfmt.json --write .",
+    "format:check": "oxfmt -c node_modules/@doscientos/configs/oxfmt.json --check .",
+    "lint": "oxlint",
+    "structure:check": "doscientos-structure --root src --tanstack-router",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "quality": "pnpm format:check && pnpm lint && pnpm structure:check && pnpm typecheck && pnpm test",
+    "quality:quick": "pnpm format:check && pnpm lint"
+  },
+  "dependencies": {
+    "@doscientos/ui": "^0.1.39",
+    "@supabase/supabase-js": "^2.116.0",
+    "@tanstack/react-query": "^5.102.8",
+    "@tanstack/react-router": "^1.170.33",
+    "@tanstack/react-start": "^1.168.50",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@doscientos/configs": "^0.1.9",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/node": "^22.16.5",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "@vitejs/plugin-react": "^5.2.0",
+    "oxfmt": "^0.65.0",
+    "oxlint": "^1.75.0",
+    "oxlint-tsgolint": "^7.0.2001",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.5",
+    "vitest": "^4.1.11"
+  },
+  "engines": {
+    "node": ">=22.18.0",
+    "pnpm": ">=9.15.2"
+  },
+  "packageManager": "pnpm@9.15.2"
+}
