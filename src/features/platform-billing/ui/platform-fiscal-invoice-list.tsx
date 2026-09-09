@@ -26,7 +26,9 @@ export function PlatformFiscalInvoiceList({
     return (
       <DataViewState>
         <DataViewStateTitle>{title}</DataViewStateTitle>
-        <DataViewStateDescription>Aún no hay facturas de suscripción para mostrar.</DataViewStateDescription>
+        <DataViewStateDescription>
+          Aún no hay facturas de suscripción para mostrar.
+        </DataViewStateDescription>
       </DataViewState>
     )
   }
@@ -48,7 +50,9 @@ export function PlatformFiscalInvoiceList({
             <tr className="border-b last:border-0" key={invoice.id}>
               {showTenant && <td className="px-3 py-3">{invoice.tenantName}</td>}
               <td className="px-3 py-3 font-medium">{invoice.fullNumber ?? 'Sin numerar'}</td>
-              <td className="px-3 py-3">{invoice.periodStart} — {invoice.periodEnd}</td>
+              <td className="px-3 py-3">
+                {invoice.periodStart} — {invoice.periodEnd}
+              </td>
               <td className="px-3 py-3">{formatMoney(invoice.totalCents, locale)}</td>
               <td className="px-3 py-3">
                 {statusLabel(invoice.status)}

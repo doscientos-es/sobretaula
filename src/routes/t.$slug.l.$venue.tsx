@@ -3,8 +3,8 @@ import { createFileRoute, notFound, Outlet } from '@tanstack/react-router'
 
 import { getTenantBySlug } from '@/features/tenancy'
 import { getTenantVenues, resolveVenue } from '@/features/venues'
-import { createTranslator } from '@/shared/lib/i18n/messages'
 import { DEFAULT_LOCALE } from '@/shared/lib/i18n/locale'
+import { createTranslator } from '@/shared/lib/i18n/messages'
 import { parseVenueSlug } from '@/shared/lib/tenant/venue-slug'
 
 /**

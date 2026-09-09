@@ -6,7 +6,15 @@ import {
   AppShellSidebar,
 } from '@doscientos/ui'
 import { Link, useParams } from '@tanstack/react-router'
-import { CalendarDays, FileText, LayoutDashboard, Map, Utensils } from 'lucide-react'
+import {
+  CalendarDays,
+  ConciergeBell,
+  FileText,
+  LayoutDashboard,
+  Map,
+  Utensils,
+  UtensilsCrossed,
+} from 'lucide-react'
 import type { ReactNode } from 'react'
 
 import { LogoutButton } from '@/features/auth'
@@ -70,6 +78,15 @@ export function AppFrame({
                 {t('nav.floorPlan')}
               </Link>
               <Link
+                to="/t/$slug/l/$venue/servicio"
+                params={{ slug, venue: activeVenue.slug }}
+                activeProps={{ className: 'bg-muted text-foreground' }}
+                className="text-muted-foreground hover:bg-secondary hover:text-foreground flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors"
+              >
+                <ConciergeBell className="size-4" />
+                {t('nav.service')}
+              </Link>
+              <Link
                 to="/t/$slug/l/$venue/reservas"
                 params={{ slug, venue: activeVenue.slug }}
                 activeProps={{ className: 'bg-muted text-foreground' }}
@@ -80,6 +97,15 @@ export function AppFrame({
               </Link>
             </>
           )}
+          <Link
+            to="/t/$slug/carta"
+            params={{ slug }}
+            activeProps={{ className: 'bg-muted text-foreground' }}
+            className="text-muted-foreground hover:bg-secondary hover:text-foreground flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors"
+          >
+            <UtensilsCrossed className="size-4" />
+            {t('nav.menu')}
+          </Link>
           <Link
             to="/t/$slug/facturas"
             params={{ slug }}

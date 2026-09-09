@@ -95,6 +95,8 @@ export const getPlatformFiscalInvoices = createServerFn({ method: 'GET' })
     return (invoices ?? []).flatMap((invoice) => {
       const [tenant] = invoice.tenants
       if (!tenant) return []
-      return [{ ...toPlatformFiscalInvoice(invoice), tenantName: tenant.name, tenantSlug: tenant.slug }]
+      return [
+        { ...toPlatformFiscalInvoice(invoice), tenantName: tenant.name, tenantSlug: tenant.slug },
+      ]
     })
   })

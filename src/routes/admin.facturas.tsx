@@ -1,10 +1,7 @@
 import { PageHeader, PageHeaderDescription, PageHeaderTitle } from '@doscientos/ui'
 import { createFileRoute, redirect } from '@tanstack/react-router'
 
-import {
-  getPlatformFiscalInvoices,
-  PlatformFiscalInvoiceList,
-} from '@/features/platform-billing'
+import { getPlatformFiscalInvoices, PlatformFiscalInvoiceList } from '@/features/platform-billing'
 
 export const Route = createFileRoute('/admin/facturas')({
   loader: async () => {
@@ -30,7 +27,12 @@ function PlatformFiscalInvoicesRoute() {
           Facturas de SobreTaula a los restaurantes. Sólo disponible para superadministradores.
         </PageHeaderDescription>
       </PageHeader>
-      <PlatformFiscalInvoiceList invoices={invoices} locale="es" showTenant title="Historial fiscal" />
+      <PlatformFiscalInvoiceList
+        invoices={invoices}
+        locale="es"
+        showTenant
+        title="Historial fiscal"
+      />
     </main>
   )
 }

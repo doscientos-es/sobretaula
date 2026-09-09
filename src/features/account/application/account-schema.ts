@@ -1,0 +1,31 @@
+import { z } from 'zod'
+
+import { PAYMENT_METHODS } from '../domain/account'
+
+export const accountSessionInput = z.object({
+  sessionId: z.string().uuid(),
+  tenantId: z.string().uuid(),
+  venueId: z.string().uuid(),
+})
+
+export const addOrderItemInput = accountSessionInput.extend({
+  menuItemId: z.string().uuid(),
+  notes: z.string().trim().max(200).optional(),
+  quantity: z.number().int().min(1).max(99),
+})
+
+export const removeOrderItemInput = accountSessionInput.extend({
+  orderItemId: z.string().uuid(),
+})
+
+export const recordPaymentInput = accountSessionInput.extend({
+  amountCents: z.number().int().min(1).max(1_000_000),
+  method: z.enum(PAYMENT_METHODS),
+  tipCents: z.number().int().min(0).max(1_000_000).optional(),
+})
+
+/** Apuntar y cobrar es trabajo de sala: camarero, encargado o dueño. */
+export function requireAccountEditor(role: string): void {
+  if (!['owner', 'manager', 'waiter'].includes(role))
+    throw new Response('Forbidden', { status: 403 })
+}

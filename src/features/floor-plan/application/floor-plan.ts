@@ -92,10 +92,11 @@ export const getFloorPlan = createServerFn({ method: 'GET' })
     const versionIds = (versionsResult.data ?? []).map((version) => version.id)
 
     const [tablesResult, placementsResult, elementsResult] = await Promise.all([
-      supabase.from('tables').select('code, id').eq('tenant_id', data.tenantId).eq(
-        'venue_id',
-        data.venueId,
-      ),
+      supabase
+        .from('tables')
+        .select('code, id')
+        .eq('tenant_id', data.tenantId)
+        .eq('venue_id', data.venueId),
       supabase
         .from('table_placements')
         .select(

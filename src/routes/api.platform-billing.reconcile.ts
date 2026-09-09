@@ -18,11 +18,20 @@ export const Route = createFileRoute('/api/platform-billing/reconcile')({
     handlers: {
       POST: async ({ request }) => {
         if (!isAuthorized(request)) return new Response('Unauthorized', { status: 401 })
-        const { data, error } = await createServiceSupabaseClient().rpc(
-          'suspend_overdue_platform_subscriptions',
-        )
-        if (error) return new Response('Reconciliation failed', { status: 500 })
-        return Response.json({ suspendedTenants: data ?? 0 })
+        const supabase = createServiceSupabaseClient()
+        const [generation, suspension] = await Promise.all([
+          // Ejecutable diariamente: la unicidad por suscripción/período hace que
+          // sólo se cree una factura para el último mes cerrado.
+          supabase.rpc('generate_platform_month_end_invoices'),
+          supabase.rpc('suspend_overdue_platform_subscriptions'),
+        ])
+        if (generation.error || suspension.error) {
+          return new Response('Reconciliation failed', { status: 500 })
+        }
+        return Response.json({
+          generatedFiscalInvoices: generation.data ?? 0,
+          suspendedTenants: suspension.data ?? 0,
+        })
       },
     },
   },

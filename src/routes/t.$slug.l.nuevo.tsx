@@ -12,10 +12,6 @@ function VenueCreateRoute() {
   const { tenant } = tenantRoute.useLoaderData()
 
   return (
-    <VenueCreatePage
-      locale={tenant.defaultLocale}
-      tenantId={tenant.id}
-      tenantSlug={tenant.slug}
-    />
+    <VenueCreatePage locale={tenant.defaultLocale} tenantId={tenant.id} tenantSlug={tenant.slug} />
   )
 }

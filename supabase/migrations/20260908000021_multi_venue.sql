@@ -120,10 +120,14 @@ select public.apply_venue_scoped_rls('table_sessions', array['owner', 'manager',
 
 -- El selector solo lista los locales alcanzables. La escritura sigue siendo de
 -- empresa: un local nuevo todavía no puede satisfacer has_venue_access().
+-- Operaciones de plataforma los lee para facturar los locales adicionales.
 drop policy venues_read on public.venues;
 create policy venues_read on public.venues
   for select to authenticated
-  using (public.is_operational_member_of(tenant_id) and public.has_venue_access(id));
+  using (
+    (public.is_operational_member_of(tenant_id) and public.has_venue_access(id))
+    or public.is_platform_member()
+  );
 
 -- El precio publicado cubre un local; cada local adicional suma un fijo mensual.
 alter table public.plans

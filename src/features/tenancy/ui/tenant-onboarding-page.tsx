@@ -13,8 +13,8 @@ import {
 } from '@doscientos/ui'
 import { useState, type FormEvent } from 'react'
 
-import { provisionTenantOnboarding } from '../application/provision-tenant-onboarding'
 import { tenantSlugCandidate } from '../application/onboarding-schema'
+import { provisionTenantOnboarding } from '../application/provision-tenant-onboarding'
 
 export function TenantOnboardingPage() {
   const feedback = useFormFeedback()
@@ -67,8 +67,8 @@ export function TenantOnboardingPage() {
         <CardHeader>
           <CardTitle>Configura tu restaurante</CardTitle>
           <CardDescription>
-            El primer año cuesta 99 € al mes, sin IVA. Después serán 300 € al mes, sin IVA.
-            Antes de activar el restaurante te solicitaremos la autorización segura de pago.
+            El primer año cuesta 99 € al mes, sin IVA. Después serán 300 € al mes, sin IVA. Antes de
+            activar el restaurante te solicitaremos la autorización segura de pago.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -76,39 +76,87 @@ export function TenantOnboardingPage() {
             <div className="grid gap-5 sm:grid-cols-2">
               <Field>
                 <FieldLabel htmlFor="tenant-name">Nombre comercial</FieldLabel>
-                <Input id="tenant-name" onChange={(event) => changeName(event.target.value)} required value={name} />
+                <Input
+                  id="tenant-name"
+                  onChange={(event) => changeName(event.target.value)}
+                  required
+                  value={name}
+                />
               </Field>
               <Field>
                 <FieldLabel htmlFor="tenant-slug">Dirección de SobreTaula</FieldLabel>
-                <Input id="tenant-slug" onChange={(event) => { setSlugEdited(true); setSlug(event.target.value) }} pattern="[a-z0-9][a-z0-9-]{1,48}[a-z0-9]" required value={slug} />
+                <Input
+                  id="tenant-slug"
+                  onChange={(event) => {
+                    setSlugEdited(true)
+                    setSlug(event.target.value)
+                  }}
+                  pattern="[a-z0-9][a-z0-9-]{1,48}[a-z0-9]"
+                  required
+                  value={slug}
+                />
               </Field>
               <Field>
                 <FieldLabel htmlFor="legal-name">Razón social</FieldLabel>
-                <Input id="legal-name" onChange={(event) => setLegalName(event.target.value)} required value={legalName} />
+                <Input
+                  id="legal-name"
+                  onChange={(event) => setLegalName(event.target.value)}
+                  required
+                  value={legalName}
+                />
               </Field>
               <Field>
                 <FieldLabel htmlFor="tax-id">NIF/CIF</FieldLabel>
-                <Input id="tax-id" onChange={(event) => setTaxId(event.target.value)} required value={taxId} />
+                <Input
+                  id="tax-id"
+                  onChange={(event) => setTaxId(event.target.value)}
+                  required
+                  value={taxId}
+                />
               </Field>
               <Field>
                 <FieldLabel htmlFor="billing-email">Correo de facturación</FieldLabel>
-                <Input autoComplete="email" id="billing-email" onChange={(event) => setEmail(event.target.value)} required type="email" value={email} />
+                <Input
+                  autoComplete="email"
+                  id="billing-email"
+                  onChange={(event) => setEmail(event.target.value)}
+                  required
+                  type="email"
+                  value={email}
+                />
               </Field>
               <Field>
                 <FieldLabel htmlFor="address">Dirección fiscal</FieldLabel>
-                <Input id="address" onChange={(event) => setAddressLine(event.target.value)} required value={addressLine} />
+                <Input
+                  id="address"
+                  onChange={(event) => setAddressLine(event.target.value)}
+                  required
+                  value={addressLine}
+                />
               </Field>
               <Field>
                 <FieldLabel htmlFor="city">Ciudad</FieldLabel>
-                <Input id="city" onChange={(event) => setCity(event.target.value)} required value={city} />
+                <Input
+                  id="city"
+                  onChange={(event) => setCity(event.target.value)}
+                  required
+                  value={city}
+                />
               </Field>
               <Field>
                 <FieldLabel htmlFor="postal-code">Código postal</FieldLabel>
-                <Input id="postal-code" onChange={(event) => setPostalCode(event.target.value)} required value={postalCode} />
+                <Input
+                  id="postal-code"
+                  onChange={(event) => setPostalCode(event.target.value)}
+                  required
+                  value={postalCode}
+                />
               </Field>
             </div>
             <FormFeedback pendingLabel="Guardando configuración…" state={feedback.state} />
-            <Button disabled={feedback.pending} type="submit">Continuar con el pago</Button>
+            <Button disabled={feedback.pending} type="submit">
+              Continuar con el pago
+            </Button>
           </form>
         </CardContent>
       </Card>

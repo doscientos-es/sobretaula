@@ -5,7 +5,9 @@ export function TenantBillingNotice({ status }: { status: TenantBillingStatus })
     return (
       <aside className="border-primary/30 bg-primary/5 text-foreground mb-5 rounded-xl border p-4 text-sm">
         <strong>Falta autorizar el método de pago de SobreTaula.</strong>
-        <p className="mt-1">El restaurante no se activará hasta completar la autorización segura.</p>
+        <p className="mt-1">
+          El restaurante no se activará hasta completar la autorización segura.
+        </p>
       </aside>
     )
   }

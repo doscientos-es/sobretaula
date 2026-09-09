@@ -24,10 +24,15 @@ function TenantPlatformFiscalInvoicesRoute() {
       <PageHeader>
         <PageHeaderTitle>Facturas de SobreTaula</PageHeaderTitle>
         <PageHeaderDescription>
-          Historial de las facturas de la suscripción de {tenant.name}. No incluye las facturas a tus clientes.
+          Historial de las facturas de la suscripción de {tenant.name}. No incluye las facturas a
+          tus clientes.
         </PageHeaderDescription>
       </PageHeader>
-      <PlatformFiscalInvoiceList invoices={invoices} locale={tenant.defaultLocale} title="Historial de suscripción" />
+      <PlatformFiscalInvoiceList
+        invoices={invoices}
+        locale={tenant.defaultLocale}
+        title="Historial de suscripción"
+      />
     </section>
   )
 }

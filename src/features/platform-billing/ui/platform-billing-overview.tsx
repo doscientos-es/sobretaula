@@ -36,6 +36,8 @@ export function PlatformBillingOverview({
           <tr>
             <th className="px-3 py-3 font-medium">Restaurante</th>
             <th className="px-3 py-3 font-medium">Plan neto</th>
+            <th className="px-3 py-3 font-medium">Locales</th>
+            <th className="px-3 py-3 font-medium">Total neto</th>
             <th className="px-3 py-3 font-medium">Suscripción</th>
             <th className="px-3 py-3 font-medium">Próximo cobro</th>
             <th className="px-3 py-3 font-medium">Tenant</th>
@@ -48,6 +50,10 @@ export function PlatformBillingOverview({
               <td className="px-3 py-3">
                 {subscription.planName} · {euro.format(subscription.planMonthlyNetCents / 100)}/mes
                 + IVA
+              </td>
+              <td className="px-3 py-3">{subscription.venueCount}</td>
+              <td className="px-3 py-3">
+                {euro.format(subscription.monthlyNetCents / 100)}/mes + IVA
               </td>
               <td className="px-3 py-3">
                 {statusLabel(subscription.status)}
