@@ -1,22 +1,26 @@
 import { PageHeader, PageHeaderTitle } from '@doscientos/ui'
 
 import type { MenuCatalog } from '@/features/menu'
+import type { InvoiceSeries } from '@/features/invoices'
 import type { Locale } from '@/shared/lib/i18n/locale'
 
 import type { AccountView } from '../application/account'
 import { AccountAddItem } from './account-add-item'
+import { AccountIssueInvoice } from './account-issue-invoice'
 import { AccountLines } from './account-lines'
 import { AccountPayments } from './account-payments'
 
 /** Cuenta de una sesión de mesa: consumiciones a la izquierda, cobro a la derecha. */
 export function AccountPage({
   account,
+  invoiceSeries,
   locale,
   menu,
   tenantId,
   venueId,
 }: {
   account: AccountView
+  invoiceSeries: InvoiceSeries[]
   locale: Locale
   menu: MenuCatalog
   tenantId: string
@@ -72,6 +76,21 @@ export function AccountPage({
           tenantId={tenantId}
           venueId={venueId}
         />
+        {!open && invoiceSeries.length > 0 && (
+          <AccountIssueInvoice
+            disabled={false}
+            locale={locale}
+            sessionId={session.id}
+            series={invoiceSeries}
+            tenantId={tenantId}
+            venueId={venueId}
+          />
+        )}
+        {!open && invoiceSeries.length === 0 && (
+          <p className="text-muted-foreground text-sm">
+            Para emitir la factura, crea primero una serie en Facturación.
+          </p>
+        )}
       </div>
     </section>
   )
