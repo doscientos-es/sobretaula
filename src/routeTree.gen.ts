@@ -10,8 +10,10 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as InvitacionRouteImport } from './routes/invitacion'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as RegistroRouteImport } from './routes/registro'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminFacturasRouteImport } from './routes/admin.facturas'
 import { Route as TSlugRouteImport } from './routes/t.$slug'
@@ -19,6 +21,7 @@ import { Route as ApiPlatformBillingReconcileRouteImport } from './routes/api.pl
 import { Route as ApiWebhooksRedsysRouteImport } from './routes/api.webhooks.redsys'
 import { Route as TSlugIndexRouteImport } from './routes/t.$slug.index'
 import { Route as TSlugCartaRouteImport } from './routes/t.$slug.carta'
+import { Route as TSlugEquipoRouteImport } from './routes/t.$slug.equipo'
 import { Route as TSlugFacturacionRouteImport } from './routes/t.$slug.facturacion'
 import { Route as TSlugFacturasRouteImport } from './routes/t.$slug.facturas'
 import { Route as TSlugLVenueRouteImport } from './routes/t.$slug.l.$venue'
@@ -35,6 +38,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const InvitacionRoute = InvitacionRouteImport.update({
+  id: '/invitacion',
+  path: '/invitacion',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -43,6 +51,11 @@ const LoginRoute = LoginRouteImport.update({
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RegistroRoute = RegistroRouteImport.update({
+  id: '/registro',
+  path: '/registro',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
@@ -79,6 +92,11 @@ const TSlugIndexRoute = TSlugIndexRouteImport.update({
 const TSlugCartaRoute = TSlugCartaRouteImport.update({
   id: '/carta',
   path: '/carta',
+  getParentRoute: () => TSlugRoute,
+} as any)
+const TSlugEquipoRoute = TSlugEquipoRouteImport.update({
+  id: '/equipo',
+  path: '/equipo',
   getParentRoute: () => TSlugRoute,
 } as any)
 const TSlugFacturacionRoute = TSlugFacturacionRouteImport.update({
@@ -136,14 +154,17 @@ const TSlugLVenueCuentaSessionIdRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/invitacion': typeof InvitacionRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
+  '/registro': typeof RegistroRoute
   '/admin/facturas': typeof AdminFacturasRoute
   '/t/$slug': typeof TSlugRouteWithChildren
   '/admin/': typeof AdminIndexRoute
   '/api/platform-billing/reconcile': typeof ApiPlatformBillingReconcileRoute
   '/api/webhooks/redsys': typeof ApiWebhooksRedsysRoute
   '/t/$slug/carta': typeof TSlugCartaRoute
+  '/t/$slug/equipo': typeof TSlugEquipoRoute
   '/t/$slug/facturacion': typeof TSlugFacturacionRoute
   '/t/$slug/facturas': typeof TSlugFacturasRoute
   '/t/$slug/': typeof TSlugIndexRoute
@@ -158,13 +179,16 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/invitacion': typeof InvitacionRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
+  '/registro': typeof RegistroRoute
   '/admin/facturas': typeof AdminFacturasRoute
   '/admin': typeof AdminIndexRoute
   '/api/platform-billing/reconcile': typeof ApiPlatformBillingReconcileRoute
   '/api/webhooks/redsys': typeof ApiWebhooksRedsysRoute
   '/t/$slug/carta': typeof TSlugCartaRoute
+  '/t/$slug/equipo': typeof TSlugEquipoRoute
   '/t/$slug/facturacion': typeof TSlugFacturacionRoute
   '/t/$slug/facturas': typeof TSlugFacturasRoute
   '/t/$slug': typeof TSlugIndexRoute
@@ -179,14 +203,17 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/invitacion': typeof InvitacionRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
+  '/registro': typeof RegistroRoute
   '/admin/facturas': typeof AdminFacturasRoute
   '/t/$slug': typeof TSlugRouteWithChildren
   '/admin/': typeof AdminIndexRoute
   '/api/platform-billing/reconcile': typeof ApiPlatformBillingReconcileRoute
   '/api/webhooks/redsys': typeof ApiWebhooksRedsysRoute
   '/t/$slug/carta': typeof TSlugCartaRoute
+  '/t/$slug/equipo': typeof TSlugEquipoRoute
   '/t/$slug/facturacion': typeof TSlugFacturacionRoute
   '/t/$slug/facturas': typeof TSlugFacturasRoute
   '/t/$slug/': typeof TSlugIndexRoute
@@ -203,14 +230,17 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/invitacion'
     | '/login'
     | '/onboarding'
+    | '/registro'
     | '/admin/facturas'
     | '/t/$slug'
     | '/admin/'
     | '/api/platform-billing/reconcile'
     | '/api/webhooks/redsys'
     | '/t/$slug/carta'
+    | '/t/$slug/equipo'
     | '/t/$slug/facturacion'
     | '/t/$slug/facturas'
     | '/t/$slug/'
@@ -225,13 +255,16 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/invitacion'
     | '/login'
     | '/onboarding'
+    | '/registro'
     | '/admin/facturas'
     | '/admin'
     | '/api/platform-billing/reconcile'
     | '/api/webhooks/redsys'
     | '/t/$slug/carta'
+    | '/t/$slug/equipo'
     | '/t/$slug/facturacion'
     | '/t/$slug/facturas'
     | '/t/$slug'
@@ -245,14 +278,17 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/invitacion'
     | '/login'
     | '/onboarding'
+    | '/registro'
     | '/admin/facturas'
     | '/t/$slug'
     | '/admin/'
     | '/api/platform-billing/reconcile'
     | '/api/webhooks/redsys'
     | '/t/$slug/carta'
+    | '/t/$slug/equipo'
     | '/t/$slug/facturacion'
     | '/t/$slug/facturas'
     | '/t/$slug/'
@@ -268,8 +304,10 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  InvitacionRoute: typeof InvitacionRoute
   LoginRoute: typeof LoginRoute
   OnboardingRoute: typeof OnboardingRoute
+  RegistroRoute: typeof RegistroRoute
   AdminFacturasRoute: typeof AdminFacturasRoute
   TSlugRoute: typeof TSlugRouteWithChildren
   AdminIndexRoute: typeof AdminIndexRoute
@@ -286,6 +324,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/invitacion': {
+      id: '/invitacion'
+      path: '/invitacion'
+      fullPath: '/invitacion'
+      preLoaderRoute: typeof InvitacionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -298,6 +343,13 @@ declare module '@tanstack/react-router' {
       path: '/onboarding'
       fullPath: '/onboarding'
       preLoaderRoute: typeof OnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/registro': {
+      id: '/registro'
+      path: '/registro'
+      fullPath: '/registro'
+      preLoaderRoute: typeof RegistroRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/': {
@@ -347,6 +399,13 @@ declare module '@tanstack/react-router' {
       path: '/carta'
       fullPath: '/t/$slug/carta'
       preLoaderRoute: typeof TSlugCartaRouteImport
+      parentRoute: typeof TSlugRoute
+    }
+    '/t/$slug/equipo': {
+      id: '/t/$slug/equipo'
+      path: '/equipo'
+      fullPath: '/t/$slug/equipo'
+      preLoaderRoute: typeof TSlugEquipoRouteImport
       parentRoute: typeof TSlugRoute
     }
     '/t/$slug/facturacion': {
@@ -444,6 +503,7 @@ const TSlugLVenueRouteWithChildren = TSlugLVenueRoute._addFileChildren(
 
 interface TSlugRouteChildren {
   TSlugCartaRoute: typeof TSlugCartaRoute
+  TSlugEquipoRoute: typeof TSlugEquipoRoute
   TSlugFacturacionRoute: typeof TSlugFacturacionRoute
   TSlugFacturasRoute: typeof TSlugFacturasRoute
   TSlugIndexRoute: typeof TSlugIndexRoute
@@ -454,6 +514,7 @@ interface TSlugRouteChildren {
 
 const TSlugRouteChildren: TSlugRouteChildren = {
   TSlugCartaRoute: TSlugCartaRoute,
+  TSlugEquipoRoute: TSlugEquipoRoute,
   TSlugFacturacionRoute: TSlugFacturacionRoute,
   TSlugFacturasRoute: TSlugFacturasRoute,
   TSlugIndexRoute: TSlugIndexRoute,
@@ -466,8 +527,10 @@ const TSlugRouteWithChildren = TSlugRoute._addFileChildren(TSlugRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  InvitacionRoute: InvitacionRoute,
   LoginRoute: LoginRoute,
   OnboardingRoute: OnboardingRoute,
+  RegistroRoute: RegistroRoute,
   AdminFacturasRoute: AdminFacturasRoute,
   TSlugRoute: TSlugRouteWithChildren,
   AdminIndexRoute: AdminIndexRoute,

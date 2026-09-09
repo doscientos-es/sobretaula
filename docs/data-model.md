@@ -34,6 +34,7 @@ Convenciones: claves `uuid` con `gen_random_uuid()`; `created_at`/`updated_at`
 
 | Tabla              | Contenido                                                  |
 | ------------------ | ---------------------------------------------------------- |
+| `profiles`         | Nombre y correo global mínimos, sincronizados desde Auth   |
 | `memberships`      | `user_id`, `tenant_id`, `role`, `status`. Unicidad por par |
 | `invitations`      | Alta por correo con token de un solo uso y caducidad       |
 | `user_preferences` | Locale preferido, ajustes personales                       |

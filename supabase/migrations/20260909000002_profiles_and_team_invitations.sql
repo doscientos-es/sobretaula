@@ -53,7 +53,6 @@ as $$
     where actor.user_id = auth.uid()
       and actor.status = 'active'
       and colleague.user_id = p_user_id
-      and colleague.status = 'active'
   );
 $$;
 

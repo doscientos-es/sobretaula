@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { canAssignTeamRole, canManageTeamMember } from './team'
+import { canAssignTeamRole, canManageTeamMember, isAssignableTenantRole } from './team'
 
 describe('team role hierarchy', () => {
   it('allows an owner to assign every non-owner role', () => {
@@ -16,8 +16,16 @@ describe('team role hierarchy', () => {
   it('never lets the normal UI manage an owner or itself', () => {
     expect(
       canManageTeamMember({
-        actorId: 'owner', actorRole: 'owner', targetId: 'owner', targetRole: 'owner',
+        actorId: 'owner',
+        actorRole: 'owner',
+        targetId: 'owner',
+        targetRole: 'owner',
       }),
     ).toBe(false)
+  })
+
+  it('parses only roles that may be assigned through the team UI', () => {
+    expect(isAssignableTenantRole('waiter')).toBe(true)
+    expect(isAssignableTenantRole('owner')).toBe(false)
   })
 })

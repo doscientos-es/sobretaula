@@ -12,7 +12,7 @@ reproducible (comando ejecutado y su resultado).
 | ---------------------- | -------------------------------------------------------------------------- | ------- |
 | F0 · Papeleo           | `project-design.md`, `data-model.md`, ADR 0001–0007                        | Hecho   |
 | F0 · Esqueleto         | Proyecto Start, `@doscientos/configs`, CI, `.env.example`                  | Hecho   |
-| F1 · Tenancy + Auth    | Migraciones, RLS, `/t/:slug`, perfiles global y tenant                     | Parcial |
+| F1 · Tenancy + Auth    | Registro, onboarding, perfiles, equipo, RLS, `/t/:slug`                    | Hecho   |
 | F1b · Billing SaaS     | Precios, Founders, cobro Redsys, gracia, facturas SaaS y suspensión segura | Parcial |
 | F2 · Diseñador de sala | Editor SVG, snap, historial, elementos y layouts versionados               | Hecho   |
 | F3 · Motor de reservas | Turnos, pacing, disponibilidad, best-fit, EXCLUDE                          | Hecho   |

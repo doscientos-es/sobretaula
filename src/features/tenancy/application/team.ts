@@ -10,11 +10,14 @@ import {
 } from '@/shared/lib/supabase/server/create-server-client'
 
 import { ASSIGNABLE_TENANT_ROLES, canAssignTeamRole } from '../domain/team'
+import { TENANT_ROLES } from '../domain/tenant'
 import { tenantMembershipMiddleware } from './require-tenant-membership'
 
 const tenantTeamInput = z.object({ tenantId: z.string().uuid() })
 const memberInput = tenantTeamInput.extend({ userId: z.string().uuid() })
 const assignableRoleInput = z.enum(ASSIGNABLE_TENANT_ROLES)
+const memberRoleInput = z.enum(TENANT_ROLES)
+const memberStatusInput = z.enum(['active', 'suspended'])
 const inviteInput = tenantTeamInput.extend({
   email: z.string().trim().toLowerCase().email().max(254),
   name: z.string().trim().min(2).max(120),
@@ -42,7 +45,10 @@ export interface TenantTeam {
   members: TenantTeamMember[]
 }
 
-function requireAssignableRole(actorRole: Parameters<typeof canAssignTeamRole>[0], role: z.infer<typeof assignableRoleInput>) {
+function requireAssignableRole(
+  actorRole: Parameters<typeof canAssignTeamRole>[0],
+  role: z.infer<typeof assignableRoleInput>,
+) {
   if (!canAssignTeamRole(actorRole, role)) throw new Response('Forbidden', { status: 403 })
 }
 
@@ -64,20 +70,21 @@ export const getTenantTeam = createServerFn({ method: 'GET' })
   .validator(tenantTeamInput)
   .handler(async ({ context, data }): Promise<TenantTeam> => {
     const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
-    const [membersResult, invitationsResult] = await Promise.all([
-      supabase
-        .from('memberships')
-        .select('user_id, role, status, profiles(display_name, email)')
-        .eq('tenant_id', data.tenantId)
-        .order('created_at'),
-      supabase
-        .from('invitations')
-        .select('email, expires_at, role')
-        .eq('tenant_id', data.tenantId)
-        .is('accepted_at', null)
-        .gt('expires_at', new Date().toISOString())
-        .order('created_at'),
-    ])
+    const membersResult = await supabase
+      .from('memberships')
+      .select('user_id, role, status, profiles(display_name, email)')
+      .eq('tenant_id', data.tenantId)
+      .order('created_at')
+    const invitationsResult =
+      context.tenantMembership.role === 'owner' || context.tenantMembership.role === 'manager'
+        ? await supabase
+            .from('invitations')
+            .select('email, expires_at, role')
+            .eq('tenant_id', data.tenantId)
+            .is('accepted_at', null)
+            .gt('expires_at', new Date().toISOString())
+            .order('created_at')
+        : { data: [], error: null }
     if (membersResult.error || invitationsResult.error) throw new Error('tenant_team_load_failed')
 
     return {
@@ -91,8 +98,8 @@ export const getTenantTeam = createServerFn({ method: 'GET' })
         return {
           email: profile?.email ?? 'Sin correo disponible',
           name: profile?.display_name ?? 'Usuario pendiente',
-          role: member.role as TenantTeamMember['role'],
-          status: member.status as TenantTeamMember['status'],
+          role: memberRoleInput.parse(member.role),
+          status: memberStatusInput.parse(member.status),
           userId: member.user_id,
         }
       }),
@@ -175,10 +182,9 @@ export const acceptTenantInvitation = createServerFn({ method: 'POST' })
   .middleware([authMiddleware])
   .validator(invitationTokenInput)
   .handler(async ({ context, data }) => {
-    const { data: result, error } = await createRequestSupabaseClient(context.principal.accessToken).rpc(
-      'accept_tenant_invitation',
-      { p_token_hash: hashInvitationToken(data.token) },
-    )
+    const { data: result, error } = await createRequestSupabaseClient(
+      context.principal.accessToken,
+    ).rpc('accept_tenant_invitation', { p_token_hash: hashInvitationToken(data.token) })
     if (error) throw new Response('Invitation unavailable', { status: 400 })
     const invitation = z.array(z.object({ tenant_slug: z.string().min(1) })).parse(result)[0]
     if (!invitation) throw new Error('tenant_invitation_acceptance_missing')

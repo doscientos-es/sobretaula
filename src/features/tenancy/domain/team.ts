@@ -3,8 +3,15 @@ import type { TenantRole } from './tenant'
 export const ASSIGNABLE_TENANT_ROLES = ['manager', 'host', 'waiter', 'accountant'] as const
 export type AssignableTenantRole = (typeof ASSIGNABLE_TENANT_ROLES)[number]
 
+export function isAssignableTenantRole(value: string): value is AssignableTenantRole {
+  return ASSIGNABLE_TENANT_ROLES.some((role) => role === value)
+}
+
 /** Owners manage every non-owner role; managers only manage operational staff. */
-export function canAssignTeamRole(actorRole: TenantRole, targetRole: AssignableTenantRole): boolean {
+export function canAssignTeamRole(
+  actorRole: TenantRole,
+  targetRole: AssignableTenantRole,
+): boolean {
   return actorRole === 'owner' || (actorRole === 'manager' && targetRole !== 'manager')
 }
 

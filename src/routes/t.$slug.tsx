@@ -14,6 +14,15 @@ import { getTenantMembership, isTenantOperational, tenantBySlugQuery } from '@/f
 import { getTenantVenues } from '@/features/venues'
 import { parseTenantSlug } from '@/shared/lib/tenant/tenant-slug'
 
+async function getMembershipOrRedirect(tenantId: string, tenantSlug: string) {
+  try {
+    return await getTenantMembership({ data: { tenantId } })
+  } catch (error) {
+    if (error instanceof Response && error.status === 403) throw error
+    throw redirect({ to: '/login', search: { redirect: `/t/${tenantSlug}` } })
+  }
+}
+
 export const Route = createFileRoute('/t/$slug')({
   loader: async ({ context, params }) => {
     const slug = parseTenantSlug(params.slug)
@@ -22,12 +31,7 @@ export const Route = createFileRoute('/t/$slug')({
     const tenant = await context.queryClient.ensureQueryData(tenantBySlugQuery(slug))
     if (!tenant) throw notFound()
 
-    try {
-      const membership = await getTenantMembership({ data: { tenantId: tenant.id } })
-    } catch (error) {
-      if (error instanceof Response && error.status === 403) throw error
-      throw redirect({ to: '/login', search: { redirect: `/t/${tenant.slug}` } })
-    }
+    const membership = await getMembershipOrRedirect(tenant.id, tenant.slug)
 
     const billingStatus = await getTenantBillingStatus({ data: { tenantId: tenant.id } })
     const venues = isTenantOperational(tenant.status)

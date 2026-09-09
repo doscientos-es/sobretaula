@@ -79,7 +79,10 @@ export function LoginPage({ redirectTo }: { redirectTo?: string }) {
           </form>
           <p className="text-muted-foreground mt-5 text-center text-sm">
             ¿Es tu primer restaurante?{' '}
-            <Link className="text-primary underline" to="/registro">Crea tu cuenta</Link>.
+            <Link className="text-primary underline" to="/registro">
+              Crea tu cuenta
+            </Link>
+            .
           </p>
         </CardContent>
       </Card>
