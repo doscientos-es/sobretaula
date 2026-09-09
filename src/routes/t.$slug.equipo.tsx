@@ -15,5 +15,12 @@ export const Route = createFileRoute('/t/$slug/equipo')({
 
 function TenantTeamRoute() {
   const { tenant, membership } = tenantRoute.useLoaderData()
-  return <TenantTeamPage team={Route.useLoaderData()} tenantId={tenant.id} viewerId={membership.userId} viewerRole={membership.role} />
+  return (
+    <TenantTeamPage
+      team={Route.useLoaderData()}
+      tenantId={tenant.id}
+      viewerId={membership.userId}
+      viewerRole={membership.role}
+    />
+  )
 }

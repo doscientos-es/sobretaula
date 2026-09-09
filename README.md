@@ -61,14 +61,18 @@ soporte del artefacto `dist/server/server.js`. No basta publicar assets
 estáticos: el servidor Node es parte del producto (fiscalidad, PDF, webhooks).
 
 1. Proyecto Supabase con las migraciones aplicadas y storage `invoice_documents`
-   creado (migraciones `20260909000001` y `20260909000002`).
+   creado (migraciones `20260909000001` a `20260909000003`).
 2. Secretos del servidor configurados en el gestor del entorno; nunca en el
    repositorio.
 3. En Supabase Auth, añadir `${APP_URL}/activar-cuenta` a las Redirect URLs
    autorizadas para los enlaces de invitación.
-4. `pnpm quality` y `pnpm build` en verde.
-5. Arrancar `node dist/server/server.js` detrás de proxy con TLS.
-6. Post-despliegue: revisar advisors de Supabase y logs del servidor.
+4. En Vercel, importar el repositorio con `internal/projects/sobretaula` como
+   **Root Directory**, Node 22+ y `pnpm build` como Build Command. Nitro usa
+   el preset de Vercel y genera el artefacto serverless automáticamente.
+5. Configurar `APP_URL` con el dominio de producción y los demás secretos sólo
+   en las variables de entorno de Vercel; nunca en el repositorio.
+6. `pnpm quality` y `pnpm build` en verde.
+7. Post-despliegue: revisar advisors de Supabase y logs del servidor.
 
 ### VERI*FACTU
 

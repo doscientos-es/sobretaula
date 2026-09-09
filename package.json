@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite dev",
     "build": "pnpm typecheck && vite build",
+    "start": "node .output/server/index.mjs",
     "format": "oxfmt -c node_modules/@doscientos/configs/oxfmt.json --write .",
     "format:check": "oxfmt -c node_modules/@doscientos/configs/oxfmt.json --check .",
     "lint": "oxlint",
@@ -22,6 +23,7 @@
     "@tanstack/react-router": "^1.170.33",
     "@tanstack/react-start": "^1.168.50",
     "lucide-react": "^1.11.0",
+    "nitro": "3.0.260903-beta",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "zod": "^3.24.2"

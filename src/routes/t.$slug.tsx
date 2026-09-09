@@ -74,7 +74,11 @@ function TenantLayout() {
               >
                 Ver facturas de SobreTaula
               </Link>
-              <Link className="text-primary underline" params={{ slug: tenant.slug }} to="/t/$slug/equipo">
+              <Link
+                className="text-primary underline"
+                params={{ slug: tenant.slug }}
+                to="/t/$slug/equipo"
+              >
                 Preparar equipo
               </Link>
             </div>
