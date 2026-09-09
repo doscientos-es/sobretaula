@@ -8,18 +8,18 @@ reproducible (comando ejecutado y su resultado).
 
 ## Fases
 
-| Fase                   | Entregable                                                                 | Estado  |
-| ---------------------- | -------------------------------------------------------------------------- | ------- |
-| F0 · Papeleo           | `project-design.md`, `data-model.md`, ADR 0001–0007                        | Hecho   |
-| F0 · Esqueleto         | Proyecto Start, `@doscientos/configs`, CI, `.env.example`                  | Hecho   |
-| F1 · Tenancy + Auth    | Registro, onboarding, perfiles, equipo, RLS, `/t/:slug`                    | Hecho   |
-| F1b · Billing SaaS     | Precios, Founders, cobro Redsys, gracia, facturas SaaS y suspensión segura | Parcial |
-| F2 · Diseñador de sala | Editor SVG, snap, historial, elementos y layouts versionados               | Hecho   |
-| F3 · Motor de reservas | Turnos, pacing, disponibilidad, best-fit, EXCLUDE                          | Hecho   |
-| F4 · Vista de servicio | Plano en vivo, sentar/mover/unir, walk-ins, espera                         | Hecho   |
-| F5 · Cuenta de mesa    | Catálogo, líneas, dividir, cerrar, cobrar                                  | Hecho   |
-| F6 · Facturación       | Ajustes fiscales, series, ledger/outbox, PDF, modo test                    | Hecho   |
-| F7 · Entrega           | Documentación operativa, smoke, despliegue autorizado                      | Parcial |
+| Fase                   | Entregable                                                                 | Estado                            |
+| ---------------------- | -------------------------------------------------------------------------- | --------------------------------- |
+| F0 · Papeleo           | `project-design.md`, `data-model.md`, ADR 0001–0007                        | Hecho                             |
+| F0 · Esqueleto         | Proyecto Start, `@doscientos/configs`, CI, `.env.example`                  | Hecho                             |
+| F1 · Tenancy + Auth    | Registro, onboarding, perfiles, equipo, RLS, `/t/:slug`                    | Implementado; migración pendiente |
+| F1b · Billing SaaS     | Precios, Founders, cobro Redsys, gracia, facturas SaaS y suspensión segura | Parcial                           |
+| F2 · Diseñador de sala | Editor SVG, snap, historial, elementos y layouts versionados               | Hecho                             |
+| F3 · Motor de reservas | Turnos, pacing, disponibilidad, best-fit, EXCLUDE                          | Hecho                             |
+| F4 · Vista de servicio | Plano en vivo, sentar/mover/unir, walk-ins, espera                         | Hecho                             |
+| F5 · Cuenta de mesa    | Catálogo, líneas, dividir, cerrar, cobrar                                  | Hecho                             |
+| F6 · Facturación       | Ajustes fiscales, series, ledger/outbox, PDF, modo test                    | Hecho                             |
+| F7 · Entrega           | Documentación operativa, smoke, despliegue autorizado                      | Parcial                           |
 
 ## Puerta de adopción de TanStack Start (ADR-0001)
 

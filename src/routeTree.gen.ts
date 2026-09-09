@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ActivarCuentaRouteImport } from './routes/activar-cuenta'
 import { Route as InvitacionRouteImport } from './routes/invitacion'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
@@ -36,6 +37,11 @@ import { Route as TSlugLVenueCuentaSessionIdRouteImport } from './routes/t.$slug
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ActivarCuentaRoute = ActivarCuentaRouteImport.update({
+  id: '/activar-cuenta',
+  path: '/activar-cuenta',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InvitacionRoute = InvitacionRouteImport.update({
@@ -154,6 +160,7 @@ const TSlugLVenueCuentaSessionIdRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/activar-cuenta': typeof ActivarCuentaRoute
   '/invitacion': typeof InvitacionRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
@@ -179,6 +186,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/activar-cuenta': typeof ActivarCuentaRoute
   '/invitacion': typeof InvitacionRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
@@ -203,6 +211,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/activar-cuenta': typeof ActivarCuentaRoute
   '/invitacion': typeof InvitacionRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
@@ -230,6 +239,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/activar-cuenta'
     | '/invitacion'
     | '/login'
     | '/onboarding'
@@ -255,6 +265,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/activar-cuenta'
     | '/invitacion'
     | '/login'
     | '/onboarding'
@@ -278,6 +289,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/activar-cuenta'
     | '/invitacion'
     | '/login'
     | '/onboarding'
@@ -304,6 +316,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ActivarCuentaRoute: typeof ActivarCuentaRoute
   InvitacionRoute: typeof InvitacionRoute
   LoginRoute: typeof LoginRoute
   OnboardingRoute: typeof OnboardingRoute
@@ -322,6 +335,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/activar-cuenta': {
+      id: '/activar-cuenta'
+      path: '/activar-cuenta'
+      fullPath: '/activar-cuenta'
+      preLoaderRoute: typeof ActivarCuentaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/invitacion': {
@@ -527,6 +547,7 @@ const TSlugRouteWithChildren = TSlugRoute._addFileChildren(TSlugRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ActivarCuentaRoute: ActivarCuentaRoute,
   InvitacionRoute: InvitacionRoute,
   LoginRoute: LoginRoute,
   OnboardingRoute: OnboardingRoute,

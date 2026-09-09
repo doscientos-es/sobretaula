@@ -38,7 +38,7 @@ Nunca se edita una migración ya aplicada: se añade una nueva. Para aplicarlas:
 | `SESSION_PASSWORD`                                                                                 | Servidor | Cifrado de la sesión del servidor (32+ caracteres)   |
 | `VERIFACTU_DEFAULT_ENV`                                                                            | Servidor | Entorno fiscal inicial de nuevos tenants (`test`)    |
 | `TENANT_CERTIFICATE_MASTER_KEY`                                                                    | Servidor | Cifrado en reposo de certificados por tenant         |
-| `REDSYS_*`, `APP_URL`, `PLATFORM_BILLING_CRON_SECRET`, `PLATFORM_PAYMENT_REFERENCE_ENCRYPTION_KEY` | Servidor | Cobros SaaS y callbacks firmados                     |
+| `REDSYS_*`, `APP_URL`, `PLATFORM_BILLING_CRON_SECRET`, `PLATFORM_PAYMENT_REFERENCE_ENCRYPTION_KEY` | Servidor | Cobros SaaS, invitaciones y callbacks firmados       |
 | `SUPABASE_TEST_URL`, `SUPABASE_TEST_PUBLISHABLE_KEY`, `SUPABASE_TEST_SECRET_KEY`                   | CI       | Solo con proyecto de pruebas dedicado; hoy no aplica |
 
 ## Pruebas de integración
@@ -61,12 +61,14 @@ soporte del artefacto `dist/server/server.js`. No basta publicar assets
 estáticos: el servidor Node es parte del producto (fiscalidad, PDF, webhooks).
 
 1. Proyecto Supabase con las migraciones aplicadas y storage `invoice_documents`
-   creado (migración `20260909000001`).
+   creado (migraciones `20260909000001` y `20260909000002`).
 2. Secretos del servidor configurados en el gestor del entorno; nunca en el
    repositorio.
-3. `pnpm quality` y `pnpm build` en verde.
-4. Arrancar `node dist/server/server.js` detrás de proxy con TLS.
-5. Post-despliegue: revisar advisors de Supabase y logs del servidor.
+3. En Supabase Auth, añadir `${APP_URL}/activar-cuenta` a las Redirect URLs
+   autorizadas para los enlaces de invitación.
+4. `pnpm quality` y `pnpm build` en verde.
+5. Arrancar `node dist/server/server.js` detrás de proxy con TLS.
+6. Post-despliegue: revisar advisors de Supabase y logs del servidor.
 
 ### VERI*FACTU
 

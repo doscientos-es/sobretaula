@@ -102,6 +102,14 @@ Sin dominio propio todavía: el tenant se selecciona por ruta `/t/:slug`. El
 código aísla la resolución en `shared/lib/tenant` para que añadir subdominios
 sea un cambio de una función. Ver [ADR-0003](./adr/0003-resolucion-tenant.md).
 
+El alta es autoservicio: el propietario crea su cuenta en `/registro`, completa
+la ficha inicial del restaurante en `/onboarding` y la transacción crea tenant,
+perfil de facturación, suscripción y primer local. Después puede preparar la
+plantilla desde `/t/:slug/equipo`: una cuenta existente se incorpora de inmediato
+y una nueva recibe un enlace de un solo uso para elegir contraseña y aceptar su
+rol. Los managers solo administran host, camareros y administración; el owner
+no puede perderse ni modificarse desde esa pantalla.
+
 ## 4. Internacionalización
 
 La UI es multilingüe desde el primer commit: castellano y catalán, con inglés

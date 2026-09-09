@@ -59,7 +59,7 @@ function hashInvitationToken(token: string): string {
 function invitationRedirect(token: string): string {
   const appUrl = process.env.APP_URL
   if (!appUrl) throw new Error('app_url_not_configured')
-  const url = new URL('/invitacion', appUrl)
+  const url = new URL('/activar-cuenta', appUrl)
   url.searchParams.set('token', token)
   return url.toString()
 }
