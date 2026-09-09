@@ -64,10 +64,9 @@ export function PlatformSettingsPage({ settings }: { settings: PlatformFiscalSet
   }
 
   return (
-    <main className="mx-auto max-w-5xl space-y-6 p-5 sm:p-8">
+    <main className="st-platform-page space-y-6">
       <PageHeader className="border-border/70 border-b pb-6">
         <div>
-          <p className="st-page-kicker">Configuración de plataforma</p>
           <PageHeaderTitle>Ajustes fiscales</PageHeaderTitle>
           <PageHeaderDescription>
             Datos que SobreTaula utiliza para emitir las facturas SaaS a los restaurantes.

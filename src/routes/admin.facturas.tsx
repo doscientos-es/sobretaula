@@ -20,7 +20,7 @@ export const Route = createFileRoute('/admin/facturas')({
 function PlatformFiscalInvoicesRoute() {
   const invoices = Route.useLoaderData()
   return (
-    <main className="mx-auto max-w-6xl space-y-6 p-5 sm:p-8">
+    <main className="st-platform-page space-y-6">
       <PageHeader className="border-border/70 border-b pb-6">
         <div>
           <PageHeaderTitle>Facturas SaaS emitidas</PageHeaderTitle>

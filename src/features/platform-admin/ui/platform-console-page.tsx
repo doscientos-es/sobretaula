@@ -70,10 +70,9 @@ export function PlatformConsolePage({ dashboard }: { dashboard: PlatformDashboar
   }
 
   return (
-    <main className="mx-auto max-w-7xl space-y-6 p-5 sm:p-8">
+    <main className="st-platform-page space-y-6">
       <PageHeader className="border-border/70 border-b pb-6">
         <div>
-          <p className="st-page-kicker">Control de plataforma</p>
           <PageHeaderTitle>Consola de superadministración</PageHeaderTitle>
           <PageHeaderDescription>
             Salud de tenants, ingresos recurrentes, riesgo de cobro y gobierno de accesos.

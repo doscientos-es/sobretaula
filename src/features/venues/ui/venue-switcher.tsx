@@ -25,39 +25,37 @@ export function VenueSwitcher({
 
   return (
     <div>
-      <p className="st-sidebar-section mt-8 px-2 text-sm font-medium">
-        {t('venue.section')}
-      </p>
-      {venues.length === 0 ? (
-        <p className="mt-3 px-2 text-sm text-white/65">{t('venue.empty')}</p>
-      ) : (
-        <nav aria-label={t('venue.section')} className="mt-3 space-y-1">
-          {venues.map((venue) => (
-            <Link
-              key={venue.id}
-              to="/t/$slug/l/$venue"
-              params={{ slug: tenantSlug, venue: venue.slug }}
-              aria-current={venue.slug === activeVenueSlug ? 'true' : undefined}
-              className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
-                venue.slug === activeVenueSlug
-                  ? 'st-venue-link st-venue-link--active'
-                  : 'st-venue-link'
-              }`}
-            >
-              <Store className="size-4" />
-              <span className="truncate">{venue.name}</span>
-            </Link>
-          ))}
-        </nav>
-      )}
-      <Link
-        to="/t/$slug/l/nuevo"
-        params={{ slug: tenantSlug }}
-        className="st-venue-link mt-1 flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors"
-      >
-        <Plus className="size-4" />
-        {t('venue.create.title')}
-      </Link>
+      <div className="st-saas-nav-group mt-5 pt-4">
+        <p className="st-saas-section-label px-1.5">{t('venue.section')}</p>
+        {venues.length === 0 ? (
+          <p className="st-saas-empty-state mt-3 px-2">{t('venue.empty')}</p>
+        ) : (
+          <nav aria-label={t('venue.section')} className="mt-2 space-y-0.5">
+            {venues.map((venue) => (
+              <Link
+                key={venue.id}
+                to="/t/$slug/l/$venue"
+                params={{ slug: tenantSlug, venue: venue.slug }}
+                aria-current={venue.slug === activeVenueSlug ? 'true' : undefined}
+                className={`st-saas-nav-link flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                  venue.slug === activeVenueSlug ? 'st-saas-nav-link--active' : ''
+                }`}
+              >
+                <Store className="size-3" />
+                <span className="truncate">{venue.name}</span>
+              </Link>
+            ))}
+          </nav>
+        )}
+        <Link
+          to="/t/$slug/l/nuevo"
+          params={{ slug: tenantSlug }}
+          className="st-saas-nav-link mt-1 flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors"
+        >
+          <Plus className="size-3" />
+          {t('venue.create.title')}
+        </Link>
+      </div>
     </div>
   )
 }

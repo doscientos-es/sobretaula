@@ -11,10 +11,9 @@ export const Route = createFileRoute('/admin/facturacion')({
 function PlatformBillingRoute() {
   const subscriptions = Route.useLoaderData()
   return (
-    <main className="mx-auto max-w-7xl space-y-6 p-5 sm:p-8">
+    <main className="st-platform-page space-y-6">
       <PageHeader className="border-border/70 border-b pb-6">
         <div>
-          <p className="st-page-kicker">Facturación SaaS</p>
           <PageHeaderTitle>Suscripciones y cobros</PageHeaderTitle>
           <PageHeaderDescription>
             Visión operativa de planes, locales facturables y próximos cobros.

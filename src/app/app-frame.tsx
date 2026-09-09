@@ -4,7 +4,6 @@ import {
   AppShellHeader,
   AppShellMain,
   AppShellSidebar,
-  Badge,
 } from '@doscientos/ui'
 import { Link, useParams } from '@tanstack/react-router'
 import {
@@ -24,6 +23,9 @@ import { resolveVenue, VenueSwitcher, type Venue } from '@/features/venues'
 import type { Locale } from '@/shared/lib/i18n/locale'
 import { createTranslator } from '@/shared/lib/i18n/messages'
 
+const navLinkClass =
+  'st-saas-nav-link flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors'
+
 export function AppFrame({
   children,
   locale,
@@ -42,29 +44,26 @@ export function AppFrame({
   const activeVenue = resolveVenue(venues, params.venue ?? null)
 
   return (
-    <AppShell className="st-app-frame" sidebarBreakpoint="lg">
-      <AppShellSidebar className="hidden w-72 p-5 lg:block">
+    <AppShell className="st-app-frame st-saas-frame" sidebarBreakpoint="lg">
+      <AppShellSidebar className="st-saas-sidebar hidden w-56 p-3 lg:block">
         <Link
           to="/"
-          className="st-sidebar-brand flex items-center gap-3 px-2 py-2 text-base font-semibold tracking-tight"
+          className="st-saas-brand flex items-center gap-2 px-1.5 py-1.5 text-sm font-semibold tracking-tight"
         >
-          <span className="st-brand-mark">
-            <Utensils className="size-[1.15rem]" />
+          <span className="st-saas-brand-mark">
+            <Utensils className="size-3.5" />
           </span>
           <span className="font-semibold tracking-[-0.03em]">{t('app.name')}</span>
         </Link>
-        <p className="st-sidebar-section mt-8 px-2 text-sm font-medium">
-          Operativa
-        </p>
-        <nav aria-label="Principal" className="mt-3 space-y-1">
+         <nav aria-label="Principal" className="mt-3 space-y-0.5">
           <Link
             to="/t/$slug"
             params={{ slug }}
             activeOptions={{ exact: true }}
-            activeProps={{ className: 'st-nav-link st-nav-link--active' }}
-            className="st-nav-link flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors"
+            activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
+            className={navLinkClass}
           >
-            <LayoutDashboard className="size-4" />
+            <LayoutDashboard className="size-3" />
             Resumen
           </Link>
           {activeVenue && (
@@ -73,28 +72,28 @@ export function AppFrame({
                 to="/t/$slug/l/$venue/plano"
                 params={{ slug, venue: activeVenue.slug }}
                 activeOptions={{ exact: true }}
-                activeProps={{ className: 'st-nav-link st-nav-link--active' }}
-                className="st-nav-link flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors"
+                activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
+                className={navLinkClass}
               >
-                <Map className="size-4" />
+                <Map className="size-3" />
                 {t('nav.floorPlan')}
               </Link>
               <Link
                 to="/t/$slug/l/$venue/servicio"
                 params={{ slug, venue: activeVenue.slug }}
-                activeProps={{ className: 'st-nav-link st-nav-link--active' }}
-                className="st-nav-link flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors"
+                activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
+                className={navLinkClass}
               >
-                <ConciergeBell className="size-4" />
+                <ConciergeBell className="size-3" />
                 {t('nav.service')}
               </Link>
               <Link
                 to="/t/$slug/l/$venue/reservas"
                 params={{ slug, venue: activeVenue.slug }}
-                activeProps={{ className: 'st-nav-link st-nav-link--active' }}
-                className="st-nav-link flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors"
+                activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
+                className={navLinkClass}
               >
-                <CalendarDays className="size-4" />
+                <CalendarDays className="size-3" />
                 {t('nav.reservations')}
               </Link>
             </>
@@ -102,37 +101,37 @@ export function AppFrame({
           <Link
             to="/t/$slug/carta"
             params={{ slug }}
-            activeProps={{ className: 'st-nav-link st-nav-link--active' }}
-            className="st-nav-link flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors"
+            activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
+            className={navLinkClass}
           >
-            <UtensilsCrossed className="size-4" />
+            <UtensilsCrossed className="size-3" />
             {t('nav.menu')}
           </Link>
           <Link
             to="/t/$slug/facturacion"
             params={{ slug }}
-            activeProps={{ className: 'st-nav-link st-nav-link--active' }}
-            className="st-nav-link flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors"
+            activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
+            className={navLinkClass}
           >
-            <FileText className="size-4" />
+            <FileText className="size-3" />
             {t('nav.billing')}
           </Link>
           <Link
             to="/t/$slug/facturas"
             params={{ slug }}
-            activeProps={{ className: 'st-nav-link st-nav-link--active' }}
-            className="st-nav-link flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors"
+            activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
+            className={navLinkClass}
           >
-            <FileText className="size-4" />
+            <FileText className="size-3" />
             {t('nav.invoices')}
           </Link>
           <Link
             to="/t/$slug/equipo"
             params={{ slug }}
-            activeProps={{ className: 'st-nav-link st-nav-link--active' }}
-            className="st-nav-link flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors"
+            activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
+            className={navLinkClass}
           >
-            <Users className="size-4" />
+            <Users className="size-3" />
             Equipo
           </Link>
         </nav>
@@ -142,43 +141,36 @@ export function AppFrame({
           tenantSlug={slug}
           venues={venues}
         />
-        <p className="st-sidebar-section mt-8 px-2 text-sm font-medium">
-          Cuenta
-        </p>
-        <nav className="mt-3">
-          <Link
-            to="/t/$slug/suscripcion/facturas"
-            params={{ slug }}
-            className="st-nav-link flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors"
-          >
-            <FileText className="size-4" />
-            Facturas de SobreTaula
-          </Link>
-        </nav>
+        <div className="st-saas-nav-group mt-5 pt-4">
+          <p className="st-saas-section-label px-1.5">Cuenta</p>
+          <nav className="mt-2">
+            <Link
+              to="/t/$slug/suscripcion/facturas"
+              params={{ slug }}
+              activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
+              className={navLinkClass}
+            >
+              <FileText className="size-3" />
+              Facturas de SobreTaula
+            </Link>
+          </nav>
+        </div>
       </AppShellSidebar>
-      <AppShellMain className="min-w-0 flex-1">
-        <AppShellHeader className="flex h-[4.5rem] items-center justify-between px-5 sm:px-8">
+      <AppShellMain className="st-saas-main min-w-0 flex-1">
+        <AppShellHeader className="st-saas-header flex h-11 items-center justify-between px-5 sm:px-6">
           <div className="flex min-w-0 flex-1 items-center gap-2">
-            <span className="st-brand-mark lg:hidden">
-              <Utensils className="size-4" />
+            <span className="st-saas-brand-mark lg:hidden">
+              <Utensils className="size-3" />
             </span>
-            <div className="min-w-0">
-              <p className="text-muted-foreground truncate text-xs font-medium">{title}</p>
-              <p className="truncate text-sm font-semibold tracking-[-0.02em]">
-                {activeVenue?.name ?? 'Visión general'}
-              </p>
-            </div>
+            <p className="st-saas-breadcrumb truncate text-xs">
+              {title} <span>/</span> {activeVenue?.name ?? 'Visión general'}
+            </p>
           </div>
-          <div className="ml-auto flex shrink-0 items-center gap-3">
-            <Badge className="hidden sm:inline-flex" variant="info">
-              {t('invoices.env.test')}
-            </Badge>
-            <LogoutButton />
-          </div>
+          <LogoutButton />
         </AppShellHeader>
         <nav
           aria-label="Navegación principal"
-          className="st-mobile-nav flex gap-5 overflow-x-auto px-5 py-3 text-sm font-medium lg:hidden"
+          className="st-mobile-nav flex gap-5 overflow-x-auto px-5 py-3 text-xs font-medium lg:hidden"
         >
           <Link params={{ slug }} to="/t/$slug">
             Resumen
@@ -200,7 +192,7 @@ export function AppFrame({
             Facturación
           </Link>
         </nav>
-        <AppShellContent className="mx-auto max-w-7xl p-5 sm:p-8">{children}</AppShellContent>
+        <AppShellContent className="mx-auto max-w-7xl p-4 sm:p-6">{children}</AppShellContent>
       </AppShellMain>
     </AppShell>
   )
