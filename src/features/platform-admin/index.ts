@@ -26,6 +26,7 @@ export {
 export type { ManagedTenantStatus, PlatformAdminRole } from './domain/platform-admin'
 export { PlatformConsolePage } from './ui/platform-console-page'
 export { PlatformTenantDetailsPage } from './ui/platform-tenant-details-page'
+export { PlatformTenantsPage } from './ui/platform-tenants-page'
 export {
   getPlatformFiscalSettings,
   savePlatformFiscalSettings,

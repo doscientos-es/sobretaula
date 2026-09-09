@@ -3,8 +3,12 @@ import { createFileRoute } from '@tanstack/react-router'
 import { AccountPage, getAccount } from '@/features/account'
 import { getBillingOverview } from '@/features/invoices'
 import { getMenu } from '@/features/menu'
+import { requireTenantRouteAccess } from '@/features/tenancy'
 
 export const Route = createFileRoute('/t/$slug/l/$venue/cuenta/$sessionId')({
+  beforeLoad: ({ context }) => {
+    requireTenantRouteAccess(context.tenantMembership.role, 'table_account')
+  },
   loader: async ({ context, params }) => {
     const data = {
       sessionId: params.sessionId,

@@ -97,6 +97,13 @@ alter table reservation_tables
 `period` se mantiene coherente con la reserva por trigger. La doble reserva pasa
 de ser un bug a ser imposible.
 
+La ampliación pendiente incorpora reglas por área, bloques de programación,
+eventos de reserva, tokens de gestión, etiquetas/notas de comensal, espera con
+ofertas, outbox de comunicaciones y términos/depósitos de grupo. El diseño de
+esas migraciones, su compatibilidad con las tablas actuales y su secuencia viven
+en [`reservations-completion-plan.md`](./reservations-completion-plan.md); no se
+deben añadir columnas o políticas públicas de forma aislada.
+
 ## Servicio y cuenta
 
 | Tabla                            | Contenido                                                                    |

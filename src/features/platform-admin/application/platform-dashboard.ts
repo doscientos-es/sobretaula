@@ -68,7 +68,10 @@ export const getPlatformDashboard = createServerFn({ method: 'GET' })
       fiscalResult,
       invitationsResult,
     ] = await Promise.all([
-      supabase.from('tenants').select('created_at, id, name, slug, status').order('created_at'),
+      supabase
+        .from('tenants')
+        .select('created_at, id, name, slug, status')
+        .order('created_at', { ascending: false }),
       supabase
         .from('subscriptions')
         .select(

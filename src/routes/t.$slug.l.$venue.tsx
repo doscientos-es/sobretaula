@@ -1,7 +1,7 @@
 import { DataViewState, DataViewStateDescription, DataViewStateTitle } from '@doscientos/ui'
 import { createFileRoute, notFound, Outlet } from '@tanstack/react-router'
 
-import { getTenantBySlug } from '@/features/tenancy'
+import { getTenantBySlug, requireTenantRouteAccess } from '@/features/tenancy'
 import { getTenantVenues, resolveVenue } from '@/features/venues'
 import { DEFAULT_LOCALE } from '@/shared/lib/i18n/locale'
 import { createTranslator } from '@/shared/lib/i18n/messages'
@@ -12,7 +12,8 @@ import { parseVenueSlug } from '@/shared/lib/tenant/venue-slug'
  * server has already validated against the caller's access.
  */
 export const Route = createFileRoute('/t/$slug/l/$venue')({
-  beforeLoad: async ({ params }) => {
+  beforeLoad: async ({ context, params }) => {
+    requireTenantRouteAccess(context.tenantMembership.role, 'operations')
     const venueSlug = parseVenueSlug(params.venue)
     if (!venueSlug) throw notFound()
 

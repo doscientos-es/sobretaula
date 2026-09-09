@@ -12,6 +12,7 @@ import { TenantAdminFrame } from '@/app/app-frame'
 import { WorkerFrame } from '@/app/worker-frame'
 import { getTenantBillingStatus, TenantBillingNotice } from '@/features/platform-billing'
 import {
+  getTenantBySlug,
   getTenantMembership,
   isTenantAdministrator,
   isTenantOperational,
@@ -30,6 +31,15 @@ async function getMembershipOrRedirect(tenantId: string, tenantSlug: string) {
 }
 
 export const Route = createFileRoute('/t/$slug')({
+  beforeLoad: async ({ params }) => {
+    const slug = parseTenantSlug(params.slug)
+    if (!slug) throw notFound()
+
+    const tenant = await getTenantBySlug({ data: { slug } })
+    if (!tenant) throw notFound()
+
+    return { tenantMembership: await getMembershipOrRedirect(tenant.id, tenant.slug) }
+  },
   loader: async ({ context, params }) => {
     const slug = parseTenantSlug(params.slug)
     if (!slug) throw notFound()
@@ -37,13 +47,11 @@ export const Route = createFileRoute('/t/$slug')({
     const tenant = await context.queryClient.ensureQueryData(tenantBySlugQuery(slug))
     if (!tenant) throw notFound()
 
-    const membership = await getMembershipOrRedirect(tenant.id, tenant.slug)
-
     const billingStatus = await getTenantBillingStatus({ data: { tenantId: tenant.id } })
     const venues = isTenantOperational(tenant.status)
       ? await getTenantVenues({ data: { tenantId: tenant.id } })
       : []
-    return { billingStatus, membership, tenant, venues }
+    return { billingStatus, membership: context.tenantMembership, tenant, venues }
   },
   component: TenantLayout,
   notFoundComponent: TenantNotFound,

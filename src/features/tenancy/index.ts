@@ -1,6 +1,12 @@
 export { getTenantBySlug, tenantBySlugQuery } from './application/get-tenant-by-slug'
 export { getUserDestinations } from './application/get-user-destinations'
 export type { UserDestinations, UserTenantDestination } from './application/get-user-destinations'
+export {
+  canAccessTenantRoute,
+  requireTenantRouteAccess,
+  TENANT_ROUTE_AREAS,
+} from './application/tenant-route-access'
+export type { TenantRouteArea } from './application/tenant-route-access'
 export { provisionTenantOnboarding } from './application/provision-tenant-onboarding'
 export {
   acceptTenantInvitation,
@@ -17,7 +23,12 @@ export {
   operationalTenantMiddleware,
   tenantMembershipMiddleware,
 } from './application/require-tenant-membership'
-export { isTenantAdministrator, isTenantOperational, TENANT_ROLES, TENANT_STATUSES } from './domain/tenant'
+export {
+  isTenantAdministrator,
+  isTenantOperational,
+  TENANT_ROLES,
+  TENANT_STATUSES,
+} from './domain/tenant'
 export type { PlatformRole, Tenant, TenantRole, TenantStatus } from './domain/tenant'
 export {
   ASSIGNABLE_TENANT_ROLES,

@@ -8,6 +8,11 @@ reversión alta viven en `docs/adr/`. El avance real vive en
 `docs/implementation-status.md`. Si el código y este documento discrepan, gana el
 código y este documento se corrige en el mismo PR.
 
+La secuencia de producto para completar el MVP operativo vive en
+[mvp-roadmap.md](./mvp-roadmap.md). No altera el estado de implementación: fija
+el orden de los próximos trabajos para que las funcionalidades se conviertan en
+valor operativo antes de ampliar el alcance.
+
 ## 1. Producto
 
 SaaS de suscripción para gestión integral de restaurantes independientes en
@@ -32,17 +37,17 @@ el dedo, el producto no se usa.
 
 ### Módulos
 
-| Módulo                                       | Fase      | Estado                 |
-| -------------------------------------------- | --------- | ---------------------- |
-| Tenancy, auth, roles, ajustes                | F1        | Alcance MVP            |
-| Diseñador de sala                            | F2        | Alcance MVP            |
-| Motor de reservas                            | F3        | Alcance MVP            |
-| Vista de servicio                            | F4        | Alcance MVP            |
-| Cuenta de mesa (simple)                      | F5        | Alcance MVP            |
-| Facturación + VERI\*FACTU                    | F6        | Alcance MVP, modo test |
-| TPV completo (comandas, cocina, arqueo)      | Posterior | Modelo preparado       |
-| Web pública de reservas                      | Posterior | Modelo preparado       |
-| Delivery, fidelización, inventario, informes | Posterior | Fuera de alcance       |
+| Módulo                                       | Fase      | Estado                                             |
+| -------------------------------------------- | --------- | -------------------------------------------------- |
+| Tenancy, auth, roles, ajustes                | F1        | Alcance MVP                                        |
+| Diseñador de sala                            | F2        | Alcance MVP                                        |
+| Motor de reservas                            | F3        | Alcance MVP                                        |
+| Vista de servicio                            | F4        | Alcance MVP                                        |
+| Cuenta de mesa (simple)                      | F5        | Alcance MVP                                        |
+| Facturación + VERI\*FACTU                    | F6        | Alcance MVP, modo test                             |
+| TPV completo (comandas, cocina, arqueo)      | Posterior | Modelo preparado                                   |
+| Web pública de reservas                      | R4        | Planificada; ver `reservations-completion-plan.md` |
+| Delivery, fidelización, inventario, informes | Posterior | Fuera de alcance                                   |
 
 La regla de escalabilidad es estructural, no aspiracional: cada módulo es un
 vertical en `src/features/<modulo>` con su dominio, aplicación, infraestructura
@@ -61,6 +66,11 @@ tarifa Founder no es una promoción temporal ni se aplica a los locales extra.
 Las futuras capacidades que sí puedan contratarse independientemente —reservas
 públicas, depósitos/no-shows, TPV de comandas y cocina, integraciones o analítica
 avanzada— se podrán ofrecer como complementos cuando estén disponibles.
+
+La ampliación de reservas (agenda, autoservicio público, avisos, espera, ficha de
+cliente y grupos) tiene su desglose de datos, seguridad, entregas y validación en
+[`reservations-completion-plan.md`](./reservations-completion-plan.md). Hasta que
+se complete, la reserva web y los depósitos no se consideran disponibles.
 
 ## 2. Arquitectura
 

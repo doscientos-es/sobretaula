@@ -9,22 +9,26 @@ reproducible (comando ejecutado y su resultado).
 
 ## Fases
 
-| Fase                   | Entregable                                                                 | Estado                                 |
-| ---------------------- | -------------------------------------------------------------------------- | -------------------------------------- |
-| F0 · Papeleo           | `project-design.md`, `data-model.md`, ADR 0001–0007                        | Hecho                                  |
-| F0 · Esqueleto         | Proyecto Start, `@doscientos/configs`, CI, `.env.example`                  | Hecho                                  |
-| F1 · Tenancy + Auth    | Registro, onboarding, perfiles, equipo, RLS, `/t/:slug`                    | Implementado; RLS real sin evidenciar  |
-| F1a · Gobierno global  | Dashboard, control auditado de tenants e invitación de operadores globales | Implementado; migración 0904 pendiente |
-| F1b · Billing SaaS     | Precios, Founders, cobro Redsys, gracia, facturas SaaS y suspensión segura | Parcial                                |
-| F2 · Diseñador de sala | Editor SVG, snap, historial, elementos y layouts versionados               | Implementado; entrega bloqueada        |
-| F3 · Motor de reservas | Turnos, pacing, disponibilidad, best-fit, EXCLUDE                          | Implementado; entrega bloqueada        |
-| F4 · Vista de servicio | Plano en vivo, sentar/mover/unir, walk-ins, espera                         | Implementado; entrega bloqueada        |
-| F5 · Cuenta de mesa    | Catálogo, líneas, dividir, cerrar, cobrar                                  | Implementado; entrega bloqueada        |
-| F6 · Facturación       | Ajustes fiscales, series, ledger/outbox, PDF, modo test                    | Implementado; entrega bloqueada        |
-| F7 · Entrega           | Documentación operativa, smoke, despliegue autorizado                      | Parcial                                |
+| Fase                   | Entregable                                                                 | Estado                                    |
+| ---------------------- | -------------------------------------------------------------------------- | ----------------------------------------- |
+| F0 · Papeleo           | `project-design.md`, `data-model.md`, ADR 0001–0007                        | Hecho                                     |
+| F0 · Esqueleto         | Proyecto Start, `@doscientos/configs`, CI, `.env.example`                  | Hecho                                     |
+| F1 · Tenancy + Auth    | Registro, onboarding, perfiles, equipo, RLS, `/t/:slug`                    | Implementado; RLS real sin evidenciar     |
+| F1a · Gobierno global  | Dashboard, control auditado de tenants e invitación de operadores globales | Implementado; migración 0904 pendiente    |
+| F1b · Billing SaaS     | Precios, Founders, cobro Redsys, gracia, facturas SaaS y suspensión segura | Parcial                                   |
+| F2 · Diseñador de sala | Editor SVG, snap, historial, elementos y layouts versionados               | Implementado; entrega bloqueada           |
+| F3 · Motor de reservas | Turnos, pacing, disponibilidad, best-fit, EXCLUDE                          | Base implementada; ampliación planificada |
+| F4 · Vista de servicio | Plano en vivo, sentar/mover/unir, walk-ins, espera                         | Implementado; entrega bloqueada           |
+| F5 · Cuenta de mesa    | Catálogo, líneas, dividir, cerrar, cobrar                                  | Implementado; entrega bloqueada           |
+| F6 · Facturación       | Ajustes fiscales, series, ledger/outbox, PDF, modo test                    | Implementado; entrega bloqueada           |
+| F7 · Entrega           | Documentación operativa, smoke, despliegue autorizado                      | Parcial                                   |
 
 «Implementado» indica que existe código y pruebas unitarias; no equivale a
 entregable aprobado mientras falten pruebas contra un entorno dedicado.
+
+El alcance ampliado solicitado para reservas —agenda, web pública, excepciones,
+autogestión, avisos, cliente, espera y grupos— está documentado, pero pendiente de
+ejecución, en [`reservations-completion-plan.md`](./reservations-completion-plan.md).
 
 ## Puerta de adopción de TanStack Start (ADR-0001)
 

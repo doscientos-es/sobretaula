@@ -1,9 +1,12 @@
 import { createFileRoute, notFound } from '@tanstack/react-router'
 
 import { getMenu, MenuPage } from '@/features/menu'
-import { tenantBySlugQuery } from '@/features/tenancy'
+import { requireTenantRouteAccess, tenantBySlugQuery } from '@/features/tenancy'
 
 export const Route = createFileRoute('/t/$slug/carta')({
+  beforeLoad: ({ context }) => {
+    requireTenantRouteAccess(context.tenantMembership.role, 'administration')
+  },
   loader: async ({ context, params }) => {
     const tenant = await context.queryClient.ensureQueryData(tenantBySlugQuery(params.slug))
     if (!tenant) throw notFound()

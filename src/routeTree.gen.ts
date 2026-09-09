@@ -23,6 +23,7 @@ import { Route as AdminFacturacionRouteImport } from './routes/admin.facturacion
 import { Route as AdminFacturasRouteImport } from './routes/admin.facturas'
 import { Route as AdminInvitacionRouteImport } from './routes/admin.invitacion'
 import { Route as TSlugRouteImport } from './routes/t.$slug'
+import { Route as AdminTenantsIndexRouteImport } from './routes/admin.tenants.index'
 import { Route as AdminTenantsTenantIdRouteImport } from './routes/admin.tenants.$tenantId'
 import { Route as ApiPlatformBillingReconcileRouteImport } from './routes/api.platform-billing.reconcile'
 import { Route as ApiWebhooksRedsysRouteImport } from './routes/api.webhooks.redsys'
@@ -109,6 +110,11 @@ const TSlugRoute = TSlugRouteImport.update({
   id: '/t/$slug',
   path: '/t/$slug',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AdminTenantsIndexRoute = AdminTenantsIndexRouteImport.update({
+  id: '/tenants/',
+  path: '/tenants/',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AdminTenantsTenantIdRoute = AdminTenantsTenantIdRouteImport.update({
   id: '/tenants/$tenantId',
@@ -216,6 +222,7 @@ export interface FileRoutesByFullPath {
   '/t/$slug/equipo': typeof TSlugEquipoRoute
   '/t/$slug/facturacion': typeof TSlugFacturacionRoute
   '/t/$slug/facturas': typeof TSlugFacturasRoute
+  '/admin/tenants/': typeof AdminTenantsIndexRoute
   '/t/$slug/': typeof TSlugIndexRoute
   '/t/$slug/l/$venue': typeof TSlugLVenueRouteWithChildren
   '/t/$slug/l/nuevo': typeof TSlugLNuevoRoute
@@ -246,6 +253,7 @@ export interface FileRoutesByTo {
   '/t/$slug/equipo': typeof TSlugEquipoRoute
   '/t/$slug/facturacion': typeof TSlugFacturacionRoute
   '/t/$slug/facturas': typeof TSlugFacturasRoute
+  '/admin/tenants': typeof AdminTenantsIndexRoute
   '/t/$slug': typeof TSlugIndexRoute
   '/t/$slug/l/nuevo': typeof TSlugLNuevoRoute
   '/t/$slug/suscripcion/facturas': typeof TSlugSuscripcionFacturasRoute
@@ -278,6 +286,7 @@ export interface FileRoutesById {
   '/t/$slug/equipo': typeof TSlugEquipoRoute
   '/t/$slug/facturacion': typeof TSlugFacturacionRoute
   '/t/$slug/facturas': typeof TSlugFacturasRoute
+  '/admin/tenants/': typeof AdminTenantsIndexRoute
   '/t/$slug/': typeof TSlugIndexRoute
   '/t/$slug/l/$venue': typeof TSlugLVenueRouteWithChildren
   '/t/$slug/l/nuevo': typeof TSlugLNuevoRoute
@@ -312,6 +321,7 @@ export interface FileRouteTypes {
     | '/t/$slug/equipo'
     | '/t/$slug/facturacion'
     | '/t/$slug/facturas'
+    | '/admin/tenants/'
     | '/t/$slug/'
     | '/t/$slug/l/$venue'
     | '/t/$slug/l/nuevo'
@@ -342,6 +352,7 @@ export interface FileRouteTypes {
     | '/t/$slug/equipo'
     | '/t/$slug/facturacion'
     | '/t/$slug/facturas'
+    | '/admin/tenants'
     | '/t/$slug'
     | '/t/$slug/l/nuevo'
     | '/t/$slug/suscripcion/facturas'
@@ -373,6 +384,7 @@ export interface FileRouteTypes {
     | '/t/$slug/equipo'
     | '/t/$slug/facturacion'
     | '/t/$slug/facturas'
+    | '/admin/tenants/'
     | '/t/$slug/'
     | '/t/$slug/l/$venue'
     | '/t/$slug/l/nuevo'
@@ -497,6 +509,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/tenants/': {
+      id: '/admin/tenants/'
+      path: '/tenants'
+      fullPath: '/admin/tenants/'
+      preLoaderRoute: typeof AdminTenantsIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/tenants/$tenantId': {
       id: '/admin/tenants/$tenantId'
       path: '/tenants/$tenantId'
@@ -620,6 +639,7 @@ interface AdminRouteChildren {
   AdminInvitacionRoute: typeof AdminInvitacionRoute
   AdminIndexRoute: typeof AdminIndexRoute
   AdminTenantsTenantIdRoute: typeof AdminTenantsTenantIdRoute
+  AdminTenantsIndexRoute: typeof AdminTenantsIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
@@ -630,6 +650,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminInvitacionRoute: AdminInvitacionRoute,
   AdminIndexRoute: AdminIndexRoute,
   AdminTenantsTenantIdRoute: AdminTenantsTenantIdRoute,
+  AdminTenantsIndexRoute: AdminTenantsIndexRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)

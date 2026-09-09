@@ -12,6 +12,7 @@ import {
 import { Link, useNavigate } from '@tanstack/react-router'
 import {
   ChevronUp,
+  Building2,
   CreditCard,
   FileText,
   LayoutDashboard,
@@ -61,6 +62,7 @@ export function PlatformAdminFrame({ children }: { children: ReactNode }) {
           </Link>
           <Link to="/admin/facturacion">Suscripciones</Link>
           <Link to="/admin/facturas">Facturas</Link>
+          <Link to="/admin/tenants">Tenants</Link>
           <Link to="/admin/equipo">Equipo</Link>
           <Link to="/admin/ajustes">Ajustes</Link>
         </nav>
@@ -106,6 +108,13 @@ export function PlatformAdminFrame({ children }: { children: ReactNode }) {
             <div className="st-platform-nav-group mt-5 pt-4">
               <p className="st-platform-section-label px-1.5">Administración</p>
               <nav className="mt-2 space-y-0.5">
+                <Link
+                  activeProps={{ className: `${navLinkClass} st-platform-nav-link--active` }}
+                  className={navLinkClass}
+                  to="/admin/tenants"
+                >
+                  <Building2 className="size-3" /> Tenants
+                </Link>
                 <Link
                   activeProps={{ className: `${navLinkClass} st-platform-nav-link--active` }}
                   className={navLinkClass}

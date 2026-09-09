@@ -1,26 +1,16 @@
 import {
-  Button,
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-  Field,
-  FieldLabel,
-  FormFeedback,
-  Input,
   PageHeader,
   PageHeaderDescription,
   PageHeaderTitle,
-  useFormFeedback,
 } from '@doscientos/ui'
 import { Link } from '@tanstack/react-router'
-import type { FormEvent } from 'react'
-
-import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
 
 import type { PlatformDashboard } from '../application/platform-dashboard'
-import { updatePlatformTenantStatus } from '../application/platform-operators'
 
 const euro = new Intl.NumberFormat('es-ES', { currency: 'EUR', style: 'currency' })
 
@@ -43,32 +33,11 @@ function subscriptionStatusLabel(
 
 /** Platform-owner dashboard for tenant health, revenue, billing risk and access controls. */
 export function PlatformConsolePage({ dashboard }: { dashboard: PlatformDashboard }) {
-  const feedback = useFormFeedback()
-  const reload = useLoaderReload()
   const activeTenants = dashboard.tenants.filter((tenant) => tenant.status === 'active').length
   const suspendedTenants = dashboard.tenants.filter(
     (tenant) => tenant.status === 'suspended',
   ).length
-
-  async function controlTenant(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    const values = new FormData(event.currentTarget)
-    const status = values.get('status')
-    const tenantId = values.get('tenantId')
-    const reason = values.get('reason')
-    if ((status !== 'active' && status !== 'suspended') || typeof tenantId !== 'string') return
-    feedback.setPending()
-    try {
-      await updatePlatformTenantStatus({
-        data: { reason: typeof reason === 'string' ? reason : '', status, tenantId },
-      })
-      feedback.setSuccess('Estado del tenant actualizado y registrado en la auditoría.')
-      event.currentTarget.reset()
-      reload()
-    } catch {
-      feedback.setError('No se ha podido cambiar el estado. Revisa el motivo y tus permisos.')
-    }
-  }
+  const recentTenants = dashboard.tenants.slice(0, 5)
 
   return (
     <main className="st-platform-page space-y-6">
@@ -124,28 +93,34 @@ export function PlatformConsolePage({ dashboard }: { dashboard: PlatformDashboar
         </Card>
       </section>
 
-      <FormFeedback pendingLabel="Actualizando tenant…" state={feedback.state} />
       <Card>
         <CardHeader>
-          <CardTitle>Tenants y ciclo de cobro</CardTitle>
-          <CardDescription>
-            El cambio manual sólo permite suspender o reactivar y exige un motivo auditable.
-          </CardDescription>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <CardTitle>Últimos tenants</CardTitle>
+              <CardDescription>
+                Los cinco restaurantes dados de alta más recientemente. Abre su ficha para revisarlo
+                o configurarlo.
+              </CardDescription>
+            </div>
+            <Link className="text-primary shrink-0 text-sm underline" to="/admin/tenants">
+              Ver todos
+            </Link>
+          </div>
         </CardHeader>
         <CardContent className="overflow-x-auto px-0">
-          <table className="w-full min-w-[1040px] text-left text-sm">
+          <table className="w-full min-w-[780px] text-left text-sm">
             <thead className="text-muted-foreground border-b">
               <tr>
                 <th className="px-5 py-3 font-medium">Restaurante</th>
                 <th className="px-3 py-3 font-medium">Tenant</th>
                 <th className="px-3 py-3 font-medium">Suscripción</th>
                 <th className="px-3 py-3 font-medium">Cobro</th>
-                <th className="px-3 py-3 font-medium">Detalle</th>
-                <th className="px-3 py-3 font-medium">Control manual</th>
+                <th className="px-3 py-3 font-medium">Acción</th>
               </tr>
             </thead>
             <tbody>
-              {dashboard.tenants.map((tenant) => (
+              {recentTenants.map((tenant) => (
                 <tr className="border-b align-top last:border-0" key={tenant.id}>
                   <td className="px-5 py-4">
                     <p className="font-medium">{tenant.name}</p>
@@ -183,50 +158,22 @@ export function PlatformConsolePage({ dashboard }: { dashboard: PlatformDashboar
                   </td>
                   <td className="px-3 py-4">
                     <Link
-                      className="text-primary text-sm underline"
+                      className="text-primary text-sm whitespace-nowrap underline"
                       params={{ tenantId: tenant.id }}
                       to="/admin/tenants/$tenantId"
                     >
                       Ver ficha
                     </Link>
                   </td>
-                  <td className="px-3 py-4">
-                    <form
-                      className="flex min-w-[360px] gap-2"
-                      onSubmit={(event) => void controlTenant(event)}
-                    >
-                      <input name="tenantId" type="hidden" value={tenant.id} />
-                      <select
-                        aria-label={`Nuevo estado para ${tenant.name}`}
-                        className="border-input h-9 rounded-md border bg-transparent px-2"
-                        defaultValue=""
-                        name="status"
-                      >
-                        <option disabled value="">
-                          Cambiar estado…
-                        </option>
-                        <option value="active">Reactivar</option>
-                        <option value="suspended">Suspender</option>
-                      </select>
-                      <Field className="min-w-0 flex-1">
-                        <FieldLabel className="sr-only" htmlFor={`reason-${tenant.id}`}>
-                          Motivo
-                        </FieldLabel>
-                        <Input
-                          id={`reason-${tenant.id}`}
-                          minLength={5}
-                          name="reason"
-                          placeholder="Motivo obligatorio"
-                          required
-                        />
-                      </Field>
-                      <Button disabled={feedback.pending} size="sm" type="submit">
-                        Aplicar
-                      </Button>
-                    </form>
-                  </td>
                 </tr>
               ))}
+              {recentTenants.length === 0 && (
+                <tr>
+                  <td className="text-muted-foreground px-5 py-8 text-center" colSpan={5}>
+                    Aún no hay tenants dados de alta.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </CardContent>

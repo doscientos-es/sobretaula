@@ -5,10 +5,14 @@ import {
   getTenantPlatformFiscalInvoices,
   PlatformFiscalInvoiceList,
 } from '@/features/platform-billing'
+import { requireTenantRouteAccess } from '@/features/tenancy'
 
 const tenantRoute = getRouteApi('/t/$slug')
 
 export const Route = createFileRoute('/t/$slug/suscripcion/facturas')({
+  beforeLoad: ({ context }) => {
+    requireTenantRouteAccess(context.tenantMembership.role, 'administration')
+  },
   loader: async () => {
     const { tenant } = tenantRoute.useLoaderData()
     return getTenantPlatformFiscalInvoices({ data: { tenantId: tenant.id } })
