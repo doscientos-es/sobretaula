@@ -131,7 +131,7 @@ export function PublicReservationPage({
           slug: profile.slug,
         },
       });
-      setAvailableSlots(result.startsAt);
+      setAvailableSlots(result);
     } catch {
       setAvailableSlots([]);
     } finally {

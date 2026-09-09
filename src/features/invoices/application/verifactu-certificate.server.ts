@@ -47,7 +47,8 @@ export function validateVerifactuCertificate({
     const pfx = forge.pkcs12.pkcs12FromAsn1(forge.asn1.fromDer(der), false, password)
     const keyBagType = forge.pki.oids.pkcs8ShroudedKeyBag
     const certificateBagType = forge.pki.oids.certBag
-    if (!keyBagType || !certificateBagType) throw new VerifactuCertificateError('certificate_invalid')
+    if (!keyBagType || !certificateBagType)
+      throw new VerifactuCertificateError('certificate_invalid')
     const keyBags = pfx.getBags({ bagType: keyBagType })[keyBagType] ?? []
     const certificateBags = pfx.getBags({ bagType: certificateBagType })[certificateBagType] ?? []
     const key = keyBags.map((bag: forge.pkcs12.Bag) => bag.key).find(Boolean)
@@ -65,7 +66,9 @@ export function validateVerifactuCertificate({
     }
 
     const attributes = certificate.subject.attributes
-    const values = attributes.map((attribute: forge.pki.CertificateField) => String(attribute.value))
+    const values = attributes.map((attribute: forge.pki.CertificateField) =>
+      String(attribute.value),
+    )
     const normalizedIssuerNif = normalizeNif(issuerNif)
     if (!values.some((value: string) => normalizeNif(value).includes(normalizedIssuerNif))) {
       throw new VerifactuCertificateError('certificate_nif_mismatch')
