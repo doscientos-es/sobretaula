@@ -5,6 +5,11 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  Dialog,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   Field,
   FieldLabel,
   FormFeedback,
@@ -40,11 +45,13 @@ export function BillingPage({
   locale,
   onDone,
   overview,
+  isOwner,
   tenantId,
 }: {
   locale: Locale
   onDone: () => void
   overview: FiscalSettingsView
+  isOwner: boolean
   tenantId: string
 }) {
   return (
@@ -58,9 +65,171 @@ export function BillingPage({
         </div>
       </PageHeader>
       <FiscalSettingsCard onDone={onDone} settings={overview.settings} tenantId={tenantId} />
+      <VerifactuCertificateCard
+        certificate={overview.certificate}
+        isOwner={isOwner}
+        onDone={onDone}
+        settings={overview.settings}
+        tenantId={tenantId}
+      />
       <SeriesCard onDone={onDone} series={overview.series} tenantId={tenantId} />
       <InvoiceBookCard invoices={overview.invoices} locale={locale} tenantId={tenantId} />
     </section>
+  )
+}
+
+function VerifactuCertificateCard({
+  certificate,
+  isOwner,
+  onDone,
+  settings,
+  tenantId,
+}: {
+  certificate: FiscalSettingsView['certificate']
+  isOwner: boolean
+  onDone: () => void
+  settings: FiscalSettingsView['settings']
+  tenantId: string
+}) {
+  const feedback = useFormFeedback()
+  const [file, setFile] = useState<File | null>(null)
+  const [password, setPassword] = useState('')
+
+  async function upload(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (feedback.pending || !file) return
+    feedback.setPending()
+    const body = new FormData()
+    body.set('certificate', file)
+    body.set('password', password)
+    try {
+      const response = await fetch(`/api/t/${tenantId}/verifactu-certificate`, {
+        body,
+        credentials: 'same-origin',
+        method: 'POST',
+      })
+      if (!response.ok) {
+        const code = await response.text()
+        const message = {
+          certificate_expired: 'El certificado está caducado.',
+          certificate_invalid:
+            'No se ha podido abrir el certificado. Revisa el archivo y la contraseña.',
+          certificate_nif_mismatch:
+            'El NIF del certificado no coincide con el NIF fiscal guardado.',
+          fiscal_settings_missing: 'Guarda primero los datos fiscales del emisor.',
+        }[code]
+        throw new Error(message ?? 'No se ha podido guardar el certificado.')
+      }
+      setFile(null)
+      setPassword('')
+      feedback.setSuccess('Certificado validado y guardado de forma cifrada.')
+      onDone()
+    } catch (error) {
+      feedback.setError(
+        error instanceof Error ? error.message : 'No se ha podido guardar el certificado.',
+      )
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Certificado VERI*FACTU</CardTitle>
+        <CardDescription>
+          {certificate
+            ? `Configurado para ${certificate.subject}; caduca el ${new Date(certificate.expiresAt).toLocaleDateString('es-ES')}.`
+            : 'Sube el certificado .pfx o .p12 del emisor para poder operar con VERI*FACTU.'}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {certificate && (
+          <dl className="grid gap-3 text-sm sm:grid-cols-2">
+            <div>
+              <dt className="text-muted-foreground">Huella SHA-256</dt>
+              <dd className="font-mono text-xs break-all">{certificate.fingerprint}</dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">Titular</dt>
+              <dd>{certificate.subject}</dd>
+            </div>
+          </dl>
+        )}
+        {!settings ? (
+          <p className="text-muted-foreground text-sm">
+            Completa primero los datos fiscales del emisor que aparecen arriba.
+          </p>
+        ) : !isOwner ? (
+          <p className="text-muted-foreground text-sm">
+            Solo la persona propietaria puede cambiar el certificado.
+          </p>
+        ) : (
+          <form className="grid gap-4 md:grid-cols-2" onSubmit={(event) => void upload(event)}>
+            <Field>
+              <FieldLabel htmlFor="verifactu-certificate">Archivo .pfx o .p12</FieldLabel>
+              <Input
+                accept=".pfx,.p12,application/x-pkcs12"
+                id="verifactu-certificate"
+                onChange={(event) => setFile(event.target.files?.[0] ?? null)}
+                required
+                type="file"
+              />
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="verifactu-password">Contraseña del certificado</FieldLabel>
+              <Input
+                autoComplete="new-password"
+                id="verifactu-password"
+                onChange={(event) => setPassword(event.target.value)}
+                type="password"
+                value={password}
+              />
+            </Field>
+            <div className="flex flex-wrap items-center gap-3 md:col-span-2">
+              <Button disabled={feedback.pending || !file} type="submit">
+                {certificate ? 'Reemplazar certificado' : 'Guardar certificado'}
+              </Button>
+              <AdvisorCertificateDialog />
+              <FormFeedback
+                pendingLabel="Validando y cifrando certificado…"
+                state={feedback.state}
+              />
+            </div>
+          </form>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+function AdvisorCertificateDialog() {
+  const [copied, setCopied] = useState(false)
+  const message =
+    'Necesito el certificado digital de la empresa en formato .pfx o .p12 y su contraseña para configurar VERI*FACTU en SobreTaula. Debe corresponder al NIF fiscal con el que emitimos las facturas. Por favor, envíamelo por un canal seguro.'
+
+  async function copyMessage() {
+    await navigator.clipboard.writeText(message)
+    setCopied(true)
+  }
+
+  return (
+    <Dialog trigger="Pedir a tu asesor" triggerProps={{ type: 'button', variant: 'outline' }}>
+      <DialogHeader>
+        <DialogTitle>Solicita el certificado a tu asesor</DialogTitle>
+        <DialogDescription>
+          El certificado y su contraseña permiten firmar en nombre de tu empresa. Compártelos solo
+          por un canal seguro.
+        </DialogDescription>
+      </DialogHeader>
+      <p className="rounded-md border p-3 text-sm leading-6">
+        Copia este texto y pásaselo a tu asesor:
+      </p>
+      <blockquote className="bg-muted rounded-md p-3 text-sm leading-6">{message}</blockquote>
+      <DialogFooter>
+        <Button onPress={() => void copyMessage()} type="button">
+          {copied ? 'Texto copiado' : 'Copiar texto'}
+        </Button>
+      </DialogFooter>
+    </Dialog>
   )
 }
 

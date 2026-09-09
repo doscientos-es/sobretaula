@@ -28,6 +28,7 @@ export function TenantOnboardingPage() {
   const [addressLine, setAddressLine] = useState('')
   const [city, setCity] = useState('')
   const [postalCode, setPostalCode] = useState('')
+  const [createdTenant, setCreatedTenant] = useState<{ slug: string } | null>(null)
 
   function changeName(value: string) {
     setName(value)
@@ -52,7 +53,7 @@ export function TenantOnboardingPage() {
           timezone: 'Europe/Madrid',
         },
       })
-      window.location.assign(`/t/${tenant.slug}`)
+      setCreatedTenant(tenant)
     } catch (error) {
       feedback.setError(
         error instanceof Response && error.status === 409
@@ -92,92 +93,116 @@ export function TenantOnboardingPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form className="space-y-5" onSubmit={(event) => void submit(event)}>
-              <div className="grid gap-5 sm:grid-cols-2">
-                <Field>
-                  <FieldLabel htmlFor="tenant-name">Nombre comercial</FieldLabel>
-                  <Input
-                    id="tenant-name"
-                    onChange={(event) => changeName(event.target.value)}
-                    required
-                    value={name}
-                  />
-                </Field>
-                <Field>
-                  <FieldLabel htmlFor="tenant-slug">Dirección de SobreTaula</FieldLabel>
-                  <Input
-                    id="tenant-slug"
-                    onChange={(event) => {
-                      setSlugEdited(true)
-                      setSlug(event.target.value)
-                    }}
-                    pattern="[a-z0-9][a-z0-9-]{1,48}[a-z0-9]"
-                    required
-                    value={slug}
-                  />
-                </Field>
-                <Field>
-                  <FieldLabel htmlFor="legal-name">Razón social</FieldLabel>
-                  <Input
-                    id="legal-name"
-                    onChange={(event) => setLegalName(event.target.value)}
-                    required
-                    value={legalName}
-                  />
-                </Field>
-                <Field>
-                  <FieldLabel htmlFor="tax-id">NIF/CIF</FieldLabel>
-                  <Input
-                    id="tax-id"
-                    onChange={(event) => setTaxId(event.target.value)}
-                    required
-                    value={taxId}
-                  />
-                </Field>
-                <Field>
-                  <FieldLabel htmlFor="billing-email">Correo de facturación</FieldLabel>
-                  <Input
-                    autoComplete="email"
-                    id="billing-email"
-                    onChange={(event) => setEmail(event.target.value)}
-                    required
-                    type="email"
-                    value={email}
-                  />
-                </Field>
-                <Field>
-                  <FieldLabel htmlFor="address">Dirección fiscal</FieldLabel>
-                  <Input
-                    id="address"
-                    onChange={(event) => setAddressLine(event.target.value)}
-                    required
-                    value={addressLine}
-                  />
-                </Field>
-                <Field>
-                  <FieldLabel htmlFor="city">Ciudad</FieldLabel>
-                  <Input
-                    id="city"
-                    onChange={(event) => setCity(event.target.value)}
-                    required
-                    value={city}
-                  />
-                </Field>
-                <Field>
-                  <FieldLabel htmlFor="postal-code">Código postal</FieldLabel>
-                  <Input
-                    id="postal-code"
-                    onChange={(event) => setPostalCode(event.target.value)}
-                    required
-                    value={postalCode}
-                  />
-                </Field>
+            {createdTenant ? (
+              <div className="space-y-5">
+                <p className="text-sm leading-6">
+                  Tu restaurante ya está creado. Puedes dejar preparado VERI*FACTU ahora o continuar
+                  y configurarlo desde Facturación cuando tengas el certificado a mano.
+                </p>
+                <div className="flex flex-wrap gap-3">
+                  <Button
+                    onPress={() => window.location.assign(`/t/${createdTenant.slug}/facturacion`)}
+                    size="lg"
+                  >
+                    Configurar VERI*FACTU ahora
+                  </Button>
+                  <Button
+                    onPress={() => window.location.assign(`/t/${createdTenant.slug}`)}
+                    size="lg"
+                    variant="outline"
+                  >
+                    Lo haré más tarde
+                  </Button>
+                </div>
               </div>
-              <FormFeedback pendingLabel="Guardando configuración…" state={feedback.state} />
-              <Button disabled={feedback.pending} size="lg" type="submit">
-                Continuar con el pago
-              </Button>
-            </form>
+            ) : (
+              <form className="space-y-5" onSubmit={(event) => void submit(event)}>
+                <div className="grid gap-5 sm:grid-cols-2">
+                  <Field>
+                    <FieldLabel htmlFor="tenant-name">Nombre comercial</FieldLabel>
+                    <Input
+                      id="tenant-name"
+                      onChange={(event) => changeName(event.target.value)}
+                      required
+                      value={name}
+                    />
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="tenant-slug">Dirección de SobreTaula</FieldLabel>
+                    <Input
+                      id="tenant-slug"
+                      onChange={(event) => {
+                        setSlugEdited(true)
+                        setSlug(event.target.value)
+                      }}
+                      pattern="[a-z0-9][a-z0-9-]{1,48}[a-z0-9]"
+                      required
+                      value={slug}
+                    />
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="legal-name">Razón social</FieldLabel>
+                    <Input
+                      id="legal-name"
+                      onChange={(event) => setLegalName(event.target.value)}
+                      required
+                      value={legalName}
+                    />
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="tax-id">NIF/CIF</FieldLabel>
+                    <Input
+                      id="tax-id"
+                      onChange={(event) => setTaxId(event.target.value)}
+                      required
+                      value={taxId}
+                    />
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="billing-email">Correo de facturación</FieldLabel>
+                    <Input
+                      autoComplete="email"
+                      id="billing-email"
+                      onChange={(event) => setEmail(event.target.value)}
+                      required
+                      type="email"
+                      value={email}
+                    />
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="address">Dirección fiscal</FieldLabel>
+                    <Input
+                      id="address"
+                      onChange={(event) => setAddressLine(event.target.value)}
+                      required
+                      value={addressLine}
+                    />
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="city">Ciudad</FieldLabel>
+                    <Input
+                      id="city"
+                      onChange={(event) => setCity(event.target.value)}
+                      required
+                      value={city}
+                    />
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="postal-code">Código postal</FieldLabel>
+                    <Input
+                      id="postal-code"
+                      onChange={(event) => setPostalCode(event.target.value)}
+                      required
+                      value={postalCode}
+                    />
+                  </Field>
+                </div>
+                <FormFeedback pendingLabel="Guardando configuración…" state={feedback.state} />
+                <Button disabled={feedback.pending} size="lg" type="submit">
+                  Continuar con el pago
+                </Button>
+              </form>
+            )}
           </CardContent>
         </Card>
       </section>

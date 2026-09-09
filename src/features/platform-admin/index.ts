@@ -1,4 +1,5 @@
 export { getPlatformAdminAccess, getPlatformDashboard } from './application/platform-dashboard'
+export { getPlatformAuditLog } from './application/platform-audit'
 export {
   getPlatformTenantDetail,
   updatePlatformTenantConfiguration,
@@ -24,7 +25,10 @@ export {
   PLATFORM_ADMIN_ROLES,
 } from './domain/platform-admin'
 export type { ManagedTenantStatus, PlatformAdminRole } from './domain/platform-admin'
+export type { PlatformAuditEvent } from './domain/platform-audit'
 export { PlatformConsolePage } from './ui/platform-console-page'
+export { PlatformAuditPage } from './ui/platform-audit-page'
+export { PlatformAuditList } from './ui/platform-audit-list'
 export { PlatformTenantDetailsPage } from './ui/platform-tenant-details-page'
 export { PlatformTenantsPage } from './ui/platform-tenants-page'
 export {

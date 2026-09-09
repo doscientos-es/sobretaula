@@ -1,3 +1,5 @@
+import { createHash, randomBytes } from 'node:crypto'
+
 import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 
@@ -12,6 +14,13 @@ const reservationInput = z.object({
   serviceId: z.string().uuid(),
   slug: z.string().trim().min(2).max(50),
   startsAt: z.string().datetime({ offset: true }),
+})
+const tokenInput = z.object({ token: z.string().regex(/^[a-f0-9]{64}$/) })
+const availabilityInput = z.object({
+  date: z.string().date(),
+  partySize: z.number().int().min(1).max(50),
+  serviceId: z.string().uuid(),
+  slug: z.string().trim().min(2).max(50),
 })
 
 export interface PublicReservationService {
@@ -29,6 +38,21 @@ export interface PublicReservationProfile {
   timezone: string
   venueName: string
   services: PublicReservationService[]
+}
+
+export interface PublicReservation {
+  endsAt: string
+  guestName?: string
+  id: string
+  partySize: number
+  startsAt: string
+  status: string
+  tenantName: string
+  venueName: string
+}
+
+function hashPublicToken(token: string): string {
+  return createHash('sha256').update(token).digest('hex')
 }
 
 interface PublicReservationProfileRow {
@@ -84,6 +108,7 @@ export const getPublicReservationProfile = createServerFn({ method: 'GET' })
 export const createPublicReservation = createServerFn({ method: 'POST' })
   .validator(reservationInput)
   .handler(async ({ data }) => {
+    const token = randomBytes(32).toString('hex')
     const { data: result, error } = await createAnonSupabaseClient().rpc(
       'create_public_reservation',
       {
@@ -94,6 +119,7 @@ export const createPublicReservation = createServerFn({ method: 'POST' })
         p_service_id: data.serviceId,
         p_slug: data.slug,
         p_starts_at: data.startsAt,
+        p_public_token_hash: hashPublicToken(token),
       },
     )
     if (error) {
@@ -109,6 +135,65 @@ export const createPublicReservation = createServerFn({ method: 'POST' })
       endsAt: row.ends_at,
       reservationId: row.reservation_id,
       startsAt: row.starts_at,
+      managementToken: token,
       venueName: row.venue_name,
     }
+  })
+
+export const getPublicReservation = createServerFn({ method: 'GET' })
+  .validator(tokenInput)
+  .handler(async ({ data }): Promise<PublicReservation | null> => {
+    const { data: rows, error } = await createAnonSupabaseClient().rpc(
+      'public_reservation_by_token',
+      { p_token_hash: hashPublicToken(data.token) },
+    )
+    if (error) throw new Error(`public_reservation_lookup_failed:${error.code}`)
+    const row = (rows ?? [])[0] as
+      | {
+          ends_at: string
+          id: string
+          party_size: number
+          starts_at: string
+          status: string
+          tenant_name: string
+          venue_name: string
+        }
+      | undefined
+    if (!row) return null
+    return {
+      endsAt: row.ends_at,
+      id: row.id,
+      partySize: row.party_size,
+      startsAt: row.starts_at,
+      status: row.status,
+      tenantName: row.tenant_name,
+      venueName: row.venue_name,
+    }
+  })
+
+export const getPublicReservationAvailability = createServerFn({ method: 'GET' })
+  .validator(availabilityInput)
+  .handler(async ({ data }): Promise<string[]> => {
+    const { data: rows, error } = await createAnonSupabaseClient().rpc(
+      'public_reservation_availability',
+      {
+        p_date: data.date,
+        p_party_size: data.partySize,
+        p_service_id: data.serviceId,
+        p_slug: data.slug,
+      },
+    )
+    if (error) throw new Error(`public_reservation_availability_failed:${error.code}`)
+    return ((rows ?? []) as Array<{ starts_at: string }>).map((row) => row.starts_at)
+  })
+
+export const cancelPublicReservation = createServerFn({ method: 'POST' })
+  .validator(tokenInput)
+  .handler(async ({ data }) => {
+    const { data: cancelled, error } = await createAnonSupabaseClient().rpc(
+      'cancel_public_reservation',
+      { p_token_hash: hashPublicToken(data.token) },
+    )
+    if (error) throw new Error(`public_reservation_cancel_failed:${error.code}`)
+    return { cancelled: cancelled === true }
   })

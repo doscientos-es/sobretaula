@@ -24,7 +24,10 @@ import {
   updatePlatformTenantConfiguration,
   type PlatformTenantDetail,
 } from '../application/platform-tenant-details'
+import type { PlatformAuditEvent } from '../domain/platform-audit'
 import { getTenantVerifactuHealth } from '../domain/platform-tenant-verifactu'
+
+import { PlatformAuditList } from './platform-audit-list'
 
 const euro = new Intl.NumberFormat('es-ES', { currency: 'EUR', style: 'currency' })
 const date = new Intl.DateTimeFormat('es-ES', { dateStyle: 'medium' })
@@ -62,7 +65,13 @@ function tenantStatusAction(status: PlatformTenantDetail['tenantStatus']) {
 }
 
 /** Owner-only detail page for configuration, basic activity and fiscal delivery health. */
-export function PlatformTenantDetailsPage({ tenant }: { tenant: PlatformTenantDetail }) {
+export function PlatformTenantDetailsPage({
+  auditEvents,
+  tenant,
+}: {
+  auditEvents: readonly PlatformAuditEvent[]
+  tenant: PlatformTenantDetail
+}) {
   const configurationFeedback = useFormFeedback()
   const statusFeedback = useFormFeedback()
   const [isEditingConfiguration, setIsEditingConfiguration] = useState(false)
@@ -107,6 +116,13 @@ export function PlatformTenantDetailsPage({ tenant }: { tenant: PlatformTenantDe
     event.preventDefault()
     if (statusFeedback.pending) return
     const values = new FormData(event.currentTarget)
+    if (
+      !window.confirm(
+        `Vas a ${statusAction.status === 'suspended' ? 'suspender' : 'reactivar'} ${tenant.tenantName}. ${statusAction.description}`,
+      )
+    ) {
+      return
+    }
     statusFeedback.setPending()
     void updatePlatformTenantStatus({
       data: {
@@ -345,6 +361,21 @@ export function PlatformTenantDetailsPage({ tenant }: { tenant: PlatformTenantDe
           </CardContent>
         </Card>
       </section>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Historial de auditoría</CardTitle>
+          <CardDescription>
+            Cambios administrativos realizados sobre este tenant. La bitácora es de solo lectura.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <PlatformAuditList
+            emptyDescription="Todavía no hay cambios administrativos registrados para este tenant."
+            events={auditEvents}
+          />
+        </CardContent>
+      </Card>
 
       <section aria-labelledby="tenant-danger-zone">
         <Card className="border-destructive/40">

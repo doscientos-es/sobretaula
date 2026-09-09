@@ -11,11 +11,13 @@ import {
   Input,
   useFormFeedback,
 } from '@doscientos/ui'
+import { Link } from '@tanstack/react-router'
 import { CalendarDays, Check, Clock3, MapPin, Users } from 'lucide-react'
 import { useMemo, useState, type FormEvent } from 'react'
 
 import {
   createPublicReservation,
+  getPublicReservationAvailability,
   type PublicReservationProfile,
 } from '../application/public-reservations'
 
@@ -68,6 +70,9 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
   const [phone, setPhone] = useState('')
   const [email, setEmail] = useState('')
   const [confirmed, setConfirmed] = useState(false)
+  const [managementToken, setManagementToken] = useState('')
+  const [availableSlots, setAvailableSlots] = useState<string[]>([])
+  const [availabilityLoading, setAvailabilityLoading] = useState(false)
   const service = profile.services.find((candidate) => candidate.id === serviceId)
   const dates = useMemo(() => (service ? nextDates(service.weekday) : []), [service])
   const slots = useMemo(() => (service ? slotsForService(service) : []), [service])
@@ -76,6 +81,27 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
     setServiceId(id)
     setDate('')
     setTime('')
+    setAvailableSlots([])
+  }
+
+  async function selectDate(value: string, size = partySize) {
+    setDate(value)
+    setTime('')
+    if (!value || !service) {
+      setAvailableSlots([])
+      return
+    }
+    setAvailabilityLoading(true)
+    try {
+      const result = await getPublicReservationAvailability({
+        data: { date: value, partySize: size, serviceId: service.id, slug: profile.slug },
+      })
+      setAvailableSlots(result.startsAt)
+    } catch {
+      setAvailableSlots([])
+    } finally {
+      setAvailabilityLoading(false)
+    }
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -86,7 +112,7 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
     }
     feedback.setPending()
     try {
-      await createPublicReservation({
+      const result = await createPublicReservation({
         data: {
           ...(email ? { email } : {}),
           ...(phone ? { phone } : {}),
@@ -99,6 +125,7 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
           startsAt: new Date(`${date}T${time}:00`).toISOString(),
         },
       })
+      setManagementToken(result.managementToken)
       setConfirmed(true)
       feedback.setSuccess('')
     } catch (error) {
@@ -136,6 +163,13 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
             Hemos reservado una mesa para {partySize} {partySize === 1 ? 'persona' : 'personas'} el{' '}
             {formatDate(date)} a las {time}.
           </p>
+          <Link
+            className="st-public-booking-manage-link"
+            params={{ token: managementToken }}
+            to="/reserva/$token"
+          >
+            Consultar o cancelar esta reserva
+          </Link>
           <p className="mt-6 text-xs leading-5 text-[#737983]">
             {profile.venueName}. Guarda esta pantalla; pronto podrás añadir confirmaciones y
             recordatorios.
@@ -209,10 +243,7 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                   <select
                     id="public-date"
                     className="min-h-12 bg-white"
-                    onChange={(event) => {
-                      setDate(event.target.value)
-                      setTime('')
-                    }}
+                    onChange={(event) => void selectDate(event.target.value)}
                     required
                     value={date}
                   >
@@ -223,6 +254,9 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                       </option>
                     ))}
                   </select>
+                  {date && !availabilityLoading && availableSlots.length === 0 ? (
+                    <p className="mt-2 text-xs text-[#c34d3e]">No quedan horas libres para ese día y número de personas.</p>
+                  ) : null}
                 </Field>
                 <Field>
                   <FieldLabel htmlFor="public-time">Hora</FieldLabel>
@@ -234,7 +268,7 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                     value={time}
                   >
                     <option value="">Selecciona una hora</option>
-                    {slots.map((candidate) => (
+                    {(date ? availableSlots : slots).map((candidate) => (
                       <option key={candidate} value={candidate}>
                         {candidate}
                       </option>
@@ -251,7 +285,11 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                   className="min-h-12"
                   max={50}
                   min={1}
-                  onChange={(event) => setPartySize(Number(event.target.value))}
+                  onChange={(event) => {
+                    const nextSize = Number(event.target.value)
+                    setPartySize(nextSize)
+                    if (date) void selectDate(date, nextSize)
+                  }}
                   required
                   type="number"
                   value={partySize}
@@ -292,7 +330,12 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
               <FormFeedback pendingLabel="Comprobando disponibilidad…" state={feedback.state} />
               <Button
                 className="w-full"
-                disabled={feedback.pending || profile.services.length === 0}
+                disabled={
+                  feedback.pending ||
+                  availabilityLoading ||
+                  profile.services.length === 0 ||
+                  Boolean(date && availableSlots.length === 0)
+                }
                 size="lg"
                 type="submit"
               >

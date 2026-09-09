@@ -29,9 +29,11 @@ import {
 import {
   createSeries,
   findFiscalSettings,
+  findVerifactuCertificateMetadata,
   listInvoices,
   listSeries,
   saveFiscalSettings,
+  type VerifactuCertificateMetadata,
 } from '../infrastructure/server/invoice-repository'
 import {
   createSeriesInput,
@@ -45,6 +47,7 @@ import {
 } from './invoice-schema'
 
 export interface FiscalSettingsView {
+  certificate: VerifactuCertificateMetadata | null
   settings: FiscalSettings | null
   series: InvoiceSeries[]
   invoices: Invoice[]
@@ -77,12 +80,18 @@ export const getBillingOverview = createServerFn({ method: 'GET' })
   .handler(async ({ context, data }): Promise<FiscalSettingsView> => {
     requireInvoiceReader(context.tenantMembership.role)
     const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
-    const [settings, series, invoices] = await Promise.all([
+    const [settings, certificate, series, invoices] = await Promise.all([
       findFiscalSettings(supabase, data.tenantId),
+      findVerifactuCertificateMetadata(supabase, data.tenantId),
       listSeries(supabase, data.tenantId),
       listInvoices(supabase, data.tenantId),
     ])
-    return { invoices, series, settings: settings ? validateFiscalSettings(settings) : null }
+    return {
+      certificate,
+      invoices,
+      series,
+      settings: settings ? validateFiscalSettings(settings) : null,
+    }
   })
 
 /** Owner-only save of the fiscal identity of the restaurant. */

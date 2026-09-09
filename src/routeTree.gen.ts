@@ -18,10 +18,12 @@ import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as RegistroRouteImport } from './routes/registro'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminAjustesRouteImport } from './routes/admin.ajustes'
+import { Route as AdminAuditoriaRouteImport } from './routes/admin.auditoria'
 import { Route as AdminEquipoRouteImport } from './routes/admin.equipo'
 import { Route as AdminFacturacionRouteImport } from './routes/admin.facturacion'
 import { Route as AdminFacturasRouteImport } from './routes/admin.facturas'
 import { Route as AdminInvitacionRouteImport } from './routes/admin.invitacion'
+import { Route as ReservaTokenRouteImport } from './routes/reserva.$token'
 import { Route as ReservarSlugRouteImport } from './routes/reservar.$slug'
 import { Route as TSlugRouteImport } from './routes/t.$slug'
 import { Route as AdminTenantsIndexRouteImport } from './routes/admin.tenants.index'
@@ -33,6 +35,7 @@ import { Route as TSlugCartaRouteImport } from './routes/t.$slug.carta'
 import { Route as TSlugEquipoRouteImport } from './routes/t.$slug.equipo'
 import { Route as TSlugFacturacionRouteImport } from './routes/t.$slug.facturacion'
 import { Route as TSlugFacturasRouteImport } from './routes/t.$slug.facturas'
+import { Route as ApiTTenantIdVerifactuCertificateRouteImport } from './routes/api.t.$tenantId.verifactu-certificate'
 import { Route as TSlugLVenueRouteImport } from './routes/t.$slug.l.$venue'
 import { Route as TSlugLNuevoRouteImport } from './routes/t.$slug.l.nuevo'
 import { Route as TSlugSuscripcionFacturasRouteImport } from './routes/t.$slug.suscripcion.facturas'
@@ -87,6 +90,11 @@ const AdminAjustesRoute = AdminAjustesRouteImport.update({
   path: '/ajustes',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminAuditoriaRoute = AdminAuditoriaRouteImport.update({
+  id: '/auditoria',
+  path: '/auditoria',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminEquipoRoute = AdminEquipoRouteImport.update({
   id: '/equipo',
   path: '/equipo',
@@ -106,6 +114,11 @@ const AdminInvitacionRoute = AdminInvitacionRouteImport.update({
   id: '/invitacion',
   path: '/invitacion',
   getParentRoute: () => AdminRoute,
+} as any)
+const ReservaTokenRoute = ReservaTokenRouteImport.update({
+  id: '/reserva/$token',
+  path: '/reserva/$token',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ReservarSlugRoute = ReservarSlugRouteImport.update({
   id: '/reservar/$slug',
@@ -163,6 +176,12 @@ const TSlugFacturasRoute = TSlugFacturasRouteImport.update({
   path: '/facturas',
   getParentRoute: () => TSlugRoute,
 } as any)
+const ApiTTenantIdVerifactuCertificateRoute =
+  ApiTTenantIdVerifactuCertificateRouteImport.update({
+    id: '/api/t/$tenantId/verifactu-certificate',
+    path: '/api/t/$tenantId/verifactu-certificate',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const TSlugLVenueRoute = TSlugLVenueRouteImport.update({
   id: '/l/$venue',
   path: '/l/$venue',
@@ -215,10 +234,12 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof OnboardingRoute
   '/registro': typeof RegistroRoute
   '/admin/ajustes': typeof AdminAjustesRoute
+  '/admin/auditoria': typeof AdminAuditoriaRoute
   '/admin/equipo': typeof AdminEquipoRoute
   '/admin/facturacion': typeof AdminFacturacionRoute
   '/admin/facturas': typeof AdminFacturasRoute
   '/admin/invitacion': typeof AdminInvitacionRoute
+  '/reserva/$token': typeof ReservaTokenRoute
   '/reservar/$slug': typeof ReservarSlugRoute
   '/t/$slug': typeof TSlugRouteWithChildren
   '/admin/': typeof AdminIndexRoute
@@ -231,6 +252,7 @@ export interface FileRoutesByFullPath {
   '/t/$slug/facturas': typeof TSlugFacturasRoute
   '/admin/tenants/': typeof AdminTenantsIndexRoute
   '/t/$slug/': typeof TSlugIndexRoute
+  '/api/t/$tenantId/verifactu-certificate': typeof ApiTTenantIdVerifactuCertificateRoute
   '/t/$slug/l/$venue': typeof TSlugLVenueRouteWithChildren
   '/t/$slug/l/nuevo': typeof TSlugLNuevoRoute
   '/t/$slug/suscripcion/facturas': typeof TSlugSuscripcionFacturasRoute
@@ -248,10 +270,12 @@ export interface FileRoutesByTo {
   '/onboarding': typeof OnboardingRoute
   '/registro': typeof RegistroRoute
   '/admin/ajustes': typeof AdminAjustesRoute
+  '/admin/auditoria': typeof AdminAuditoriaRoute
   '/admin/equipo': typeof AdminEquipoRoute
   '/admin/facturacion': typeof AdminFacturacionRoute
   '/admin/facturas': typeof AdminFacturasRoute
   '/admin/invitacion': typeof AdminInvitacionRoute
+  '/reserva/$token': typeof ReservaTokenRoute
   '/reservar/$slug': typeof ReservarSlugRoute
   '/admin': typeof AdminIndexRoute
   '/admin/tenants/$tenantId': typeof AdminTenantsTenantIdRoute
@@ -263,6 +287,7 @@ export interface FileRoutesByTo {
   '/t/$slug/facturas': typeof TSlugFacturasRoute
   '/admin/tenants': typeof AdminTenantsIndexRoute
   '/t/$slug': typeof TSlugIndexRoute
+  '/api/t/$tenantId/verifactu-certificate': typeof ApiTTenantIdVerifactuCertificateRoute
   '/t/$slug/l/nuevo': typeof TSlugLNuevoRoute
   '/t/$slug/suscripcion/facturas': typeof TSlugSuscripcionFacturasRoute
   '/t/$slug/l/$venue/plano': typeof TSlugLVenuePlanoRoute
@@ -281,10 +306,12 @@ export interface FileRoutesById {
   '/onboarding': typeof OnboardingRoute
   '/registro': typeof RegistroRoute
   '/admin/ajustes': typeof AdminAjustesRoute
+  '/admin/auditoria': typeof AdminAuditoriaRoute
   '/admin/equipo': typeof AdminEquipoRoute
   '/admin/facturacion': typeof AdminFacturacionRoute
   '/admin/facturas': typeof AdminFacturasRoute
   '/admin/invitacion': typeof AdminInvitacionRoute
+  '/reserva/$token': typeof ReservaTokenRoute
   '/reservar/$slug': typeof ReservarSlugRoute
   '/t/$slug': typeof TSlugRouteWithChildren
   '/admin/': typeof AdminIndexRoute
@@ -297,6 +324,7 @@ export interface FileRoutesById {
   '/t/$slug/facturas': typeof TSlugFacturasRoute
   '/admin/tenants/': typeof AdminTenantsIndexRoute
   '/t/$slug/': typeof TSlugIndexRoute
+  '/api/t/$tenantId/verifactu-certificate': typeof ApiTTenantIdVerifactuCertificateRoute
   '/t/$slug/l/$venue': typeof TSlugLVenueRouteWithChildren
   '/t/$slug/l/nuevo': typeof TSlugLNuevoRoute
   '/t/$slug/suscripcion/facturas': typeof TSlugSuscripcionFacturasRoute
@@ -317,10 +345,12 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/registro'
     | '/admin/ajustes'
+    | '/admin/auditoria'
     | '/admin/equipo'
     | '/admin/facturacion'
     | '/admin/facturas'
     | '/admin/invitacion'
+    | '/reserva/$token'
     | '/reservar/$slug'
     | '/t/$slug'
     | '/admin/'
@@ -333,6 +363,7 @@ export interface FileRouteTypes {
     | '/t/$slug/facturas'
     | '/admin/tenants/'
     | '/t/$slug/'
+    | '/api/t/$tenantId/verifactu-certificate'
     | '/t/$slug/l/$venue'
     | '/t/$slug/l/nuevo'
     | '/t/$slug/suscripcion/facturas'
@@ -350,10 +381,12 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/registro'
     | '/admin/ajustes'
+    | '/admin/auditoria'
     | '/admin/equipo'
     | '/admin/facturacion'
     | '/admin/facturas'
     | '/admin/invitacion'
+    | '/reserva/$token'
     | '/reservar/$slug'
     | '/admin'
     | '/admin/tenants/$tenantId'
@@ -365,6 +398,7 @@ export interface FileRouteTypes {
     | '/t/$slug/facturas'
     | '/admin/tenants'
     | '/t/$slug'
+    | '/api/t/$tenantId/verifactu-certificate'
     | '/t/$slug/l/nuevo'
     | '/t/$slug/suscripcion/facturas'
     | '/t/$slug/l/$venue/plano'
@@ -382,10 +416,12 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/registro'
     | '/admin/ajustes'
+    | '/admin/auditoria'
     | '/admin/equipo'
     | '/admin/facturacion'
     | '/admin/facturas'
     | '/admin/invitacion'
+    | '/reserva/$token'
     | '/reservar/$slug'
     | '/t/$slug'
     | '/admin/'
@@ -398,6 +434,7 @@ export interface FileRouteTypes {
     | '/t/$slug/facturas'
     | '/admin/tenants/'
     | '/t/$slug/'
+    | '/api/t/$tenantId/verifactu-certificate'
     | '/t/$slug/l/$venue'
     | '/t/$slug/l/nuevo'
     | '/t/$slug/suscripcion/facturas'
@@ -416,10 +453,12 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   OnboardingRoute: typeof OnboardingRoute
   RegistroRoute: typeof RegistroRoute
+  ReservaTokenRoute: typeof ReservaTokenRoute
   ReservarSlugRoute: typeof ReservarSlugRoute
   TSlugRoute: typeof TSlugRouteWithChildren
   ApiPlatformBillingReconcileRoute: typeof ApiPlatformBillingReconcileRoute
   ApiWebhooksRedsysRoute: typeof ApiWebhooksRedsysRoute
+  ApiTTenantIdVerifactuCertificateRoute: typeof ApiTTenantIdVerifactuCertificateRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -487,6 +526,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAjustesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/auditoria': {
+      id: '/admin/auditoria'
+      path: '/auditoria'
+      fullPath: '/admin/auditoria'
+      preLoaderRoute: typeof AdminAuditoriaRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/equipo': {
       id: '/admin/equipo'
       path: '/equipo'
@@ -514,6 +560,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/invitacion'
       preLoaderRoute: typeof AdminInvitacionRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/reserva/$token': {
+      id: '/reserva/$token'
+      path: '/reserva/$token'
+      fullPath: '/reserva/$token'
+      preLoaderRoute: typeof ReservaTokenRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/reservar/$slug': {
       id: '/reservar/$slug'
@@ -592,6 +645,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TSlugFacturasRouteImport
       parentRoute: typeof TSlugRoute
     }
+    '/api/t/$tenantId/verifactu-certificate': {
+      id: '/api/t/$tenantId/verifactu-certificate'
+      path: '/api/t/$tenantId/verifactu-certificate'
+      fullPath: '/api/t/$tenantId/verifactu-certificate'
+      preLoaderRoute: typeof ApiTTenantIdVerifactuCertificateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/t/$slug/l/$venue': {
       id: '/t/$slug/l/$venue'
       path: '/l/$venue'
@@ -653,6 +713,7 @@ declare module '@tanstack/react-router' {
 
 interface AdminRouteChildren {
   AdminAjustesRoute: typeof AdminAjustesRoute
+  AdminAuditoriaRoute: typeof AdminAuditoriaRoute
   AdminEquipoRoute: typeof AdminEquipoRoute
   AdminFacturacionRoute: typeof AdminFacturacionRoute
   AdminFacturasRoute: typeof AdminFacturasRoute
@@ -664,6 +725,7 @@ interface AdminRouteChildren {
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAjustesRoute: AdminAjustesRoute,
+  AdminAuditoriaRoute: AdminAuditoriaRoute,
   AdminEquipoRoute: AdminEquipoRoute,
   AdminFacturacionRoute: AdminFacturacionRoute,
   AdminFacturasRoute: AdminFacturasRoute,
@@ -727,10 +789,12 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   OnboardingRoute: OnboardingRoute,
   RegistroRoute: RegistroRoute,
+  ReservaTokenRoute: ReservaTokenRoute,
   ReservarSlugRoute: ReservarSlugRoute,
   TSlugRoute: TSlugRouteWithChildren,
   ApiPlatformBillingReconcileRoute: ApiPlatformBillingReconcileRoute,
   ApiWebhooksRedsysRoute: ApiWebhooksRedsysRoute,
+  ApiTTenantIdVerifactuCertificateRoute: ApiTTenantIdVerifactuCertificateRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -8,7 +8,8 @@ import { authSessionConfig, toAuthSessionData } from './session'
 
 const TOKEN_REFRESH_SKEW_SECONDS = 60
 
-export const authMiddleware = createMiddleware({ type: 'function' }).server(async ({ next }) => {
+/** Resolves and refreshes the httpOnly session for server functions and server routes. */
+export async function getAuthenticatedPrincipal(): Promise<AuthPrincipal> {
   const session = await useSession<AuthSessionData>(authSessionConfig())
   const current = session.data
 
@@ -39,6 +40,10 @@ export const authMiddleware = createMiddleware({ type: 'function' }).server(asyn
     throw new Response('Unauthenticated', { status: 401 })
   }
 
-  const principal: AuthPrincipal = { accessToken, userId: data.user.id }
+  return { accessToken, userId: data.user.id }
+}
+
+export const authMiddleware = createMiddleware({ type: 'function' }).server(async ({ next }) => {
+  const principal = await getAuthenticatedPrincipal()
   return next({ context: { principal } })
 })

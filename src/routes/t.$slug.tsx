@@ -62,9 +62,10 @@ function TenantLayout() {
   const pathname = useRouterState({ select: (state) => state.location.pathname })
   const isSubscriptionInvoicesRoute = pathname === `/t/${tenant.slug}/suscripcion/facturas`
   const isTeamRoute = pathname === `/t/${tenant.slug}/equipo`
+  const isBillingRoute = pathname === `/t/${tenant.slug}/facturacion`
 
   if (!isTenantOperational(tenant.status)) {
-    if (isSubscriptionInvoicesRoute || isTeamRoute) return <Outlet />
+    if (isBillingRoute || isSubscriptionInvoicesRoute || isTeamRoute) return <Outlet />
 
     const setupPending = tenant.status === 'setup_pending'
     return (

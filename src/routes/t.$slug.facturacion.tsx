@@ -24,6 +24,7 @@ function BillingRoute() {
   return (
     <BillingPage
       locale={tenant.defaultLocale}
+      isOwner={Route.useRouteContext().tenantMembership.role === 'owner'}
       onDone={reload}
       overview={overview}
       tenantId={tenant.id}

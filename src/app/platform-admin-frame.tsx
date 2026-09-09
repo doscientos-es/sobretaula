@@ -15,6 +15,7 @@ import {
   EllipsisVertical,
   FileText,
   LayoutDashboard,
+  ScrollText,
   Settings2,
   ShieldCheck,
   Users,
@@ -60,6 +61,7 @@ export function PlatformAdminFrame({ children }: { children: ReactNode }) {
           <Link to="/admin/facturas">Facturas</Link>
           <Link to="/admin/tenants">Tenants</Link>
           <Link to="/admin/equipo">Equipo</Link>
+          <Link to="/admin/auditoria">Auditoría</Link>
           <Link to="/admin/ajustes">Ajustes</Link>
         </nav>
       }
@@ -117,6 +119,13 @@ export function PlatformAdminFrame({ children }: { children: ReactNode }) {
                   to="/admin/equipo"
                 >
                   <Users className="size-3" /> Equipo
+                </Link>
+                <Link
+                  activeProps={{ className: `${navLinkClass} st-platform-nav-link--active` }}
+                  className={navLinkClass}
+                  to="/admin/auditoria"
+                >
+                  <ScrollText className="size-3" /> Auditoría
                 </Link>
               </nav>
             </div>

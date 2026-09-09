@@ -11,6 +11,8 @@ const configured = Boolean(testUrl && testPublishableKey && testSecretKey)
 const describeRls = configured ? describe : describe.skip
 
 interface Fixture {
+  platformOwner: SupabaseClient
+  platformOwnerId: string
   tenantAId: string
   tenantBId: string
   userAId: string
@@ -77,6 +79,7 @@ describeRls('tenant RLS isolation', () => {
     const nonce = randomUUID()
     const tenantAId = randomUUID()
     const tenantBId = randomUUID()
+    const platformOwner = await createAuthenticatedClient(`rls-platform-${nonce}@example.test`)
     const userA = await createAuthenticatedClient(`rls-a-${nonce}@example.test`)
     const userB = await createAuthenticatedClient(`rls-b-${nonce}@example.test`)
 
@@ -102,6 +105,20 @@ describeRls('tenant RLS isolation', () => {
     ])
     if (membershipError) throw membershipError
 
+    const { error: platformMemberError } = await admin
+      .from('platform_members')
+      .insert({ role: 'platform_owner', user_id: platformOwner.userId })
+    if (platformMemberError) throw platformMemberError
+
+    const { error: auditError } = await admin.from('platform_audit_log').insert({
+      action: 'tenant_status_changed',
+      actor_user_id: platformOwner.userId,
+      metadata: { from: 'active', reason: 'Prueba de aislamiento', to: 'suspended' },
+      target_id: tenantAId,
+      target_type: 'tenant',
+    })
+    if (auditError) throw auditError
+
     const { error: venueError } = await admin.from('venues').insert([
       { name: `Venue A ${nonce}`, tenant_id: tenantAId },
       { name: `Venue B ${nonce}`, tenant_id: tenantBId },
@@ -109,6 +126,8 @@ describeRls('tenant RLS isolation', () => {
     if (venueError) throw venueError
 
     fixture = {
+      platformOwner: platformOwner.client,
+      platformOwnerId: platformOwner.userId,
       tenantAId,
       tenantBId,
       userA: userA.client,
@@ -123,6 +142,7 @@ describeRls('tenant RLS isolation', () => {
     const admin = createAdminClient()
     await admin.from('tenants').delete().in('id', [fixture.tenantAId, fixture.tenantBId])
     await Promise.all([
+      admin.auth.admin.deleteUser(fixture.platformOwnerId),
       admin.auth.admin.deleteUser(fixture.userAId),
       admin.auth.admin.deleteUser(fixture.userBId),
     ])
@@ -145,5 +165,21 @@ describeRls('tenant RLS isolation', () => {
       .insert({ name: 'Forbidden cross-tenant venue', tenant_id: fixture.tenantBId })
 
     expect(error).not.toBeNull()
+  })
+
+  it('only lets a platform owner read the immutable platform audit log', async () => {
+    if (!fixture) throw new Error('RLS fixture is unavailable.')
+
+    const [ownerResult, tenantResult] = await Promise.all([
+      fixture.platformOwner.from('platform_audit_log').select('action, target_id'),
+      fixture.userA.from('platform_audit_log').select('id'),
+    ])
+
+    expect(ownerResult.error).toBeNull()
+    expect(ownerResult.data).toEqual([
+      { action: 'tenant_status_changed', target_id: fixture.tenantAId },
+    ])
+    expect(tenantResult.error).toBeNull()
+    expect(tenantResult.data).toEqual([])
   })
 })

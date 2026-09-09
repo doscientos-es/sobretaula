@@ -9,19 +9,19 @@ reproducible (comando ejecutado y su resultado).
 
 ## Fases
 
-| Fase                   | Entregable                                                                 | Estado                                    |
-| ---------------------- | -------------------------------------------------------------------------- | ----------------------------------------- |
-| F0 · Papeleo           | `project-design.md`, `data-model.md`, ADR 0001–0007                        | Hecho                                     |
-| F0 · Esqueleto         | Proyecto Start, `@doscientos/configs`, CI, `.env.example`                  | Hecho                                     |
-| F1 · Tenancy + Auth    | Registro, onboarding, perfiles, equipo, RLS, `/t/:slug`                    | Implementado; RLS real sin evidenciar     |
-| F1a · Gobierno global  | Dashboard, control auditado de tenants e invitación de operadores globales | Implementado; migración 0904 pendiente    |
-| F1b · Billing SaaS     | Precios, Founders, cobro Redsys, gracia, facturas SaaS y suspensión segura | Parcial                                   |
-| F2 · Diseñador de sala | Editor SVG, snap, historial, elementos y layouts versionados               | Implementado; entrega bloqueada           |
-| F3 · Motor de reservas | Turnos, pacing, disponibilidad, best-fit, EXCLUDE                          | Base implementada; ampliación planificada |
-| F4 · Vista de servicio | Plano en vivo, sentar/mover/unir, walk-ins, espera                         | Implementado; entrega bloqueada           |
-| F5 · Cuenta de mesa    | Catálogo, líneas, dividir, cerrar, cobrar                                  | Implementado; entrega bloqueada           |
-| F6 · Facturación       | Ajustes fiscales, series, ledger/outbox, PDF, modo test                    | Implementado; entrega bloqueada           |
-| F7 · Entrega           | Documentación operativa, smoke, despliegue autorizado                      | Parcial                                   |
+| Fase                   | Entregable                                                                 | Estado                                     |
+| ---------------------- | -------------------------------------------------------------------------- | ------------------------------------------ |
+| F0 · Papeleo           | `project-design.md`, `data-model.md`, ADR 0001–0007                        | Hecho                                      |
+| F0 · Esqueleto         | Proyecto Start, `@doscientos/configs`, CI, `.env.example`                  | Hecho                                      |
+| F1 · Tenancy + Auth    | Registro, onboarding, perfiles, equipo, RLS, `/t/:slug`                    | Implementado; RLS real sin evidenciar      |
+| F1a · Gobierno global  | Dashboard, tenants, auditoría, operadores y controles de acceso            | Implementado; falta evidencia RLS dedicada |
+| F1b · Billing SaaS     | Precios, Founders, cobro Redsys, gracia, facturas SaaS y suspensión segura | Parcial                                    |
+| F2 · Diseñador de sala | Editor SVG, snap, historial, elementos y layouts versionados               | Implementado; entrega bloqueada            |
+| F3 · Motor de reservas | Turnos, pacing, disponibilidad, best-fit, EXCLUDE                          | Base implementada; ampliación planificada  |
+| F4 · Vista de servicio | Plano en vivo, sentar/mover/unir, walk-ins, espera                         | Implementado; entrega bloqueada            |
+| F5 · Cuenta de mesa    | Catálogo, líneas, dividir, cerrar, cobrar                                  | Implementado; entrega bloqueada            |
+| F6 · Facturación       | Ajustes fiscales, series, ledger/outbox, PDF, modo test                    | Implementado; entrega bloqueada            |
+| F7 · Entrega           | Documentación operativa, smoke, despliegue autorizado                      | Parcial                                    |
 
 «Implementado» indica que existe código y pruebas unitarias; no equivale a
 entregable aprobado mientras falten pruebas contra un entorno dedicado.
@@ -49,16 +49,16 @@ hasta que un asesor fiscal valide el reparto de responsabilidad.
 
 ## Desviaciones conocidas
 
-| Tema                                                            | Situación                                                   | Plan                                                                                                                                                                                                                                                                            |
-| --------------------------------------------------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `doscientos-structure` y sufijos `.server.ts` / `.functions.ts` | El checker inspeccionado no los reconoce                    | Documentar la excepción concreta y proponer regresión en `@doscientos/configs`. No desactivar el check ni renombrar archivos                                                                                                                                                    |
-| Generador `create-operational-app`                              | Solo produce Vite/Router, no Start                          | Esqueleto construido a mano con los mismos scripts y contratos de calidad                                                                                                                                                                                                       |
-| Proyecto Supabase                                               | Migraciones 0001–0022 y 0901–0903 aplicadas; 0904 pendiente | La migración local 0904 incorpora gobierno de plataforma. El acceso de gestión disponible no lista el proyecto de SobreTaula, por lo que no se ha aplicado ni verificado contra producción.                                                                                     |
-| Helpers `SECURITY DEFINER` visibles para `authenticated`        | Advisor los marca como WARN                                 | Es intencionado: `is_member_of`, `has_tenant_role`, `is_platform_*` y `reserve_invoice_number` deben ser invocables para que las políticas RLS funcionen. Solo devuelven booleanos o reservan número validando rol                                                              |
-| `tenant_public_by_slug` visible para `anon`                     | Advisor lo marca como WARN                                  | Es intencionado: la resolución de `/t/:slug` ocurre antes de haber sesión. Exige el slug exacto y devuelve solo marca (nombre, estado, idioma, zona horaria), así que no permite enumerar tenants                                                                               |
-| Redsys recurrente                                               | Adaptador pendiente de terminal propio                      | El esquema guarda sólo referencias cifradas e intentos idempotentes. Antes de activar cobros se debe confirmar MIT/tokenización y configurar secretos exclusivos de SobreTaula.                                                                                                 |
-| Facturas SaaS y VERI*FACTU de plataforma                        | Cierre mensual automático y outbox listos                   | El cron autenticado llama diariamente a la conciliación: genera una vez el último mes cerrado y suspende impagos. Las facturas quedan `pending_review` si falta emisor; el envío certificado que cambia `issued` a `registered` requiere el adaptador VERI*FACTU de plataforma. |
-| Componentes de `@doscientos/ui`                                 | Usos incompatibles corregidos                               | Se eliminaron props no soportadas de los consumidores (`variant`, `width`, `density`, `icon`); `typecheck`, `quality` y `build` vuelven a completar correctamente.                                                                                                              |
+| Tema                                                            | Situación                                     | Plan                                                                                                                                                                                                                                                                            |
+| --------------------------------------------------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `doscientos-structure` y sufijos `.server.ts` / `.functions.ts` | El checker inspeccionado no los reconoce      | Documentar la excepción concreta y proponer regresión en `@doscientos/configs`. No desactivar el check ni renombrar archivos                                                                                                                                                    |
+| Generador `create-operational-app`                              | Solo produce Vite/Router, no Start            | Esqueleto construido a mano con los mismos scripts y contratos de calidad                                                                                                                                                                                                       |
+| Proyecto Supabase                                               | Gobierno global y reservas públicas aplicados | Las migraciones propias aplicadas en producción se han comprobado. Las nuevas migraciones se revisan y aplican individualmente, nunca junto a cambios locales ajenos.                                                                                                           |
+| Helpers `SECURITY DEFINER` visibles para `authenticated`        | Advisor los marca como WARN                   | Es intencionado: `is_member_of`, `has_tenant_role`, `is_platform_*` y `reserve_invoice_number` deben ser invocables para que las políticas RLS funcionen. Solo devuelven booleanos o reservan número validando rol                                                              |
+| `tenant_public_by_slug` visible para `anon`                     | Advisor lo marca como WARN                    | Es intencionado: la resolución de `/t/:slug` ocurre antes de haber sesión. Exige el slug exacto y devuelve solo marca (nombre, estado, idioma, zona horaria), así que no permite enumerar tenants                                                                               |
+| Redsys recurrente                                               | Adaptador pendiente de terminal propio        | El esquema guarda sólo referencias cifradas e intentos idempotentes. Antes de activar cobros se debe confirmar MIT/tokenización y configurar secretos exclusivos de SobreTaula.                                                                                                 |
+| Facturas SaaS y VERI*FACTU de plataforma                        | Cierre mensual automático y outbox listos     | El cron autenticado llama diariamente a la conciliación: genera una vez el último mes cerrado y suspende impagos. Las facturas quedan `pending_review` si falta emisor; el envío certificado que cambia `issued` a `registered` requiere el adaptador VERI*FACTU de plataforma. |
+| Componentes de `@doscientos/ui`                                 | Usos incompatibles corregidos                 | Se eliminaron props no soportadas de los consumidores (`variant`, `width`, `density`, `icon`); `typecheck`, `quality` y `build` vuelven a completar correctamente.                                                                                                              |
 
 ## Comandos de validación
 
@@ -82,6 +82,8 @@ Supabase de pruebas dedicado (`SUPABASE_TEST_URL`,
 `SUPABASE_TEST_PUBLISHABLE_KEY`, `SUPABASE_TEST_SECRET_KEY`; contrato en
 `.env.test.example`). Hoy existe un único proyecto Supabase, que es producción:
 no hay base de pruebas, así que la suite queda saltada y **no se ejecuta ningún
-humo contra producción**. Cuando exista un proyecto de pruebas, se activan sin
+humo contra producción**. Además del aislamiento entre tenants, la suite cubre
+la lectura de auditoría: sólo un `platform_owner` puede consultar
+`platform_audit_log`. Cuando exista un proyecto de pruebas, se activan sin
 cambios de código y la puerta de adopción (#2, #3, #5, #6) se cierra con esa
 evidencia.

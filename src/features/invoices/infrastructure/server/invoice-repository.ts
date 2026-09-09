@@ -3,6 +3,12 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { InvoiceSeries, FiscalSettings } from '../../domain/fiscal-settings'
 import type { Invoice } from '../../domain/invoice'
 
+export interface VerifactuCertificateMetadata {
+  expiresAt: string
+  fingerprint: string
+  subject: string
+}
+
 export interface IssuableSessionData {
   sessionId: string
   lines: { name: string; quantity: number; unitPriceCents: number; vatRateBps: number }[]
@@ -31,6 +37,34 @@ export async function findFiscalSettings(
     issuerNif: data.issuer_nif as string,
     legalName: data.legal_name as string,
     postalCode: data.postal_code as string,
+  }
+}
+
+/** Returns only safe, derived certificate metadata; Vault material is never selected. */
+export async function findVerifactuCertificateMetadata(
+  supabase: SupabaseClient,
+  tenantId: string,
+): Promise<VerifactuCertificateMetadata | null> {
+  const { data, error } = await supabase
+    .from('tenant_fiscal_settings')
+    .select(
+      'certificate_expires_at, certificate_fingerprint, certificate_secret_id, certificate_subject',
+    )
+    .eq('tenant_id', tenantId)
+    .maybeSingle()
+  if (error) throw new Error(`certificate_metadata_lookup_failed:${error.code}`)
+  if (
+    !data?.certificate_secret_id ||
+    !data.certificate_expires_at ||
+    !data.certificate_fingerprint ||
+    !data.certificate_subject
+  ) {
+    return null
+  }
+  return {
+    expiresAt: data.certificate_expires_at as string,
+    fingerprint: data.certificate_fingerprint as string,
+    subject: data.certificate_subject as string,
   }
 }
 

@@ -174,9 +174,7 @@ controles, incluidos `typecheck`, `quality` y `build`; el detalle y las
 evidencias viven en `docs/implementation-status.md`.
 
 Desde F1 se añaden pruebas de integración de RLS y concurrencia contra una base
-Supabase de pruebas, nunca producción. El proyecto de producción ya existe y
-tiene aplicadas las migraciones 0001–0022 y 0901–0903. La migración 0904 de
-gobierno global está versionada localmente y pendiente de aplicar y verificar,
-porque el acceso de gestión actual no lista el proyecto de SobreTaula. Aún no
-hay un proyecto de pruebas dedicado, por lo que las pruebas RLS quedan omitidas
-y no se ejecuta ningún humo contra producción.
+Supabase de pruebas, nunca producción. Las migraciones de gobierno global ya
+están aplicadas y verificadas en el proyecto de producción. Aún no hay un
+proyecto de pruebas dedicado, por lo que las pruebas RLS quedan omitidas y no
+se ejecuta ningún humo contra producción.
