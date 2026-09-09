@@ -276,7 +276,21 @@ export function ReservationPage({
           </Card>
           <Card>
             <CardHeader>
-              <CardTitle>Agenda</CardTitle>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <CardTitle>Agenda</CardTitle>
+                <Button
+                  disabled={agendaLoading}
+                  onClick={() => {
+                    setAgendaLoading(true);
+                    setAgendaRefresh((value) => value + 1);
+                  }}
+                  size="sm"
+                  type="button"
+                  variant="outline"
+                >
+                  Actualizar agenda
+                </Button>
+              </div>
               <CardDescription>Reservas del día seleccionado en este local.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
