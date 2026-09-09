@@ -10,11 +10,11 @@ import { createRequestSupabaseClient } from '@/shared/lib/supabase/server/create
 
 import {
   buildFullNumber,
-  currentFiscalYear,
+  canIssueInvoices,
   groupVatTotals,
-  invoiceIssueBlocker,
   sumVatBreakdowns,
   normalizeNif,
+  type Invoice,
 } from '../domain/invoice'
 import {
   normalizeSeriesCode,
@@ -22,7 +22,6 @@ import {
   type FiscalSettings,
   type InvoiceSeries,
 } from '../domain/fiscal-settings'
-import type { Invoice } from '../domain/invoice'
 import {
   createSeries,
   findFiscalSettings,
@@ -30,12 +29,6 @@ import {
   listSeries,
   saveFiscalSettings,
 } from '../infrastructure/server/invoice-repository'
-
-export interface FiscalSettingsView {
-  settings: FiscalSettings | null
-  series: InvoiceSeries[]
-  invoices: Invoice[]
-}
 import {
   createSeriesInput,
   issueInvoiceInput,
@@ -47,9 +40,9 @@ import {
 } from './invoice-schema'
 
 export interface FiscalSettingsView {
-  settings: ReturnType<typeof validateFiscalSettings> | null
-  series: Awaited<ReturnType<typeof listSeries>>
-  invoices: Awaited<ReturnType<typeof listInvoices>>
+  settings: FiscalSettings | null
+  series: InvoiceSeries[]
+  invoices: Invoice[]
 }
 
 /** Everything the billing page needs in one call. */
@@ -108,8 +101,9 @@ export const issueInvoiceFromSession = createServerFn({ method: 'POST' })
     const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
 
     const settings = await findFiscalSettings(supabase, data.tenantId)
-    const blocker = invoiceIssueBlocker(settings)
-    if (blocker) throw new Response(blocker, { status: 422 })
+    if (!canIssueInvoices(settings)) {
+      throw new Response('Fiscal settings not ready for test emission', { status: 422 })
+    }
 
     // Sesión cerrada de este venue, ya cobrada y sin factura previa.
     const { data: session, error: sessionError } = await supabase
@@ -296,4 +290,7 @@ async function computeRecordHash(
 ): Promise<string> {
   const { createHash } = await import('node:crypto')
   return createHash('sha256')
-    .upd
+    .update(`${issuerNif}|${sequence}|${JSON.stringify(payload)}`)
+    .digest('hex')
+    .toUpperCase()
+}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { buildFullNumber, groupVatTotals, invoiceIssueBlocker, isValidNifFormat, normalizeNif, sumVatBreakdowns } from './invoice'
+import { buildFullNumber, canIssueInvoices, groupVatTotals, isValidNifFormat, normalizeNif, sumVatBreakdowns } from './invoice'
 import { isValidSeriesCode, normalizeSeriesCode, validateFiscalSettings } from './fiscal-settings'
 
 describe('normalizeNif / isValidNifFormat', () => {
@@ -40,12 +40,12 @@ describe('groupVatTotals', () => {
     const ten = breakdowns.find((item) => item.rateBps === 1000)
     const twentyOne = breakdowns.find((item) => item.rateBps === 2100)
     expect(ten).toEqual({ net: 191, rateBps: 1000, vat: 19 })
-    expect(twentyOne?.net).toBe(2120 + 1000 - 1) // 3119
-    expect(twentyOne?.vat).toBe(1 + 210) // 211
+    // 1210 -> net 1000/vat 210; 1000 -> net 826/vat 174
+    expect(twentyOne).toEqual({ net: 1826, rateBps: 2100, vat: 384 })
     const totals = sumVatBreakdowns(breakdowns)
-    expect(totals.net).toBe(3310)
-    expect(totals.vat).toBe(230)
-    expect(totals.gross).toBe(3540)
+    expect(totals.net).toBe(2017)
+    expect(totals.vat).toBe(403)
+    expect(totals.gross).toBe(2420)
   })
 
   it('handles zero-rated lines', () => {
@@ -54,11 +54,11 @@ describe('groupVatTotals', () => {
   })
 })
 
-describe('invoiceIssueBlocker', () => {
+describe('canIssueInvoices', () => {
   it('blocks without settings and in prod (MVP is test-only)', () => {
-    expect(invoiceIssueBlocker(null)).toBe('fiscal_settings_missing')
-    expect(invoiceIssueBlocker({ environment: 'prod' })).toBe('prod_not_enabled')
-    expect(invoiceIssueBlocker({ environment: 'test' })).toBeNull()
+    expect(canIssueInvoices(null)).toBe(false)
+    expect(canIssueInvoices({ environment: 'prod' })).toBe(false)
+    expect(canIssueInvoices({ environment: 'test' })).toBe(true)
   })
 })
 

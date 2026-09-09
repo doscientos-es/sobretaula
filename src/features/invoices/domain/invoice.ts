@@ -96,10 +96,12 @@ export function sumVatBreakdowns(breakdowns: readonly VatBreakdown[]): {
  * Whether this tenant may emit invoices now. The MVP only issues in `test`:
  * `prod` requires the fiscal checklist and the AEAT adapter (ADR-0005).
  */
-export function invoiceIssueBlocker(
-  settings: { environment: VerifactuEnv } | null,
-): 'fiscal_settings_missing' | 'prod_not_enabled' | null {
-  if (!settings) return 'fiscal_settings_missing'
-  if (settings.environment === 'prod') return 'prod_not_enabled'
-  return null
+export function canIssueInvoices(
+  settings: FiscalSettingsLike | null,
+): settings is FiscalSettingsLike {
+  return settings !== null && settings.environment === 'test'
+}
+
+export interface FiscalSettingsLike {
+  environment: VerifactuEnv
 }
