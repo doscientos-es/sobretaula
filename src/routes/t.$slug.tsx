@@ -23,7 +23,7 @@ export const Route = createFileRoute('/t/$slug')({
     if (!tenant) throw notFound()
 
     try {
-      await getTenantMembership({ data: { tenantId: tenant.id } })
+      const membership = await getTenantMembership({ data: { tenantId: tenant.id } })
     } catch (error) {
       if (error instanceof Response && error.status === 403) throw error
       throw redirect({ to: '/login', search: { redirect: `/t/${tenant.slug}` } })
@@ -33,7 +33,7 @@ export const Route = createFileRoute('/t/$slug')({
     const venues = isTenantOperational(tenant.status)
       ? await getTenantVenues({ data: { tenantId: tenant.id } })
       : []
-    return { billingStatus, tenant, venues }
+    return { billingStatus, membership, tenant, venues }
   },
   component: TenantLayout,
   notFoundComponent: TenantNotFound,
@@ -43,9 +43,10 @@ function TenantLayout() {
   const { billingStatus, tenant, venues } = Route.useLoaderData()
   const pathname = useRouterState({ select: (state) => state.location.pathname })
   const isSubscriptionInvoicesRoute = pathname === `/t/${tenant.slug}/suscripcion/facturas`
+  const isTeamRoute = pathname === `/t/${tenant.slug}/equipo`
 
   if (!isTenantOperational(tenant.status)) {
-    if (isSubscriptionInvoicesRoute) return <Outlet />
+    if (isSubscriptionInvoicesRoute || isTeamRoute) return <Outlet />
 
     const setupPending = tenant.status === 'setup_pending'
     return (
@@ -68,6 +69,9 @@ function TenantLayout() {
                 to="/t/$slug/suscripcion/facturas"
               >
                 Ver facturas de SobreTaula
+              </Link>
+              <Link className="text-primary underline" params={{ slug: tenant.slug }} to="/t/$slug/equipo">
+                Preparar equipo
               </Link>
             </div>
           )}

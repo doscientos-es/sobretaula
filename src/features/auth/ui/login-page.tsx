@@ -11,6 +11,7 @@ import {
   Input,
   useFormFeedback,
 } from '@doscientos/ui'
+import { Link } from '@tanstack/react-router'
 import { useState, type FormEvent } from 'react'
 
 import { login } from '../application/authentication'
@@ -76,6 +77,10 @@ export function LoginPage({ redirectTo }: { redirectTo?: string }) {
               Entrar
             </Button>
           </form>
+          <p className="text-muted-foreground mt-5 text-center text-sm">
+            ¿Es tu primer restaurante?{' '}
+            <Link className="text-primary underline" to="/registro">Crea tu cuenta</Link>.
+          </p>
         </CardContent>
       </Card>
     </main>

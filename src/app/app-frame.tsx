@@ -14,6 +14,7 @@ import {
   Map,
   Utensils,
   UtensilsCrossed,
+  Users,
 } from 'lucide-react'
 import type { ReactNode } from 'react'
 
@@ -123,6 +124,15 @@ export function AppFrame({
           >
             <FileText className="size-4" />
             {t('nav.invoices')}
+          </Link>
+          <Link
+            to="/t/$slug/equipo"
+            params={{ slug }}
+            activeProps={{ className: 'bg-muted text-foreground' }}
+            className="text-muted-foreground hover:bg-secondary hover:text-foreground flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors"
+          >
+            <Users className="size-4" />
+            Equipo
           </Link>
         </nav>
         <VenueSwitcher

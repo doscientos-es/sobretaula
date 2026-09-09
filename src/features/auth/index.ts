@@ -1,5 +1,7 @@
 export { login, logout } from './application/authentication'
+export { register } from './application/registration'
 export { isSafeInternalRedirect } from './domain/auth'
 export type { AuthPrincipal, AuthSessionData } from './domain/auth'
 export { LoginPage } from './ui/login-page'
 export { LogoutButton } from './ui/logout-button'
+export { RegisterPage } from './ui/register-page'
