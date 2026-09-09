@@ -5,6 +5,7 @@ import {
   CardHeader,
   CardTitle,
   PageHeader,
+  PageHeaderDescription,
   PageHeaderTitle,
   Table,
   TableBody,
@@ -43,8 +44,13 @@ export function MenuPage({
 
   return (
     <section className="space-y-6">
-      <PageHeader>
-        <PageHeaderTitle>{t('nav.menu')}</PageHeaderTitle>
+      <PageHeader className="border-border/70 border-b pb-6">
+        <div>
+          <PageHeaderTitle>{t('nav.menu')}</PageHeaderTitle>
+          <PageHeaderDescription>
+            Mantén tus platos, precios e IVA preparados para que sala pueda cobrar con fluidez.
+          </PageHeaderDescription>
+        </div>
       </PageHeader>
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="space-y-6">

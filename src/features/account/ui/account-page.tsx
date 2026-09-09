@@ -1,4 +1,4 @@
-import { PageHeader, PageHeaderTitle } from '@doscientos/ui'
+import { PageHeader, PageHeaderDescription, PageHeaderTitle } from '@doscientos/ui'
 
 import type { InvoiceSeries } from '@/features/invoices'
 import type { MenuCatalog } from '@/features/menu'
@@ -40,12 +40,14 @@ export function AccountPage({
 
   return (
     <section className="space-y-6">
-      <PageHeader>
-        <PageHeaderTitle>{`Cuenta${tablesLabel}`}</PageHeaderTitle>
+      <PageHeader className="border-border/70 border-b pb-6">
+        <div>
+          <PageHeaderTitle>{`Cuenta${tablesLabel}`}</PageHeaderTitle>
+          <PageHeaderDescription>
+            {`${session.covers} comensales · abierta a las ${openedAt}${open ? '' : ' · cerrada'}`}
+          </PageHeaderDescription>
+        </div>
       </PageHeader>
-      <p className="text-muted-foreground text-sm">
-        {`${session.covers} comensales · abierta a las ${openedAt}${open ? '' : ' · cerrada'}`}
-      </p>
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="space-y-6">
           <AccountLines
@@ -68,28 +70,30 @@ export function AccountPage({
             />
           )}
         </div>
-        <AccountPayments
-          account={account}
-          locale={locale}
-          onDone={reload}
-          tenantId={tenantId}
-          venueId={venueId}
-        />
-        {!open && invoiceSeries.length > 0 && (
-          <AccountIssueInvoice
-            disabled={false}
+        <aside className="space-y-6 lg:sticky lg:top-6 lg:self-start">
+          <AccountPayments
+            account={account}
             locale={locale}
-            sessionId={session.id}
-            series={invoiceSeries}
+            onDone={reload}
             tenantId={tenantId}
             venueId={venueId}
           />
-        )}
-        {!open && invoiceSeries.length === 0 && (
-          <p className="text-muted-foreground text-sm">
-            Para emitir la factura, crea primero una serie en Facturación.
-          </p>
-        )}
+          {!open && invoiceSeries.length > 0 && (
+            <AccountIssueInvoice
+              disabled={false}
+              locale={locale}
+              sessionId={session.id}
+              series={invoiceSeries}
+              tenantId={tenantId}
+              venueId={venueId}
+            />
+          )}
+          {!open && invoiceSeries.length === 0 && (
+            <p className="text-muted-foreground rounded-xl border border-dashed p-4 text-sm">
+              Para emitir la factura, crea primero una serie en Facturación.
+            </p>
+          )}
+        </aside>
       </div>
     </section>
   )

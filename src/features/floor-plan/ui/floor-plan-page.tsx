@@ -10,6 +10,7 @@ import {
   FormFeedback,
   Input,
   PageHeader,
+  PageHeaderDescription,
   PageHeaderTitle,
   useFormFeedback,
 } from '@doscientos/ui'
@@ -206,8 +207,13 @@ export function FloorPlanPage({
 
   return (
     <section className="space-y-6">
-      <PageHeader>
-        <PageHeaderTitle>Plano de sala</PageHeaderTitle>
+      <PageHeader className="border-border/70 border-b pb-6">
+        <div>
+          <PageHeaderTitle>Plano de sala</PageHeaderTitle>
+          <PageHeaderDescription>
+            Dibuja el recorrido de tu equipo y guarda versiones antes de cada cambio.
+          </PageHeaderDescription>
+        </div>
       </PageHeader>
       {!activeVersion ? (
         <Card className="max-w-2xl">
@@ -276,7 +282,7 @@ export function FloorPlanPage({
             <CardContent>
               <svg
                 aria-label={`Plano ${activeVersion.name}`}
-                className="border-border bg-muted/30 h-auto w-full rounded-md border"
+                className="border-border bg-muted/30 h-auto w-full rounded-xl border shadow-inner"
                 onPointerCancel={() => setDraggingTableId(undefined)}
                 onPointerUp={finishDrag}
                 viewBox={`0 0 ${activeVersion.widthCm} ${activeVersion.heightCm}`}

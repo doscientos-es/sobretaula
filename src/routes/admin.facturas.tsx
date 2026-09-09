@@ -20,12 +20,14 @@ export const Route = createFileRoute('/admin/facturas')({
 function PlatformFiscalInvoicesRoute() {
   const invoices = Route.useLoaderData()
   return (
-    <main className="mx-auto max-w-6xl space-y-6 p-6">
-      <PageHeader>
-        <PageHeaderTitle>Facturas SaaS emitidas</PageHeaderTitle>
-        <PageHeaderDescription>
-          Facturas de SobreTaula a los restaurantes. Sólo disponible para superadministradores.
-        </PageHeaderDescription>
+    <main className="mx-auto max-w-6xl space-y-6 p-5 sm:p-8">
+      <PageHeader className="border-border/70 border-b pb-6">
+        <div>
+          <PageHeaderTitle>Facturas SaaS emitidas</PageHeaderTitle>
+          <PageHeaderDescription>
+            Facturas de SobreTaula a los restaurantes. Sólo disponible para superadministradores.
+          </PageHeaderDescription>
+        </div>
       </PageHeader>
       <PlatformFiscalInvoiceList
         invoices={invoices}

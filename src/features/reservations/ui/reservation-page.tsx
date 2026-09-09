@@ -10,6 +10,7 @@ import {
   FormFeedback,
   Input,
   PageHeader,
+  PageHeaderDescription,
   PageHeaderTitle,
   useFormFeedback,
 } from '@doscientos/ui'
@@ -94,8 +95,13 @@ export function ReservationPage({
 
   return (
     <section className="space-y-6">
-      <PageHeader>
-        <PageHeaderTitle>Reservas</PageHeaderTitle>
+      <PageHeader className="border-border/70 border-b pb-6">
+        <div>
+          <PageHeaderTitle>Reservas</PageHeaderTitle>
+          <PageHeaderDescription>
+            Organiza cada turno y asigna grupos a la mesa que mejor encaja.
+          </PageHeaderDescription>
+        </div>
       </PageHeader>
       {services.length === 0 ? (
         <Card className="max-w-xl">

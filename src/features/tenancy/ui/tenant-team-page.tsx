@@ -1,4 +1,7 @@
 import {
+  Avatar,
+  AvatarFallback,
+  Badge,
   Button,
   Card,
   CardContent,
@@ -9,6 +12,9 @@ import {
   FieldLabel,
   FormFeedback,
   Input,
+  PageHeader,
+  PageHeaderDescription,
+  PageHeaderTitle,
   useFormFeedback,
 } from '@doscientos/ui'
 import { useState, type FormEvent } from 'react'
@@ -89,12 +95,14 @@ export function TenantTeamPage({
 
   return (
     <section className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-semibold">Equipo</h1>
-        <p className="text-muted-foreground mt-1">
-          Da acceso a las personas que trabajan en tu restaurante.
-        </p>
-      </header>
+      <PageHeader className="border-border/70 border-b pb-6">
+        <div>
+          <PageHeaderTitle>Equipo</PageHeaderTitle>
+          <PageHeaderDescription>
+            Da acceso a las personas que hacen que el restaurante funcione cada día.
+          </PageHeaderDescription>
+        </div>
+      </PageHeader>
       {(viewerRole === 'owner' || viewerRole === 'manager') && (
         <Card>
           <CardHeader>
@@ -161,15 +169,23 @@ export function TenantTeamPage({
             })
             return (
               <div
-                className="flex flex-wrap items-center justify-between gap-3 border-b pb-3 last:border-0 last:pb-0"
+                className="border-border/70 bg-surface-subtle flex flex-wrap items-center justify-between gap-3 rounded-xl border p-3"
                 key={member.userId}
               >
-                <div>
-                  <p className="font-medium">{member.name}</p>
-                  <p className="text-muted-foreground text-sm">
-                    {member.email} · {roleLabel[member.role]} ·{' '}
-                    {member.status === 'active' ? 'Activo' : 'Sin acceso'}
-                  </p>
+                <div className="flex min-w-0 items-center gap-3">
+                  <Avatar className="bg-primary/10 text-primary" size="lg">
+                    <AvatarFallback>{member.name.slice(0, 2).toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0">
+                    <p className="truncate font-medium">{member.name}</p>
+                    <p className="text-muted-foreground truncate text-sm">{member.email}</p>
+                    <div className="mt-1.5 flex flex-wrap gap-1.5">
+                      <Badge variant="default">{roleLabel[member.role]}</Badge>
+                      <Badge variant={member.status === 'active' ? 'success' : 'warning'}>
+                        {member.status === 'active' ? 'Activo' : 'Sin acceso'}
+                      </Badge>
+                    </div>
+                  </div>
                 </div>
                 {manageable && (
                   <div className="flex gap-2">

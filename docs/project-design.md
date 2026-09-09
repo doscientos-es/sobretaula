@@ -1,6 +1,7 @@
 # SobreTaula · Diseño del producto y de la plataforma
 
-Estado: borrador aprobado para F0. Última revisión: 2026-09-08.
+Estado: diseño aprobado para F0; implementación del MVP avanzada, pero no
+entregable aprobado. Última revisión: 2026-09-09.
 
 Este documento es la fuente de verdad del diseño. Las decisiones con coste de
 reversión alta viven en `docs/adr/`. El avance real vive en
@@ -98,6 +99,13 @@ sobre tablas de plataforma y, para entrar en un tenant, deja rastro en
 `plan_entitlements`; un módulo desactivado por plan se bloquea en servidor, no
 solo ocultando el enlace.
 
+La consola de superadministración queda reservada a `platform_owner`: muestra
+salud de tenants, MRR estimado, saldo pendiente y revisiones fiscales. Los
+cambios manuales de estado sólo admiten `active` o `suspended`, exigen motivo y
+se registran. Las altas de operadores usan invitaciones de un solo uso, con
+token almacenado como hash y ligado al correo autenticado; no se permite
+revocar, degradar ni modificar el acceso propio, ni eliminar el último owner.
+
 Sin dominio propio todavía: el tenant se selecciona por ruta `/t/:slug`. El
 código aísla la resolución en `shared/lib/tenant` para que añadir subdominios
 sea un cambio de una función. Ver [ADR-0003](./adr/0003-resolucion-tenant.md).
@@ -138,8 +146,14 @@ antes de habilitar `prod`.
 
 Contrato completo en cada cierre de tarea y en CI: `pnpm format:check`,
 `pnpm lint`, `pnpm structure:check`, `pnpm typecheck`, `pnpm test`,
-`pnpm quality`, `pnpm build`. Desde F1 se añaden pruebas de integración de RLS y
-concurrencia contra una base Supabase de pruebas, nunca producción.
+`pnpm quality`, `pnpm build`. La última ejecución local completa todos los
+controles, incluidos `typecheck`, `quality` y `build`; el detalle y las
+evidencias viven en `docs/implementation-status.md`.
 
-El proyecto Supabase no existe todavía: las migraciones se escriben versionadas
-y ordenadas para aplicarse por MCP en cuanto exista, sin pasos manuales.
+Desde F1 se añaden pruebas de integración de RLS y concurrencia contra una base
+Supabase de pruebas, nunca producción. El proyecto de producción ya existe y
+tiene aplicadas las migraciones 0001–0022 y 0901–0903. La migración 0904 de
+gobierno global está versionada localmente y pendiente de aplicar y verificar,
+porque el acceso de gestión actual no lista el proyecto de SobreTaula. Aún no
+hay un proyecto de pruebas dedicado, por lo que las pruebas RLS quedan omitidas
+y no se ejecuta ningún humo contra producción.

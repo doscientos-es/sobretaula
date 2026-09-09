@@ -10,6 +10,7 @@ import {
   FormFeedback,
   Input,
   PageHeader,
+  PageHeaderDescription,
   PageHeaderTitle,
   useFormFeedback,
 } from '@doscientos/ui'
@@ -61,8 +62,13 @@ export function VenueCreatePage({
 
   return (
     <section className="space-y-6">
-      <PageHeader>
-        <PageHeaderTitle>{t('venue.create.title')}</PageHeaderTitle>
+      <PageHeader className="border-border/70 border-b pb-6">
+        <div>
+          <PageHeaderTitle>{t('venue.create.title')}</PageHeaderTitle>
+          <PageHeaderDescription>
+            Añade un nuevo espacio y mantén cada local organizado desde el mismo lugar.
+          </PageHeaderDescription>
+        </div>
       </PageHeader>
       <Card className="max-w-xl">
         <CardHeader>

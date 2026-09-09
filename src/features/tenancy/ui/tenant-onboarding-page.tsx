@@ -11,6 +11,7 @@ import {
   Input,
   useFormFeedback,
 } from '@doscientos/ui'
+import { Building2, CircleCheck } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 
 import { tenantSlugCandidate } from '../application/onboarding-schema'
@@ -62,104 +63,124 @@ export function TenantOnboardingPage() {
   }
 
   return (
-    <main className="mx-auto max-w-2xl p-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Configura tu restaurante</CardTitle>
-          <CardDescription>
-            El primer año cuesta 99 € al mes, sin IVA. Después serán 300 € al mes, sin IVA. Antes de
-            activar el restaurante te solicitaremos la autorización segura de pago.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form className="space-y-5" onSubmit={(event) => void submit(event)}>
-            <div className="grid gap-5 sm:grid-cols-2">
-              <Field>
-                <FieldLabel htmlFor="tenant-name">Nombre comercial</FieldLabel>
-                <Input
-                  id="tenant-name"
-                  onChange={(event) => changeName(event.target.value)}
-                  required
-                  value={name}
-                />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="tenant-slug">Dirección de SobreTaula</FieldLabel>
-                <Input
-                  id="tenant-slug"
-                  onChange={(event) => {
-                    setSlugEdited(true)
-                    setSlug(event.target.value)
-                  }}
-                  pattern="[a-z0-9][a-z0-9-]{1,48}[a-z0-9]"
-                  required
-                  value={slug}
-                />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="legal-name">Razón social</FieldLabel>
-                <Input
-                  id="legal-name"
-                  onChange={(event) => setLegalName(event.target.value)}
-                  required
-                  value={legalName}
-                />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="tax-id">NIF/CIF</FieldLabel>
-                <Input
-                  id="tax-id"
-                  onChange={(event) => setTaxId(event.target.value)}
-                  required
-                  value={taxId}
-                />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="billing-email">Correo de facturación</FieldLabel>
-                <Input
-                  autoComplete="email"
-                  id="billing-email"
-                  onChange={(event) => setEmail(event.target.value)}
-                  required
-                  type="email"
-                  value={email}
-                />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="address">Dirección fiscal</FieldLabel>
-                <Input
-                  id="address"
-                  onChange={(event) => setAddressLine(event.target.value)}
-                  required
-                  value={addressLine}
-                />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="city">Ciudad</FieldLabel>
-                <Input
-                  id="city"
-                  onChange={(event) => setCity(event.target.value)}
-                  required
-                  value={city}
-                />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="postal-code">Código postal</FieldLabel>
-                <Input
-                  id="postal-code"
-                  onChange={(event) => setPostalCode(event.target.value)}
-                  required
-                  value={postalCode}
-                />
-              </Field>
+    <main className="st-auth-shell py-10">
+      <span aria-hidden="true" className="st-auth-orb st-auth-orb--lime" />
+      <span aria-hidden="true" className="st-auth-orb st-auth-orb--mint" />
+      <section className="relative w-full max-w-3xl">
+        <div className="mb-6 max-w-xl">
+          <h1 className="text-foreground mt-2 text-4xl tracking-[-0.05em]">
+            Vamos a preparar tu casa.
+          </h1>
+          <p className="text-muted-foreground mt-2 text-sm leading-6">
+            Completa los datos esenciales. Configurarás la sala y el equipo justo después.
+          </p>
+        </div>
+        <Card className="st-auth-card">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <span className="st-brand-mark">
+                <Building2 className="size-5" />
+              </span>
+              <span className="text-success inline-flex items-center gap-1.5 text-sm font-medium">
+                <CircleCheck className="size-4" /> Datos protegidos
+              </span>
             </div>
-            <FormFeedback pendingLabel="Guardando configuración…" state={feedback.state} />
-            <Button disabled={feedback.pending} type="submit">
-              Continuar con el pago
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+            <CardTitle>Configura tu restaurante</CardTitle>
+            <CardDescription>
+              El primer año cuesta 99 € al mes, sin IVA. Después serán 300 € al mes, sin IVA. Antes
+              de activar el restaurante te solicitaremos la autorización segura de pago.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form className="space-y-5" onSubmit={(event) => void submit(event)}>
+              <div className="grid gap-5 sm:grid-cols-2">
+                <Field>
+                  <FieldLabel htmlFor="tenant-name">Nombre comercial</FieldLabel>
+                  <Input
+                    id="tenant-name"
+                    onChange={(event) => changeName(event.target.value)}
+                    required
+                    value={name}
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="tenant-slug">Dirección de SobreTaula</FieldLabel>
+                  <Input
+                    id="tenant-slug"
+                    onChange={(event) => {
+                      setSlugEdited(true)
+                      setSlug(event.target.value)
+                    }}
+                    pattern="[a-z0-9][a-z0-9-]{1,48}[a-z0-9]"
+                    required
+                    value={slug}
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="legal-name">Razón social</FieldLabel>
+                  <Input
+                    id="legal-name"
+                    onChange={(event) => setLegalName(event.target.value)}
+                    required
+                    value={legalName}
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="tax-id">NIF/CIF</FieldLabel>
+                  <Input
+                    id="tax-id"
+                    onChange={(event) => setTaxId(event.target.value)}
+                    required
+                    value={taxId}
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="billing-email">Correo de facturación</FieldLabel>
+                  <Input
+                    autoComplete="email"
+                    id="billing-email"
+                    onChange={(event) => setEmail(event.target.value)}
+                    required
+                    type="email"
+                    value={email}
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="address">Dirección fiscal</FieldLabel>
+                  <Input
+                    id="address"
+                    onChange={(event) => setAddressLine(event.target.value)}
+                    required
+                    value={addressLine}
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="city">Ciudad</FieldLabel>
+                  <Input
+                    id="city"
+                    onChange={(event) => setCity(event.target.value)}
+                    required
+                    value={city}
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="postal-code">Código postal</FieldLabel>
+                  <Input
+                    id="postal-code"
+                    onChange={(event) => setPostalCode(event.target.value)}
+                    required
+                    value={postalCode}
+                  />
+                </Field>
+              </div>
+              <FormFeedback pendingLabel="Guardando configuración…" state={feedback.state} />
+              <Button disabled={feedback.pending} size="lg" type="submit">
+                Continuar con el pago
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </section>
     </main>
   )
 }

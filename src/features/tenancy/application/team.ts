@@ -8,6 +8,7 @@ import {
   createRequestSupabaseClient,
   createServiceSupabaseClient,
 } from '@/shared/lib/supabase/server/create-server-client'
+import { indexProfilesByUserId } from '@/shared/lib/supabase/profile-index'
 
 import { ASSIGNABLE_TENANT_ROLES, canAssignTeamRole } from '../domain/team'
 import { TENANT_ROLES } from '../domain/tenant'
@@ -72,7 +73,7 @@ export const getTenantTeam = createServerFn({ method: 'GET' })
     const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
     const membersResult = await supabase
       .from('memberships')
-      .select('user_id, role, status, profiles(display_name, email)')
+      .select('user_id, role, status')
       .eq('tenant_id', data.tenantId)
       .order('created_at')
     const invitationsResult =
@@ -86,6 +87,16 @@ export const getTenantTeam = createServerFn({ method: 'GET' })
             .order('created_at')
         : { data: [], error: null }
     if (membersResult.error || invitationsResult.error) throw new Error('tenant_team_load_failed')
+    const memberUserIds = (membersResult.data ?? []).map((member) => member.user_id)
+    const profilesResult =
+      memberUserIds.length === 0
+        ? { data: [], error: null }
+        : await supabase
+            .from('profiles')
+            .select('display_name, email, user_id')
+            .in('user_id', memberUserIds)
+    if (profilesResult.error) throw new Error('tenant_team_profiles_load_failed')
+    const profilesByUserId = indexProfilesByUserId(profilesResult.data ?? [])
 
     return {
       invitations: (invitationsResult.data ?? []).map((invitation) => ({
@@ -94,7 +105,7 @@ export const getTenantTeam = createServerFn({ method: 'GET' })
         role: assignableRoleInput.parse(invitation.role),
       })),
       members: (membersResult.data ?? []).map((member) => {
-        const profile = Array.isArray(member.profiles) ? member.profiles[0] : member.profiles
+        const profile = profilesByUserId.get(member.user_id)
         return {
           email: profile?.email ?? 'Sin correo disponible',
           name: profile?.display_name ?? 'Usuario pendiente',

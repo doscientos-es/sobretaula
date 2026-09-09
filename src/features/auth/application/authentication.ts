@@ -10,9 +10,10 @@ import {
 import type { AuthSessionData } from '../domain/auth'
 import { authSessionConfig, toAuthSessionData } from '../infrastructure/server/session'
 
-const loginInput = z.object({
-  email: z.string().trim().email(),
+export const loginInput = z.object({
+  email: z.string().trim().toLowerCase().email().max(254),
   password: z.string().min(1).max(256),
+  rememberSession: z.boolean().default(false),
 })
 
 export const login = createServerFn({ method: 'POST' })
@@ -21,7 +22,7 @@ export const login = createServerFn({ method: 'POST' })
     const { data: result, error } = await createAnonSupabaseClient().auth.signInWithPassword(data)
     if (error || !result.session) return { ok: false as const }
 
-    const session = await useSession<AuthSessionData>(authSessionConfig())
+    const session = await useSession<AuthSessionData>(authSessionConfig(data.rememberSession))
     await session.update(toAuthSessionData(result.session))
     return { ok: true as const }
   })

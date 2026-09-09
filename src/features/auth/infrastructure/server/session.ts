@@ -1,8 +1,9 @@
 import type { AuthSessionData } from '../../domain/auth'
 
 const SESSION_MAX_AGE_SECONDS = 8 * 60 * 60
+const REMEMBERED_SESSION_MAX_AGE_SECONDS = 30 * 24 * 60 * 60
 
-export function authSessionConfig() {
+export function authSessionConfig(rememberSession = false) {
   const password = process.env.SESSION_PASSWORD
   if (!password) throw new Error('Falta la variable de entorno SESSION_PASSWORD.')
 
@@ -13,7 +14,7 @@ export function authSessionConfig() {
       sameSite: 'lax' as const,
       secure: process.env.NODE_ENV === 'production',
     },
-    maxAge: SESSION_MAX_AGE_SECONDS,
+    maxAge: rememberSession ? REMEMBERED_SESSION_MAX_AGE_SECONDS : SESSION_MAX_AGE_SECONDS,
     name:
       process.env.NODE_ENV === 'production' ? '__Host-sobretaula-session' : 'sobretaula-session',
     password,

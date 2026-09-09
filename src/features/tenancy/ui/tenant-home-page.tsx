@@ -3,6 +3,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  MetricCard,
   PageHeader,
   PageHeaderDescription,
   PageHeaderTitle,
@@ -18,7 +19,7 @@ export function TenantHomePage({ tenant }: { tenant: Tenant }) {
 
   return (
     <section className="space-y-7">
-      <PageHeader>
+      <PageHeader className="border-border/70 border-b pb-6">
         <div>
           <PageHeaderTitle>Buenos días</PageHeaderTitle>
           <PageHeaderDescription>
@@ -34,24 +35,15 @@ export function TenantHomePage({ tenant }: { tenant: Tenant }) {
             ['Facturación del día', '1.284 €', '+8,4% vs. ayer', Euro, '#64c59a'],
             ['Próximo servicio', '20:30', 'Cena · 42 comensales', Clock3, '#d29cff'],
           ] as [string, string, string, LucideIcon, string][]
-        ).map(([label, value, meta, Icon, color]) => (
-          <Card key={String(label)}>
-            <CardContent className="p-5">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-muted-foreground text-sm">{label}</p>
-                  <p className="mt-3 text-3xl font-semibold tracking-[-0.04em]">{value}</p>
-                  <p className="text-muted-foreground mt-2 text-xs">{meta}</p>
-                </div>
-                <span
-                  className="flex size-10 items-center justify-center rounded-xl"
-                  style={{ backgroundColor: `${String(color)}22`, color: String(color) }}
-                >
-                  <Icon className="size-5" />
-                </span>
-              </div>
-            </CardContent>
-          </Card>
+        ).map(([label, value, meta, Icon], index) => (
+          <MetricCard
+            description={meta}
+            icon={<Icon />}
+            key={String(label)}
+            label={label}
+            tone={index === 2 ? 'success' : index === 3 ? 'info' : 'default'}
+            value={value}
+          />
         ))}
       </div>
       <Card>

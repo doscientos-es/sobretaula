@@ -25,11 +25,11 @@ export function VenueSwitcher({
 
   return (
     <div>
-      <p className="text-muted-foreground mt-8 px-2 text-[11px] font-semibold tracking-[0.16em] uppercase">
+      <p className="st-sidebar-section mt-8 px-2 text-sm font-medium">
         {t('venue.section')}
       </p>
       {venues.length === 0 ? (
-        <p className="text-muted-foreground mt-3 px-2 text-sm">{t('venue.empty')}</p>
+        <p className="mt-3 px-2 text-sm text-white/65">{t('venue.empty')}</p>
       ) : (
         <nav aria-label={t('venue.section')} className="mt-3 space-y-1">
           {venues.map((venue) => (
@@ -40,8 +40,8 @@ export function VenueSwitcher({
               aria-current={venue.slug === activeVenueSlug ? 'true' : undefined}
               className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
                 venue.slug === activeVenueSlug
-                  ? 'bg-secondary text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                  ? 'st-venue-link st-venue-link--active'
+                  : 'st-venue-link'
               }`}
             >
               <Store className="size-4" />
@@ -53,7 +53,7 @@ export function VenueSwitcher({
       <Link
         to="/t/$slug/l/nuevo"
         params={{ slug: tenantSlug }}
-        className="text-muted-foreground hover:bg-secondary hover:text-foreground mt-1 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors"
+        className="st-venue-link mt-1 flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors"
       >
         <Plus className="size-4" />
         {t('venue.create.title')}

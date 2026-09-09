@@ -11,12 +11,17 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ActivarCuentaRouteImport } from './routes/activar-cuenta'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as InvitacionRouteImport } from './routes/invitacion'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as RegistroRouteImport } from './routes/registro'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AdminAjustesRouteImport } from './routes/admin.ajustes'
+import { Route as AdminEquipoRouteImport } from './routes/admin.equipo'
+import { Route as AdminFacturacionRouteImport } from './routes/admin.facturacion'
 import { Route as AdminFacturasRouteImport } from './routes/admin.facturas'
+import { Route as AdminInvitacionRouteImport } from './routes/admin.invitacion'
 import { Route as TSlugRouteImport } from './routes/t.$slug'
 import { Route as ApiPlatformBillingReconcileRouteImport } from './routes/api.platform-billing.reconcile'
 import { Route as ApiWebhooksRedsysRouteImport } from './routes/api.webhooks.redsys'
@@ -44,6 +49,11 @@ const ActivarCuentaRoute = ActivarCuentaRouteImport.update({
   path: '/activar-cuenta',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const InvitacionRoute = InvitacionRouteImport.update({
   id: '/invitacion',
   path: '/invitacion',
@@ -65,14 +75,34 @@ const RegistroRoute = RegistroRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
-  id: '/admin/',
-  path: '/admin/',
-  getParentRoute: () => rootRouteImport,
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAjustesRoute = AdminAjustesRouteImport.update({
+  id: '/ajustes',
+  path: '/ajustes',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminEquipoRoute = AdminEquipoRouteImport.update({
+  id: '/equipo',
+  path: '/equipo',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminFacturacionRoute = AdminFacturacionRouteImport.update({
+  id: '/facturacion',
+  path: '/facturacion',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AdminFacturasRoute = AdminFacturasRouteImport.update({
-  id: '/admin/facturas',
-  path: '/admin/facturas',
-  getParentRoute: () => rootRouteImport,
+  id: '/facturas',
+  path: '/facturas',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminInvitacionRoute = AdminInvitacionRouteImport.update({
+  id: '/invitacion',
+  path: '/invitacion',
+  getParentRoute: () => AdminRoute,
 } as any)
 const TSlugRoute = TSlugRouteImport.update({
   id: '/t/$slug',
@@ -161,11 +191,16 @@ const TSlugLVenueCuentaSessionIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/activar-cuenta': typeof ActivarCuentaRoute
+  '/admin': typeof AdminRouteWithChildren
   '/invitacion': typeof InvitacionRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/registro': typeof RegistroRoute
+  '/admin/ajustes': typeof AdminAjustesRoute
+  '/admin/equipo': typeof AdminEquipoRoute
+  '/admin/facturacion': typeof AdminFacturacionRoute
   '/admin/facturas': typeof AdminFacturasRoute
+  '/admin/invitacion': typeof AdminInvitacionRoute
   '/t/$slug': typeof TSlugRouteWithChildren
   '/admin/': typeof AdminIndexRoute
   '/api/platform-billing/reconcile': typeof ApiPlatformBillingReconcileRoute
@@ -191,7 +226,11 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/registro': typeof RegistroRoute
+  '/admin/ajustes': typeof AdminAjustesRoute
+  '/admin/equipo': typeof AdminEquipoRoute
+  '/admin/facturacion': typeof AdminFacturacionRoute
   '/admin/facturas': typeof AdminFacturasRoute
+  '/admin/invitacion': typeof AdminInvitacionRoute
   '/admin': typeof AdminIndexRoute
   '/api/platform-billing/reconcile': typeof ApiPlatformBillingReconcileRoute
   '/api/webhooks/redsys': typeof ApiWebhooksRedsysRoute
@@ -212,11 +251,16 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/activar-cuenta': typeof ActivarCuentaRoute
+  '/admin': typeof AdminRouteWithChildren
   '/invitacion': typeof InvitacionRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/registro': typeof RegistroRoute
+  '/admin/ajustes': typeof AdminAjustesRoute
+  '/admin/equipo': typeof AdminEquipoRoute
+  '/admin/facturacion': typeof AdminFacturacionRoute
   '/admin/facturas': typeof AdminFacturasRoute
+  '/admin/invitacion': typeof AdminInvitacionRoute
   '/t/$slug': typeof TSlugRouteWithChildren
   '/admin/': typeof AdminIndexRoute
   '/api/platform-billing/reconcile': typeof ApiPlatformBillingReconcileRoute
@@ -240,11 +284,16 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/activar-cuenta'
+    | '/admin'
     | '/invitacion'
     | '/login'
     | '/onboarding'
     | '/registro'
+    | '/admin/ajustes'
+    | '/admin/equipo'
+    | '/admin/facturacion'
     | '/admin/facturas'
+    | '/admin/invitacion'
     | '/t/$slug'
     | '/admin/'
     | '/api/platform-billing/reconcile'
@@ -270,7 +319,11 @@ export interface FileRouteTypes {
     | '/login'
     | '/onboarding'
     | '/registro'
+    | '/admin/ajustes'
+    | '/admin/equipo'
+    | '/admin/facturacion'
     | '/admin/facturas'
+    | '/admin/invitacion'
     | '/admin'
     | '/api/platform-billing/reconcile'
     | '/api/webhooks/redsys'
@@ -290,11 +343,16 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/activar-cuenta'
+    | '/admin'
     | '/invitacion'
     | '/login'
     | '/onboarding'
     | '/registro'
+    | '/admin/ajustes'
+    | '/admin/equipo'
+    | '/admin/facturacion'
     | '/admin/facturas'
+    | '/admin/invitacion'
     | '/t/$slug'
     | '/admin/'
     | '/api/platform-billing/reconcile'
@@ -317,13 +375,12 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ActivarCuentaRoute: typeof ActivarCuentaRoute
+  AdminRoute: typeof AdminRouteWithChildren
   InvitacionRoute: typeof InvitacionRoute
   LoginRoute: typeof LoginRoute
   OnboardingRoute: typeof OnboardingRoute
   RegistroRoute: typeof RegistroRoute
-  AdminFacturasRoute: typeof AdminFacturasRoute
   TSlugRoute: typeof TSlugRouteWithChildren
-  AdminIndexRoute: typeof AdminIndexRoute
   ApiPlatformBillingReconcileRoute: typeof ApiPlatformBillingReconcileRoute
   ApiWebhooksRedsysRoute: typeof ApiWebhooksRedsysRoute
 }
@@ -342,6 +399,13 @@ declare module '@tanstack/react-router' {
       path: '/activar-cuenta'
       fullPath: '/activar-cuenta'
       preLoaderRoute: typeof ActivarCuentaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/invitacion': {
@@ -374,17 +438,45 @@ declare module '@tanstack/react-router' {
     }
     '/admin/': {
       id: '/admin/'
-      path: '/admin'
+      path: '/'
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/ajustes': {
+      id: '/admin/ajustes'
+      path: '/ajustes'
+      fullPath: '/admin/ajustes'
+      preLoaderRoute: typeof AdminAjustesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/equipo': {
+      id: '/admin/equipo'
+      path: '/equipo'
+      fullPath: '/admin/equipo'
+      preLoaderRoute: typeof AdminEquipoRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/facturacion': {
+      id: '/admin/facturacion'
+      path: '/facturacion'
+      fullPath: '/admin/facturacion'
+      preLoaderRoute: typeof AdminFacturacionRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/admin/facturas': {
       id: '/admin/facturas'
-      path: '/admin/facturas'
+      path: '/facturas'
       fullPath: '/admin/facturas'
       preLoaderRoute: typeof AdminFacturasRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/invitacion': {
+      id: '/admin/invitacion'
+      path: '/invitacion'
+      fullPath: '/admin/invitacion'
+      preLoaderRoute: typeof AdminInvitacionRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/t/$slug': {
       id: '/t/$slug'
@@ -501,6 +593,26 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AdminRouteChildren {
+  AdminAjustesRoute: typeof AdminAjustesRoute
+  AdminEquipoRoute: typeof AdminEquipoRoute
+  AdminFacturacionRoute: typeof AdminFacturacionRoute
+  AdminFacturasRoute: typeof AdminFacturasRoute
+  AdminInvitacionRoute: typeof AdminInvitacionRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminAjustesRoute: AdminAjustesRoute,
+  AdminEquipoRoute: AdminEquipoRoute,
+  AdminFacturacionRoute: AdminFacturacionRoute,
+  AdminFacturasRoute: AdminFacturasRoute,
+  AdminInvitacionRoute: AdminInvitacionRoute,
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 interface TSlugLVenueRouteChildren {
   TSlugLVenuePlanoRoute: typeof TSlugLVenuePlanoRoute
   TSlugLVenueReservasRoute: typeof TSlugLVenueReservasRoute
@@ -548,13 +660,12 @@ const TSlugRouteWithChildren = TSlugRoute._addFileChildren(TSlugRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ActivarCuentaRoute: ActivarCuentaRoute,
+  AdminRoute: AdminRouteWithChildren,
   InvitacionRoute: InvitacionRoute,
   LoginRoute: LoginRoute,
   OnboardingRoute: OnboardingRoute,
   RegistroRoute: RegistroRoute,
-  AdminFacturasRoute: AdminFacturasRoute,
   TSlugRoute: TSlugRouteWithChildren,
-  AdminIndexRoute: AdminIndexRoute,
   ApiPlatformBillingReconcileRoute: ApiPlatformBillingReconcileRoute,
   ApiWebhooksRedsysRoute: ApiWebhooksRedsysRoute,
 }

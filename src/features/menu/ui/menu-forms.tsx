@@ -99,7 +99,7 @@ export function MenuForms({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 lg:sticky lg:top-6 lg:self-start">
       <Card>
         <CardHeader>
           <CardTitle>Nueva categoría</CardTitle>

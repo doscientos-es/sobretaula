@@ -1,8 +1,11 @@
 # Modelo de datos
 
-Borrador de F0. Se materializa en `supabase/migrations/` de forma incremental,
-una migración pequeña por fase. Toda tabla de negocio lleva `tenant_id uuid not
-null` y RLS forzada ([ADR-0002](./adr/0002-multitenancy-rls.md)).
+Diseño de F0 materializado incrementalmente en `supabase/migrations/`: las
+migraciones 0001–0022 y 0901–0903 están aplicadas en el proyecto de producción;
+la 0904 de gobierno de plataforma está pendiente de aplicar y verificar.
+El documento conserva el contrato del modelo y se actualiza junto a cada cambio
+de esquema. Toda tabla de negocio lleva `tenant_id uuid not null` y RLS forzada
+([ADR-0002](./adr/0002-multitenancy-rls.md)).
 
 Convenciones: claves `uuid` con `gen_random_uuid()`; `created_at`/`updated_at`
 `timestamptz`; fechas de negocio `date` en la zona del `venue`; importes en
@@ -15,6 +18,8 @@ Convenciones: claves `uuid` con `gen_random_uuid()`; `created_at`/`updated_at`
 | `tenants`                            | `slug` único, nombre, estado (`setup_pending`,`trial`,`active`,`suspended`), `default_locale`, `timezone` |
 | `tenant_slug_history`                | Slugs anteriores para redirección                                                                         |
 | `platform_members`                   | Operadores Doscientos y su rol global                                                                     |
+| `platform_invitations`               | Invitaciones de operador con hash de token, correo, rol, caducidad y aceptación de un solo uso            |
+| `platform_audit_log`                 | Bitácora append-only de invitaciones, roles y cambios manuales de estado de tenant                        |
 | `support_access_log`                 | Acceso de soporte a un tenant: quién, cuándo, motivo, caducidad                                           |
 | `plans` / `plan_entitlements`        | Planes y módulos habilitados por plan                                                                     |
 | `subscriptions`                      | Plan del tenant, estado, periodo, vencimiento y gracia                                                    |

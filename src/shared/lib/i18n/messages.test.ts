@@ -12,4 +12,9 @@ describe('translate', () => {
     const t = createTranslator('ca')
     expect(t('nav.invoices')).toBe('Factures')
   })
+
+  it('ships guidance for the full-page error state in every locale', () => {
+    expect(translate('es', 'error.help.title')).toBe('Mientras tanto, puedes probar esto')
+    expect(translate('ca', 'error.help.title')).toBe('Mentrestant, pots provar això')
+  })
 })

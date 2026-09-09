@@ -6,6 +6,7 @@ import {
   CardHeader,
   CardTitle,
   PageHeader,
+  PageHeaderDescription,
   PageHeaderTitle,
 } from '@doscientos/ui'
 import { useState } from 'react'
@@ -45,8 +46,13 @@ export function ServicePage({
 
   return (
     <section className="space-y-6">
-      <PageHeader>
-        <PageHeaderTitle>Servicio</PageHeaderTitle>
+      <PageHeader className="border-border/70 border-b pb-6">
+        <div>
+          <PageHeaderTitle>Servicio</PageHeaderTitle>
+          <PageHeaderDescription>
+            Consulta el estado de cada mesa, recibe a los comensales y lleva sus cuentas al día.
+          </PageHeaderDescription>
+        </div>
       </PageHeader>
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="space-y-6">
@@ -55,7 +61,7 @@ export function ServicePage({
               <CardHeader>
                 <CardTitle>{activeVersion.name}</CardTitle>
                 <CardDescription>
-                  Rojo ocupada, azul reservada, gris libre. Selecciona mesas en la lista.
+                  Rojo ocupada, verde reservada, gris libre. Selecciona mesas en la lista.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -98,7 +104,7 @@ export function ServicePage({
             </CardContent>
           </Card>
         </div>
-        <div className="space-y-6">
+        <aside className="space-y-6 lg:sticky lg:top-6 lg:self-start">
           <ServiceActions
             board={board}
             onDone={reload}
@@ -113,7 +119,7 @@ export function ServicePage({
             tenantId={tenantId}
             venueId={venueId}
           />
-        </div>
+        </aside>
       </div>
     </section>
   )

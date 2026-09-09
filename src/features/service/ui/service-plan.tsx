@@ -28,7 +28,7 @@ export function ServicePlan({
   return (
     <svg
       aria-hidden="true"
-      className="border-border bg-muted/30 h-auto w-full rounded-md border"
+      className="border-border bg-muted/30 h-auto w-full rounded-xl border shadow-inner"
       focusable="false"
       viewBox={`0 0 ${version.widthCm} ${version.heightCm}`}
     >

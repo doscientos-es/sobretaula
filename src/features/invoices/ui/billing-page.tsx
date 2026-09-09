@@ -9,6 +9,9 @@ import {
   FieldLabel,
   FormFeedback,
   Input,
+  PageHeader,
+  PageHeaderDescription,
+  PageHeaderTitle,
   Table,
   TableBody,
   TableCell,
@@ -46,6 +49,14 @@ export function BillingPage({
 }) {
   return (
     <section className="space-y-6">
+      <PageHeader className="border-border/70 border-b pb-6">
+        <div>
+          <PageHeaderTitle>Facturación</PageHeaderTitle>
+          <PageHeaderDescription>
+            Configura la identidad de emisión, las series y el libro de facturas del restaurante.
+          </PageHeaderDescription>
+        </div>
+      </PageHeader>
       <FiscalSettingsCard onDone={onDone} settings={overview.settings} tenantId={tenantId} />
       <SeriesCard onDone={onDone} series={overview.series} tenantId={tenantId} />
       <InvoiceBookCard invoices={overview.invoices} locale={locale} tenantId={tenantId} />

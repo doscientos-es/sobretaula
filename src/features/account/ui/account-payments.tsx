@@ -84,7 +84,7 @@ export function AccountPayments({
         <CardDescription>Los importes salen de la carta con IVA incluido.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <dl className="space-y-1 text-sm">
+        <dl className="bg-surface-subtle space-y-2 rounded-xl p-4 text-sm">
           <div className="flex justify-between">
             <dt className="text-muted-foreground">Neto</dt>
             <dd className="tabular-nums">{formatMoney(totals.netCents, locale)}</dd>
@@ -101,9 +101,11 @@ export function AccountPayments({
             <dt className="text-muted-foreground">Pagado</dt>
             <dd className="tabular-nums">{formatMoney(totals.paidCents, locale)}</dd>
           </div>
-          <div className="flex justify-between font-semibold">
+          <div className="border-border/70 flex justify-between border-t pt-2 font-semibold">
             <dt>Pendiente</dt>
-            <dd className="tabular-nums">{formatMoney(totals.balanceCents, locale)}</dd>
+            <dd className="text-primary tabular-nums">
+              {formatMoney(totals.balanceCents, locale)}
+            </dd>
           </div>
         </dl>
         {!open && <p className="text-muted-foreground text-sm">La cuenta está cerrada.</p>}
