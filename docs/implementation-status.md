@@ -8,30 +8,30 @@ reproducible (comando ejecutado y su resultado).
 
 ## Fases
 
-| Fase                   | Entregable                                                                 | Estado    |
-| ---------------------- | -------------------------------------------------------------------------- | --------- |
-| F0 · Papeleo           | `project-design.md`, `data-model.md`, ADR 0001–0007                        | Hecho     |
-| F0 · Esqueleto         | Proyecto Start, `@doscientos/configs`, CI, `.env.example`                  | Hecho     |
-| F1 · Tenancy + Auth    | Migraciones, RLS, `/t/:slug`, perfiles global y tenant                     | Parcial   |
-| F1b · Billing SaaS     | Precios, Founders, cobro Redsys, gracia, facturas SaaS y suspensión segura | Parcial   |
-| F2 · Diseñador de sala | Editor SVG, snap, historial, elementos y layouts versionados               | Hecho     |
-| F3 · Motor de reservas | Turnos, pacing, disponibilidad, best-fit, EXCLUDE                          | Hecho     |
-| F4 · Vista de servicio | Plano en vivo, sentar/mover/unir, walk-ins, espera                         | Hecho     |
-| F5 · Cuenta de mesa    | Catálogo, líneas, dividir, cerrar, cobrar                                  | Hecho     |
-| F6 · Facturación       | Ajustes fiscales, series, ledger/outbox, PDF, modo test                    | Hecho     |
-| F7 · Entrega           | Documentación operativa, smoke, despliegue autorizado                      | Pendiente |
+| Fase                   | Entregable                                                                 | Estado  |
+| ---------------------- | -------------------------------------------------------------------------- | ------- |
+| F0 · Papeleo           | `project-design.md`, `data-model.md`, ADR 0001–0007                        | Hecho   |
+| F0 · Esqueleto         | Proyecto Start, `@doscientos/configs`, CI, `.env.example`                  | Hecho   |
+| F1 · Tenancy + Auth    | Migraciones, RLS, `/t/:slug`, perfiles global y tenant                     | Parcial |
+| F1b · Billing SaaS     | Precios, Founders, cobro Redsys, gracia, facturas SaaS y suspensión segura | Parcial |
+| F2 · Diseñador de sala | Editor SVG, snap, historial, elementos y layouts versionados               | Hecho   |
+| F3 · Motor de reservas | Turnos, pacing, disponibilidad, best-fit, EXCLUDE                          | Hecho   |
+| F4 · Vista de servicio | Plano en vivo, sentar/mover/unir, walk-ins, espera                         | Hecho   |
+| F5 · Cuenta de mesa    | Catálogo, líneas, dividir, cerrar, cobrar                                  | Hecho   |
+| F6 · Facturación       | Ajustes fiscales, series, ledger/outbox, PDF, modo test                    | Hecho   |
+| F7 · Entrega           | Documentación operativa, smoke, despliegue autorizado                      | Parcial |
 
 ## Puerta de adopción de TanStack Start (ADR-0001)
 
-| #   | Evidencia                                                            | Estado                                                      |
-| --- | -------------------------------------------------------------------- | ----------------------------------------------------------- |
-| 1   | Instalación limpia, tipos, lint, tests y build del artefacto Node    | Hecho                                                       |
-| 2   | Login/logout/expiración y refresh sin caché compartida               | Implementado; pendiente de smoke contra Supabase de pruebas |
-| 3   | Endpoint directo: tenant ajeno → 403, anónimo → 401                  | Implementado; pendiente de smoke contra Supabase de pruebas |
-| 4   | Listado con URL, loader, pending/error, reintento, invalidación      | Pendiente                                                   |
-| 5   | Emisión concurrente idempotente sin números duplicados               | Pendiente                                                   |
-| 6   | PDF privado; descarga cruzada denegada; fiscalidad fuera del cliente | Pendiente                                                   |
-| 7   | Integración fiscal en `mock`/`test` y compatibilidad del runtime     | Pendiente                                                   |
+| #   | Evidencia                                                            | Estado                                                                                   |
+| --- | -------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| 1   | Instalación limpia, tipos, lint, tests y build del artefacto Node    | Hecho                                                                                    |
+| 2   | Login/logout/expiración y refresh sin caché compartida               | Implementado; smoke `anonymous-access-smoke.test.ts` listo contra Supabase de pruebas    |
+| 3   | Endpoint directo: tenant ajeno → 403, anónimo → 401                  | Implementado; smoke `anonymous-access-smoke.test.ts` + `tenant-rls.test.ts` listos       |
+| 4   | Listado con URL, loader, pending/error, reintento, invalidación      | Hecho: estados de root + invalidación en sitio (`useLoaderReload`) en todas las rutas    |
+| 5   | Emisión concurrente idempotente sin números duplicados               | Implementado; smoke `invoice-concurrency-smoke.test.ts` listo contra Supabase de pruebas |
+| 6   | PDF privado; descarga cruzada denegada; fiscalidad fuera del cliente | Implementado; smoke `invoice-documents-smoke.test.ts` listo contra Supabase de pruebas   |
+| 7   | Integración fiscal en `mock`/`test` y compatibilidad del runtime     | Pendiente: requiere runtime real y certificado, fuera del MVP                            |
 
 ## Checklist previa a VERI\*FACTU `prod` (ADR-0005)
 

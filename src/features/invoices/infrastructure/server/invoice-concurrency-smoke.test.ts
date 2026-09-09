@@ -112,8 +112,11 @@ describeSmoke('invoice number reservation concurrency', () => {
 
     expect(first.error).toBeNull()
     expect(second.error).toBeNull()
-    const numbers = [first.data as number, second.data as number].sort((a, b) => a - b)
-    expect(numbers[1] - numbers[0]).toBe(1)
+    expect(first.data).toBeDefined()
+    expect(second.data).toBeDefined()
+    const firstNumber = first.data as number
+    const secondNumber = second.data as number
+    expect(Math.abs(secondNumber - firstNumber)).toBe(1)
   })
 
   it('rejects reservation without a membership role allowed to invoice', async () => {
