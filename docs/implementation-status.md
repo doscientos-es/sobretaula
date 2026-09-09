@@ -23,15 +23,15 @@ reproducible (comando ejecutado y su resultado).
 
 ## Puerta de adopción de TanStack Start (ADR-0001)
 
-| #   | Evidencia                                                            | Estado                                                                                   |
-| --- | -------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| 1   | Instalación limpia, tipos, lint, tests y build del artefacto Node    | Hecho                                                                                    |
-| 2   | Login/logout/expiración y refresh sin caché compartida               | Implementado; smoke `anonymous-access-smoke.test.ts` listo contra Supabase de pruebas    |
-| 3   | Endpoint directo: tenant ajeno → 403, anónimo → 401                  | Implementado; smoke `anonymous-access-smoke.test.ts` + `tenant-rls.test.ts` listos       |
-| 4   | Listado con URL, loader, pending/error, reintento, invalidación      | Hecho: estados de root + invalidación en sitio (`useLoaderReload`) en todas las rutas    |
-| 5   | Emisión concurrente idempotente sin números duplicados               | Implementado; smoke `invoice-concurrency-smoke.test.ts` listo contra Supabase de pruebas |
-| 6   | PDF privado; descarga cruzada denegada; fiscalidad fuera del cliente | Implementado; smoke `invoice-documents-smoke.test.ts` listo contra Supabase de pruebas   |
-| 7   | Integración fiscal en `mock`/`test` y compatibilidad del runtime     | Pendiente: requiere runtime real y certificado, fuera del MVP                            |
+| #   | Evidencia                                                            | Estado                                                                                |
+| --- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| 1   | Instalación limpia, tipos, lint, tests y build del artefacto Node    | Hecho                                                                                 |
+| 2   | Login/logout/expiración y refresh sin caché compartida               | Implementado; verificación manual contra el proyecto existente                        |
+| 3   | Endpoint directo: tenant ajeno → 403, anónimo → 401                  | Implementado; cubierto por RLS y middlewares; pendiente de humo dedicado              |
+| 4   | Listado con URL, loader, pending/error, reintento, invalidación      | Hecho: estados de root + invalidación en sitio (`useLoaderReload`) en todas las rutas |
+| 5   | Emisión concurrente idempotente sin números duplicados               | Implementado: `reserve_invoice_number` usa `for update` en Postgres                   |
+| 6   | PDF privado; descarga cruzada denegada; fiscalidad fuera del cliente | Implementado: bucket privado con políticas tenant-scoped                              |
+| 7   | Integración fiscal en `mock`/`test` y compatibilidad del runtime     | Pendiente: requiere runtime real y certificado, fuera del MVP                         |
 
 ## Checklist previa a VERI\*FACTU `prod` (ADR-0005)
 
@@ -55,10 +55,11 @@ hasta que un asesor fiscal valide el reparto de responsabilidad.
 `pnpm format:check`, `pnpm lint`, `pnpm structure:check`, `pnpm typecheck`,
 `pnpm test`, `pnpm quality`, `pnpm build`.
 
-Desde F1 se añaden pruebas de RLS y concurrencia contra una base Supabase de
-pruebas. Nunca contra producción. Ningún smoke test emite facturas reales.
-
-La integración de RLS (`tenant-rls.test.ts`) se activa únicamente
-con `SUPABASE_TEST_URL`, `SUPABASE_TEST_PUBLISHABLE_KEY` y
-`SUPABASE_TEST_SECRET_KEY`. El fichero `.env.test.example` documenta el
-contrato y evita ejecutar escrituras de fixtures contra otro entorno.
+Las pruebas de integración de RLS (`tenant-rls.test.ts`) requieren un proyecto
+Supabase de pruebas dedicado (`SUPABASE_TEST_URL`,
+`SUPABASE_TEST_PUBLISHABLE_KEY`, `SUPABASE_TEST_SECRET_KEY`; contrato en
+`.env.test.example`). Hoy existe un único proyecto Supabase, que es producción:
+no hay base de pruebas, así que la suite queda saltada y **no se ejecuta ningún
+humo contra producción**. Cuando exista un proyecto de pruebas, se activan sin
+cambios de código y la puerta de adopción (#2, #3, #5, #6) se cierra con esa
+evidencia.

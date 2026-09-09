@@ -31,30 +31,28 @@ Nunca se edita una migración ya aplicada: se añade una nueva. Para aplicarlas:
 
 ## Variables de entorno
 
-| Variable                                                                                           | Plano    | Uso                                                |
-| -------------------------------------------------------------------------------------------------- | -------- | -------------------------------------------------- |
-| `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`                                               | Cliente  | Conexión pública protegida por RLS                 |
-| `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`                                  | Servidor | Cliente administrativo; nunca al bundle            |
-| `SESSION_PASSWORD`                                                                                 | Servidor | Cifrado de la sesión del servidor (32+ caracteres) |
-| `VERIFACTU_DEFAULT_ENV`                                                                            | Servidor | Entorno fiscal inicial de nuevos tenants (`test`)  |
-| `TENANT_CERTIFICATE_MASTER_KEY`                                                                    | Servidor | Cifrado en reposo de certificados por tenant       |
-| `REDSYS_*`, `APP_URL`, `PLATFORM_BILLING_CRON_SECRET`, `PLATFORM_PAYMENT_REFERENCE_ENCRYPTION_KEY` | Servidor | Cobros SaaS y callbacks firmados                   |
-| `SUPABASE_TEST_URL`, `SUPABASE_TEST_PUBLISHABLE_KEY`, `SUPABASE_TEST_SECRET_KEY`                   | CI       | Smoke de RLS y concurrencia; nunca producción      |
+| Variable                                                                                           | Plano    | Uso                                                  |
+| -------------------------------------------------------------------------------------------------- | -------- | ---------------------------------------------------- |
+| `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`                                               | Cliente  | Conexión pública protegida por RLS                   |
+| `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`                                  | Servidor | Cliente administrativo; nunca al bundle              |
+| `SESSION_PASSWORD`                                                                                 | Servidor | Cifrado de la sesión del servidor (32+ caracteres)   |
+| `VERIFACTU_DEFAULT_ENV`                                                                            | Servidor | Entorno fiscal inicial de nuevos tenants (`test`)    |
+| `TENANT_CERTIFICATE_MASTER_KEY`                                                                    | Servidor | Cifrado en reposo de certificados por tenant         |
+| `REDSYS_*`, `APP_URL`, `PLATFORM_BILLING_CRON_SECRET`, `PLATFORM_PAYMENT_REFERENCE_ENCRYPTION_KEY` | Servidor | Cobros SaaS y callbacks firmados                     |
+| `SUPABASE_TEST_URL`, `SUPABASE_TEST_PUBLISHABLE_KEY`, `SUPABASE_TEST_SECRET_KEY`                   | CI       | Solo con proyecto de pruebas dedicado; hoy no aplica |
 
-## Smoke tests de integración
+## Pruebas de integración
 
-`src/features/*/infrastructure/server/*.smoke.test.ts` y `tenant-rls.test.ts`
-corren contra un proyecto Supabase de pruebas dedicado y se saltan solos sin
-credenciales (`describe.skip`). Cubren: aislamiento RLS, acceso anónimo
-denegado, reserva concurrente de números de factura sin duplicados y storage
-privado de PDFs con descarga cruzada denegada.
+`tenant-rls.test.ts` cubre aislamiento RLS entre tenants y requiere un proyecto
+Supabase de pruebas dedicado; se salta solo sin credenciales (`describe.skip`).
+Hoy solo existe el proyecto de producción, así que la suite no llega a ejecutar
+sus escrituras de fixture: **nunca se apunta a producción**. Cuando exista un
+proyecto de pruebas, rellena `.env.test` (contrato en `.env.test.example`) y
+ejecuta:
 
 ```sh
-# .env.test (no versionado; ver .env.test.example)
-pnpm exec vitest run src/features/tenancy src/features/invoices
+pnpm exec vitest run src/features/tenancy
 ```
-
-Ningún smoke test emite facturas reales ni toca producción.
 
 ## Despliegue
 
