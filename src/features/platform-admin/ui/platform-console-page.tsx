@@ -14,6 +14,7 @@ import {
   PageHeaderTitle,
   useFormFeedback,
 } from '@doscientos/ui'
+import { Link } from '@tanstack/react-router'
 import type { FormEvent } from 'react'
 
 import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
@@ -132,13 +133,14 @@ export function PlatformConsolePage({ dashboard }: { dashboard: PlatformDashboar
           </CardDescription>
         </CardHeader>
         <CardContent className="overflow-x-auto px-0">
-          <table className="w-full min-w-[940px] text-left text-sm">
+          <table className="w-full min-w-[1040px] text-left text-sm">
             <thead className="text-muted-foreground border-b">
               <tr>
                 <th className="px-5 py-3 font-medium">Restaurante</th>
                 <th className="px-3 py-3 font-medium">Tenant</th>
                 <th className="px-3 py-3 font-medium">Suscripción</th>
                 <th className="px-3 py-3 font-medium">Cobro</th>
+                <th className="px-3 py-3 font-medium">Detalle</th>
                 <th className="px-3 py-3 font-medium">Control manual</th>
               </tr>
             </thead>
@@ -178,6 +180,15 @@ export function PlatformConsolePage({ dashboard }: { dashboard: PlatformDashboar
                         Gracia: {tenant.subscription.graceEndsOn}
                       </p>
                     )}
+                  </td>
+                  <td className="px-3 py-4">
+                    <Link
+                      className="text-primary text-sm underline"
+                      params={{ tenantId: tenant.id }}
+                      to="/admin/tenants/$tenantId"
+                    >
+                      Ver ficha
+                    </Link>
                   </td>
                   <td className="px-3 py-4">
                     <form

@@ -9,11 +9,12 @@ import {
   Button,
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@doscientos/ui'
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import {
   ChevronUp,
   CreditCard,
@@ -36,8 +37,8 @@ type PlatformUser = { displayName: string; email: string }
 export function PlatformAdminFrame({ children }: { children: ReactNode }) {
   return (
     <AppShell className="st-app-frame st-platform-frame" sidebarBreakpoint="lg">
-      <AppShellSidebar className="st-platform-sidebar hidden w-56 flex-col p-3 lg:flex">
-        <div className="min-h-0 flex-1">
+      <AppShellSidebar className="st-platform-sidebar sticky top-0 hidden h-svh w-56 shrink-0 flex-col overflow-hidden p-3 lg:flex">
+        <div className="min-h-0 flex-1 overflow-y-auto">
           <Link
             activeOptions={{ exact: true }}
             className="st-platform-brand flex items-center gap-2 px-1.5 py-1.5 text-sm font-semibold tracking-tight"
@@ -48,7 +49,7 @@ export function PlatformAdminFrame({ children }: { children: ReactNode }) {
             </span>
             <span>SobreTaula</span>
           </Link>
-         
+
           <nav aria-label="Navegación de plataforma" className="mt-3 space-y-0.5">
             <Link
               activeOptions={{ exact: true }}
@@ -106,9 +107,7 @@ export function PlatformAdminFrame({ children }: { children: ReactNode }) {
             <span className="st-platform-brand-mark lg:hidden">
               <ShieldCheck className="size-3" />
             </span>
-            <p className="st-platform-breadcrumb truncate text-xs">
-              Superadministración
-            </p>
+            <p className="st-platform-breadcrumb truncate text-xs">Superadministración</p>
           </div>
           <div className="lg:hidden">
             <LogoutButton />
@@ -134,6 +133,7 @@ export function PlatformAdminFrame({ children }: { children: ReactNode }) {
 
 function PlatformUserMenu() {
   const [user, setUser] = useState<PlatformUser | null>(null)
+  const navigate = useNavigate()
 
   useEffect(() => {
     void createBrowserSupabaseClient()
@@ -153,7 +153,7 @@ function PlatformUserMenu() {
   const email = user?.email ?? 'Sesión activa'
 
   return (
-    <div className="st-platform-user-menu pt-3">
+    <div className="st-platform-user-menu mt-auto shrink-0 pt-3">
       <DropdownMenu>
         <DropdownMenuTrigger>
           <Button
@@ -176,6 +176,19 @@ function PlatformUserMenu() {
             <span className="block text-xs font-medium">{displayName}</span>
             <span className="text-muted-foreground block text-xs font-normal">{email}</span>
           </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onPress={() => void navigate({ to: '/admin/equipo' })}
+            textValue="Equipo de plataforma"
+          >
+            <Users className="size-3.5" /> Equipo de plataforma
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onPress={() => void navigate({ to: '/admin/ajustes' })}
+            textValue="Ajustes fiscales"
+          >
+            <Settings2 className="size-3.5" /> Ajustes fiscales
+          </DropdownMenuItem>
           <DropdownMenuSeparator />
           <div className="px-1 py-1">
             <LogoutButton />

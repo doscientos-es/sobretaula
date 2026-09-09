@@ -1,4 +1,8 @@
 export { getPlatformAdminAccess, getPlatformDashboard } from './application/platform-dashboard'
+export {
+  getPlatformTenantDetail,
+  updatePlatformTenantConfiguration,
+} from './application/platform-tenant-details'
 export type {
   PlatformDashboard,
   PlatformDashboardSubscription,
@@ -21,6 +25,7 @@ export {
 } from './domain/platform-admin'
 export type { ManagedTenantStatus, PlatformAdminRole } from './domain/platform-admin'
 export { PlatformConsolePage } from './ui/platform-console-page'
+export { PlatformTenantDetailsPage } from './ui/platform-tenant-details-page'
 export {
   getPlatformFiscalSettings,
   savePlatformFiscalSettings,
@@ -34,3 +39,4 @@ export type {
   PlatformOperatorDirectory,
   PlatformOperatorInvitation,
 } from './application/platform-operators'
+export type { PlatformTenantDetail } from './application/platform-tenant-details'

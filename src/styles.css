@@ -367,7 +367,13 @@ select:not([data-slot]):focus-visible {
   color: #c3c6ca;
 }
 
+.st-platform-frame {
+  display: flex;
+  min-height: 100svh;
+}
+
 .st-platform-frame [data-slot='app-shell-sidebar'] {
+  height: 100svh;
   min-height: 100svh;
   border-right-color: #e9e9e9;
   color: #2d3138;
@@ -379,11 +385,18 @@ select:not([data-slot]):focus-visible {
 }
 
 .st-platform-sidebar {
+  position: sticky;
+  top: 0;
+  height: 100svh;
   min-height: 100svh;
 }
 
 .st-platform-content {
   width: 100%;
+}
+
+.st-platform-main {
+  min-height: 100svh;
 }
 
 .st-platform-page {

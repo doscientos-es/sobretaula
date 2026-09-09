@@ -55,7 +55,8 @@ export function AppFrame({
           </span>
           <span className="font-semibold tracking-[-0.03em]">{t('app.name')}</span>
         </Link>
-         <nav aria-label="Principal" className="mt-3 space-y-0.5">
+        <p className="st-saas-section-label mt-6 px-1.5">Espacio de trabajo</p>
+        <nav aria-label="Principal" className="mt-3 space-y-0.5">
           <Link
             to="/t/$slug"
             params={{ slug }}

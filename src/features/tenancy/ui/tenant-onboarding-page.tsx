@@ -87,8 +87,8 @@ export function TenantOnboardingPage() {
             </div>
             <CardTitle>Configura tu restaurante</CardTitle>
             <CardDescription>
-              El primer año cuesta 99 € al mes, sin IVA. Después serán 300 € al mes, sin IVA. Antes
-              de activar el restaurante te solicitaremos la autorización segura de pago.
+              SobreTaula Sala cuesta 149 € al mes, sin IVA, e incluye un local. Antes de activar el
+              restaurante te solicitaremos la autorización segura de pago.
             </CardDescription>
           </CardHeader>
           <CardContent>

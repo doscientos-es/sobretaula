@@ -5,38 +5,39 @@ import {
   monthlyNetCentsForCycle,
   priceWithVat,
   subscriptionMonthlyNetCents,
-  INTRODUCTORY_MONTHLY_NET_CENTS,
+  FOUNDERS_MONTHLY_NET_CENTS,
+  STANDARD_MONTHLY_NET_CENTS,
 } from './subscription-pricing'
 
 describe('subscription pricing', () => {
-  it('charges 99 EUR net for the first twelve monthly cycles', () => {
+  it('charges 149 EUR net per month for the standard plan', () => {
     expect(
       monthlyNetCentsForCycle({
-        cycle: 12,
+        cycle: 1,
         hasFoundersBenefit: false,
-        standardMonthlyNetCents: 30_000,
+        standardMonthlyNetCents: STANDARD_MONTHLY_NET_CENTS,
       }),
-    ).toBe(INTRODUCTORY_MONTHLY_NET_CENTS)
+    ).toBe(STANDARD_MONTHLY_NET_CENTS)
   })
 
-  it('moves non-Founders to the 300 EUR net plan price after the first year', () => {
+  it('does not raise the standard price after a year', () => {
     expect(
       monthlyNetCentsForCycle({
         cycle: 13,
         hasFoundersBenefit: false,
-        standardMonthlyNetCents: 30_000,
+        standardMonthlyNetCents: STANDARD_MONTHLY_NET_CENTS,
       }),
-    ).toBe(30_000)
+    ).toBe(STANDARD_MONTHLY_NET_CENTS)
   })
 
-  it('keeps Founders at half of the current plan price after the first year', () => {
+  it('keeps Founders at 99 EUR net without a later increase', () => {
     expect(
       monthlyNetCentsForCycle({
         cycle: 13,
         hasFoundersBenefit: true,
-        standardMonthlyNetCents: 36_000,
+        standardMonthlyNetCents: STANDARD_MONTHLY_NET_CENTS,
       }),
-    ).toBe(18_000)
+    ).toBe(FOUNDERS_MONTHLY_NET_CENTS)
   })
 
   it('adds Spanish VAT after calculating the net subscription amount', () => {
@@ -51,23 +52,23 @@ describe('subscription pricing', () => {
     expect(extraVenueNetCents({ venueCount: 1 })).toBe(0)
   })
 
-  it('charges 100 EUR net for every additional venue', () => {
-    expect(extraVenueNetCents({ venueCount: 3 })).toBe(20_000)
+  it('charges 75 EUR net for every additional venue', () => {
+    expect(extraVenueNetCents({ venueCount: 3 })).toBe(15_000)
   })
 
   it('rejects a company without venues', () => {
     expect(() => extraVenueNetCents({ venueCount: 0 })).toThrow('invalid_venue_count')
   })
 
-  it('adds the venue surcharge on top of the introductory plan price', () => {
+  it('adds the venue surcharge on top of the standard plan price', () => {
     expect(
       subscriptionMonthlyNetCents({
         cycle: 1,
         hasFoundersBenefit: false,
-        standardMonthlyNetCents: 30_000,
+        standardMonthlyNetCents: STANDARD_MONTHLY_NET_CENTS,
         venueCount: 2,
       }),
-    ).toBe(INTRODUCTORY_MONTHLY_NET_CENTS + 10_000)
+    ).toBe(STANDARD_MONTHLY_NET_CENTS + 7_500)
   })
 
   it('keeps additional venues at full price for Founders', () => {
@@ -75,9 +76,9 @@ describe('subscription pricing', () => {
       subscriptionMonthlyNetCents({
         cycle: 13,
         hasFoundersBenefit: true,
-        standardMonthlyNetCents: 30_000,
+        standardMonthlyNetCents: STANDARD_MONTHLY_NET_CENTS,
         venueCount: 2,
       }),
-    ).toBe(25_000)
+    ).toBe(FOUNDERS_MONTHLY_NET_CENTS + 7_500)
   })
 })

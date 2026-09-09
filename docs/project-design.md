@@ -49,6 +49,19 @@ vertical en `src/features/<modulo>` con su dominio, aplicación, infraestructura
 y UI, y una API pública pequeña en `index.ts`. Añadir un módulo no debe obligar
 a tocar otro. Ver [ADR-0006](./adr/0006-arquitectura-modular.md).
 
+### Política comercial inicial
+
+El producto se vende como una operación de sala integrada, no como módulos
+separados: plano, reservas, servicio, cuenta y facturación básica pertenecen al
+plan **SobreTaula Sala**. El precio público es 149 EUR/mes netos e incluye el
+primer local; cada local adicional suma 75 EUR/mes netos. Se reservan hasta diez
+plazas **Founders** a 99 EUR/mes netos mientras mantengan la suscripción. La
+tarifa Founder no es una promoción temporal ni se aplica a los locales extra.
+
+Las futuras capacidades que sí puedan contratarse independientemente —reservas
+públicas, depósitos/no-shows, TPV de comandas y cocina, integraciones o analítica
+avanzada— se podrán ofrecer como complementos cuando estén disponibles.
+
 ## 2. Arquitectura
 
 TanStack Start (React 19, Router, Query, Tailwind v4) sobre runtime Node, con

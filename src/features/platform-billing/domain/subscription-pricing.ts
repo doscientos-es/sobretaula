@@ -1,9 +1,8 @@
-export const INTRODUCTORY_MONTHS = 12
-export const INTRODUCTORY_MONTHLY_NET_CENTS = 9_900
-export const FOUNDERS_DISCOUNT_BPS = 5_000
+export const STANDARD_MONTHLY_NET_CENTS = 14_900
+export const FOUNDERS_MONTHLY_NET_CENTS = 9_900
 export const DEFAULT_VAT_RATE_BPS = 2_100
 export const VENUES_INCLUDED_IN_PLAN = 1
-export const EXTRA_VENUE_MONTHLY_NET_CENTS = 10_000
+export const EXTRA_VENUE_MONTHLY_NET_CENTS = 7_500
 
 export interface SubscriptionPrice {
   netCents: number
@@ -19,7 +18,11 @@ function requireNonNegativeInteger(value: number, field: string): void {
   if (!Number.isSafeInteger(value) || value < 0) throw new Error(`invalid_${field}`)
 }
 
-/** Returns the net monthly amount for the currently agreed commercial policy. */
+/**
+ * Returns the net monthly price for the first venue. Founders keep their
+ * published price while their subscription remains active; it is not a
+ * temporary discount that later becomes a surprise price increase.
+ */
 export function monthlyNetCentsForCycle({
   cycle,
   hasFoundersBenefit,
@@ -31,10 +34,7 @@ export function monthlyNetCentsForCycle({
 }): number {
   requirePositiveInteger(cycle, 'cycle')
   requirePositiveInteger(standardMonthlyNetCents, 'standard_monthly_net_cents')
-  if (cycle <= INTRODUCTORY_MONTHS) return INTRODUCTORY_MONTHLY_NET_CENTS
-  return hasFoundersBenefit
-    ? Math.round((standardMonthlyNetCents * (10_000 - FOUNDERS_DISCOUNT_BPS)) / 10_000)
-    : standardMonthlyNetCents
+  return hasFoundersBenefit ? FOUNDERS_MONTHLY_NET_CENTS : standardMonthlyNetCents
 }
 
 /** Surcharge for the venues that the plan price does not already cover. */
@@ -51,8 +51,8 @@ export function extraVenueNetCents({
 }
 
 /**
- * Net monthly amount billed to the company. Introductory and Founders benefits
- * only affect the plan price: every additional venue is charged in full.
+ * Net monthly amount billed to the company. The Founders price only affects
+ * the first venue; every additional venue is charged in full.
  */
 export function subscriptionMonthlyNetCents({
   cycle,
