@@ -26,7 +26,8 @@ import { createTranslator } from '@/shared/lib/i18n/messages'
 const navLinkClass =
   'st-saas-nav-link flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors'
 
-export function AppFrame({
+/** Tenant-management frame; shared shell structure lives in AppShellFrame. */
+export function TenantAdminFrame({
   children,
   locale,
   slug,

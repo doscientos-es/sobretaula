@@ -20,11 +20,10 @@ export {
   DEFAULT_VAT_RATE_BPS,
   EXTRA_VENUE_MONTHLY_NET_CENTS,
   extraVenueNetCents,
-  FOUNDERS_DISCOUNT_BPS,
-  INTRODUCTORY_MONTHLY_NET_CENTS,
-  INTRODUCTORY_MONTHS,
+  FOUNDERS_MONTHLY_NET_CENTS,
   monthlyNetCentsForCycle,
   priceWithVat,
+  STANDARD_MONTHLY_NET_CENTS,
   subscriptionMonthlyNetCents,
   VENUES_INCLUDED_IN_PLAN,
 } from './domain/subscription-pricing'

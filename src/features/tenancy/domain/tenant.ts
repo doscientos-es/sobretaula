@@ -6,6 +6,13 @@ export type TenantStatus = (typeof TENANT_STATUSES)[number]
 export const TENANT_ROLES = ['owner', 'manager', 'host', 'waiter', 'accountant'] as const
 export type TenantRole = (typeof TENANT_ROLES)[number]
 
+const administrativeTenantRoles: readonly TenantRole[] = ['owner', 'manager', 'accountant']
+
+/** Administrative roles use the management workspace; room roles use operations. */
+export function isTenantAdministrator(role: TenantRole): boolean {
+  return administrativeTenantRoles.includes(role)
+}
+
 export const PLATFORM_ROLES = ['platform_owner', 'platform_support'] as const
 export type PlatformRole = (typeof PLATFORM_ROLES)[number]
 

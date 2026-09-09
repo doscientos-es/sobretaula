@@ -8,9 +8,15 @@ import {
   useRouterState,
 } from '@tanstack/react-router'
 
-import { AppFrame } from '@/app/app-frame'
+import { TenantAdminFrame } from '@/app/app-frame'
+import { WorkerFrame } from '@/app/worker-frame'
 import { getTenantBillingStatus, TenantBillingNotice } from '@/features/platform-billing'
-import { getTenantMembership, isTenantOperational, tenantBySlugQuery } from '@/features/tenancy'
+import {
+  getTenantMembership,
+  isTenantAdministrator,
+  isTenantOperational,
+  tenantBySlugQuery,
+} from '@/features/tenancy'
 import { getTenantVenues } from '@/features/venues'
 import { parseTenantSlug } from '@/shared/lib/tenant/tenant-slug'
 
@@ -44,7 +50,7 @@ export const Route = createFileRoute('/t/$slug')({
 })
 
 function TenantLayout() {
-  const { billingStatus, tenant, venues } = Route.useLoaderData()
+  const { billingStatus, membership, tenant, venues } = Route.useLoaderData()
   const pathname = useRouterState({ select: (state) => state.location.pathname })
   const isSubscriptionInvoicesRoute = pathname === `/t/${tenant.slug}/suscripcion/facturas`
   const isTeamRoute = pathname === `/t/${tenant.slug}/equipo`
@@ -97,11 +103,12 @@ function TenantLayout() {
     )
   }
 
+  const Frame = isTenantAdministrator(membership.role) ? TenantAdminFrame : WorkerFrame
   return (
-    <AppFrame locale={tenant.defaultLocale} slug={tenant.slug} title={tenant.name} venues={venues}>
+    <Frame locale={tenant.defaultLocale} slug={tenant.slug} title={tenant.name} venues={venues}>
       <TenantBillingNotice status={billingStatus} />
       <Outlet />
-    </AppFrame>
+    </Frame>
   )
 }
 

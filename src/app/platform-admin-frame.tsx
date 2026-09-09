@@ -1,9 +1,4 @@
 import {
-  AppShell,
-  AppShellContent,
-  AppShellHeader,
-  AppShellMain,
-  AppShellSidebar,
   Avatar,
   AvatarFallback,
   Button,
@@ -29,6 +24,8 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { LogoutButton } from '@/features/auth'
 import { createBrowserSupabaseClient } from '@/shared/lib/supabase/client'
 
+import { AppShellFrame } from './app-shell-frame'
+
 const navLinkClass =
   'st-platform-nav-link flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors'
 
@@ -36,73 +33,11 @@ type PlatformUser = { displayName: string; email: string }
 
 export function PlatformAdminFrame({ children }: { children: ReactNode }) {
   return (
-    <AppShell className="st-app-frame st-platform-frame" sidebarBreakpoint="lg">
-      <AppShellSidebar className="st-platform-sidebar sticky top-0 hidden h-svh w-56 shrink-0 flex-col overflow-hidden p-3 lg:flex">
-        <div className="min-h-0 flex-1 overflow-y-auto">
-          <Link
-            activeOptions={{ exact: true }}
-            className="st-platform-brand flex items-center gap-2 px-1.5 py-1.5 text-sm font-semibold tracking-tight"
-            to="/admin"
-          >
-            <span className="st-platform-brand-mark">
-              <ShieldCheck className="size-3.5" />
-            </span>
-            <span>SobreTaula</span>
-          </Link>
-
-          <nav aria-label="Navegación de plataforma" className="mt-3 space-y-0.5">
-            <Link
-              activeOptions={{ exact: true }}
-              activeProps={{ className: `${navLinkClass} st-platform-nav-link--active` }}
-              className={navLinkClass}
-              to="/admin"
-            >
-              <LayoutDashboard className="size-3" /> Resumen
-            </Link>
-            <Link
-              activeProps={{ className: `${navLinkClass} st-platform-nav-link--active` }}
-              className={navLinkClass}
-              to="/admin/facturacion"
-            >
-              <CreditCard className="size-3" /> Suscripciones
-            </Link>
-            <Link
-              activeProps={{ className: `${navLinkClass} st-platform-nav-link--active` }}
-              className={navLinkClass}
-              to="/admin/facturas"
-            >
-              <FileText className="size-3" /> Facturas fiscales
-            </Link>
-          </nav>
-          <div className="st-platform-nav-group mt-5 pt-4">
-            <p className="st-platform-section-label px-1.5">Administración</p>
-            <nav className="mt-2 space-y-0.5">
-              <Link
-                activeProps={{ className: `${navLinkClass} st-platform-nav-link--active` }}
-                className={navLinkClass}
-                to="/admin/equipo"
-              >
-                <Users className="size-3" /> Equipo
-              </Link>
-            </nav>
-          </div>
-          <div className="st-platform-nav-group mt-5 pt-4">
-            <p className="st-platform-section-label px-1.5">Configuración</p>
-            <nav className="mt-2">
-              <Link
-                activeProps={{ className: `${navLinkClass} st-platform-nav-link--active` }}
-                className={navLinkClass}
-                to="/admin/ajustes"
-              >
-                <Settings2 className="size-3" /> Ajustes fiscales
-              </Link>
-            </nav>
-          </div>
-        </div>
-        <PlatformUserMenu />
-      </AppShellSidebar>
-      <AppShellMain className="st-platform-main min-w-0 flex-1">
-        <AppShellHeader className="st-platform-header flex h-11 items-center justify-between px-5 sm:px-8">
+    <AppShellFrame
+      className="st-app-frame st-platform-frame"
+      contentClassName="st-platform-content min-w-0"
+      header={
+        <>
           <div className="flex min-w-0 items-center gap-3">
             <span className="st-platform-brand-mark lg:hidden">
               <ShieldCheck className="size-3" />
@@ -112,7 +47,11 @@ export function PlatformAdminFrame({ children }: { children: ReactNode }) {
           <div className="lg:hidden">
             <LogoutButton />
           </div>
-        </AppShellHeader>
+        </>
+      }
+      headerClassName="st-platform-header flex h-11 items-center justify-between px-5 sm:px-8"
+      mainClassName="st-platform-main min-w-0 flex-1"
+      mobileNavigation={
         <nav
           aria-label="Navegación de plataforma"
           className="st-mobile-nav flex gap-5 overflow-x-auto px-5 py-3 text-xs font-medium lg:hidden"
@@ -125,9 +64,77 @@ export function PlatformAdminFrame({ children }: { children: ReactNode }) {
           <Link to="/admin/equipo">Equipo</Link>
           <Link to="/admin/ajustes">Ajustes</Link>
         </nav>
-        <AppShellContent className="st-platform-content min-w-0">{children}</AppShellContent>
-      </AppShellMain>
-    </AppShell>
+      }
+      sidebar={
+        <>
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <Link
+              activeOptions={{ exact: true }}
+              className="st-platform-brand flex items-center gap-2 px-1.5 py-1.5 text-sm font-semibold tracking-tight"
+              to="/admin"
+            >
+              <span className="st-platform-brand-mark">
+                <ShieldCheck className="size-3.5" />
+              </span>
+              <span>SobreTaula</span>
+            </Link>
+
+            <nav aria-label="Navegación de plataforma" className="mt-3 space-y-0.5">
+              <Link
+                activeOptions={{ exact: true }}
+                activeProps={{ className: `${navLinkClass} st-platform-nav-link--active` }}
+                className={navLinkClass}
+                to="/admin"
+              >
+                <LayoutDashboard className="size-3" /> Resumen
+              </Link>
+              <Link
+                activeProps={{ className: `${navLinkClass} st-platform-nav-link--active` }}
+                className={navLinkClass}
+                to="/admin/facturacion"
+              >
+                <CreditCard className="size-3" /> Suscripciones
+              </Link>
+              <Link
+                activeProps={{ className: `${navLinkClass} st-platform-nav-link--active` }}
+                className={navLinkClass}
+                to="/admin/facturas"
+              >
+                <FileText className="size-3" /> Facturas fiscales
+              </Link>
+            </nav>
+            <div className="st-platform-nav-group mt-5 pt-4">
+              <p className="st-platform-section-label px-1.5">Administración</p>
+              <nav className="mt-2 space-y-0.5">
+                <Link
+                  activeProps={{ className: `${navLinkClass} st-platform-nav-link--active` }}
+                  className={navLinkClass}
+                  to="/admin/equipo"
+                >
+                  <Users className="size-3" /> Equipo
+                </Link>
+              </nav>
+            </div>
+            <div className="st-platform-nav-group mt-5 pt-4">
+              <p className="st-platform-section-label px-1.5">Configuración</p>
+              <nav className="mt-2">
+                <Link
+                  activeProps={{ className: `${navLinkClass} st-platform-nav-link--active` }}
+                  className={navLinkClass}
+                  to="/admin/ajustes"
+                >
+                  <Settings2 className="size-3" /> Ajustes fiscales
+                </Link>
+              </nav>
+            </div>
+          </div>
+          <PlatformUserMenu />
+        </>
+      }
+      sidebarClassName="st-platform-sidebar sticky top-0 hidden h-svh w-56 shrink-0 flex-col overflow-hidden p-3 lg:flex"
+    >
+      {children}
+    </AppShellFrame>
   )
 }
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { isTenantOperational } from './tenant'
+import { isTenantAdministrator, isTenantOperational } from './tenant'
 
 describe('isTenantOperational', () => {
   it('lets trial and active tenants operate', () => {
@@ -10,5 +10,18 @@ describe('isTenantOperational', () => {
 
   it('stops suspended tenants', () => {
     expect(isTenantOperational('suspended')).toBe(false)
+  })
+})
+
+describe('isTenantAdministrator', () => {
+  it.each(['owner', 'manager', 'accountant'] as const)(
+    'classifies %s as administrative',
+    (role) => {
+      expect(isTenantAdministrator(role)).toBe(true)
+    },
+  )
+
+  it.each(['host', 'waiter'] as const)('classifies %s as operational', (role) => {
+    expect(isTenantAdministrator(role)).toBe(false)
   })
 })
