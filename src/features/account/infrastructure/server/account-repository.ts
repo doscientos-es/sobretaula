@@ -63,15 +63,14 @@ export async function loadAccount(
   }
 
   const orderIds = (ordersResult.data ?? []).map((order) => order.id as string)
-  const itemsResult =
-    orderIds.length === 0
-      ? Promise.resolve({ data: [], error: null })
-      : await supabase
-          .from('order_items')
-          .select('id, name_snapshot, notes, quantity, unit_price_cents, vat_rate_bps')
-          .eq('tenant_id', tenantId)
-          .in('order_id', orderIds)
-          .order('created_at')
+  const itemsResult = await (orderIds.length === 0
+    ? Promise.resolve({ data: [], error: null })
+    : supabase
+        .from('order_items')
+        .select('id, name_snapshot, notes, quantity, unit_price_cents, vat_rate_bps')
+        .eq('tenant_id', tenantId)
+        .in('order_id', orderIds)
+        .order('created_at'))
   if (itemsResult.error) throw new Error('account_load_failed')
 
   const tableCodes = new Map<string, string>(

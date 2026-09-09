@@ -18,7 +18,6 @@ describe('formatMoney', () => {
   })
 })
 
-
 describe('parsePriceToCents', () => {
   it('parses euros with comma or dot decimals', () => {
     expect(parsePriceToCents('12,50')).toBe(1250)

@@ -32,9 +32,7 @@ export interface AccountTotals {
 }
 
 /** Cart prices are VAT-included, so the line gross is just quantity × price. */
-export function lineGrossCents(
-  line: Pick<AccountLine, 'quantity' | 'unitPriceCents'>,
-): MinorUnits {
+export function lineGrossCents(line: Pick<AccountLine, 'quantity' | 'unitPriceCents'>): MinorUnits {
   return assertMinorUnits(line.quantity * line.unitPriceCents)
 }
 

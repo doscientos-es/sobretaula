@@ -64,9 +64,7 @@ export function MenuPage({
                 <CardHeader>
                   <CardTitle>{localizedText(section.category.nameI18n, locale)}</CardTitle>
                   <CardDescription>
-                    {section.items.length === 1
-                      ? '1 plato'
-                      : `${section.items.length} platos`}
+                    {section.items.length === 1 ? '1 plato' : `${section.items.length} platos`}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>

@@ -68,10 +68,7 @@ describe('computeAccountTotals', () => {
   })
 
   it('never lets the tip pay the bill', () => {
-    const totals = computeAccountTotals(
-      [line({})],
-      [payment({ amountCents: 1000, tipCents: 500 })],
-    )
+    const totals = computeAccountTotals([line({})], [payment({ amountCents: 1000, tipCents: 500 })])
 
     expect(totals.balanceCents).toBe(0)
     expect(totals.tipCents).toBe(500)

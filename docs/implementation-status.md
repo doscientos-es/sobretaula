@@ -17,7 +17,7 @@ reproducible (comando ejecutado y su resultado).
 | F2 · Diseñador de sala | Editor SVG, snap, historial, elementos y layouts versionados               | Hecho     |
 | F3 · Motor de reservas | Turnos, pacing, disponibilidad, best-fit, EXCLUDE                          | Hecho     |
 | F4 · Vista de servicio | Plano en vivo, sentar/mover/unir, walk-ins, espera                         | Hecho     |
-| F5 · Cuenta de mesa    | Catálogo, líneas, dividir, cerrar, cobrar                                  | Pendiente |
+| F5 · Cuenta de mesa    | Catálogo, líneas, dividir, cerrar, cobrar                                  | Hecho     |
 | F6 · Facturación       | Ajustes fiscales, series, ledger/outbox, PDF, modo test                    | Pendiente |
 | F7 · Entrega           | Documentación operativa, smoke, despliegue autorizado                      | Pendiente |
 

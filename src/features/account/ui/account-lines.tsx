@@ -56,9 +56,7 @@ export function AccountLines({
     <Card>
       <CardHeader>
         <CardTitle>Consumiciones</CardTitle>
-        <CardDescription>
-          Precios congelados en el momento de apuntar cada línea.
-        </CardDescription>
+        <CardDescription>Precios congelados en el momento de apuntar cada línea.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         {lines.length === 0 ? (

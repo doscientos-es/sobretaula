@@ -15,7 +15,6 @@ export function formatMoney(value: MinorUnits, locale: Locale, currency = 'EUR')
   )
 }
 
-
 /** Accepts "12,50" or "12.50" and returns minor units. Null when it is not a price. */
 export function parsePriceToCents(value: string): MinorUnits | null {
   const normalized = value.trim().replace(',', '.')

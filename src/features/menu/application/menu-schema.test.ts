@@ -21,7 +21,13 @@ describe('menu schemas', () => {
 
   it('rejects items without a Spanish name or with out-of-range money fields', () => {
     expect(() =>
-      createMenuItemInput.parse({ categoryId, nameEs: '', priceCents: 100, tenantId, vatRateBps: 1000 }),
+      createMenuItemInput.parse({
+        categoryId,
+        nameEs: '',
+        priceCents: 100,
+        tenantId,
+        vatRateBps: 1000,
+      }),
     ).toThrow()
     expect(() =>
       createMenuItemInput.parse({
