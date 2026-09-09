@@ -9,6 +9,7 @@ import { Link, useParams } from '@tanstack/react-router'
 import {
   CalendarDays,
   ConciergeBell,
+  ExternalLink,
   FileText,
   LayoutDashboard,
   Map,
@@ -18,7 +19,7 @@ import {
 } from 'lucide-react'
 import type { ReactNode } from 'react'
 
-import { LogoutButton } from '@/features/auth'
+import { CurrentUserSidebar, LogoutButton } from '@/features/auth'
 import { resolveVenue, VenueSwitcher, type Venue } from '@/features/venues'
 import type { Locale } from '@/shared/lib/i18n/locale'
 import { createTranslator } from '@/shared/lib/i18n/messages'
@@ -46,7 +47,7 @@ export function TenantAdminFrame({
 
   return (
     <AppShell className="st-app-frame st-saas-frame" sidebarBreakpoint="lg">
-      <AppShellSidebar className="st-saas-sidebar hidden w-56 p-3 lg:block">
+      <AppShellSidebar className="st-saas-sidebar hidden w-56 p-3 lg:flex lg:h-svh lg:flex-col">
         <Link
           to="/"
           className="st-saas-brand flex items-center gap-2 px-1.5 py-1.5 text-sm font-semibold tracking-tight"
@@ -157,6 +158,7 @@ export function TenantAdminFrame({
             </Link>
           </nav>
         </div>
+        <CurrentUserSidebar />
       </AppShellSidebar>
       <AppShellMain className="st-saas-main min-w-0 flex-1">
         <AppShellHeader className="st-saas-header flex h-11 items-center justify-between px-5 sm:px-6">
@@ -167,6 +169,17 @@ export function TenantAdminFrame({
             <p className="st-saas-breadcrumb truncate text-xs">
               {title} <span>/</span> {activeVenue?.name ?? 'Visión general'}
             </p>
+            <Link
+              aria-label="Ver la ficha pública como cliente"
+              className="st-saas-preview-link inline-flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium"
+              params={{ slug }}
+              rel="noreferrer"
+              target="_blank"
+              to="/reservar/$slug"
+            >
+              <ExternalLink aria-hidden="true" className="size-3.5" />
+              <span className="hidden sm:inline">Ver como cliente</span>
+            </Link>
           </div>
           <LogoutButton />
         </AppShellHeader>

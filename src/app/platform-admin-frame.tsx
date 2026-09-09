@@ -1,36 +1,32 @@
 import {
   Avatar,
   AvatarFallback,
-  Button,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  IconButton,
 } from '@doscientos/ui'
 import { Link, useNavigate } from '@tanstack/react-router'
 import {
-  ChevronUp,
   Building2,
   CreditCard,
+  EllipsisVertical,
   FileText,
   LayoutDashboard,
   Settings2,
   ShieldCheck,
   Users,
 } from 'lucide-react'
-import { useEffect, useState, type ReactNode } from 'react'
+import { type ReactNode } from 'react'
 
-import { LogoutButton } from '@/features/auth'
-import { createBrowserSupabaseClient } from '@/shared/lib/supabase/client'
+import { LogoutButton, useCurrentUser, userInitials } from '@/features/auth'
 
 import { AppShellFrame } from './app-shell-frame'
 
 const navLinkClass =
   'st-platform-nav-link flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors'
-
-type PlatformUser = { displayName: string; email: string }
 
 export function PlatformAdminFrame({ children }: { children: ReactNode }) {
   return (
@@ -148,51 +144,28 @@ export function PlatformAdminFrame({ children }: { children: ReactNode }) {
 }
 
 function PlatformUserMenu() {
-  const [user, setUser] = useState<PlatformUser | null>(null)
+  const user = useCurrentUser()
   const navigate = useNavigate()
 
-  useEffect(() => {
-    void createBrowserSupabaseClient()
-      .auth.getUser()
-      .then(({ data }) => {
-        if (!data.user?.email) return
-        const displayName = data.user.user_metadata?.display_name
-        setUser({
-          displayName: typeof displayName === 'string' ? displayName : 'Cuenta de plataforma',
-          email: data.user.email,
-        })
-      })
-      .catch(() => undefined)
-  }, [])
-
-  const displayName = user?.displayName ?? 'Cuenta de plataforma'
-  const email = user?.email ?? 'Sesión activa'
+  const displayName = user?.displayName || 'Usuario actual'
+  const email = user?.email || 'Sin email disponible'
 
   return (
-    <div className="st-platform-user-menu mt-auto shrink-0 pt-3">
+    <footer className="st-platform-user-menu mt-auto flex shrink-0 items-center gap-2 pt-3">
+      <Avatar className="st-platform-user-avatar" size="sm">
+        <AvatarFallback className="text-white">{userInitials(displayName)}</AvatarFallback>
+      </Avatar>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-xs font-medium">{displayName}</span>
+        <span className="text-muted-foreground block truncate text-[0.625rem]">{email}</span>
+      </span>
       <DropdownMenu>
         <DropdownMenuTrigger>
-          <Button
-            aria-label={`Abrir menú de ${displayName}`}
-            className="st-platform-user-trigger w-full justify-start gap-2 px-1.5"
-            variant="ghost"
-          >
-            <Avatar className="st-platform-user-avatar" size="sm">
-              <AvatarFallback aria-hidden="true" />
-            </Avatar>
-            <span className="min-w-0 flex-1 text-left">
-              <span className="block truncate text-xs font-medium">{displayName}</span>
-              <span className="text-muted-foreground block truncate text-[0.625rem]">{email}</span>
-            </span>
-            <ChevronUp aria-hidden="true" className="text-muted-foreground size-3" />
-          </Button>
+          <IconButton label="Opciones de cuenta" size="sm" variant="ghost">
+            <EllipsisVertical aria-hidden="true" className="size-4" />
+          </IconButton>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-56" offset={8} placement="top start">
-          <DropdownMenuLabel>
-            <span className="block text-xs font-medium">{displayName}</span>
-            <span className="text-muted-foreground block text-xs font-normal">{email}</span>
-          </DropdownMenuLabel>
-          <DropdownMenuSeparator />
+        <DropdownMenuContent className="w-52" offset={8} placement="top end">
           <DropdownMenuItem
             onPress={() => void navigate({ to: '/admin/equipo' })}
             textValue="Equipo de plataforma"
@@ -211,6 +184,6 @@ function PlatformUserMenu() {
           </div>
         </DropdownMenuContent>
       </DropdownMenu>
-    </div>
+    </footer>
   )
 }

@@ -24,6 +24,7 @@
     "@tanstack/react-start": "^1.168.50",
     "lucide-react": "^1.11.0",
     "nitro": "3.0.260903-beta",
+    "node-forge": "^1.4.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "zod": "^3.24.2"
@@ -32,6 +33,7 @@
     "@doscientos/configs": "^0.1.9",
     "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^22.16.5",
+    "@types/node-forge": "^1.3.14",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
     "@vitejs/plugin-react": "^5.2.0",

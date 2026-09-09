@@ -3,7 +3,7 @@ import { CalendarDays, ConciergeBell, Map, Utensils } from 'lucide-react'
 import type { ReactNode } from 'react'
 
 import { AppShellFrame } from '@/app/app-shell-frame'
-import { LogoutButton } from '@/features/auth'
+import { CurrentUserSidebar, LogoutButton } from '@/features/auth'
 import { resolveVenue, VenueSwitcher, type Venue } from '@/features/venues'
 import type { Locale } from '@/shared/lib/i18n/locale'
 import { createTranslator } from '@/shared/lib/i18n/messages'
@@ -117,9 +117,10 @@ export function WorkerFrame({
             tenantSlug={slug}
             venues={venues}
           />
+          <CurrentUserSidebar />
         </>
       }
-      sidebarClassName="st-saas-sidebar hidden w-56 p-3 lg:block"
+      sidebarClassName="st-saas-sidebar hidden w-56 p-3 lg:flex lg:h-svh lg:flex-col"
     >
       {children}
     </AppShellFrame>

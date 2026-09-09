@@ -39,6 +39,130 @@ validación fiscal necesaria para activar VERI*FACTU en producción.
   por RLS; una mejora de producto no justifica relajar estas garantías.
 - Añadir a cada funcionalidad una métrica de adopción o de resultado operativo.
 
+## Principios de experiencia, interfaz y accesibilidad
+
+La calidad visual y la accesibilidad no son una fase posterior. Cada pantalla
+debe ser rápida de entender durante un servicio, agradable de mirar durante una
+configuración y posible de operar sin ratón o sin depender de un único sentido.
+
+### Principios de interfaz
+
+1. **La sala manda.** La pantalla de servicio prioriza plano, estado y próxima
+   acción; la configuración y los informes nunca compiten visualmente con ella.
+2. **Una acción principal por contexto.** En cada pantalla debe ser obvio qué
+   hacer ahora: sentar, crear reserva, cobrar, guardar o continuar. Las acciones
+   destructivas o poco frecuentes se colocan en menús secundarios.
+3. **Estado antes que decoración.** Color, icono y texto comunican ocupación,
+   alerta, disponibilidad y error. No usar color como único indicador.
+4. **Jerarquía serena.** Espacio suficiente, tipografía legible, pocos bordes,
+   contraste alto y densidad adaptable: compacta en servicio, cómoda en
+   configuración y escritorio.
+5. **Respuesta inmediata.** Una pulsación siempre muestra resultado, estado de
+   carga o error recuperable; no dejar la interfaz ambigua tras una mutación.
+6. **Diseño de datos real.** Vacíos, errores, carga, red inestable, permisos y
+   primeros usos se diseñan con el mismo cuidado que el caso feliz.
+
+### Dispositivos objetivo
+
+| Contexto               | Dispositivo principal                  | Prioridad de diseño                            |
+| ---------------------- | -------------------------------------- | ---------------------------------------------- |
+| Jefe de sala / host    | Tablet táctil en vertical y horizontal | Plano, agenda del turno y acciones de una mano |
+| Camarero               | Móvil                                  | Cuenta, estado de mesa y acciones mínimas      |
+| Propietario / gerente  | Escritorio                             | Configuración, informes y facturación          |
+| Comensal               | Móvil web                              | Reserva pública breve, clara y sin cuenta      |
+| Operador de plataforma | Escritorio                             | Superadmin, soporte y salud de tenants         |
+
+### Estándar mínimo de accesibilidad
+
+Todo PR de interfaz debe cumplir WCAG 2.2 AA como mínimo:
+
+- Navegación completa con teclado, orden de foco lógico y foco visible.
+- Semántica HTML nativa antes de crear controles personalizados; `button`,
+  `label`, `dialog`, tabla y encabezados cuando correspondan.
+- Etiquetas asociadas, instrucciones y errores anunciables para todos los campos.
+- Contraste AA, texto escalable al 200 %, objetivos táctiles de al menos 44 × 44
+  CSS px y sin depender de hover para una acción esencial.
+- Estados que no dependen solo de color: icono/texto/patrón además del color.
+- Modales que atrapan el foco, se cierran con Escape cuando sea seguro y devuelven
+  el foco al activador.
+- Mensajes de éxito, error y carga mediante regiones `aria-live` adecuadas, sin
+  interrumpir innecesariamente al lector de pantalla.
+- Respeto por `prefers-reduced-motion`; nunca usar animación para transmitir
+  información indispensable.
+- Prueba con lector de pantalla en los flujos públicos y de servicio críticos.
+
+### Definition of Done para cualquier pantalla
+
+Una funcionalidad visual no está terminada hasta que incluye:
+
+1. Estados de carga, vacío, error, permiso denegado y éxito.
+2. Versión móvil/tablet/escritorio según su dispositivo objetivo.
+3. Prueba de teclado y revisión de foco.
+4. Revisión de contraste y objetivos táctiles.
+5. Textos de interfaz concretos, breves y orientados a la acción; sin jerga de
+   implementación.
+6. Prueba automatizada de la interacción crítica y prueba manual en Supabase de
+   pruebas con el rol correcto.
+7. Captura o checklist de QA que demuestre el resultado antes de cerrar el PR.
+
+## Secuencia de PRs
+
+Cada PR debe ser pequeño, desplegable y demostrable en el Supabase online de
+pruebas. No mezclar una capacidad nueva, una refactorización amplia y cambios
+visuales sin relación.
+
+| PR  | Resultado entregable                                                          | Roles de QA                 | Dependencia              |
+| --- | ----------------------------------------------------------------------------- | --------------------------- | ------------------------ |
+| 0   | Cerrar superadmin: listado, detalle, estados, permisos y estados vacíos/error | platform owner/support      | Ninguna                  |
+| 1   | Página pública de reserva por local, conectada al motor existente             | anónimo, owner, host        | PR 0                     |
+| 2   | Gestión pública segura: confirmación, cancelación y modificación              | anónimo, host               | PR 1                     |
+| 3   | Agenda de turno y reglas visibles de capacidad/cierres                        | owner, manager, host        | PR 1                     |
+| 4   | Recordatorios, confirmación pendiente y lista de espera                       | host, comensal              | PR 2–3                   |
+| 5   | Sala en vivo: llegada, walk-in, sugerencia de mesa, retrasos y bloqueos       | host, waiter                | PR 3                     |
+| 6   | Pacing, cronómetro, secciones y handover de turno                             | manager, host, waiter       | PR 5                     |
+| 7   | Cuenta robusta: división, movimientos, descuentos auditados y pagos mixtos    | waiter, manager, accountant | PR 5                     |
+| 8   | Depósitos y políticas de no-show para grupos                                  | owner, host, comensal       | PR 4 y proveedor de pago |
+| 9   | Onboarding/importación y plantillas de operación                              | owner, manager              | PR 3 y 5                 |
+| 10  | Indicadores operativos y resumen semanal                                      | owner, manager              | Eventos de PR 1–9        |
+| 11  | Integración o exportación TPV guiada por pilotos                              | owner, manager, waiter      | PR 7                     |
+
+El PR 1 es el siguiente trabajo de producto recomendado tras cerrar el
+superadmin. La página pública se diseña primero como destino móvil propio; el
+widget web se añade después reutilizando el mismo flujo, no como producto
+paralelo.
+
+## Ficha obligatoria antes de iniciar un PR
+
+Cada PR debe empezar con una nota breve en su descripción o en el documento de
+implementación que responda:
+
+1. Qué dolor operativo elimina y para qué rol.
+2. Qué recorrido de usuario completo se podrá demostrar al terminar.
+3. Qué datos se leen/escriben, qué autorización los protege y qué migración se
+   necesita, si la hay.
+4. Qué ocurre si no hay red, no hay permisos o el dato ya cambió.
+5. Qué dispositivo objetivo y qué comprobaciones de accesibilidad aplican.
+6. Cómo se medirá uso o resultado.
+
+## Sistema visual a consolidar antes de añadir muchas pantallas
+
+Mantener y ampliar las primitivas de `@doscientos/ui`; no crear estilos aislados
+por pantalla. Antes del PR 1, revisar que el sistema ofrezca y documente:
+
+- Escala tipográfica, espaciado, radio, sombras y anchos de lectura consistentes.
+- Colores semánticos (`success`, `warning`, `danger`, `info`, `muted`) con pares
+  de fondo/texto contrastados.
+- Botones, icon buttons, inputs, select, combobox, date/time picker, tabs,
+  badges, toasts, dialog y confirmación destructiva accesibles.
+- Skeleton, empty state, error state y loading state reutilizables.
+- Patrones de cabecera, barra de acciones, panel lateral y bottom sheet para
+  tablet/móvil.
+- Iconografía con etiqueta accesible o `aria-hidden` correcto; no iconos sin
+  nombre para controles interactivos.
+
+La revisión no debe bloquear el PR 1 con una reescritura de diseño: arreglar la
+primitiva cuando se necesite y reutilizarla desde entonces.
+
 ## Fase 0 · Fiabilidad para servicio real
 
 **Objetivo:** poder operar con restaurantes piloto sin riesgo de fuga de datos,

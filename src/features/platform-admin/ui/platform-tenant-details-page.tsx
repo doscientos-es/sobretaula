@@ -15,7 +15,7 @@ import {
   useFormFeedback,
 } from '@doscientos/ui'
 import { Link } from '@tanstack/react-router'
-import type { FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 
 import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
 
@@ -28,6 +28,10 @@ import { getTenantVerifactuHealth } from '../domain/platform-tenant-verifactu'
 
 const euro = new Intl.NumberFormat('es-ES', { currency: 'EUR', style: 'currency' })
 const date = new Intl.DateTimeFormat('es-ES', { dateStyle: 'medium' })
+const tenantTimezones = [
+  { label: 'España peninsular y Baleares', value: 'Europe/Madrid' },
+  { label: 'Islas Canarias', value: 'Atlantic/Canary' },
+]
 
 function statusLabel(status: PlatformTenantDetail['tenantStatus']) {
   return {
@@ -43,11 +47,30 @@ function formString(values: FormData, name: string): string {
   return typeof value === 'string' ? value : ''
 }
 
+function tenantStatusAction(status: PlatformTenantDetail['tenantStatus']) {
+  return status === 'suspended'
+    ? {
+        description: 'Restaurará el acceso operativo al tenant.',
+        label: 'Reactivar tenant',
+        status: 'active' as const,
+      }
+    : {
+        description: 'Bloqueará el acceso operativo de todos sus miembros.',
+        label: 'Suspender tenant',
+        status: 'suspended' as const,
+      }
+}
+
 /** Owner-only detail page for configuration, basic activity and fiscal delivery health. */
 export function PlatformTenantDetailsPage({ tenant }: { tenant: PlatformTenantDetail }) {
   const configurationFeedback = useFormFeedback()
   const statusFeedback = useFormFeedback()
+  const [isEditingConfiguration, setIsEditingConfiguration] = useState(false)
   const reload = useLoaderReload()
+  const statusAction = tenantStatusAction(tenant.tenantStatus)
+  const timezoneLabel =
+    tenantTimezones.find((timezone) => timezone.value === tenant.tenantTimezone)?.label ??
+    tenant.tenantTimezone
   const health = getTenantVerifactuHealth({
     certificateConfigured: tenant.certificateConfigured,
     certificateExpiresAt: tenant.certificateExpiresAt,
@@ -73,6 +96,7 @@ export function PlatformTenantDetailsPage({ tenant }: { tenant: PlatformTenantDe
       },
     })
       .then(() => {
+        setIsEditingConfiguration(false)
         configurationFeedback.setSuccess('Configuración guardada y registrada en la auditoría.')
         reload()
       })
@@ -83,11 +107,13 @@ export function PlatformTenantDetailsPage({ tenant }: { tenant: PlatformTenantDe
     event.preventDefault()
     if (statusFeedback.pending) return
     const values = new FormData(event.currentTarget)
-    const status = values.get('status')
-    if (status !== 'active' && status !== 'suspended') return
     statusFeedback.setPending()
     void updatePlatformTenantStatus({
-      data: { reason: formString(values, 'reason'), status, tenantId: tenant.tenantId },
+      data: {
+        reason: formString(values, 'reason'),
+        status: statusAction.status,
+        tenantId: tenant.tenantId,
+      },
     })
       .then(() => {
         statusFeedback.setSuccess('Estado actualizado y registrado en la auditoría.')
@@ -101,8 +127,11 @@ export function PlatformTenantDetailsPage({ tenant }: { tenant: PlatformTenantDe
     <main className="st-platform-page space-y-6">
       <PageHeader className="border-border/70 border-b pb-6">
         <div>
-          <Link className="text-muted-foreground mb-3 inline-block text-sm underline" to="/admin">
-            Volver al resumen
+          <Link
+            className="text-muted-foreground mb-3 inline-block text-sm underline"
+            to="/admin/tenants"
+          >
+            Volver a tenants
           </Link>
           <PageHeaderTitle>{tenant.tenantName}</PageHeaderTitle>
           <PageHeaderDescription>
@@ -138,15 +167,22 @@ export function PlatformTenantDetailsPage({ tenant }: { tenant: PlatformTenantDe
         />
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-2">
-        <Card>
-          <CardHeader>
+      <Card>
+        <CardHeader className="flex flex-row items-start justify-between gap-4">
+          <div>
             <CardTitle>Configuración general</CardTitle>
             <CardDescription>
               El slug se mantiene estable para preservar las rutas del restaurante.
             </CardDescription>
-          </CardHeader>
-          <CardContent>
+          </div>
+          {!isEditingConfiguration && (
+            <Button onPress={() => setIsEditingConfiguration(true)} size="sm" variant="outline">
+              Editar
+            </Button>
+          )}
+        </CardHeader>
+        <CardContent>
+          {isEditingConfiguration ? (
             <form className="grid gap-4 md:grid-cols-2" onSubmit={saveConfiguration}>
               <Field className="md:col-span-2">
                 <FieldLabel htmlFor="tenant-name">Nombre del restaurante</FieldLabel>
@@ -165,69 +201,60 @@ export function PlatformTenantDetailsPage({ tenant }: { tenant: PlatformTenantDe
                 </select>
               </Field>
               <Field>
-                <FieldLabel htmlFor="tenant-timezone">Zona horaria IANA</FieldLabel>
-                <Input
+                <FieldLabel htmlFor="tenant-timezone">Zona horaria</FieldLabel>
+                <select
+                  className="border-input h-10 w-full rounded-md border bg-transparent px-3 text-sm"
                   defaultValue={tenant.tenantTimezone}
                   id="tenant-timezone"
                   name="timezone"
                   required
-                />
+                >
+                  {!tenantTimezones.some(
+                    (timezone) => timezone.value === tenant.tenantTimezone,
+                  ) && <option value={tenant.tenantTimezone}>{tenant.tenantTimezone}</option>}
+                  {tenantTimezones.map((timezone) => (
+                    <option key={timezone.value} value={timezone.value}>
+                      {timezone.label}
+                    </option>
+                  ))}
+                </select>
               </Field>
-              <div className="md:col-span-2">
+              <div className="flex items-center gap-3 md:col-span-2">
+                <Button disabled={configurationFeedback.pending} type="submit">
+                  Guardar cambios
+                </Button>
+                <Button
+                  disabled={configurationFeedback.pending}
+                  onPress={() => setIsEditingConfiguration(false)}
+                  type="button"
+                  variant="outline"
+                >
+                  Cancelar
+                </Button>
                 <FormFeedback
                   pendingLabel="Guardando configuración…"
                   state={configurationFeedback.state}
                 />
-                <Button className="mt-4" disabled={configurationFeedback.pending} type="submit">
-                  Guardar configuración
-                </Button>
               </div>
             </form>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Acceso del tenant</CardTitle>
-            <CardDescription>
-              La suspensión y reactivación requieren un motivo que queda auditado.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form className="space-y-4" onSubmit={saveStatus}>
-              <Field>
-                <FieldLabel htmlFor="tenant-status">Nuevo estado</FieldLabel>
-                <select
-                  className="border-input h-10 w-full rounded-md border bg-transparent px-3 text-sm"
-                  defaultValue=""
-                  id="tenant-status"
-                  name="status"
-                >
-                  <option disabled value="">
-                    Selecciona una acción…
-                  </option>
-                  <option value="active">Reactivar tenant</option>
-                  <option value="suspended">Suspender tenant</option>
-                </select>
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="tenant-status-reason">Motivo</FieldLabel>
-                <Input
-                  id="tenant-status-reason"
-                  minLength={5}
-                  name="reason"
-                  placeholder="Motivo obligatorio"
-                  required
-                />
-              </Field>
-              <FormFeedback pendingLabel="Actualizando estado…" state={statusFeedback.state} />
-              <Button disabled={statusFeedback.pending} type="submit">
-                Aplicar cambio de estado
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      </section>
+          ) : (
+            <dl className="grid gap-4 text-sm md:grid-cols-2">
+              <Info
+                className="md:col-span-2"
+                label="Nombre del restaurante"
+                value={tenant.tenantName}
+              />
+              <Info label="Slug" value={tenant.tenantSlug} />
+              <Info label="Estado actual" value={statusLabel(tenant.tenantStatus)} />
+              <Info
+                label="Idioma predeterminado"
+                value={tenant.defaultLocale === 'ca' ? 'Catalán' : 'Español'}
+              />
+              <Info label="Zona horaria" value={timezoneLabel} />
+            </dl>
+          )}
+        </CardContent>
+      </Card>
 
       <section className="grid gap-6 xl:grid-cols-2">
         <Card>
@@ -318,6 +345,49 @@ export function PlatformTenantDetailsPage({ tenant }: { tenant: PlatformTenantDe
           </CardContent>
         </Card>
       </section>
+
+      <section aria-labelledby="tenant-danger-zone">
+        <Card className="border-destructive/40">
+          <CardHeader>
+            <CardTitle id="tenant-danger-zone" className="text-destructive">
+              Zona de riesgo
+            </CardTitle>
+            <CardDescription>
+              Estas acciones cambian el acceso operativo del tenant y quedan registradas en la
+              auditoría.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form
+              className="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-end"
+              onSubmit={saveStatus}
+            >
+              <Field>
+                <FieldLabel htmlFor="tenant-status-reason">Motivo de la acción</FieldLabel>
+                <Input
+                  id="tenant-status-reason"
+                  minLength={5}
+                  name="reason"
+                  placeholder="Motivo obligatorio"
+                  required
+                />
+              </Field>
+              <Button
+                className="border-destructive/40 text-destructive hover:bg-destructive/10"
+                disabled={statusFeedback.pending}
+                type="submit"
+                variant="outline"
+              >
+                {statusAction.label}
+              </Button>
+              <div className="md:col-span-2">
+                <p className="text-muted-foreground text-sm">{statusAction.description}</p>
+                <FormFeedback pendingLabel="Actualizando estado…" state={statusFeedback.state} />
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      </section>
     </main>
   )
 }
@@ -350,9 +420,9 @@ function Metric({
   )
 }
 
-function Info({ label, value }: { label: string; value: string }) {
+function Info({ className, label, value }: { className?: string; label: string; value: string }) {
   return (
-    <div>
+    <div className={className}>
       <dt className="text-muted-foreground">{label}</dt>
       <dd className="mt-1 font-medium">{value}</dd>
     </div>

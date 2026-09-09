@@ -22,6 +22,7 @@ import { Route as AdminEquipoRouteImport } from './routes/admin.equipo'
 import { Route as AdminFacturacionRouteImport } from './routes/admin.facturacion'
 import { Route as AdminFacturasRouteImport } from './routes/admin.facturas'
 import { Route as AdminInvitacionRouteImport } from './routes/admin.invitacion'
+import { Route as ReservarSlugRouteImport } from './routes/reservar.$slug'
 import { Route as TSlugRouteImport } from './routes/t.$slug'
 import { Route as AdminTenantsIndexRouteImport } from './routes/admin.tenants.index'
 import { Route as AdminTenantsTenantIdRouteImport } from './routes/admin.tenants.$tenantId'
@@ -105,6 +106,11 @@ const AdminInvitacionRoute = AdminInvitacionRouteImport.update({
   id: '/invitacion',
   path: '/invitacion',
   getParentRoute: () => AdminRoute,
+} as any)
+const ReservarSlugRoute = ReservarSlugRouteImport.update({
+  id: '/reservar/$slug',
+  path: '/reservar/$slug',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const TSlugRoute = TSlugRouteImport.update({
   id: '/t/$slug',
@@ -213,6 +219,7 @@ export interface FileRoutesByFullPath {
   '/admin/facturacion': typeof AdminFacturacionRoute
   '/admin/facturas': typeof AdminFacturasRoute
   '/admin/invitacion': typeof AdminInvitacionRoute
+  '/reservar/$slug': typeof ReservarSlugRoute
   '/t/$slug': typeof TSlugRouteWithChildren
   '/admin/': typeof AdminIndexRoute
   '/admin/tenants/$tenantId': typeof AdminTenantsTenantIdRoute
@@ -245,6 +252,7 @@ export interface FileRoutesByTo {
   '/admin/facturacion': typeof AdminFacturacionRoute
   '/admin/facturas': typeof AdminFacturasRoute
   '/admin/invitacion': typeof AdminInvitacionRoute
+  '/reservar/$slug': typeof ReservarSlugRoute
   '/admin': typeof AdminIndexRoute
   '/admin/tenants/$tenantId': typeof AdminTenantsTenantIdRoute
   '/api/platform-billing/reconcile': typeof ApiPlatformBillingReconcileRoute
@@ -277,6 +285,7 @@ export interface FileRoutesById {
   '/admin/facturacion': typeof AdminFacturacionRoute
   '/admin/facturas': typeof AdminFacturasRoute
   '/admin/invitacion': typeof AdminInvitacionRoute
+  '/reservar/$slug': typeof ReservarSlugRoute
   '/t/$slug': typeof TSlugRouteWithChildren
   '/admin/': typeof AdminIndexRoute
   '/admin/tenants/$tenantId': typeof AdminTenantsTenantIdRoute
@@ -312,6 +321,7 @@ export interface FileRouteTypes {
     | '/admin/facturacion'
     | '/admin/facturas'
     | '/admin/invitacion'
+    | '/reservar/$slug'
     | '/t/$slug'
     | '/admin/'
     | '/admin/tenants/$tenantId'
@@ -344,6 +354,7 @@ export interface FileRouteTypes {
     | '/admin/facturacion'
     | '/admin/facturas'
     | '/admin/invitacion'
+    | '/reservar/$slug'
     | '/admin'
     | '/admin/tenants/$tenantId'
     | '/api/platform-billing/reconcile'
@@ -375,6 +386,7 @@ export interface FileRouteTypes {
     | '/admin/facturacion'
     | '/admin/facturas'
     | '/admin/invitacion'
+    | '/reservar/$slug'
     | '/t/$slug'
     | '/admin/'
     | '/admin/tenants/$tenantId'
@@ -404,6 +416,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   OnboardingRoute: typeof OnboardingRoute
   RegistroRoute: typeof RegistroRoute
+  ReservarSlugRoute: typeof ReservarSlugRoute
   TSlugRoute: typeof TSlugRouteWithChildren
   ApiPlatformBillingReconcileRoute: typeof ApiPlatformBillingReconcileRoute
   ApiWebhooksRedsysRoute: typeof ApiWebhooksRedsysRoute
@@ -501,6 +514,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/invitacion'
       preLoaderRoute: typeof AdminInvitacionRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/reservar/$slug': {
+      id: '/reservar/$slug'
+      path: '/reservar/$slug'
+      fullPath: '/reservar/$slug'
+      preLoaderRoute: typeof ReservarSlugRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/t/$slug': {
       id: '/t/$slug'
@@ -707,6 +727,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   OnboardingRoute: OnboardingRoute,
   RegistroRoute: RegistroRoute,
+  ReservarSlugRoute: ReservarSlugRoute,
   TSlugRoute: TSlugRouteWithChildren,
   ApiPlatformBillingReconcileRoute: ApiPlatformBillingReconcileRoute,
   ApiWebhooksRedsysRoute: ApiWebhooksRedsysRoute,
