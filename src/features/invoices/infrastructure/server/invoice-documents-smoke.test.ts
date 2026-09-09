@@ -56,7 +56,9 @@ async function signIn(
   }
 }
 
-async function createTenantOwner(prefix: string): Promise<{ tenantId: string; email: string; password: string; userId: string }> {
+async function createTenantOwner(
+  prefix: string,
+): Promise<{ tenantId: string; email: string; password: string; userId: string }> {
   const admin = adminClient()
   const nonce = randomUUID()
   const tenantId = randomUUID()

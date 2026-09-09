@@ -49,7 +49,12 @@ describeSmoke('auth and anonymous access smoke', () => {
 
     const { error: tenantError } = await adminClient()
       .from('tenants')
-      .insert({ id: tenantId, name: `Smoke Auth ${nonce}`, slug: `smoke-auth-${nonce.slice(0, 8)}`, status: 'active' })
+      .insert({
+        id: tenantId,
+        name: `Smoke Auth ${nonce}`,
+        slug: `smoke-auth-${nonce.slice(0, 8)}`,
+        status: 'active',
+      })
     if (tenantError) throw tenantError
 
     const { data: created, error: createError } = await adminClient().auth.admin.createUser({

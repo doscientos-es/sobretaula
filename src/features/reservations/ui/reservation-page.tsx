@@ -15,12 +15,13 @@ import {
 } from '@doscientos/ui'
 import { useState, type FormEvent } from 'react'
 
+import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
+
 import {
   createReservation,
   createReservationService,
   type ReservationService,
 } from '../application/reservations'
-import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
 
 const weekdays = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
 
