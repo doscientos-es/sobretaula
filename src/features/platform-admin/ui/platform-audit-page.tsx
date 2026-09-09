@@ -16,7 +16,6 @@ import {
   platformAuditActionLabel,
   type PlatformAuditEvent,
 } from '../domain/platform-audit'
-
 import { PlatformAuditList } from './platform-audit-list'
 
 /** Lets platform owners review, search and filter the latest immutable audit events. */
@@ -57,7 +56,9 @@ export function PlatformAuditPage({ events }: { events: readonly PlatformAuditEv
       <Card>
         <CardHeader>
           <CardTitle>Filtrar actividad</CardTitle>
-          <CardDescription>Mostrando {visibleEvents.length} de {events.length} eventos.</CardDescription>
+          <CardDescription>
+            Mostrando {visibleEvents.length} de {events.length} eventos.
+          </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           <Input
@@ -69,7 +70,9 @@ export function PlatformAuditPage({ events }: { events: readonly PlatformAuditEv
           <select
             aria-label="Filtrar por acción de auditoría"
             className="border-input h-10 rounded-md border bg-transparent px-3 text-sm"
-            onChange={(event) => setAction(event.target.value as 'all' | PlatformAuditEvent['action'])}
+            onChange={(event) =>
+              setAction(event.target.value as 'all' | PlatformAuditEvent['action'])
+            }
             value={action}
           >
             <option value="all">Todas las acciones</option>

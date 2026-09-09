@@ -45,14 +45,17 @@ export function validateVerifactuCertificate({
   try {
     const der = forge.util.createBuffer(bytes.toString('latin1'))
     const pfx = forge.pkcs12.pkcs12FromAsn1(forge.asn1.fromDer(der), false, password)
-    const keyBags = pfx.getBags({ bagType: forge.pki.oids.pkcs8ShroudedKeyBag })[
-      forge.pki.oids.pkcs8ShroudedKeyBag
-    ]
-    const certificateBags = pfx.getBags({ bagType: forge.pki.oids.certBag })[forge.pki.oids.certBag]
-    const key = keyBags?.map((bag) => bag.key).find(Boolean)
-    const certificates = certificateBags?.map((bag) => bag.cert).filter(Boolean) ?? []
+    const keyBagType = forge.pki.oids.pkcs8ShroudedKeyBag
+    const certificateBagType = forge.pki.oids.certBag
+    if (!keyBagType || !certificateBagType) throw new VerifactuCertificateError('certificate_invalid')
+    const keyBags = pfx.getBags({ bagType: keyBagType })[keyBagType] ?? []
+    const certificateBags = pfx.getBags({ bagType: certificateBagType })[certificateBagType] ?? []
+    const key = keyBags.map((bag: forge.pkcs12.Bag) => bag.key).find(Boolean)
+    const certificates = certificateBags
+      .map((bag: forge.pkcs12.Bag) => bag.cert)
+      .filter((certificate): certificate is forge.pki.Certificate => Boolean(certificate))
     const certificate = certificates.find(
-      (candidate) =>
+      (candidate: forge.pki.Certificate) =>
         candidate?.publicKey.n.compareTo(key?.n) === 0 &&
         candidate.publicKey.e.compareTo(key?.e) === 0,
     )
@@ -62,13 +65,15 @@ export function validateVerifactuCertificate({
     }
 
     const attributes = certificate.subject.attributes
-    const values = attributes.map((attribute) => String(attribute.value))
+    const values = attributes.map((attribute: forge.pki.CertificateField) => String(attribute.value))
     const normalizedIssuerNif = normalizeNif(issuerNif)
-    if (!values.some((value) => normalizeNif(value).includes(normalizedIssuerNif))) {
+    if (!values.some((value: string) => normalizeNif(value).includes(normalizedIssuerNif))) {
       throw new VerifactuCertificateError('certificate_nif_mismatch')
     }
 
-    const commonName = attributes.find((attribute) => attribute.name === 'commonName')?.value
+    const commonName = attributes.find(
+      (attribute: forge.pki.CertificateField) => attribute.name === 'commonName',
+    )?.value
     const subject = String(commonName ?? values.join(', '))
       .trim()
       .slice(0, 400)

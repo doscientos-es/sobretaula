@@ -4,11 +4,11 @@ import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 
 import { authMiddleware } from '@/features/auth/infrastructure/server/auth-middleware'
+import { indexProfilesByUserId } from '@/shared/lib/supabase/profile-index'
 import {
   createRequestSupabaseClient,
   createServiceSupabaseClient,
 } from '@/shared/lib/supabase/server/create-server-client'
-import { indexProfilesByUserId } from '@/shared/lib/supabase/profile-index'
 
 import { createPlatformOwnerClient } from './platform-dashboard'
 
@@ -70,10 +70,7 @@ export const getPlatformOperators = createServerFn({ method: 'GET' })
       context.principal.userId,
     )
     const [operatorsResult, invitationsResult] = await Promise.all([
-      request
-        .from('platform_members')
-        .select('created_at, role, user_id')
-        .order('created_at'),
+      request.from('platform_members').select('created_at, role, user_id').order('created_at'),
       request
         .from('platform_invitations')
         .select('email, expires_at, role')

@@ -10,107 +10,142 @@ import {
   FormFeedback,
   Input,
   useFormFeedback,
-} from '@doscientos/ui'
-import { Link } from '@tanstack/react-router'
-import { CalendarDays, Check, Clock3, MapPin, Users } from 'lucide-react'
-import { useMemo, useState, type FormEvent } from 'react'
+} from "@doscientos/ui";
+import { Link } from "@tanstack/react-router";
+import { CalendarDays, Check, Clock3, MapPin, Users } from "lucide-react";
+import { useMemo, useState, type FormEvent } from "react";
 
 import {
   createPublicReservation,
   getPublicReservationAvailability,
   type PublicReservationProfile,
-} from '../application/public-reservations'
+} from "../application/public-reservations";
 
-const weekdayNames = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado']
+const weekdayNames = [
+  "domingo",
+  "lunes",
+  "martes",
+  "miércoles",
+  "jueves",
+  "viernes",
+  "sábado",
+];
 
 function localDateKey(date: Date): string {
-  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(date)
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Madrid" }).format(
+    date,
+  );
 }
 
 function nextDates(weekday: number): string[] {
-  const today = new Date()
-  const result: string[] = []
+  const today = new Date();
+  const result: string[] = [];
   for (let offset = 0; offset < 30 && result.length < 8; offset += 1) {
-    const date = new Date(today)
-    date.setDate(today.getDate() + offset)
-    if (date.getDay() === weekday) result.push(localDateKey(date))
+    const date = new Date(today);
+    date.setDate(today.getDate() + offset);
+    if (date.getDay() === weekday) result.push(localDateKey(date));
   }
-  return result
+  return result;
 }
 
-function slotsForService(service: PublicReservationProfile['services'][number]): string[] {
-  const [startHour = 0, startMinute = 0] = service.startsAtTime.slice(0, 5).split(':').map(Number)
-  const [endHour = 0, endMinute = 0] = service.endsAtTime.slice(0, 5).split(':').map(Number)
-  const start = startHour * 60 + startMinute
-  const end = endHour * 60 + endMinute
-  const slots: string[] = []
+function slotsForService(
+  service: PublicReservationProfile["services"][number],
+): string[] {
+  const [startHour = 0, startMinute = 0] = service.startsAtTime
+    .slice(0, 5)
+    .split(":")
+    .map(Number);
+  const [endHour = 0, endMinute = 0] = service.endsAtTime
+    .slice(0, 5)
+    .split(":")
+    .map(Number);
+  const start = startHour * 60 + startMinute;
+  const end = endHour * 60 + endMinute;
+  const slots: string[] = [];
   for (let minute = start; minute < end; minute += service.slotMinutes) {
     slots.push(
-      `${String(Math.floor(minute / 60)).padStart(2, '0')}:${String(minute % 60).padStart(2, '0')}`,
-    )
+      `${String(Math.floor(minute / 60)).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}`,
+    );
   }
-  return slots
+  return slots;
 }
 
 function formatDate(date: string): string {
-  return new Intl.DateTimeFormat('es-ES', {
-    day: 'numeric',
-    month: 'long',
-    weekday: 'long',
-  }).format(new Date(`${date}T12:00:00`))
+  return new Intl.DateTimeFormat("es-ES", {
+    day: "numeric",
+    month: "long",
+    weekday: "long",
+  }).format(new Date(`${date}T12:00:00`));
 }
 
-export function PublicReservationPage({ profile }: { profile: PublicReservationProfile }) {
-  const feedback = useFormFeedback()
-  const [serviceId, setServiceId] = useState(profile.services[0]?.id ?? '')
-  const [date, setDate] = useState('')
-  const [time, setTime] = useState('')
-  const [partySize, setPartySize] = useState(2)
-  const [guestName, setGuestName] = useState('')
-  const [phone, setPhone] = useState('')
-  const [email, setEmail] = useState('')
-  const [confirmed, setConfirmed] = useState(false)
-  const [managementToken, setManagementToken] = useState('')
-  const [availableSlots, setAvailableSlots] = useState<string[]>([])
-  const [availabilityLoading, setAvailabilityLoading] = useState(false)
-  const service = profile.services.find((candidate) => candidate.id === serviceId)
-  const dates = useMemo(() => (service ? nextDates(service.weekday) : []), [service])
-  const slots = useMemo(() => (service ? slotsForService(service) : []), [service])
+export function PublicReservationPage({
+  profile,
+}: {
+  profile: PublicReservationProfile;
+}) {
+  const feedback = useFormFeedback();
+  const [serviceId, setServiceId] = useState(profile.services[0]?.id ?? "");
+  const [date, setDate] = useState("");
+  const [time, setTime] = useState("");
+  const [partySize, setPartySize] = useState(2);
+  const [guestName, setGuestName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [confirmed, setConfirmed] = useState(false);
+  const [managementToken, setManagementToken] = useState("");
+  const [availableSlots, setAvailableSlots] = useState<string[]>([]);
+  const [availabilityLoading, setAvailabilityLoading] = useState(false);
+  const service = profile.services.find(
+    (candidate) => candidate.id === serviceId,
+  );
+  const dates = useMemo(
+    () => (service ? nextDates(service.weekday) : []),
+    [service],
+  );
+  const slots = useMemo(
+    () => (service ? slotsForService(service) : []),
+    [service],
+  );
 
   function selectService(id: string) {
-    setServiceId(id)
-    setDate('')
-    setTime('')
-    setAvailableSlots([])
+    setServiceId(id);
+    setDate("");
+    setTime("");
+    setAvailableSlots([]);
   }
 
   async function selectDate(value: string, size = partySize) {
-    setDate(value)
-    setTime('')
+    setDate(value);
+    setTime("");
     if (!value || !service) {
-      setAvailableSlots([])
-      return
+      setAvailableSlots([]);
+      return;
     }
-    setAvailabilityLoading(true)
+    setAvailabilityLoading(true);
     try {
       const result = await getPublicReservationAvailability({
-        data: { date: value, partySize: size, serviceId: service.id, slug: profile.slug },
-      })
-      setAvailableSlots(result.startsAt)
+        data: {
+          date: value,
+          partySize: size,
+          serviceId: service.id,
+          slug: profile.slug,
+        },
+      });
+      setAvailableSlots(result.startsAt);
     } catch {
-      setAvailableSlots([])
+      setAvailableSlots([]);
     } finally {
-      setAvailabilityLoading(false)
+      setAvailabilityLoading(false);
     }
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
+    event.preventDefault();
     if (!service || !date || !time) {
-      feedback.setError('Elige el día y la hora que prefieras.')
-      return
+      feedback.setError("Elige el día y la hora que prefieras.");
+      return;
     }
-    feedback.setPending()
+    feedback.setPending();
     try {
       const result = await createPublicReservation({
         data: {
@@ -124,16 +159,16 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
           // server validates the instant again against the tenant timezone.
           startsAt: new Date(`${date}T${time}:00`).toISOString(),
         },
-      })
-      setManagementToken(result.managementToken)
-      setConfirmed(true)
-      feedback.setSuccess('')
+      });
+      setManagementToken(result.managementToken);
+      setConfirmed(true);
+      feedback.setSuccess("");
     } catch (error) {
       feedback.setError(
         error instanceof Response && error.status === 409
-          ? 'Esta hora acaba de ocuparse. Elige otra, por favor.'
-          : 'No hemos podido completar la reserva. Revisa los datos e inténtalo de nuevo.',
-      )
+          ? "Esta hora acaba de ocuparse. Elige otra, por favor."
+          : "No hemos podido completar la reserva. Revisa los datos e inténtalo de nuevo.",
+      );
     }
   }
 
@@ -160,8 +195,9 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
             Te esperamos en {profile.name}
           </h1>
           <p className="mt-6 leading-relaxed text-[#60656d]">
-            Hemos reservado una mesa para {partySize} {partySize === 1 ? 'persona' : 'personas'} el{' '}
-            {formatDate(date)} a las {time}.
+            Hemos reservado una mesa para {partySize}{" "}
+            {partySize === 1 ? "persona" : "personas"} el {formatDate(date)} a
+            las {time}.
           </p>
           <Link
             className="st-public-booking-manage-link"
@@ -171,12 +207,12 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
             Consultar o cancelar esta reserva
           </Link>
           <p className="mt-6 text-xs leading-5 text-[#737983]">
-            {profile.venueName}. Guarda esta pantalla; pronto podrás añadir confirmaciones y
-            recordatorios.
+            {profile.venueName}. Guarda esta pantalla; pronto podrás añadir
+            confirmaciones y recordatorios.
           </p>
         </section>
       </main>
-    )
+    );
   }
 
   return (
@@ -202,10 +238,12 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
           </p>
           <div className="mt-8 grid gap-2.5 text-sm text-[#737983]">
             <span className="inline-flex items-center gap-2">
-              <MapPin aria-hidden="true" className="size-4" /> {profile.venueName}
+              <MapPin aria-hidden="true" className="size-4" />{" "}
+              {profile.venueName}
             </span>
             <span className="inline-flex items-center gap-2">
-              <Clock3 aria-hidden="true" className="size-4" /> Reserva en menos de un minuto
+              <Clock3 aria-hidden="true" className="size-4" /> Reserva en menos
+              de un minuto
             </span>
           </div>
         </header>
@@ -214,12 +252,15 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
             <CardTitle>Encuentra tu mesa</CardTitle>
             <CardDescription>
               {profile.services.length > 0
-                ? 'No necesitas crear una cuenta.'
-                : 'Este restaurante todavía no ha publicado ningún turno disponible.'}
+                ? "No necesitas crear una cuenta."
+                : "Este restaurante todavía no ha publicado ningún turno disponible."}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form className="grid gap-4" onSubmit={(event) => void submit(event)}>
+            <form
+              className="grid gap-4"
+              onSubmit={(event) => void submit(event)}
+            >
               <Field>
                 <FieldLabel htmlFor="public-service">Momento</FieldLabel>
                 <select
@@ -238,7 +279,11 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field>
                   <FieldLabel htmlFor="public-date">
-                    <CalendarDays aria-hidden="true" className="mr-1 inline size-4" /> Día
+                    <CalendarDays
+                      aria-hidden="true"
+                      className="mr-1 inline size-4"
+                    />{" "}
+                    Día
                   </FieldLabel>
                   <select
                     id="public-date"
@@ -254,8 +299,12 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                       </option>
                     ))}
                   </select>
-                  {date && !availabilityLoading && availableSlots.length === 0 ? (
-                    <p className="mt-2 text-xs text-[#c34d3e]">No quedan horas libres para ese día y número de personas.</p>
+                  {date &&
+                  !availabilityLoading &&
+                  availableSlots.length === 0 ? (
+                    <p className="mt-2 text-xs text-[#c34d3e]">
+                      No quedan horas libres para ese día y número de personas.
+                    </p>
                   ) : null}
                 </Field>
                 <Field>
@@ -278,7 +327,8 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
               </div>
               <Field>
                 <FieldLabel htmlFor="public-party">
-                  <Users aria-hidden="true" className="mr-1 inline size-4" /> Personas
+                  <Users aria-hidden="true" className="mr-1 inline size-4" />{" "}
+                  Personas
                 </FieldLabel>
                 <Input
                   id="public-party"
@@ -286,9 +336,9 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                   max={50}
                   min={1}
                   onChange={(event) => {
-                    const nextSize = Number(event.target.value)
-                    setPartySize(nextSize)
-                    if (date) void selectDate(date, nextSize)
+                    const nextSize = Number(event.target.value);
+                    setPartySize(nextSize);
+                    if (date) void selectDate(date, nextSize);
                   }}
                   required
                   type="number"
@@ -327,7 +377,10 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                   value={email}
                 />
               </Field>
-              <FormFeedback pendingLabel="Comprobando disponibilidad…" state={feedback.state} />
+              <FormFeedback
+                pendingLabel="Comprobando disponibilidad…"
+                state={feedback.state}
+              />
               <Button
                 className="w-full"
                 disabled={
@@ -342,13 +395,13 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                 Reservar mesa
               </Button>
               <p className="m-0 text-xs leading-5 text-[#737983]">
-                Al reservar, tus datos se compartirán solo con {profile.name} para gestionar esta
-                reserva.
+                Al reservar, tus datos se compartirán solo con {profile.name}{" "}
+                para gestionar esta reserva.
               </p>
             </form>
           </CardContent>
         </Card>
       </section>
     </main>
-  )
+  );
 }

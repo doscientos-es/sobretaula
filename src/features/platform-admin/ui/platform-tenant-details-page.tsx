@@ -26,7 +26,6 @@ import {
 } from '../application/platform-tenant-details'
 import type { PlatformAuditEvent } from '../domain/platform-audit'
 import { getTenantVerifactuHealth } from '../domain/platform-tenant-verifactu'
-
 import { PlatformAuditList } from './platform-audit-list'
 
 const euro = new Intl.NumberFormat('es-ES', { currency: 'EUR', style: 'currency' })

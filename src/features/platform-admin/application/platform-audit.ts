@@ -9,7 +9,6 @@ import {
   platformAuditSummary,
   type PlatformAuditEvent,
 } from '../domain/platform-audit'
-
 import { createPlatformOwnerClient } from './platform-dashboard'
 
 const auditLogInput = z.object({ tenantId: z.string().uuid().optional() })
@@ -46,9 +45,7 @@ export const getPlatformAuditLog = createServerFn({ method: 'GET' })
       new Set(events.flatMap((event) => (event.actor_user_id ? [event.actor_user_id] : []))),
     )
     const tenantIds = Array.from(
-      new Set(
-        events.flatMap((event) => (event.target_type === 'tenant' ? [event.target_id] : [])),
-      ),
+      new Set(events.flatMap((event) => (event.target_type === 'tenant' ? [event.target_id] : []))),
     )
     const [profilesResult, tenantsResult] = await Promise.all([
       userIds.length
@@ -58,10 +55,13 @@ export const getPlatformAuditLog = createServerFn({ method: 'GET' })
         ? supabase.from('tenants').select('id, name').in('id', tenantIds)
         : Promise.resolve({ data: [], error: null }),
     ])
-    if (profilesResult.error || tenantsResult.error) throw new Error('platform_audit_log_context_failed')
+    if (profilesResult.error || tenantsResult.error)
+      throw new Error('platform_audit_log_context_failed')
 
     const profilesByUserId = indexProfilesByUserId(profilesResult.data ?? [])
-    const tenantsById = new Map((tenantsResult.data ?? []).map((tenant) => [tenant.id, tenant.name]))
+    const tenantsById = new Map(
+      (tenantsResult.data ?? []).map((tenant) => [tenant.id, tenant.name]),
+    )
     return events.map((event) => {
       const actor = event.actor_user_id ? profilesByUserId.get(event.actor_user_id) : undefined
       const target =

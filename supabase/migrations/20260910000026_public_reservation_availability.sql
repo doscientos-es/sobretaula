@@ -21,9 +21,9 @@ as $$
     where t.slug = p_slug and t.status in ('trial', 'active') and s.id = p_service_id
   ), candidates as (
     select target.*, (p_date + target.starts_at_time
-      + (n * target.slot_minutes) * interval '1 minute') at time zone target.timezone as starts_at,
+      + (slots.n * target.slot_minutes) * interval '1 minute') at time zone target.timezone as starts_at,
       (p_date + target.starts_at_time
-      + (n * target.slot_minutes + target.duration) * interval '1 minute') at time zone target.timezone as ends_at
+      + (slots.n * target.slot_minutes + target.duration) * interval '1 minute') at time zone target.timezone as ends_at
     from target cross join lateral generate_series(
       0, greatest(0, floor(extract(epoch from (target.ends_at_time - target.starts_at_time)) / 60
         - target.duration) / target.slot_minutes)::integer
@@ -47,6 +47,13 @@ as $$
           * c.slot_minutes * interval '1 minute'
           + c.slot_minutes * interval '1 minute'
     ) < c.max_reservations_per_slot)
+    and (c.max_covers_per_slot is null or (
+      select coalesce(sum(r.party_size), 0) from public.reservations r where r.tenant_id = c.tenant_id and r.venue_id = c.venue_id
+        and r.status in ('pending', 'confirmed', 'seated')
+        and r.starts_at >= date_trunc('hour', c.starts_at)
+        and r.starts_at < date_trunc('hour', c.starts_at) + floor(extract(minute from c.starts_at) / c.slot_minutes)
+          * c.slot_minutes * interval '1 minute' + c.slot_minutes * interval '1 minute'
+    ) + p_party_size <= c.max_covers_per_slot)
     and exists (
       select 1 from public.tables tb where tb.tenant_id = c.tenant_id and tb.venue_id = c.venue_id
         and tb.is_active and tb.is_bookable and tb.max_seats >= p_party_size
