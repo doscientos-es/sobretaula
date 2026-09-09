@@ -20,6 +20,7 @@ import {
   createReservationService,
   type ReservationService,
 } from '../application/reservations'
+import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
 
 const weekdays = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
 
@@ -87,6 +88,8 @@ export function ReservationPage({
       feedback.setError('No hay disponibilidad para esta petición.')
     }
   }
+
+  const reload = useLoaderReload()
 
   return (
     <section className="space-y-6">

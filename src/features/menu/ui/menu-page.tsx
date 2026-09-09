@@ -15,6 +15,7 @@ import {
 
 import type { Locale } from '@/shared/lib/i18n/locale'
 import { createTranslator } from '@/shared/lib/i18n/messages'
+import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
 
 import type { MenuCatalog } from '../application/menu'
 import { buildMenuSections, localizedText } from '../domain/menu'
@@ -38,9 +39,7 @@ export function MenuPage({
     locale,
   })
 
-  function reload() {
-    window.location.reload()
-  }
+  const reload = useLoaderReload()
 
   return (
     <section className="space-y-6">

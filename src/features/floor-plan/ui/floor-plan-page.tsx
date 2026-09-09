@@ -15,6 +15,8 @@ import {
 } from '@doscientos/ui'
 import { useState, type FormEvent, type KeyboardEvent, type PointerEvent } from 'react'
 
+import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
+
 import {
   createFloorPlanTable,
   createInitialFloorPlan,
@@ -44,6 +46,7 @@ export function FloorPlanPage({
   venueId: string
 }) {
   const feedback = useFormFeedback()
+  const reload = useLoaderReload()
   const [areaName, setAreaName] = useState('Sala principal')
   const [widthCm, setWidthCm] = useState(800)
   const [heightCm, setHeightCm] = useState(600)
@@ -77,7 +80,7 @@ export function FloorPlanPage({
       await createInitialFloorPlan({
         data: { areaName, heightCm, tenantId, venueId, widthCm },
       })
-      window.location.reload()
+      reload()
     } catch {
       feedback.setError('No se ha podido crear el plano. Revisa los datos e inténtalo de nuevo.')
     }
@@ -104,7 +107,7 @@ export function FloorPlanPage({
           yCm: tableYCm,
         },
       })
-      window.location.reload()
+      reload()
     } catch {
       feedback.setError('La mesa queda fuera del plano, se solapa o ya existe ese código.')
     }
@@ -195,7 +198,7 @@ export function FloorPlanPage({
           venueId,
         },
       })
-      window.location.reload()
+      reload()
     } catch {
       feedback.setError('No se ha podido guardar la versión del plano.')
     }

@@ -2,6 +2,7 @@ import { createFileRoute, notFound } from '@tanstack/react-router'
 
 import { BillingPage, getBillingOverview } from '@/features/invoices'
 import { tenantBySlugQuery } from '@/features/tenancy'
+import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
 
 export const Route = createFileRoute('/t/$slug/facturacion')({
   loader: async ({ context, params }) => {
@@ -15,11 +16,12 @@ export const Route = createFileRoute('/t/$slug/facturacion')({
 
 function BillingRoute() {
   const { overview, tenant } = Route.useLoaderData()
+  const reload = useLoaderReload()
 
   return (
     <BillingPage
       locale={tenant.defaultLocale}
-      onDone={() => window.location.reload()}
+      onDone={reload}
       overview={overview}
       tenantId={tenant.id}
     />

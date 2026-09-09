@@ -11,6 +11,7 @@ import {
 import { useState } from 'react'
 
 import type { FloorPlanData } from '@/features/floor-plan'
+import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
 
 import type { ServiceBoard } from '../domain/service-board'
 import { ServiceActions } from './service-actions'
@@ -30,6 +31,7 @@ export function ServicePage({
   venueId: string
 }) {
   const [selectedTableIds, setSelectedTableIds] = useState<readonly string[]>([])
+  const reload = useLoaderReload()
   const activeVersion = plan.versions[0]
   const placements = activeVersion
     ? plan.placements.filter((placement) => placement.floorPlanVersionId === activeVersion.id)
@@ -99,14 +101,14 @@ export function ServicePage({
         <div className="space-y-6">
           <ServiceActions
             board={board}
-            onDone={() => window.location.reload()}
+            onDone={reload}
             selectedTableIds={selectedTableIds}
             tenantId={tenantId}
             venueId={venueId}
           />
           <ServiceQueue
             board={board}
-            onDone={() => window.location.reload()}
+            onDone={reload}
             selectedTableIds={selectedTableIds}
             tenantId={tenantId}
             venueId={venueId}

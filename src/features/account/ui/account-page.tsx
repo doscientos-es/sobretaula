@@ -35,9 +35,7 @@ export function AccountPage({
   const tablesLabel =
     session.tableCodes.length > 0 ? ` · Mesa ${session.tableCodes.join(' + ')}` : ''
 
-  function reload() {
-    window.location.reload()
-  }
+  const reload = useLoaderReload()
 
   return (
     <section className="space-y-6">
