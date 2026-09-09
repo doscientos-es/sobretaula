@@ -10,7 +10,10 @@ export const upsertFiscalSettingsInput = z.object({
   environment: z.enum(VERIFACTU_ENVS),
   issuerNif: z.string().trim().min(9).max(12),
   legalName: z.string().trim().min(1).max(120),
-  postalCode: z.string().trim().regex(/^\d{5}$/),
+  postalCode: z
+    .string()
+    .trim()
+    .regex(/^\d{5}$/),
   tenantId: z.string().uuid(),
 })
 

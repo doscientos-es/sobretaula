@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest'
 
-import { buildFullNumber, canIssueInvoices, groupVatTotals, isValidNifFormat, normalizeNif, sumVatBreakdowns } from './invoice'
 import { isValidSeriesCode, normalizeSeriesCode, validateFiscalSettings } from './fiscal-settings'
+import {
+  buildFullNumber,
+  canIssueInvoices,
+  groupVatTotals,
+  isValidNifFormat,
+  normalizeNif,
+  sumVatBreakdowns,
+} from './invoice'
 
 describe('normalizeNif / isValidNifFormat', () => {
   it('trims, uppercases and strips separators', () => {
@@ -49,7 +56,9 @@ describe('groupVatTotals', () => {
   })
 
   it('handles zero-rated lines', () => {
-    const totals = sumVatBreakdowns(groupVatTotals([{ quantity: 3, unitPriceCents: 100, vatRateBps: 0 }]))
+    const totals = sumVatBreakdowns(
+      groupVatTotals([{ quantity: 3, unitPriceCents: 100, vatRateBps: 0 }]),
+    )
     expect(totals).toEqual({ gross: 300, net: 300, vat: 0 })
   })
 })
@@ -80,8 +89,14 @@ describe('validateFiscalSettings', () => {
   })
 
   it('rejects wrong NIF, postal code or empty name', () => {
-    expect(() => validateFiscalSettings({ ...base, issuerNif: 'BAD' })).toThrow('fiscal_settings_invalid_nif')
-    expect(() => validateFiscalSettings({ ...base, postalCode: '4600' })).toThrow('fiscal_settings_invalid_postal_code')
-    expect(() => validateFiscalSettings({ ...base, legalName: '   ' })).toThrow('fiscal_settings_invalid_legal_name')
+    expect(() => validateFiscalSettings({ ...base, issuerNif: 'BAD' })).toThrow(
+      'fiscal_settings_invalid_nif',
+    )
+    expect(() => validateFiscalSettings({ ...base, postalCode: '4600' })).toThrow(
+      'fiscal_settings_invalid_postal_code',
+    )
+    expect(() => validateFiscalSettings({ ...base, legalName: '   ' })).toThrow(
+      'fiscal_settings_invalid_legal_name',
+    )
   })
 })

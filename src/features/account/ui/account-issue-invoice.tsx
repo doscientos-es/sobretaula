@@ -13,10 +13,8 @@ import {
 } from '@doscientos/ui'
 import { useState, type FormEvent } from 'react'
 
+import { issueInvoiceFromSession, type InvoiceSeries } from '@/features/invoices'
 import type { Locale } from '@/shared/lib/i18n/locale'
-
-import { issueInvoiceFromSession } from '@/features/invoices'
-import type { InvoiceSeries } from '@/features/invoices'
 
 /** Emits the fiscal invoice of a closed, fully paid session. */
 export function AccountIssueInvoice({
@@ -58,7 +56,7 @@ export function AccountIssueInvoice({
       },
     })
       .then((result) => {
-        feedback.setDone(`Factura ${result.fullNumber} emitida.`)
+        feedback.setSuccess(`Factura ${result.fullNumber} emitida.`)
       })
       .catch(() => feedback.setError('No se ha podido emitir la factura.'))
   }
@@ -75,7 +73,11 @@ export function AccountIssueInvoice({
         <form className="grid gap-4" onSubmit={issue}>
           <Field>
             <FieldLabel htmlFor="issue-series">Serie</FieldLabel>
-            <select id="issue-series" onChange={(event) => setSeriesId(event.target.value)} value={seriesId}>
+            <select
+              id="issue-series"
+              onChange={(event) => setSeriesId(event.target.value)}
+              value={seriesId}
+            >
               {series.map((item) => (
                 <option key={item.id} value={item.id}>
                   {`${item.code} · ejercicio ${item.fiscalYear}`}
@@ -85,11 +87,19 @@ export function AccountIssueInvoice({
           </Field>
           <Field>
             <FieldLabel htmlFor="issue-customer-name">Cliente (opcional)</FieldLabel>
-            <Input id="issue-customer-name" onChange={(event) => setCustomerName(event.target.value)} value={customerName} />
+            <Input
+              id="issue-customer-name"
+              onChange={(event) => setCustomerName(event.target.value)}
+              value={customerName}
+            />
           </Field>
           <Field>
             <FieldLabel htmlFor="issue-customer-nif">NIF del cliente (opcional)</FieldLabel>
-            <Input id="issue-customer-nif" onChange={(event) => setCustomerNif(event.target.value)} value={customerNif} />
+            <Input
+              id="issue-customer-nif"
+              onChange={(event) => setCustomerNif(event.target.value)}
+              value={customerNif}
+            />
           </Field>
           <FormFeedback pendingLabel="Emitiendo factura…" state={feedback.state} />
           <Button disabled={disabled || feedback.pending || series.length === 0} type="submit">

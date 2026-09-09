@@ -107,6 +107,15 @@ export function AppFrame({
             {t('nav.menu')}
           </Link>
           <Link
+            to="/t/$slug/facturacion"
+            params={{ slug }}
+            activeProps={{ className: 'bg-muted text-foreground' }}
+            className="text-muted-foreground hover:bg-secondary hover:text-foreground flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors"
+          >
+            <FileText className="size-4" />
+            {t('nav.billing')}
+          </Link>
+          <Link
             to="/t/$slug/facturas"
             params={{ slug }}
             activeProps={{ className: 'bg-muted text-foreground' }}

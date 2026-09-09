@@ -22,10 +22,13 @@ import { useState, type FormEvent } from 'react'
 import type { Locale } from '@/shared/lib/i18n/locale'
 import { formatMoney } from '@/shared/lib/money/money'
 
-import type { FiscalSettingsView } from '../application/invoice'
-import { createInvoiceSeries, upsertFiscalSettings } from '../application/invoice'
+import {
+  createInvoiceSeries,
+  getInvoiceDocument,
+  upsertFiscalSettings,
+  type FiscalSettingsView,
+} from '../application/invoice'
 import type { VerifactuEnv } from '../domain/invoice'
-import { formatInvoiceReference } from '../domain/invoice'
 
 const CURRENT_YEAR = new Date().getFullYear()
 
@@ -43,20 +46,18 @@ export function BillingPage({
 }) {
   return (
     <section className="space-y-6">
-      <FiscalSettingsCard locale={locale} onDone={onDone} settings={overview.settings} tenantId={tenantId} />
+      <FiscalSettingsCard onDone={onDone} settings={overview.settings} tenantId={tenantId} />
       <SeriesCard onDone={onDone} series={overview.series} tenantId={tenantId} />
-      <InvoiceBookCard invoices={overview.invoices} locale={locale} />
+      <InvoiceBookCard invoices={overview.invoices} locale={locale} tenantId={tenantId} />
     </section>
   )
 }
 
 function FiscalSettingsCard({
-  locale,
   onDone,
   settings,
   tenantId,
 }: {
-  locale: Locale
   onDone: () => void
   settings: FiscalSettingsView['settings']
   tenantId: string
@@ -102,27 +103,59 @@ function FiscalSettingsCard({
         <form className="grid gap-4 md:grid-cols-2" onSubmit={save}>
           <Field>
             <FieldLabel htmlFor="fiscal-nif">NIF</FieldLabel>
-            <Input id="fiscal-nif" onChange={(event) => setIssuerNif(event.target.value)} required value={issuerNif} />
+            <Input
+              id="fiscal-nif"
+              onChange={(event) => setIssuerNif(event.target.value)}
+              required
+              value={issuerNif}
+            />
           </Field>
           <Field>
             <FieldLabel htmlFor="fiscal-name">Razón social</FieldLabel>
-            <Input id="fiscal-name" onChange={(event) => setLegalName(event.target.value)} required value={legalName} />
+            <Input
+              id="fiscal-name"
+              onChange={(event) => setLegalName(event.target.value)}
+              required
+              value={legalName}
+            />
           </Field>
           <Field>
             <FieldLabel htmlFor="fiscal-address">Domicilio</FieldLabel>
-            <Input id="fiscal-address" onChange={(event) => setAddressLine(event.target.value)} required value={addressLine} />
+            <Input
+              id="fiscal-address"
+              onChange={(event) => setAddressLine(event.target.value)}
+              required
+              value={addressLine}
+            />
           </Field>
           <Field>
             <FieldLabel htmlFor="fiscal-city">Población</FieldLabel>
-            <Input id="fiscal-city" onChange={(event) => setCity(event.target.value)} required value={city} />
+            <Input
+              id="fiscal-city"
+              onChange={(event) => setCity(event.target.value)}
+              required
+              value={city}
+            />
           </Field>
           <Field>
             <FieldLabel htmlFor="fiscal-postal">Código postal</FieldLabel>
-            <Input id="fiscal-postal" inputMode="numeric" onChange={(event) => setPostalCode(event.target.value)} required value={postalCode} />
+            <Input
+              id="fiscal-postal"
+              inputMode="numeric"
+              onChange={(event) => setPostalCode(event.target.value)}
+              required
+              value={postalCode}
+            />
           </Field>
           <Field>
             <FieldLabel htmlFor="fiscal-country">País</FieldLabel>
-            <Input id="fiscal-country" maxLength={2} onChange={(event) => setCountryCode(event.target.value)} required value={countryCode} />
+            <Input
+              id="fiscal-country"
+              maxLength={2}
+              onChange={(event) => setCountryCode(event.target.value)}
+              required
+              value={countryCode}
+            />
           </Field>
           <Field>
             <FieldLabel htmlFor="fiscal-env">Entorno VERI*FACTU</FieldLabel>
@@ -173,7 +206,9 @@ function SeriesCard({
     <Card>
       <CardHeader>
         <CardTitle>Series de facturación</CardTitle>
-        <CardDescription>La correlatividad se reserva de forma atómica en la base de datos.</CardDescription>
+        <CardDescription>
+          La correlatividad se reserva de forma atómica en la base de datos.
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {series.length > 0 && (
@@ -199,7 +234,12 @@ function SeriesCard({
         <form className="flex flex-wrap items-end gap-3" onSubmit={create}>
           <Field>
             <FieldLabel htmlFor="series-code">Código</FieldLabel>
-            <Input id="series-code" onChange={(event) => setCode(event.target.value)} required value={code} />
+            <Input
+              id="series-code"
+              onChange={(event) => setCode(event.target.value)}
+              required
+              value={code}
+            />
           </Field>
           <Field>
             <FieldLabel htmlFor="series-year">Ejercicio</FieldLabel>
@@ -223,7 +263,15 @@ function SeriesCard({
   )
 }
 
-function InvoiceBookCard({ invoices, locale }: { invoices: FiscalSettingsView['invoices']; locale: Locale }) {
+function InvoiceBookCard({
+  invoices,
+  locale,
+  tenantId,
+}: {
+  invoices: FiscalSettingsView['invoices']
+  locale: Locale
+  tenantId: string
+}) {
   return (
     <Card>
       <CardHeader>
@@ -242,6 +290,9 @@ function InvoiceBookCard({ invoices, locale }: { invoices: FiscalSettingsView['i
                 <TableHead>Cliente</TableHead>
                 <TableHead>Estado</TableHead>
                 <TableHead className="text-right">Total</TableHead>
+                <TableHead>
+                  <span className="sr-only">Descargar</span>
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -254,6 +305,9 @@ function InvoiceBookCard({ invoices, locale }: { invoices: FiscalSettingsView['i
                   <TableCell className="text-right tabular-nums">
                     {formatMoney(invoice.totalGross, locale)}
                   </TableCell>
+                  <TableCell className="text-right">
+                    <InvoiceDownloadButton invoiceId={invoice.id} tenantId={tenantId} />
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -261,5 +315,31 @@ function InvoiceBookCard({ invoices, locale }: { invoices: FiscalSettingsView['i
         )}
       </CardContent>
     </Card>
+  )
+}
+
+function InvoiceDownloadButton({ invoiceId, tenantId }: { invoiceId: string; tenantId: string }) {
+  const feedback = useFormFeedback()
+
+  function download() {
+    if (feedback.pending) return
+    feedback.setPending()
+    void getInvoiceDocument({ data: { invoiceId, tenantId } })
+      .then((result) => {
+        feedback.reset()
+        window.open(result.signedUrl, '_blank', 'noopener,noreferrer')
+      })
+      .catch(() => {
+        feedback.setError('Aún no hay PDF disponible para esta factura.')
+      })
+  }
+
+  return (
+    <span className="inline-flex items-center gap-2">
+      <FormFeedback pendingLabel="Preparando PDF…" state={feedback.state} />
+      <Button onClick={download} size="sm" type="button" variant="ghost">
+        Descargar PDF
+      </Button>
+    </span>
   )
 }

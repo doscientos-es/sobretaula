@@ -1,7 +1,7 @@
 import { PageHeader, PageHeaderTitle } from '@doscientos/ui'
 
-import type { MenuCatalog } from '@/features/menu'
 import type { InvoiceSeries } from '@/features/invoices'
+import type { MenuCatalog } from '@/features/menu'
 import type { Locale } from '@/shared/lib/i18n/locale'
 
 import type { AccountView } from '../application/account'

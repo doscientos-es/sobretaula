@@ -19,6 +19,7 @@ import { Route as ApiPlatformBillingReconcileRouteImport } from './routes/api.pl
 import { Route as ApiWebhooksRedsysRouteImport } from './routes/api.webhooks.redsys'
 import { Route as TSlugIndexRouteImport } from './routes/t.$slug.index'
 import { Route as TSlugCartaRouteImport } from './routes/t.$slug.carta'
+import { Route as TSlugFacturacionRouteImport } from './routes/t.$slug.facturacion'
 import { Route as TSlugFacturasRouteImport } from './routes/t.$slug.facturas'
 import { Route as TSlugLVenueRouteImport } from './routes/t.$slug.l.$venue'
 import { Route as TSlugLNuevoRouteImport } from './routes/t.$slug.l.nuevo'
@@ -80,6 +81,11 @@ const TSlugCartaRoute = TSlugCartaRouteImport.update({
   path: '/carta',
   getParentRoute: () => TSlugRoute,
 } as any)
+const TSlugFacturacionRoute = TSlugFacturacionRouteImport.update({
+  id: '/facturacion',
+  path: '/facturacion',
+  getParentRoute: () => TSlugRoute,
+} as any)
 const TSlugFacturasRoute = TSlugFacturasRouteImport.update({
   id: '/facturas',
   path: '/facturas',
@@ -138,6 +144,7 @@ export interface FileRoutesByFullPath {
   '/api/platform-billing/reconcile': typeof ApiPlatformBillingReconcileRoute
   '/api/webhooks/redsys': typeof ApiWebhooksRedsysRoute
   '/t/$slug/carta': typeof TSlugCartaRoute
+  '/t/$slug/facturacion': typeof TSlugFacturacionRoute
   '/t/$slug/facturas': typeof TSlugFacturasRoute
   '/t/$slug/': typeof TSlugIndexRoute
   '/t/$slug/l/$venue': typeof TSlugLVenueRouteWithChildren
@@ -158,6 +165,7 @@ export interface FileRoutesByTo {
   '/api/platform-billing/reconcile': typeof ApiPlatformBillingReconcileRoute
   '/api/webhooks/redsys': typeof ApiWebhooksRedsysRoute
   '/t/$slug/carta': typeof TSlugCartaRoute
+  '/t/$slug/facturacion': typeof TSlugFacturacionRoute
   '/t/$slug/facturas': typeof TSlugFacturasRoute
   '/t/$slug': typeof TSlugIndexRoute
   '/t/$slug/l/nuevo': typeof TSlugLNuevoRoute
@@ -179,6 +187,7 @@ export interface FileRoutesById {
   '/api/platform-billing/reconcile': typeof ApiPlatformBillingReconcileRoute
   '/api/webhooks/redsys': typeof ApiWebhooksRedsysRoute
   '/t/$slug/carta': typeof TSlugCartaRoute
+  '/t/$slug/facturacion': typeof TSlugFacturacionRoute
   '/t/$slug/facturas': typeof TSlugFacturasRoute
   '/t/$slug/': typeof TSlugIndexRoute
   '/t/$slug/l/$venue': typeof TSlugLVenueRouteWithChildren
@@ -202,6 +211,7 @@ export interface FileRouteTypes {
     | '/api/platform-billing/reconcile'
     | '/api/webhooks/redsys'
     | '/t/$slug/carta'
+    | '/t/$slug/facturacion'
     | '/t/$slug/facturas'
     | '/t/$slug/'
     | '/t/$slug/l/$venue'
@@ -222,6 +232,7 @@ export interface FileRouteTypes {
     | '/api/platform-billing/reconcile'
     | '/api/webhooks/redsys'
     | '/t/$slug/carta'
+    | '/t/$slug/facturacion'
     | '/t/$slug/facturas'
     | '/t/$slug'
     | '/t/$slug/l/nuevo'
@@ -242,6 +253,7 @@ export interface FileRouteTypes {
     | '/api/platform-billing/reconcile'
     | '/api/webhooks/redsys'
     | '/t/$slug/carta'
+    | '/t/$slug/facturacion'
     | '/t/$slug/facturas'
     | '/t/$slug/'
     | '/t/$slug/l/$venue'
@@ -337,6 +349,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TSlugCartaRouteImport
       parentRoute: typeof TSlugRoute
     }
+    '/t/$slug/facturacion': {
+      id: '/t/$slug/facturacion'
+      path: '/facturacion'
+      fullPath: '/t/$slug/facturacion'
+      preLoaderRoute: typeof TSlugFacturacionRouteImport
+      parentRoute: typeof TSlugRoute
+    }
     '/t/$slug/facturas': {
       id: '/t/$slug/facturas'
       path: '/facturas'
@@ -425,6 +444,7 @@ const TSlugLVenueRouteWithChildren = TSlugLVenueRoute._addFileChildren(
 
 interface TSlugRouteChildren {
   TSlugCartaRoute: typeof TSlugCartaRoute
+  TSlugFacturacionRoute: typeof TSlugFacturacionRoute
   TSlugFacturasRoute: typeof TSlugFacturasRoute
   TSlugIndexRoute: typeof TSlugIndexRoute
   TSlugLVenueRoute: typeof TSlugLVenueRouteWithChildren
@@ -434,6 +454,7 @@ interface TSlugRouteChildren {
 
 const TSlugRouteChildren: TSlugRouteChildren = {
   TSlugCartaRoute: TSlugCartaRoute,
+  TSlugFacturacionRoute: TSlugFacturacionRoute,
   TSlugFacturasRoute: TSlugFacturasRoute,
   TSlugIndexRoute: TSlugIndexRoute,
   TSlugLVenueRoute: TSlugLVenueRouteWithChildren,

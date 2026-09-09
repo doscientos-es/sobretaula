@@ -10,6 +10,7 @@ export type { FiscalSettings, InvoiceSeries } from './domain/fiscal-settings'
 export {
   createInvoiceSeries,
   getBillingOverview,
+  getInvoiceDocument,
   issueInvoiceFromSession,
   upsertFiscalSettings,
   type FiscalSettingsView,

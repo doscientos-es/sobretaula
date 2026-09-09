@@ -70,7 +70,10 @@ export async function saveFiscalSettings(
   if (auditError) throw new Error(`fiscal_settings_audit_failed:${auditError.code}`)
 }
 
-export async function listSeries(supabase: SupabaseClient, tenantId: string): Promise<InvoiceSeries[]> {
+export async function listSeries(
+  supabase: SupabaseClient,
+  tenantId: string,
+): Promise<InvoiceSeries[]> {
   const { data, error } = await supabase
     .from('invoice_series')
     .select('code, fiscal_year, id, next_number')

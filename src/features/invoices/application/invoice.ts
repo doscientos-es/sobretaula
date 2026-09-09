@@ -9,6 +9,12 @@ import {
 import { createRequestSupabaseClient } from '@/shared/lib/supabase/server/create-server-client'
 
 import {
+  normalizeSeriesCode,
+  validateFiscalSettings,
+  type FiscalSettings,
+  type InvoiceSeries,
+} from '../domain/fiscal-settings'
+import {
   buildFullNumber,
   canIssueInvoices,
   groupVatTotals,
@@ -17,11 +23,9 @@ import {
   type Invoice,
 } from '../domain/invoice'
 import {
-  normalizeSeriesCode,
-  validateFiscalSettings,
-  type FiscalSettings,
-  type InvoiceSeries,
-} from '../domain/fiscal-settings'
+  createInvoiceDocumentUrl,
+  findInvoiceDocument,
+} from '../infrastructure/server/invoice-document-repository'
 import {
   createSeries,
   findFiscalSettings,
@@ -31,6 +35,7 @@ import {
 } from '../infrastructure/server/invoice-repository'
 import {
   createSeriesInput,
+  getInvoiceDocumentInput,
   issueInvoiceInput,
   listInvoicesInput,
   requireFiscalSettingsOwner,
@@ -45,6 +50,26 @@ export interface FiscalSettingsView {
   invoices: Invoice[]
 }
 
+/** Signed download URL for the fiscal PDF of an invoice. */
+export const getInvoiceDocument = createServerFn({ method: 'GET' })
+  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .validator(getInvoiceDocumentInput)
+  .handler(async ({ context, data }) => {
+    requireInvoiceReader(context.tenantMembership.role)
+    const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    const { data: invoice, error } = await supabase
+      .from('invoices')
+      .select('id')
+      .eq('id', data.invoiceId)
+      .eq('tenant_id', data.tenantId)
+      .single()
+    if (error || !invoice) throw new Response('Not found', { status: 404 })
+
+    const document = await findInvoiceDocument(supabase, data.invoiceId, data.tenantId)
+    if (!document) throw new Response('Not found', { status: 404 })
+    const signedUrl = await createInvoiceDocumentUrl(document.objectPath, 300)
+    return { contentHash: document.contentHash, signedUrl }
+  })
 /** Everything the billing page needs in one call. */
 export const getBillingOverview = createServerFn({ method: 'GET' })
   .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
