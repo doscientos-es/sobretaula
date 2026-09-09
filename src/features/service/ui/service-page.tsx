@@ -9,7 +9,8 @@ import {
   PageHeaderDescription,
   PageHeaderTitle,
 } from '@doscientos/ui'
-import { useState } from 'react'
+import { RefreshCw } from 'lucide-react'
+import { useEffect, useState } from 'react'
 
 import type { FloorPlanData } from '@/features/floor-plan'
 import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
@@ -33,6 +34,10 @@ export function ServicePage({
 }) {
   const [selectedTableIds, setSelectedTableIds] = useState<readonly string[]>([])
   const reload = useLoaderReload()
+  useEffect(() => {
+    const interval = window.setInterval(() => reload(), 60_000)
+    return () => window.clearInterval(interval)
+  }, [reload])
   const activeVersion = plan.versions[0]
   const placements = activeVersion
     ? plan.placements.filter((placement) => placement.floorPlanVersionId === activeVersion.id)
@@ -52,7 +57,14 @@ export function ServicePage({
           <PageHeaderDescription>
             Consulta el estado de cada mesa, recibe a los comensales y lleva sus cuentas al día.
           </PageHeaderDescription>
+          <p className="text-muted-foreground mt-1 text-xs">
+            Sincronización automática cada minuto · también puedes actualizar ahora.
+          </p>
         </div>
+        <Button className="shrink-0" onClick={() => reload()} type="button" variant="outline">
+          <RefreshCw aria-hidden="true" className="mr-2 size-4" />
+          Actualizar sala
+        </Button>
       </PageHeader>
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="space-y-6">

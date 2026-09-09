@@ -15,12 +15,15 @@ import {
   closeSessionInput,
   mergeSessionsInput,
   moveSessionInput,
+  noShowReservationInput,
   requireServiceEditor,
   seatWalkInInput,
   serviceVenueInput,
 } from './service-schema'
 
-const seatReservationInput = serviceVenueInput.extend({ reservationId: z.string().uuid() })
+const seatReservationInput = serviceVenueInput.extend({
+  reservationId: z.string().uuid(),
+})
 
 interface OpenSession {
   covers: number
@@ -97,6 +100,56 @@ export const seatReservation = createServerFn({ method: 'POST' })
       throw new Error(`reservation_seat_failed:${statusError.code}`)
     }
     return { sessionId: session.id }
+  })
+
+/** Marks an unarrived booking as no-show and releases its reserved tables. */
+export const markReservationNoShow = createServerFn({ method: 'POST' })
+  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .validator(noShowReservationInput)
+  .handler(async ({ context, data }) => {
+    requireServiceEditor(context.tenantMembership.role)
+    const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    const { data: reservation, error } = await supabase
+      .from('reservations')
+      .select('id, starts_at')
+      .eq('id', data.reservationId)
+      .eq('tenant_id', data.tenantId)
+      .eq('venue_id', data.venueId)
+      .in('status', ['pending', 'confirmed'])
+      .maybeSingle()
+    if (error) throw new Error(`reservation_no_show_failed:${error.code}`)
+    if (!reservation) throw new Response('Not found', { status: 404 })
+    if (Date.now() - new Date(reservation.starts_at as string).getTime() < 15 * 60_000)
+      throw new Response('Too early for no-show', { status: 422 })
+    const { error: updateError } = await supabase
+      .from('reservations')
+      .update({ status: 'no_show' })
+      .eq('id', reservation.id)
+      .eq('tenant_id', data.tenantId)
+      .eq('venue_id', data.venueId)
+      .in('status', ['pending', 'confirmed'])
+    if (updateError) throw new Error(`reservation_no_show_failed:${updateError.code}`)
+    return { reservationId: reservation.id as string }
+  })
+
+export const cancelReservation = createServerFn({ method: 'POST' })
+  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .validator(noShowReservationInput)
+  .handler(async ({ context, data }) => {
+    requireServiceEditor(context.tenantMembership.role)
+    const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    const { data: reservation, error } = await supabase
+      .from('reservations')
+      .update({ status: 'cancelled' })
+      .eq('id', data.reservationId)
+      .eq('tenant_id', data.tenantId)
+      .eq('venue_id', data.venueId)
+      .in('status', ['pending', 'confirmed'])
+      .select('id')
+      .maybeSingle()
+    if (error) throw new Error(`reservation_cancel_failed:${error.code}`)
+    if (!reservation) throw new Response('Not found', { status: 404 })
+    return { reservationId: reservation.id as string }
   })
 
 /** Walk-in: the party has no booking, so the session opens straight on the plan. */

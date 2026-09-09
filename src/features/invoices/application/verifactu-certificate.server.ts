@@ -52,15 +52,20 @@ export function validateVerifactuCertificate({
     const keyBags = pfx.getBags({ bagType: keyBagType })[keyBagType] ?? []
     const certificateBags = pfx.getBags({ bagType: certificateBagType })[certificateBagType] ?? []
     const key = keyBags.map((bag: forge.pkcs12.Bag) => bag.key).find(Boolean)
+    if (!key) throw new VerifactuCertificateError('certificate_invalid')
     const certificates = certificateBags
       .map((bag: forge.pkcs12.Bag) => bag.cert)
       .filter((certificate): certificate is forge.pki.Certificate => Boolean(certificate))
-    const certificate = certificates.find(
-      (candidate: forge.pki.Certificate) =>
-        candidate?.publicKey.n.compareTo(key?.n) === 0 &&
-        candidate.publicKey.e.compareTo(key?.e) === 0,
-    )
-    if (!key || !certificate) throw new VerifactuCertificateError('certificate_invalid')
+    const certificate = certificates.find((candidate: forge.pki.Certificate) => {
+      const publicKey = candidate.publicKey
+      if (!('n' in publicKey) || !('e' in publicKey)) return false
+      return (
+        Boolean(publicKey.n && publicKey.e && key.n && key.e) &&
+        publicKey.n.compareTo(key.n) === 0 &&
+        publicKey.e.compareTo(key.e) === 0
+      )
+    })
+    if (!certificate) throw new VerifactuCertificateError('certificate_invalid')
     if (certificate.validity.notAfter.getTime() <= Date.now()) {
       throw new VerifactuCertificateError('certificate_expired')
     }
@@ -134,6 +139,7 @@ export async function storeVerifactuCertificate({
   const { error } = await supabase.rpc('replace_tenant_verifactu_certificate', {
     p_tenant_id: tenantId,
     p_certificate_base64: bytes.toString('base64'),
+    p_certificate_password: password,
     p_expires_at: certificate.expiresAt,
     p_fingerprint: certificate.fingerprint,
     p_subject: certificate.subject,

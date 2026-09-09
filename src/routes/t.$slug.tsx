@@ -13,6 +13,7 @@ import { WorkerFrame } from '@/app/worker-frame'
 import { getTenantBillingStatus, TenantBillingNotice } from '@/features/platform-billing'
 import {
   getTenantBySlug,
+  getDashboardMetrics,
   getTenantMembership,
   isTenantAdministrator,
   isTenantOperational,
@@ -38,7 +39,9 @@ export const Route = createFileRoute('/t/$slug')({
     const tenant = await getTenantBySlug({ data: { slug } })
     if (!tenant) throw notFound()
 
-    return { tenantMembership: await getMembershipOrRedirect(tenant.id, tenant.slug) }
+    return {
+      tenantMembership: await getMembershipOrRedirect(tenant.id, tenant.slug),
+    }
   },
   loader: async ({ context, params }) => {
     const slug = parseTenantSlug(params.slug)
@@ -47,11 +50,33 @@ export const Route = createFileRoute('/t/$slug')({
     const tenant = await context.queryClient.ensureQueryData(tenantBySlugQuery(slug))
     if (!tenant) throw notFound()
 
-    const billingStatus = await getTenantBillingStatus({ data: { tenantId: tenant.id } })
+    const billingStatus = await getTenantBillingStatus({
+      data: { tenantId: tenant.id },
+    })
     const venues = isTenantOperational(tenant.status)
       ? await getTenantVenues({ data: { tenantId: tenant.id } })
       : []
-    return { billingStatus, membership: context.tenantMembership, tenant, venues }
+    const metrics = isTenantOperational(tenant.status)
+      ? await getDashboardMetrics({
+          data: {
+            tenantId: tenant.id,
+            venueIds: venues.map((venue) => venue.id),
+          },
+        })
+      : {
+          nextReservationCovers: null,
+          nextReservationStartsAt: null,
+          occupiedTables: 0,
+          paidTodayCents: 0,
+          reservationsToday: 0,
+        }
+    return {
+      billingStatus,
+      membership: context.tenantMembership,
+      metrics,
+      tenant,
+      venues,
+    }
   },
   component: TenantLayout,
   notFoundComponent: TenantNotFound,
@@ -59,7 +84,9 @@ export const Route = createFileRoute('/t/$slug')({
 
 function TenantLayout() {
   const { billingStatus, membership, tenant, venues } = Route.useLoaderData()
-  const pathname = useRouterState({ select: (state) => state.location.pathname })
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  })
   const isSubscriptionInvoicesRoute = pathname === `/t/${tenant.slug}/suscripcion/facturas`
   const isTeamRoute = pathname === `/t/${tenant.slug}/equipo`
   const isBillingRoute = pathname === `/t/${tenant.slug}/facturacion`

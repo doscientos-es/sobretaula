@@ -28,7 +28,13 @@ export const mergeSessionsInput = serviceVenueInput
     path: ['sourceSessionId'],
   })
 
-export const closeSessionInput = serviceVenueInput.extend({ sessionId: z.string().uuid() })
+export const closeSessionInput = serviceVenueInput.extend({
+  sessionId: z.string().uuid(),
+})
+
+export const noShowReservationInput = serviceVenueInput.extend({
+  reservationId: z.string().uuid(),
+})
 
 export const waitlistEntryInput = serviceVenueInput.extend({
   estimatedWaitMinutes: z.number().int().min(0).max(480).nullable(),
@@ -40,7 +46,9 @@ export const waitlistEntryReference = serviceVenueInput.extend({
   waitlistEntryId: z.string().uuid(),
 })
 
-export const seatWaitlistEntryInput = waitlistEntryReference.extend({ tableIds })
+export const seatWaitlistEntryInput = waitlistEntryReference.extend({
+  tableIds,
+})
 
 /** Sala del día: quien mueve mesas y abre cuentas. */
 export function requireServiceEditor(role: string): void {

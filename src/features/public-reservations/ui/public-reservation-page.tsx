@@ -323,6 +323,14 @@ export function PublicReservationPage({
                       </option>
                     ))}
                   </select>
+                  {availabilityLoading ? (
+                    <p
+                      aria-live="polite"
+                      className="text-muted-foreground mt-2 text-xs"
+                    >
+                      Buscando horas disponibles…
+                    </p>
+                  ) : null}
                 </Field>
               </div>
               <Field>
@@ -361,6 +369,7 @@ export function PublicReservationPage({
                   <Input
                     autoComplete="tel"
                     id="public-phone"
+                    inputMode="tel"
                     onChange={(event) => setPhone(event.target.value)}
                     required
                     value={phone}

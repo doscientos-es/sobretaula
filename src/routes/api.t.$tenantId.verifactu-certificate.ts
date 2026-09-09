@@ -44,7 +44,8 @@ export const Route = createFileRoute('/api/t/$tenantId/verifactu-certificate')({
         } catch (error) {
           if (error instanceof Response) return error
           if (error instanceof VerifactuCertificateError) {
-            const status = error.code === 'forbidden' ? 403 : error.code === 'upload_failed' ? 500 : 422
+            const status =
+              error.code === 'forbidden' ? 403 : error.code === 'upload_failed' ? 500 : 422
             return new Response(error.code, { status })
           }
           return new Response('Certificate upload failed', { status: 500 })

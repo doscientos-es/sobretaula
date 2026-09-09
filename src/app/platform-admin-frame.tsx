@@ -1,12 +1,10 @@
 import {
   Avatar,
   AvatarFallback,
+  Button,
   DropdownMenu,
-  DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
-  DropdownMenuTrigger,
-  IconButton,
 } from '@doscientos/ui'
 import { Link, useNavigate } from '@tanstack/react-router'
 import {
@@ -168,30 +166,32 @@ function PlatformUserMenu() {
         <span className="block truncate text-xs font-medium">{displayName}</span>
         <span className="text-muted-foreground block truncate text-[0.625rem]">{email}</span>
       </span>
-      <DropdownMenu>
-        <DropdownMenuTrigger>
-          <IconButton label="Opciones de cuenta" size="sm" variant="ghost">
+      <DropdownMenu
+        className="w-52"
+        offset={8}
+        placement="top end"
+        trigger={
+          <Button aria-label="Opciones de cuenta" size="icon" variant="ghost">
             <EllipsisVertical aria-hidden="true" className="size-4" />
-          </IconButton>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-52" offset={8} placement="top end">
-          <DropdownMenuItem
-            onPress={() => void navigate({ to: '/admin/equipo' })}
-            textValue="Equipo de plataforma"
-          >
-            <Users className="size-3.5" /> Equipo de plataforma
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            onPress={() => void navigate({ to: '/admin/ajustes' })}
-            textValue="Ajustes fiscales"
-          >
-            <Settings2 className="size-3.5" /> Ajustes fiscales
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <div className="px-1 py-1">
-            <LogoutButton />
-          </div>
-        </DropdownMenuContent>
+          </Button>
+        }
+      >
+        <DropdownMenuItem
+          onPress={() => void navigate({ to: '/admin/equipo' })}
+          textValue="Equipo de plataforma"
+        >
+          <Users className="size-3.5" /> Equipo de plataforma
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onPress={() => void navigate({ to: '/admin/ajustes' })}
+          textValue="Ajustes fiscales"
+        >
+          <Settings2 className="size-3.5" /> Ajustes fiscales
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <div className="px-1 py-1">
+          <LogoutButton />
+        </div>
       </DropdownMenu>
     </footer>
   )

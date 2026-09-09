@@ -1,5 +1,4 @@
-import type { PlatformAuditEvent } from '../domain/platform-audit'
-import { platformAuditActionLabel } from '../domain/platform-audit'
+import { platformAuditActionLabel, type PlatformAuditEvent } from '../domain/platform-audit'
 
 const dateTime = new Intl.DateTimeFormat('es-ES', { dateStyle: 'medium', timeStyle: 'short' })
 

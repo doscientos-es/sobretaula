@@ -1,4 +1,7 @@
+/** Default projection used by pure consumers and tests. */
 export const UPCOMING_RESERVATION_WINDOW_MINUTES = 120
+/** Operational queue projection: one full shift. */
+export const SERVICE_SHIFT_WINDOW_MINUTES = 720
 
 export type ServiceTableStatus = 'free' | 'occupied' | 'reserved'
 
@@ -19,6 +22,7 @@ export interface ServiceSession {
 
 export interface ServiceReservation {
   guestName: string | null
+  guestPhone?: string | null
   id: string
   partySize: number
   startsAt: string

@@ -1,21 +1,21 @@
 # Plan de finalización del módulo de reservas
 
-Estado: propuesto para ejecución. Última revisión: 2026-09-09.
+Estado: ejecución iterativa. Última revisión: 2026-09-10.
 
 Este es el plan de entregas verificables para completar las capacidades de
 reservas solicitadas. No declara ninguna de ellas como terminada.
 
 ## 1. Base existente y brechas
 
-| Capacidad | Existe | Falta para el alcance final |
-| --- | --- | --- |
-| Turnos y reglas | `services`, `availability_rules`, duración y pacing | Edición, máximo de grupo y regla/horario por área |
-| Disponibilidad | Cierres, best-fit y `EXCLUDE` de mesas | Transacción única para crear, editar y cancelar |
-| Reserva interna | Alta mínima con asignación automática | Agenda, detalle, acciones y gestión de reservas existentes |
-| Operación | Sentar lleva a `seated`; cerrar sesión a `completed` | Confirmación, cancelación, cambio y no-show |
-| Clientes | Nombre, contacto, idioma, notas y alergias | Etiquetas, notas auditadas, deduplicación e historial |
-| Espera | Cola presencial en Servicio | Espera de fecha futura, oferta, aviso y caducidad |
-| Cobro | Sesión enlazada a reserva y pagos | Condiciones, depósitos, webhook y reembolsos |
+| Capacidad       | Existe                                                                                 | Falta para el alcance final                           |
+| --------------- | -------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| Turnos y reglas | `services`, `availability_rules`, duración y pacing                                    | Edición, máximo de grupo y regla/horario por área     |
+| Disponibilidad  | Cierres, best-fit y `EXCLUDE` de mesas                                                 | Transacción única para crear, editar y cancelar       |
+| Reserva interna | Alta con asignación automática, teléfono y deduplicación por contacto                  | Agenda de rango, detalle e historial                  |
+| Operación       | Sentar lleva a `seated`; cerrar sesión a `completed`; cancelación y no-show desde sala | Cambio de hora/grupo, historial y eventos             |
+| Clientes        | Nombre, contacto, idioma, notas y alergias                                             | Etiquetas, notas auditadas, deduplicación e historial |
+| Espera          | Cola presencial en Servicio                                                            | Espera de fecha futura, oferta, aviso y caducidad     |
+| Cobro           | Sesión enlazada a reserva y pagos                                                      | Condiciones, depósitos, webhook y reembolsos          |
 
 Las piezas base están en `src/features/reservations`, `src/features/service` y
 las migraciones `20260908000007`, `00008` y `00016`. La cadena
@@ -41,18 +41,28 @@ reserva → sesión → pagos permite obtener visitas y gasto sin duplicar impor
 7. **No copiar el cobro SaaS.** Los depósitos pertenecen al restaurante, usan un
    proveedor/merchant separado y no almacenan tarjeta, PAN ni CVV.
 
+## Siguiente PR: agenda operativa por fecha
+
+Antes de ampliar horarios, vacaciones o excepciones complejas, la siguiente
+entrega debe permitir consultar una fecha concreta desde Reservas: selector de
+día en la zona horaria del local, listado ordenado por hora con nombre, teléfono,
+comensales, mesa y estado, refresco explícito y cancelación. El loader debe
+filtrar en servidor por `venue_id` y rango diario, mantener Servicio como vista
+operativa en tiempo real y cubrir con pruebas el aislamiento por tenant, los
+límites del rango y la cancelación idempotente.
+
 ## 3. Decisiones necesarias antes de R1
 
-| Decisión | Propuesta inicial | Aprobación |
-| --- | --- | --- |
-| Confirmación web | Automática sin depósito; tras pago cuando se exige depósito | Producto + operaciones |
-| Cambio/cancelación | Hasta antelación configurada, sin sesión abierta ni depósito no reembolsable | Operaciones + legal |
-| No-show | Tolerancia por local y motivo obligatorio | Operaciones |
-| Lista de espera | Oferta temporal aceptable desde enlace; nunca reserva automática | Producto |
-| Etiquetas | Sistema: VIP, carrito, mascota y cumpleaños; catálogo adicional por tenant | Operaciones |
-| Depósitos | Umbral, importe fijo/por persona, vencimiento y reembolso por local | Operaciones + finanzas |
-| Mensajería | Proveedor, coste, remitente, opt-in y canal primario | Producto + legal |
-| Retención | Consentimiento, exportación, anonimización y retención de datos de cliente | Legal |
+| Decisión           | Propuesta inicial                                                            | Aprobación             |
+| ------------------ | ---------------------------------------------------------------------------- | ---------------------- |
+| Confirmación web   | Automática sin depósito; tras pago cuando se exige depósito                  | Producto + operaciones |
+| Cambio/cancelación | Hasta antelación configurada, sin sesión abierta ni depósito no reembolsable | Operaciones + legal    |
+| No-show            | Tolerancia por local y motivo obligatorio                                    | Operaciones            |
+| Lista de espera    | Oferta temporal aceptable desde enlace; nunca reserva automática             | Producto               |
+| Etiquetas          | Sistema: VIP, carrito, mascota y cumpleaños; catálogo adicional por tenant   | Operaciones            |
+| Depósitos          | Umbral, importe fijo/por persona, vencimiento y reembolso por local          | Operaciones + finanzas |
+| Mensajería         | Proveedor, coste, remitente, opt-in y canal primario                         | Producto + legal       |
+| Retención          | Consentimiento, exportación, anonimización y retención de datos de cliente   | Legal                  |
 
 ## 4. Migraciones y modelo de datos
 
@@ -221,17 +231,17 @@ una política `anon` general sobre `guests`, `reservations`, asignaciones o nota
 
 ## 8. Orden de entrega y salida
 
-| Entrega | Trabajo | Aceptación |
-| --- | --- | --- |
-| R0 | Aprobar decisiones, estados, políticas, mensajes y proveedor | Sin supuestos funcionales o legales implícitos |
-| R1 | Motor transaccional, reglas por área, bloques, eventos y concurrencia | No hay doble mesa ni salto de aforo/regla al crear o editar |
-| R2 | Agenda y configuración internas | Host gestiona día, semana y turno sin formulario técnico |
-| R3 | Cliente, etiquetas, notas e historial derivado | Gasto solo aparece para visitas cobradas vinculadas |
-| R4 | Web pública, confirmación y enlace de gestión | Un anónimo gestiona solo su propia reserva |
-| R5 | Outbox, worker/cron, confirmaciones y recordatorios | Mensajes idempotentes y no obsoletos |
-| R6 | Espera futura, ofertas, holds y aceptación | La aceptación no sobrevende ni duplica una oferta |
-| R7 | Grupos, depósitos, webhook y reembolsos | Reintentos no duplican cargo, reserva o reembolso |
-| R8 | Seguridad, accesibilidad, piloto, runbook y despliegue gradual | Piloto aprobado y sin incidencias críticas |
+| Entrega | Trabajo                                                               | Aceptación                                                  |
+| ------- | --------------------------------------------------------------------- | ----------------------------------------------------------- |
+| R0      | Aprobar decisiones, estados, políticas, mensajes y proveedor          | Sin supuestos funcionales o legales implícitos              |
+| R1      | Motor transaccional, reglas por área, bloques, eventos y concurrencia | No hay doble mesa ni salto de aforo/regla al crear o editar |
+| R2      | Agenda y configuración internas                                       | Host gestiona día, semana y turno sin formulario técnico    |
+| R3      | Cliente, etiquetas, notas e historial derivado                        | Gasto solo aparece para visitas cobradas vinculadas         |
+| R4      | Web pública, confirmación y enlace de gestión                         | Un anónimo gestiona solo su propia reserva                  |
+| R5      | Outbox, worker/cron, confirmaciones y recordatorios                   | Mensajes idempotentes y no obsoletos                        |
+| R6      | Espera futura, ofertas, holds y aceptación                            | La aceptación no sobrevende ni duplica una oferta           |
+| R7      | Grupos, depósitos, webhook y reembolsos                               | Reintentos no duplican cargo, reserva o reembolso           |
+| R8      | Seguridad, accesibilidad, piloto, runbook y despliegue gradual        | Piloto aprobado y sin incidencias críticas                  |
 
 R4, R5 y R7 dependen de R1. No se expone la web ni se cobra un depósito con el
 actual flujo dividido en varias lecturas y escrituras.

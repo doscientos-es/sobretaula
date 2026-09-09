@@ -1,6 +1,6 @@
 # Estado de implementación
 
-Última actualización: 2026-09-09. Incluye la ejecución local de controles de
+Última actualización: 2026-09-10. Incluye la ejecución local de controles de
 calidad de esta fecha.
 
 Registro honesto de lo que existe y está verificado. Un punto sin ejecutar es
@@ -9,19 +9,33 @@ reproducible (comando ejecutado y su resultado).
 
 ## Fases
 
-| Fase                   | Entregable                                                                 | Estado                                     |
-| ---------------------- | -------------------------------------------------------------------------- | ------------------------------------------ |
-| F0 · Papeleo           | `project-design.md`, `data-model.md`, ADR 0001–0007                        | Hecho                                      |
-| F0 · Esqueleto         | Proyecto Start, `@doscientos/configs`, CI, `.env.example`                  | Hecho                                      |
-| F1 · Tenancy + Auth    | Registro, onboarding, perfiles, equipo, RLS, `/t/:slug`                    | Implementado; RLS real sin evidenciar      |
-| F1a · Gobierno global  | Dashboard, tenants, auditoría, operadores y controles de acceso            | Implementado; falta evidencia RLS dedicada |
-| F1b · Billing SaaS     | Precios, Founders, cobro Redsys, gracia, facturas SaaS y suspensión segura | Parcial                                    |
-| F2 · Diseñador de sala | Editor SVG, snap, historial, elementos y layouts versionados               | Implementado; entrega bloqueada            |
-| F3 · Motor de reservas | Turnos, pacing, disponibilidad, best-fit, EXCLUDE                          | Base implementada; ampliación planificada  |
-| F4 · Vista de servicio | Plano en vivo, sentar/mover/unir, walk-ins, espera                         | Implementado; entrega bloqueada            |
-| F5 · Cuenta de mesa    | Catálogo, líneas, dividir, cerrar, cobrar                                  | Implementado; entrega bloqueada            |
-| F6 · Facturación       | Ajustes fiscales, series, ledger/outbox, PDF, modo test                    | Implementado; entrega bloqueada            |
-| F7 · Entrega           | Documentación operativa, smoke, despliegue autorizado                      | Parcial                                    |
+| Fase                   | Entregable                                                                 | Estado                                                           |
+| ---------------------- | -------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| F0 · Papeleo           | `project-design.md`, `data-model.md`, ADR 0001–0007                        | Hecho                                                            |
+| F0 · Esqueleto         | Proyecto Start, `@doscientos/configs`, CI, `.env.example`                  | Hecho                                                            |
+| F1 · Tenancy + Auth    | Registro, onboarding, perfiles, equipo, RLS, `/t/:slug`                    | Implementado; RLS real sin evidenciar                            |
+| F1a · Gobierno global  | Dashboard, tenants, auditoría, operadores y controles de acceso            | Implementado; falta evidencia RLS dedicada                       |
+| F1b · Billing SaaS     | Precios, Founders, cobro Redsys, gracia, facturas SaaS y suspensión segura | Parcial                                                          |
+| F2 · Diseñador de sala | Editor SVG, snap, historial, elementos y layouts versionados               | Implementado; entrega bloqueada                                  |
+| F3 · Motor de reservas | Turnos, pacing, disponibilidad, best-fit, EXCLUDE                          | Implementado; falta aplicar migraciones públicas y humo dedicado |
+| F4 · Vista de servicio | Plano en vivo, sentar/mover/unir, walk-ins, espera, no-show                | Implementado; entrega bloqueada                                  |
+| F5 · Cuenta de mesa    | Catálogo, líneas, dividir, cerrar, cobrar                                  | Implementado; entrega bloqueada                                  |
+| F6 · Facturación       | Ajustes fiscales, series, ledger/outbox, PDF, modo test                    | Implementado; entrega bloqueada                                  |
+| F7 · Entrega           | Documentación operativa, smoke, despliegue autorizado                      | Parcial                                                          |
+
+El dashboard operativo ya calcula reservas activas, sesiones abiertas y cobros
+del día desde Supabase; la actividad detallada sigue consultándose en las vistas
+de Servicio, Reservas y Cuenta. Falta añadir pruebas de integración contra un
+proyecto Supabase dedicado.
+
+La operación de sala permite marcar una reserva como `no_show` desde la puerta,
+libera su mesa mediante el trigger de sincronización y aplica también en servidor
+la espera mínima de 15 minutos para evitar ausencias prematuras.
+
+Las migraciones de reservas públicas (`20260910000024`, `20260910000025` y
+`20260910000026`) están preparadas y revisadas localmente, pero deben aplicarse
+de forma explícita en el proyecto Supabase conectado antes de validar el flujo
+completo con datos reales.
 
 «Implementado» indica que existe código y pruebas unitarias; no equivale a
 entregable aprobado mientras falten pruebas contra un entorno dedicado.
@@ -65,17 +79,17 @@ hasta que un asesor fiscal valide el reparto de responsabilidad.
 `pnpm format:check`, `pnpm lint`, `pnpm structure:check`, `pnpm typecheck`,
 `pnpm test`, `pnpm quality`, `pnpm build`.
 
-### Última ejecución local (2026-09-09)
+### Última ejecución local (2026-09-10)
 
 | Comando                | Resultado                                                               |
 | ---------------------- | ----------------------------------------------------------------------- |
-| `pnpm format:check`    | Correcto                                                                |
-| `pnpm lint`            | Correcto                                                                |
-| `pnpm structure:check` | Correcto                                                                |
-| `pnpm test`            | 30 archivos y 141 pruebas correctas; 1 archivo y 2 pruebas RLS omitidas |
-| `pnpm typecheck`       | Correcto                                                                |
-| `pnpm quality`         | Correcto                                                                |
-| `pnpm build`           | Correcto                                                                |
+| `pnpm format:check`    | Pendiente por 5 archivos ajenos al alcance actual                         |
+| `pnpm lint`            | Correcto                                                                  |
+| `pnpm structure:check` | Pendiente por 2 nombres `.server*` heredados y `abstract-restaurant.avif` |
+| `pnpm test`            | 38 archivos y 177 pruebas correctas; 1 archivo y 3 pruebas RLS omitidas  |
+| `pnpm typecheck`       | Correcto                                                                  |
+| `pnpm quality`         | Correcto                                                                  |
+| `pnpm build`           | Correcto; solo avisos de Vite/chunks                                       |
 
 Las pruebas de integración de RLS (`tenant-rls.test.ts`) requieren un proyecto
 Supabase de pruebas dedicado (`SUPABASE_TEST_URL`,

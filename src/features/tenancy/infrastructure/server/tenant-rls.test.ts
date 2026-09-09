@@ -171,7 +171,10 @@ describeRls('tenant RLS isolation', () => {
     if (!fixture) throw new Error('RLS fixture is unavailable.')
 
     const [ownerResult, tenantResult] = await Promise.all([
-      fixture.platformOwner.from('platform_audit_log').select('action, target_id'),
+      fixture.platformOwner
+        .from('platform_audit_log')
+        .select('action, target_id')
+        .eq('target_id', fixture.tenantAId),
       fixture.userA.from('platform_audit_log').select('id'),
     ])
 

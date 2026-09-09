@@ -7,6 +7,7 @@ alter table public.tenant_fiscal_settings
 create or replace function public.replace_tenant_verifactu_certificate(
   p_tenant_id uuid,
   p_certificate_base64 text,
+  p_certificate_password text,
   p_fingerprint text,
   p_subject text,
   p_expires_at timestamptz
@@ -29,6 +30,7 @@ begin
   if p_certificate_base64 !~ '^[A-Za-z0-9+/]+={0,2}$'
     or length(p_certificate_base64) > 2796204
     or octet_length(decode(p_certificate_base64, 'base64')) > 2 * 1024 * 1024
+    or length(p_certificate_password) > 256
     or p_fingerprint !~ '^[a-f0-9]{64}$'
     or length(btrim(p_subject)) not between 1 and 400
     or p_expires_at <= now() then
@@ -47,7 +49,10 @@ begin
   v_secret_name := format('verifactu-%s', p_tenant_id);
   if v_secret_id is null then
     v_secret_id := vault.create_secret(
-      p_certificate_base64,
+      jsonb_build_object(
+        'certificate_base64', p_certificate_base64,
+        'password', p_certificate_password
+      )::text,
       v_secret_name,
       'PKCS#12 VERI*FACTU; managed by SobreTaula',
       null
@@ -55,7 +60,10 @@ begin
   else
     perform vault.update_secret(
       v_secret_id,
-      p_certificate_base64,
+      jsonb_build_object(
+        'certificate_base64', p_certificate_base64,
+        'password', p_certificate_password
+      )::text,
       v_secret_name,
       'PKCS#12 VERI*FACTU; managed by SobreTaula',
       null
@@ -79,5 +87,5 @@ begin
 end;
 $$;
 
-revoke execute on function public.replace_tenant_verifactu_certificate(uuid, text, text, text, timestamptz) from public, anon;
-grant execute on function public.replace_tenant_verifactu_certificate(uuid, text, text, text, timestamptz) to authenticated;
+revoke execute on function public.replace_tenant_verifactu_certificate(uuid, text, text, text, text, timestamptz) from public, anon;
+grant execute on function public.replace_tenant_verifactu_certificate(uuid, text, text, text, text, timestamptz) to authenticated;

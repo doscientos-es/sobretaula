@@ -61,6 +61,20 @@ export function AccountPayments({
       feedback.setError('Importe no válido. Usa euros con dos decimales, por ejemplo 25,50.')
       return
     }
+    if (amountCents <= 0) {
+      feedback.setError('El importe debe ser mayor que cero.')
+      return
+    }
+    if (tipCents < 0) {
+      feedback.setError('La propina no puede ser negativa.')
+      return
+    }
+    if (amountCents > totals.balanceCents) {
+      feedback.setError(
+        `El importe supera el pendiente de ${formatMoney(totals.balanceCents, locale)}.`,
+      )
+      return
+    }
     if (feedback.pending) return
     feedback.setPending()
     void recordPayment({

@@ -8,13 +8,24 @@ import {
   PageHeaderDescription,
   PageHeaderTitle,
 } from '@doscientos/ui'
+import { Link } from '@tanstack/react-router'
 import { CalendarCheck2, Clock3, Euro, Users, type LucideIcon } from 'lucide-react'
 
+import type { Venue } from '@/features/venues'
 import { createTranslator } from '@/shared/lib/i18n/messages'
 
+import type { DashboardMetrics } from '../application/dashboard-metrics'
 import type { Tenant } from '../domain/tenant'
 
-export function TenantHomePage({ tenant }: { tenant: Tenant }) {
+export function TenantHomePage({
+  metrics,
+  tenant,
+  venues,
+}: {
+  metrics: DashboardMetrics
+  tenant: Tenant
+  venues: readonly Venue[]
+}) {
   const t = createTranslator(tenant.defaultLocale)
 
   return (
@@ -30,10 +41,44 @@ export function TenantHomePage({ tenant }: { tenant: Tenant }) {
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {(
           [
-            ['Reservas de hoy', '24', '+12% vs. ayer', CalendarCheck2, '#5aa6ff'],
-            ['Mesas ocupadas', '18 / 32', '56% de capacidad', Users, '#ffb946'],
-            ['Facturación del día', '1.284 €', '+8,4% vs. ayer', Euro, '#64c59a'],
-            ['Próximo servicio', '20:30', 'Cena · 42 comensales', Clock3, '#d29cff'],
+            [
+              'Reservas de hoy',
+              String(metrics.reservationsToday),
+              'Confirmadas o pendientes',
+              CalendarCheck2,
+              '#5aa6ff',
+            ],
+            [
+              'Mesas ocupadas',
+              String(metrics.occupiedTables),
+              'Sesiones abiertas ahora',
+              Users,
+              '#ffb946',
+            ],
+            [
+              'Facturación del día',
+              new Intl.NumberFormat(tenant.defaultLocale, {
+                style: 'currency',
+                currency: 'EUR',
+              }).format(metrics.paidTodayCents / 100),
+              'Cobros registrados hoy',
+              Euro,
+              '#64c59a',
+            ],
+            [
+              'Próximo servicio',
+              metrics.nextReservationStartsAt
+                ? new Intl.DateTimeFormat(tenant.defaultLocale, {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  }).format(new Date(metrics.nextReservationStartsAt))
+                : '—',
+              metrics.nextReservationCovers === null
+                ? 'No hay reservas próximas'
+                : `${metrics.nextReservationCovers} comensales previstos`,
+              Clock3,
+              '#d29cff',
+            ],
           ] as [string, string, string, LucideIcon, string][]
         ).map(([label, value, meta, Icon], index) => (
           <MetricCard
@@ -50,24 +95,28 @@ export function TenantHomePage({ tenant }: { tenant: Tenant }) {
         <CardHeader className="border-b">
           <CardTitle>Actividad reciente</CardTitle>
         </CardHeader>
-        <CardContent className="p-0">
-          <div className="divide-border/70 divide-y">
-            {[
-              ['19:42', 'Reserva confirmada', 'Mesa 14 · 4 personas', 'Hoy'],
-              ['19:15', 'Nuevo pedido', 'Mesa 8 · Ensalada de temporada', 'Hoy'],
-              ['18:50', 'Factura emitida', 'Ticket #1048 · 86,40 €', 'Hoy'],
-            ].map(([time, title, desc, status]) => (
-              <div key={time} className="flex items-center gap-4 px-5 py-4">
-                <span className="text-muted-foreground w-12 text-xs">{time}</span>
-                <span className="bg-primary size-2 rounded-full" />
-                <div className="min-w-0 flex-1">
-                  <p className="font-medium">{title}</p>
-                  <p className="text-muted-foreground truncate text-sm">{desc}</p>
-                </div>
-                <span className="text-muted-foreground hidden text-xs sm:block">{status}</span>
-              </div>
-            ))}
-          </div>
+        <CardContent className="space-y-3">
+          <p className="text-muted-foreground text-sm">
+            La actividad detallada se consulta en tiempo real desde Servicio, Reservas y Cuenta.
+          </p>
+          {venues[0] ? (
+            <div className="flex flex-wrap gap-4 text-sm">
+              <Link
+                className="text-primary underline underline-offset-4"
+                params={{ slug: tenant.slug, venue: venues[0].slug }}
+                to="/t/$slug/l/$venue/servicio"
+              >
+                Abrir servicio
+              </Link>
+              <Link
+                className="text-primary underline underline-offset-4"
+                params={{ slug: tenant.slug, venue: venues[0].slug }}
+                to="/t/$slug/l/$venue/reservas"
+              >
+                Gestionar reservas
+              </Link>
+            </div>
+          ) : null}
         </CardContent>
       </Card>
       <p className="text-muted-foreground text-xs">

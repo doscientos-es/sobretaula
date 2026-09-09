@@ -4,6 +4,7 @@ import {
   closeSessionInput,
   mergeSessionsInput,
   moveSessionInput,
+  noShowReservationInput,
   requireServiceEditor,
   requireWaitlistEditor,
   seatWaitlistEntryInput,
@@ -43,13 +44,23 @@ describe('requireWaitlistEditor', () => {
 describe('seatWalkInInput', () => {
   it('accepts a walk-in within capacity bounds', () => {
     expect(
-      seatWalkInInput.safeParse({ covers: 2, tableIds: [tableId], tenantId, venueId }).success,
+      seatWalkInInput.safeParse({
+        covers: 2,
+        tableIds: [tableId],
+        tenantId,
+        venueId,
+      }).success,
     ).toBe(true)
   })
 
   it('rejects zero covers, an empty table list and more than six tables', () => {
     expect(
-      seatWalkInInput.safeParse({ covers: 0, tableIds: [tableId], tenantId, venueId }).success,
+      seatWalkInInput.safeParse({
+        covers: 0,
+        tableIds: [tableId],
+        tenantId,
+        venueId,
+      }).success,
     ).toBe(false)
     expect(seatWalkInInput.safeParse({ covers: 2, tableIds: [], tenantId, venueId }).success).toBe(
       false,
@@ -68,7 +79,12 @@ describe('seatWalkInInput', () => {
 describe('moveSessionInput', () => {
   it('requires at least one destination table', () => {
     expect(
-      moveSessionInput.safeParse({ sessionId, tableIds: [tableId], tenantId, venueId }).success,
+      moveSessionInput.safeParse({
+        sessionId,
+        tableIds: [tableId],
+        tenantId,
+        venueId,
+      }).success,
     ).toBe(true)
     expect(moveSessionInput.safeParse({ sessionId, tableIds: [], tenantId, venueId }).success).toBe(
       false,
@@ -102,6 +118,28 @@ describe('mergeSessionsInput', () => {
 describe('closeSessionInput', () => {
   it('accepts a bare session reference', () => {
     expect(closeSessionInput.safeParse({ sessionId, tenantId, venueId }).success).toBe(true)
+  })
+})
+
+describe('reservation action input', () => {
+  it('accepts a reservation reference scoped to a venue', () => {
+    expect(
+      noShowReservationInput.safeParse({
+        reservationId: sessionId,
+        tenantId,
+        venueId,
+      }).success,
+    ).toBe(true)
+  })
+
+  it('rejects malformed reservation references', () => {
+    expect(
+      noShowReservationInput.safeParse({
+        reservationId: 'not-a-uuid',
+        tenantId,
+        venueId,
+      }).success,
+    ).toBe(false)
   })
 })
 

@@ -13,10 +13,34 @@ import {
 } from '@doscientos/ui'
 import { useState, type FormEvent } from 'react'
 
-import { seatReservation } from '../application/table-service'
+import {
+  cancelReservation,
+  markReservationNoShow,
+  seatReservation,
+} from '../application/table-service'
 import { addToWaitlist, removeFromWaitlist, seatWaitlistEntry } from '../application/waitlist'
 import type { ServiceBoard } from '../domain/service-board'
 import { describeTime } from './service-labels'
+
+function reservationTableLabel(
+  reservation: ServiceBoard['reservations'][number],
+  board: ServiceBoard,
+): string {
+  const codes = new Map(board.tables.map((table) => [table.id, table.code]))
+  const labels = reservation.tableIds.map((id) => codes.get(id)).filter(Boolean)
+  return labels.length > 0 ? labels.join(', ') : 'Sin mesa'
+}
+
+function reservationTiming(startsAt: string): { label: string; tone: string } {
+  const minutes = (new Date(startsAt).getTime() - Date.now()) / 60_000
+  if (minutes < -15) return { label: 'Retrasada', tone: 'text-destructive' }
+  if (minutes <= 30) return { label: 'Llega ahora', tone: 'text-amber-700' }
+  return { label: 'Próxima', tone: 'text-muted-foreground' }
+}
+
+function canMarkNoShow(startsAt: string): boolean {
+  return Date.now() - new Date(startsAt).getTime() >= 15 * 60_000
+}
 
 /** The door: bookings about to arrive and parties waiting without one. */
 export function ServiceQueue({
@@ -35,6 +59,11 @@ export function ServiceQueue({
   const feedback = useFormFeedback()
   const [guestName, setGuestName] = useState('')
   const [partySize, setPartySize] = useState(2)
+  const reservations = [...board.reservations].sort(
+    (left, right) =>
+      Number(canMarkNoShow(right.startsAt)) - Number(canMarkNoShow(left.startsAt)) ||
+      new Date(left.startsAt).getTime() - new Date(right.startsAt).getTime(),
+  )
 
   async function run(action: () => Promise<unknown>, message: string) {
     if (feedback.pending) return
@@ -68,35 +97,110 @@ export function ServiceQueue({
     <Card>
       <CardHeader>
         <CardTitle>Puerta</CardTitle>
-        <CardDescription>Próximas reservas y lista de espera.</CardDescription>
+        <CardDescription>Reservas de las próximas 12 horas y lista de espera.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="space-y-2">
-          <h3 className="text-sm font-medium">Reservas próximas</h3>
-          {board.reservations.length === 0 ? (
+          <h3 className="text-sm font-medium">Reservas del turno</h3>
+          {reservations.length === 0 ? (
             <p className="text-muted-foreground text-sm">No hay reservas en las próximas horas.</p>
           ) : (
             <ul className="space-y-2 text-sm">
-              {board.reservations.map((reservation) => (
-                <li key={reservation.id} className="flex items-center justify-between gap-2">
-                  <span>
-                    {`${describeTime(reservation.startsAt)} · ${reservation.guestName ?? 'Sin nombre'} · ${reservation.partySize} pax`}
+              {reservations.map((reservation) => (
+                <li
+                  key={reservation.id}
+                  className="flex items-start justify-between gap-3 rounded-lg border p-3"
+                >
+                  <span className="min-w-0">
+                    <span className="block font-medium">
+                      {describeTime(reservation.startsAt)} · {reservation.guestName ?? 'Sin nombre'}
+                    </span>
+                    <span className="text-muted-foreground block text-xs">
+                      {reservation.partySize} pax ·{' '}
+                      {reservation.guestPhone ? (
+                        <a
+                          className="text-primary underline underline-offset-2"
+                          href={`tel:${reservation.guestPhone}`}
+                        >
+                          {reservation.guestPhone}
+                        </a>
+                      ) : (
+                        'Sin teléfono'
+                      )}{' '}
+                      · Mesa {reservationTableLabel(reservation, board)}
+                    </span>
                   </span>
-                  <Button
-                    disabled={feedback.pending}
-                    onClick={() =>
-                      void run(
-                        () =>
-                          seatReservation({
-                            data: { reservationId: reservation.id, tenantId, venueId },
-                          }),
-                        'No se ha podido sentar la reserva.',
-                      )
-                    }
-                    type="button"
+                  <output
+                    aria-label={`Estado: ${reservationTiming(reservation.startsAt).label}`}
+                    className={`shrink-0 text-xs font-medium ${reservationTiming(reservation.startsAt).tone}`}
                   >
-                    Sentar
-                  </Button>
+                    {reservationTiming(reservation.startsAt).label}
+                  </output>
+                  <span className="flex max-w-full shrink flex-wrap justify-end gap-2">
+                    <Button
+                      disabled={feedback.pending}
+                      onClick={() =>
+                        void run(
+                          () =>
+                            seatReservation({
+                              data: {
+                                reservationId: reservation.id,
+                                tenantId,
+                                venueId,
+                              },
+                            }),
+                          'No se ha podido sentar la reserva.',
+                        )
+                      }
+                      type="button"
+                    >
+                      Sentar
+                    </Button>
+                    <Button
+                      disabled={feedback.pending || !canMarkNoShow(reservation.startsAt)}
+                      onClick={() =>
+                        window.confirm('¿Marcar esta reserva como no presentada?')
+                          ? void run(
+                              () =>
+                                markReservationNoShow({
+                                  data: {
+                                    reservationId: reservation.id,
+                                    tenantId,
+                                    venueId,
+                                  },
+                                }),
+                              'No se ha podido marcar como no presentada.',
+                            )
+                          : undefined
+                      }
+                      type="button"
+                      variant="outline"
+                    >
+                      No-show
+                    </Button>
+                    <Button
+                      disabled={feedback.pending}
+                      onClick={() =>
+                        window.confirm('¿Cancelar esta reserva y liberar su mesa?')
+                          ? void run(
+                              () =>
+                                cancelReservation({
+                                  data: {
+                                    reservationId: reservation.id,
+                                    tenantId,
+                                    venueId,
+                                  },
+                                }),
+                              'No se ha podido cancelar la reserva.',
+                            )
+                          : undefined
+                      }
+                      type="button"
+                      variant="outline"
+                    >
+                      Cancelar
+                    </Button>
+                  </span>
                 </li>
               ))}
             </ul>
@@ -138,7 +242,11 @@ export function ServiceQueue({
                         void run(
                           () =>
                             removeFromWaitlist({
-                              data: { tenantId, venueId, waitlistEntryId: entry.id },
+                              data: {
+                                tenantId,
+                                venueId,
+                                waitlistEntryId: entry.id,
+                              },
                             }),
                           'No se ha podido quitar de la lista.',
                         )

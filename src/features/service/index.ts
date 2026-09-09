@@ -1,8 +1,10 @@
 export { getServiceBoard } from './application/service-board'
 export {
   closeSession,
+  cancelReservation,
   mergeSessions,
   moveSession,
+  markReservationNoShow,
   seatReservation,
   seatWalkIn,
 } from './application/table-service'

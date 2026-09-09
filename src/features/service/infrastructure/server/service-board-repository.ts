@@ -2,7 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 import {
   buildServiceTableStates,
-  UPCOMING_RESERVATION_WINDOW_MINUTES,
+  SERVICE_SHIFT_WINDOW_MINUTES,
   type ServiceBoard,
   type ServiceReservation,
   type ServiceSession,
@@ -24,8 +24,8 @@ export async function loadServiceBoard(
   supabase: SupabaseClient,
   { now, tenantId, venueId }: ServiceBoardQuery,
 ): Promise<ServiceBoard> {
-  const windowStart = new Date(now.getTime() - UPCOMING_RESERVATION_WINDOW_MINUTES * 60_000)
-  const windowEnd = new Date(now.getTime() + UPCOMING_RESERVATION_WINDOW_MINUTES * 60_000)
+  const windowStart = new Date(now.getTime() - SERVICE_SHIFT_WINDOW_MINUTES * 60_000)
+  const windowEnd = new Date(now.getTime() + SERVICE_SHIFT_WINDOW_MINUTES * 60_000)
 
   const [tablesResult, sessionsResult, reservationsResult, waitlistResult] = await Promise.all([
     supabase
@@ -85,7 +85,7 @@ export async function loadServiceBoard(
       ? Promise.resolve({ data: [], error: null })
       : supabase
           .from('guests')
-          .select('full_name, id')
+          .select('full_name, id, phone')
           .eq('tenant_id', tenantId)
           .in('id', [...new Set(guestIds)]),
   ])
@@ -98,6 +98,12 @@ export async function loadServiceBoard(
   }
   const guestNames = new Map<string, string>(
     (guestsResult.data ?? []).map((guest) => [guest.id as string, guest.full_name as string]),
+  )
+  const guestPhones = new Map<string, string | null>(
+    (guestsResult.data ?? []).map((guest) => [
+      guest.id as string,
+      (guest.phone as string | null) ?? null,
+    ]),
   )
 
   const tables: ServiceTable[] = (tablesResult.data ?? []).map((table) => ({
@@ -115,6 +121,7 @@ export async function loadServiceBoard(
   }))
   const reservations: ServiceReservation[] = (reservationsResult.data ?? []).map((reservation) => ({
     guestName: reservation.guest_id ? (guestNames.get(reservation.guest_id) ?? null) : null,
+    guestPhone: reservation.guest_id ? (guestPhones.get(reservation.guest_id) ?? null) : null,
     id: reservation.id,
     partySize: reservation.party_size,
     startsAt: reservation.starts_at,
@@ -131,7 +138,13 @@ export async function loadServiceBoard(
   return {
     reservations,
     sessions,
-    tables: buildServiceTableStates({ now, reservations, sessions, tables }),
+    tables: buildServiceTableStates({
+      now,
+      reservations,
+      sessions,
+      tables,
+      windowMinutes: SERVICE_SHIFT_WINDOW_MINUTES,
+    }),
     waitlist,
   }
 }

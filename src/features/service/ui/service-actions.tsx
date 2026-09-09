@@ -56,7 +56,10 @@ export function ServiceActions({
       return
     }
     void run(
-      () => seatWalkIn({ data: { covers, tableIds: [...selectedTableIds], tenantId, venueId } }),
+      () =>
+        seatWalkIn({
+          data: { covers, tableIds: [...selectedTableIds], tenantId, venueId },
+        }),
       'Esas mesas están ocupadas o no dan para tantos comensales.',
     )
   }
@@ -107,7 +110,11 @@ export function ServiceActions({
             {sessionId && (
               <Link
                 className="text-primary text-sm font-medium underline underline-offset-4"
-                params={{ sessionId, slug: params.slug ?? '', venue: params.venue ?? '' }}
+                params={{
+                  sessionId,
+                  slug: params.slug ?? '',
+                  venue: params.venue ?? '',
+                }}
                 to="/t/$slug/l/$venue/cuenta/$sessionId"
               >
                 Ver cuenta de la sesión seleccionada
@@ -120,7 +127,12 @@ export function ServiceActions({
                   void run(
                     () =>
                       moveSession({
-                        data: { sessionId, tableIds: [...selectedTableIds], tenantId, venueId },
+                        data: {
+                          sessionId,
+                          tableIds: [...selectedTableIds],
+                          tenantId,
+                          venueId,
+                        },
                       }),
                     'No se puede mover la cuenta a esas mesas.',
                   )
@@ -132,10 +144,15 @@ export function ServiceActions({
               <Button
                 disabled={feedback.pending || !sessionId}
                 onClick={() =>
-                  void run(
-                    () => closeSession({ data: { sessionId, tenantId, venueId } }),
-                    'No se ha podido cerrar. Si queda saldo pendiente, cobra la cuenta primero.',
-                  )
+                  window.confirm('¿Cerrar esta cuenta y liberar sus mesas?')
+                    ? void run(
+                        () =>
+                          closeSession({
+                            data: { sessionId, tenantId, venueId },
+                          }),
+                        'No se ha podido cerrar. Si queda saldo pendiente, cobra la cuenta primero.',
+                      )
+                    : undefined
                 }
                 type="button"
               >

@@ -3,14 +3,16 @@ export {
   durationForParty,
   findBestFitTable,
   intervalsOverlap,
-} from './domain/availability'
+} from "./domain/availability";
 export {
   createReservation,
   createReservationService,
+  getReservationsForDate,
   getReservationServices,
-} from './application/reservations'
-export { ReservationPage } from './ui/reservation-page'
-export type { ReservationService } from './application/reservations'
+  type ReservationAgendaItem,
+} from "./application/reservations";
+export { ReservationPage } from "./ui/reservation-page";
+export type { ReservationService } from "./application/reservations";
 export type {
   AvailabilityRejectionReason,
   AvailabilityResult,
@@ -18,4 +20,4 @@ export type {
   AvailabilityTable,
   ClosureWindow,
   ReservationWindow,
-} from './domain/availability'
+} from "./domain/availability";

@@ -1,5 +1,4 @@
-import { createMiddleware } from '@tanstack/react-start'
-import { useSession } from '@tanstack/react-start/server'
+import { createMiddleware, createServerOnlyFn } from '@tanstack/react-start'
 
 import { createAnonSupabaseClient } from '@/shared/lib/supabase/server/create-server-client'
 
@@ -8,9 +7,14 @@ import { authSessionConfig, toAuthSessionData } from './session'
 
 const TOKEN_REFRESH_SKEW_SECONDS = 60
 
+const readAuthSession = createServerOnlyFn(async () => {
+  const { useSession } = await import('@tanstack/react-start/server')
+  return useSession<AuthSessionData>(authSessionConfig())
+})
+
 /** Resolves and refreshes the httpOnly session for server functions and server routes. */
 export async function getAuthenticatedPrincipal(): Promise<AuthPrincipal> {
-  const session = await useSession<AuthSessionData>(authSessionConfig())
+  const session = await readAuthSession()
   const current = session.data
 
   if (!current.accessToken || !current.refreshToken || !current.expiresAt) {
