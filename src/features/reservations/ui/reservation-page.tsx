@@ -58,7 +58,7 @@ export function ReservationPage({
           weekday,
         },
       })
-      window.location.reload()
+      reload()
     } catch {
       feedback.setError('No se ha podido crear el turno. Comprueba que no esté duplicado.')
     }

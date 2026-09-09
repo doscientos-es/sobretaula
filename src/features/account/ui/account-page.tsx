@@ -3,6 +3,7 @@ import { PageHeader, PageHeaderTitle } from '@doscientos/ui'
 import type { InvoiceSeries } from '@/features/invoices'
 import type { MenuCatalog } from '@/features/menu'
 import type { Locale } from '@/shared/lib/i18n/locale'
+import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
 
 import type { AccountView } from '../application/account'
 import { AccountAddItem } from './account-add-item'
