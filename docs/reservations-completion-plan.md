@@ -11,8 +11,8 @@ reservas solicitadas. No declara ninguna de ellas como terminada.
 | --------------- | -------------------------------------------------------------------------------------- | ----------------------------------------------------- |
 | Turnos y reglas | `services`, `availability_rules`, duración y pacing                                    | Edición, máximo de grupo y regla/horario por área     |
 | Disponibilidad  | Cierres, best-fit y `EXCLUDE` de mesas                                                 | Transacción única para crear, editar y cancelar       |
-| Reserva interna | Alta con asignación automática, teléfono y deduplicación por contacto                  | Agenda de rango, detalle e historial                  |
-| Operación       | Sentar lleva a `seated`; cerrar sesión a `completed`; cancelación y no-show desde sala | Cambio de hora/grupo, historial y eventos             |
+| Reserva interna | Alta con asignación automática, teléfono, deduplicación y agenda por fecha                | Cambio de hora/grupo, detalle e historial              |
+| Operación       | Sentar lleva a `seated`; cerrar sesión a `completed`; cancelación y no-show desde sala y agenda | Cambio de hora/grupo, historial y eventos       |
 | Clientes        | Nombre, contacto, idioma, notas y alergias                                             | Etiquetas, notas auditadas, deduplicación e historial |
 | Espera          | Cola presencial en Servicio                                                            | Espera de fecha futura, oferta, aviso y caducidad     |
 | Cobro           | Sesión enlazada a reserva y pagos                                                      | Condiciones, depósitos, webhook y reembolsos          |
@@ -49,7 +49,8 @@ día en la zona horaria del local, listado ordenado por hora con nombre, teléfo
 comensales, mesa y estado, refresco explícito y cancelación. El loader debe
 filtrar en servidor por `venue_id` y rango diario, mantener Servicio como vista
 operativa en tiempo real y cubrir con pruebas el aislamiento por tenant, los
-límites del rango y la cancelación idempotente.
+límites del rango y la cancelación idempotente. La agenda ya muestra etiquetas
+operativas en español y ofrece no-show tras la tolerancia de 15 minutos.
 
 ## 3. Decisiones necesarias antes de R1
 

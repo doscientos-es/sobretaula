@@ -3,7 +3,7 @@ import { useState } from 'react'
 
 import { logout } from '../application/authentication'
 
-export function LogoutButton() {
+export function useLogout() {
   const [pending, setPending] = useState(false)
 
   async function signOut() {
@@ -14,6 +14,12 @@ export function LogoutButton() {
       window.location.assign('/login')
     }
   }
+
+  return { pending, signOut }
+}
+
+export function LogoutButton() {
+  const { pending, signOut } = useLogout()
 
   return (
     <Button onPress={() => void signOut()} size="sm" variant="ghost" disabled={pending}>

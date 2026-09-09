@@ -36,6 +36,21 @@ function canMarkNoShow(startsAt: string): boolean {
   return Date.now() - new Date(startsAt).getTime() >= 15 * 60_000;
 }
 
+function dateOffset(days: number): string {
+  const date = new Date();
+  date.setDate(date.getDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+const reservationStatusLabels: Record<string, string> = {
+  cancelled: "Cancelada",
+  completed: "Completada",
+  confirmed: "Confirmada",
+  no_show: "No presentada",
+  pending: "Pendiente",
+  seated: "Sentada",
+};
+
 export function ReservationPage({
   services,
   tenantId,
@@ -129,6 +144,14 @@ export function ReservationPage({
       cancelled = true;
     };
   }, [agendaDate, agendaRefresh, tenantId, venueId]);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setAgendaLoading(true);
+      setAgendaRefresh((value) => value + 1);
+    }, 60_000);
+    return () => window.clearInterval(interval);
+  }, []);
 
   async function cancelAgendaReservation(reservationId: string) {
     if (!window.confirm("¿Cancelar esta reserva?")) return;
@@ -292,6 +315,9 @@ export function ReservationPage({
                 </Button>
               </div>
               <CardDescription>Reservas del día seleccionado en este local.</CardDescription>
+              <p className="text-muted-foreground text-xs">
+                Se actualiza automáticamente cada minuto.
+              </p>
             </CardHeader>
             <CardContent className="space-y-4">
               <Field>
@@ -305,6 +331,22 @@ export function ReservationPage({
                     setAgendaDate(event.target.value);
                   }}
                 />
+                <div className="mt-2 flex gap-2">
+                  {[{ label: "Hoy", value: dateOffset(0) }, { label: "Mañana", value: dateOffset(1) }].map((option) => (
+                    <Button
+                      key={option.value}
+                      onClick={() => {
+                        setAgendaLoading(true);
+                        setAgendaDate(option.value);
+                      }}
+                      size="sm"
+                      type="button"
+                      variant={agendaDate === option.value ? "default" : "outline"}
+                    >
+                      {option.label}
+                    </Button>
+                  ))}
+                </div>
               </Field>
               <output aria-live="polite" className="text-muted-foreground text-sm">
                 {agendaLoading
@@ -327,7 +369,8 @@ export function ReservationPage({
                           · {item.guestName ?? "Sin nombre"}
                         </p>
                         <p className="text-muted-foreground text-sm">
-                          {item.partySize} comensales · {item.status}
+                          {item.partySize} comensales ·{" "}
+                          {reservationStatusLabels[item.status] ?? item.status}
                         </p>
                       </div>
                       <div className="text-muted-foreground text-sm text-right">

@@ -13,6 +13,7 @@ import {
   EllipsisVertical,
   FileText,
   LayoutDashboard,
+  LogOut,
   ScrollText,
   Settings2,
   ShieldCheck,
@@ -20,7 +21,7 @@ import {
 } from 'lucide-react'
 import { type ReactNode } from 'react'
 
-import { LogoutButton, useCurrentUser, userInitials } from '@/features/auth'
+import { LogoutButton, useCurrentUser, useLogout, userInitials } from '@/features/auth'
 
 import { AppShellFrame } from './app-shell-frame'
 
@@ -153,6 +154,7 @@ export function PlatformAdminFrame({ children }: { children: ReactNode }) {
 function PlatformUserMenu() {
   const user = useCurrentUser()
   const navigate = useNavigate()
+  const { pending: logoutPending, signOut } = useLogout()
 
   const displayName = user?.displayName || 'Usuario actual'
   const email = user?.email || 'Sin email disponible'
@@ -167,7 +169,7 @@ function PlatformUserMenu() {
         <span className="text-muted-foreground block truncate text-[0.625rem]">{email}</span>
       </span>
       <DropdownMenu
-        className="w-52"
+        className="z-[60] w-52"
         offset={8}
         placement="top end"
         trigger={
@@ -189,9 +191,13 @@ function PlatformUserMenu() {
           <Settings2 className="size-3.5" /> Ajustes fiscales
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <div className="px-1 py-1">
-          <LogoutButton />
-        </div>
+        <DropdownMenuItem
+          isDisabled={logoutPending}
+          onPress={() => void signOut()}
+          textValue="Salir"
+        >
+          <LogOut className="size-3.5" /> Salir
+        </DropdownMenuItem>
       </DropdownMenu>
     </footer>
   )
