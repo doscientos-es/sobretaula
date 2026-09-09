@@ -2,8 +2,12 @@ node_modules/
 dist/
 coverage/
 .output/
+.vercel/
 .nitro/
 .tanstack/
 .env
 .env.local
 .env.*.local
+
+.vercel
+.env*
