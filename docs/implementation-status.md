@@ -47,6 +47,10 @@ cálculo de mesas libres y sugerencias. La vista de servicio permite bloquear y
 reabrir la selección; el servidor rechaza bloquear mesas con sesiones abiertas.
 Requiere aplicar `20260910000047_service_table_blocks.sql`.
 
+Al cerrar una cuenta, sus mesas pasan a `Pendiente de limpiar` y dejan de ser
+seleccionables hasta que el equipo las marca como limpias. La capacidad se
+persiste en `20260910000048_service_table_cleaning.sql`.
+
 Las acciones de sentar una reserva, abrir un walk-in y sentar una espera soportan
 ahora modo offline: guardan una operación local, la reintentan al recuperar la
 conexión y envían un `operation_id` único. La restricción parcial
