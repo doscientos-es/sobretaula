@@ -19,28 +19,29 @@ reproducible (comando ejecutado y su resultado).
 
 ## Fases
 
-| Fase                   | Entregable                                                                  | Estado                                                                                                                                                                                                                                                                       |
-| ---------------------- | --------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| F0 · Papeleo           | `project-design.md`, `data-model.md`, ADR 0001–0007                         | Hecho                                                                                                                                                                                                                                                                        |
-| F0 · Esqueleto         | Proyecto Start, `@doscientos/configs`, CI, `.env.example`                   | Hecho                                                                                                                                                                                                                                                                        |
-| F1 · Tenancy + Auth    | Registro, onboarding, perfiles, equipo, RLS, `/t/:slug`                     | Implementado; RLS real sin evidenciar                                                                                                                                                                                                                                        |
-| F1a · Gobierno global  | Dashboard, tenants, auditoría, operadores y controles de acceso             | Implementado; falta evidencia RLS dedicada                                                                                                                                                                                                                                   |
-| F1b · Billing SaaS     | Precios, Founders, cobro Redsys, gracia, facturas SaaS y suspensión segura  | Parcial                                                                                                                                                                                                                                                                      |
-| F2 · Diseñador de sala | Editor SVG, snap, historial, elementos, rotación real y layouts versionados | Implementado; entrega bloqueada                                                                                                                                                                                                                                              |
-| F3 · Motor de reservas | Turnos, pacing, disponibilidad, best-fit, EXCLUDE                           | Implementado; las RPC públicas están activas; falta humo dedicado                                                                                                                                                                                                            |
-| F4 · Vista de servicio | Plano en vivo, sentar/mover/unir, walk-ins, espera, no-show                 | Implementado; entrega bloqueada                                                                                                                                                                                                                                              |
-| F5 · Cuenta de mesa    | Catálogo, líneas, dividir, cerrar, cobrar                                   | Implementado; las comandas son reintentables y las anulaciones quedan auditadas; entrega bloqueada                                                                                                                                                                           |
-| F6 · Facturación       | Ajustes fiscales, series, ledger/outbox, PDF, modo test                     | Implementado; entrega bloqueada                                                                                                                                                                                                                                              |
-| F7 · TPV ampliado      | Catálogo, comandas, cocina/barra, cobros, caja y arqueo                     | Parcial; el TPV integra cuenta, comandas, cocina/barra, cobro manual, caja e informe diario con permisos; faltan hardware e informe financiero completo                                                                                                                      |
-| F8 · Reservas públicas | Reserva sin cuenta, gestión, avisos, espera y ficha de cliente              | Parcial; reserva, disponibilidad, gestión por token y confirmación por email activas; faltan recordatorios, espera futura y privacidad avanzada                                                                                                                              |
-| F9 · Control horario   | PIN, pausas, jornadas, auditoría y exportación                              | Parcial; eventos, transiciones, cálculo, pantalla inicial, exportación CSV, PIN almacenado como hash y endpoint de terminal para verificar PIN y registrar el evento del empleado implementados; faltan UX de terminal compartido, limitación de intentos y reglas laborales |
-| F10 · Producto         | Inventario, escandallos, alérgenos, precios por canal y carta               | Parcial; ingredientes, recetas, escandallo, inventario, UI, canales y carta pública enriquecida implementados; faltan versionado y validación visual final                                                                                                                   |
-| F11 · Entrega          | Documentación operativa, smoke, despliegue autorizado                       | Parcial                                                                                                                                                                                                                                                                      |
+| Fase                   | Entregable                                                                  | Estado                                                                                                                                                                                                       |
+| ---------------------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| F0 · Papeleo           | `project-design.md`, `data-model.md`, ADR 0001–0007                         | Hecho                                                                                                                                                                                                        |
+| F0 · Esqueleto         | Proyecto Start, `@doscientos/configs`, CI, `.env.example`                   | Hecho                                                                                                                                                                                                        |
+| F1 · Tenancy + Auth    | Registro, onboarding, perfiles, equipo, RLS, `/t/:slug`                     | Implementado; RLS real sin evidenciar                                                                                                                                                                        |
+| F1a · Gobierno global  | Dashboard, tenants, auditoría, operadores y controles de acceso             | Implementado; falta evidencia RLS dedicada                                                                                                                                                                   |
+| F1b · Billing SaaS     | Precios, Founders, cobro Redsys, gracia, facturas SaaS y suspensión segura  | Parcial                                                                                                                                                                                                      |
+| F2 · Diseñador de sala | Editor SVG, snap, historial, elementos, rotación real y layouts versionados | Implementado; entrega bloqueada                                                                                                                                                                              |
+| F3 · Motor de reservas | Turnos, pacing, disponibilidad, best-fit, EXCLUDE                           | Implementado; las RPC públicas están activas; falta humo dedicado                                                                                                                                            |
+| F4 · Vista de servicio | Plano en vivo, sentar/mover/unir, walk-ins, espera, no-show                 | Implementado; entrega bloqueada                                                                                                                                                                              |
+| F5 · Cuenta de mesa    | Catálogo, líneas, dividir, cerrar, cobrar                                   | Implementado; las comandas son reintentables y las anulaciones quedan auditadas; entrega bloqueada                                                                                                           |
+| F6 · Facturación       | Ajustes fiscales, series, ledger/outbox, PDF, modo test                     | Implementado; entrega bloqueada                                                                                                                                                                              |
+| F7 · TPV ampliado      | Catálogo, comandas, cocina/barra, cobros, caja y arqueo                     | Parcial; el TPV integra cuenta, comandas, cocina/barra, cobro manual, caja e informe diario con permisos; faltan hardware e informe financiero completo                                                      |
+| F8 · Reservas públicas | Reserva sin cuenta, gestión, avisos, espera y ficha de cliente              | Parcial; reserva, disponibilidad, gestión por token y confirmación por email activas; faltan recordatorios, espera futura y privacidad avanzada                                                              |
+| F9 · Control horario   | PIN, pausas, jornadas, auditoría y exportación                              | Parcial; portal personal, terminal compartido, PIN bcrypt, límite de intentos, eventos inmutables con encadenado y exportación CSV implementados; faltan reglas laborales españolas y su cálculo/explotación |
+| F10 · Producto         | Inventario, escandallos, alérgenos, precios por canal y carta               | Parcial; ingredientes, recetas, escandallo, inventario, UI, canales y carta pública enriquecida implementados; faltan versionado y validación visual final                                                   |
+| F11 · Entrega          | Documentación operativa, smoke, despliegue autorizado                       | Parcial                                                                                                                                                                                                      |
 
 El dashboard operativo ya calcula reservas activas, reservas de la semana,
-sesiones abiertas y cobros del día desde Supabase; la actividad detallada sigue consultándose en las vistas
-de Servicio, Reservas y Cuenta. Falta añadir pruebas de integración contra un
-proyecto Supabase dedicado.
+sesiones abiertas y cobros del día desde Supabase; la actividad detallada sigue
+consultándose en las vistas de Servicio, Reservas y Cuenta. No se ejecutan
+pruebas de integración con fixtures: el producto usa un único Supabase con datos
+reales.
 
 La operación de sala permite marcar una reserva como `no_show` desde la puerta,
 libera su mesa mediante el trigger de sincronización y aplica también en servidor
@@ -108,6 +109,24 @@ también queda cubierto con una operación idempotente y la migración propia de
 Las migraciones de reservas públicas están activas en el proyecto existente. El
 flujo usa RPC anónimas mínimas, no políticas RLS generales sobre reservas o
 clientes, y no se han ejecutado fixtures, cargas ni humo sobre datos reales.
+
+### Fichaje seguro por terminal (D4)
+
+El portal personal permite consultar la jornada, fichar y crear o renovar un
+PIN numérico de 4 a 8 cifras. El TPV enlaza la nueva terminal compartida en
+`/t/:slug/l/:venue/fichaje-terminal`: lista solo al equipo que puede operar en
+ese local, no retiene el PIN en navegador y registra entrada, pausa y salida.
+
+La migración local `20260910000083_timekeeping_terminal_security.sql` fue
+aplicada y verificada en el único proyecto autorizado como
+`timekeeping_terminal_security` (versión `20260910212711`). Los PIN nuevos usan
+bcrypt; los hashes SHA-256 heredados se reemplazan por bcrypt al primer uso
+correcto. Tras cinco PIN erróneos, el terminal queda bloqueado 15 minutos. Los
+eventos no admiten escritura directa, modificación ni borrado: solo las RPC
+atómicas con comprobación de tenant, local y asignación de empleado pueden
+crearlos, y cada evento nuevo referencia el hash del anterior. RLS permanece
+forzado y el trigger append-only y ambos RPC `SECURITY DEFINER` fueron
+comprobados por metadatos; no se crearon ni consultaron datos operativos.
 
 La política de terraza ya está aislada en dominio (`weather-policy.ts`): permite
 decidir de forma determinista si mantener el exterior, trasladar al interior o
@@ -179,21 +198,16 @@ hasta que un asesor fiscal valide el reparto de responsabilidad.
 
 ### Última ejecución local (2026-09-10)
 
-Tras añadir la validación geométrica de la huella rotada de mesas, la suite
-local queda en 64 archivos correctos y 272 pruebas correctas; 1 archivo y 3
-pruebas RLS siguen omitidos para no conectarlos al proyecto con datos reales.
-
-La verificación posterior de producción (`pnpm build`) también completa
-correctamente y genera el artefacto Nitro/Vercel. La suite global actual queda
-en 64 archivos y 272 pruebas correctas; 1 archivo y 3 pruebas RLS continúan
-omitidos de forma deliberada para no usar datos reales como prueba.
+La última ejecución de `pnpm quality` completa correctamente con 75 archivos y
+293 pruebas correctas. Un archivo y tres pruebas RLS siguen omitidos de forma
+deliberada para no conectarlos al proyecto con datos reales.
 
 | Comando                | Resultado                                                                                    |
 | ---------------------- | -------------------------------------------------------------------------------------------- |
-| `pnpm format:check`    | Pendiente por 5 archivos ajenos al alcance actual                                            |
+| `pnpm format:check`    | Correcto                                                                                     |
 | `pnpm lint`            | Correcto                                                                                     |
 | `pnpm structure:check` | Correcto localmente; el asset de login vive en `public/` y los módulos usan nombres estándar |
-| `pnpm test`            | 64 archivos y 272 pruebas correctas; 1 archivo y 3 pruebas RLS omitidas deliberadamente      |
+| `pnpm test`            | 75 archivos y 293 pruebas correctas; 1 archivo y 3 pruebas RLS omitidas deliberadamente      |
 | `pnpm typecheck`       | Correcto                                                                                     |
 | `pnpm quality`         | Correcto                                                                                     |
 | `pnpm build`           | Correcto; solo avisos de Vite/chunks                                                         |

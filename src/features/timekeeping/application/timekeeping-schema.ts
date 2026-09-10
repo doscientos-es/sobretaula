@@ -20,5 +20,5 @@ export const verifyPinInput = timekeepingInput.extend({
 })
 export const terminalTimeEventInput = verifyPinInput.extend({
   eventType: z.enum(TIME_EVENT_TYPES),
-  terminalId: z.string().trim().max(100).optional(),
+  terminalId: z.string().trim().min(1).max(100),
 })

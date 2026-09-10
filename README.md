@@ -28,12 +28,11 @@ archivos ni el índice.
 ## Migraciones
 
 SQL versionado en `supabase/migrations`, aplicadas en orden lexicográfico.
-Nunca se edita una migración ya aplicada: se añade una nueva. Para aplicarlas:
-
-- **Entorno de pruebas dedicado**: aplicación por MCP o `supabase db push`
-  apuntando al proyecto de pruebas; nunca contra producción.
-- **Producción**: aplicación autorizada de forma explícita, una persona
-  ejecuta, otra revisa el diff antes.
+Nunca se edita una migración ya aplicada: se añade una nueva. El producto usa
+un único proyecto Supabase con datos reales: toda migración propia se revisa y
+se aplica individualmente por MCP al destino autorizado, verificando después el
+esquema. Nunca se usan fixtures, humo, carga ni pruebas de concurrencia sobre
+ese proyecto.
 
 ## Variables de entorno
 
@@ -47,20 +46,13 @@ Nunca se edita una migración ya aplicada: se añade una nueva. Para aplicarlas:
 | `REDSYS_ENVIRONMENT`, `REDSYS_MERCHANT_CODE`, `REDSYS_TERMINAL=999`, `REDSYS_CURRENCY=978`, `REDSYS_SECRET_KEY`, `APP_URL`, `PLATFORM_BILLING_CRON_SECRET`, `PLATFORM_PAYMENT_REFERENCE_ENCRYPTION_KEY` | Servidor      | Cobros SaaS, tokenización, invitaciones y callbacks firmados |
 | `NOTIFICATION_CRON_SECRET`, `NOTIFICATION_WORKER_TOKEN`                                                                                                                                                 | Servidor      | Worker autenticado de notificaciones                         |
 | `RESEND_API_KEY`, `RESEND_FROM_EMAIL`                                                                                                                                                                   | Edge Function | Confirmaciones por correo con remitente verificado           |
-| `SUPABASE_TEST_URL`, `SUPABASE_TEST_PUBLISHABLE_KEY`, `SUPABASE_TEST_SECRET_KEY`                                                                                                                        | CI            | Solo con proyecto de pruebas dedicado; hoy no aplica         |
 
 ## Pruebas de integración
 
-`tenant-rls.test.ts` cubre aislamiento RLS entre tenants y requiere un proyecto
-Supabase de pruebas dedicado; se salta solo sin credenciales (`describe.skip`).
-Hoy solo existe el proyecto de producción, así que la suite no llega a ejecutar
-sus escrituras de fixture: **nunca se apunta a producción**. Cuando exista un
-proyecto de pruebas, rellena `.env.test` (contrato en `.env.test.example`) y
-ejecuta:
-
-```sh
-pnpm exec vitest run src/features/tenancy
-```
+`tenant-rls.test.ts` cubre aislamiento RLS entre tenants, pero queda omitido
+para no ejecutar sus usuarios ni fixtures contra el único proyecto con datos
+reales. La revisión de migraciones comprueba sus políticas y grants; las pruebas
+unitarias y de interfaz no se conectan a producción.
 
 ## Despliegue
 

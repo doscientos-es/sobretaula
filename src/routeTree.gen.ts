@@ -56,6 +56,7 @@ import { Route as TSlugLVenueCajaRouteImport } from './routes/t.$slug.l.$venue.c
 import { Route as TSlugLVenueClientesRouteImport } from './routes/t.$slug.l.$venue.clientes'
 import { Route as TSlugLVenueComunicacionesRouteImport } from './routes/t.$slug.l.$venue.comunicaciones'
 import { Route as TSlugLVenueFichajeRouteImport } from './routes/t.$slug.l.$venue.fichaje'
+import { Route as TSlugLVenueFichajeTerminalRouteImport } from './routes/t.$slug.l.$venue.fichaje-terminal'
 import { Route as TSlugLVenueInformesRouteImport } from './routes/t.$slug.l.$venue.informes'
 import { Route as TSlugLVenuePlanoRouteImport } from './routes/t.$slug.l.$venue.plano'
 import { Route as TSlugLVenueProductosRouteImport } from './routes/t.$slug.l.$venue.productos'
@@ -303,6 +304,12 @@ const TSlugLVenueFichajeRoute = TSlugLVenueFichajeRouteImport.update({
   path: '/fichaje',
   getParentRoute: () => TSlugLVenueRoute,
 } as any)
+const TSlugLVenueFichajeTerminalRoute =
+  TSlugLVenueFichajeTerminalRouteImport.update({
+    id: '/fichaje-terminal',
+    path: '/fichaje-terminal',
+    getParentRoute: () => TSlugLVenueRoute,
+  } as any)
 const TSlugLVenueInformesRoute = TSlugLVenueInformesRouteImport.update({
   id: '/informes',
   path: '/informes',
@@ -387,6 +394,7 @@ export interface FileRoutesByFullPath {
   '/t/$slug/l/$venue/clientes': typeof TSlugLVenueClientesRoute
   '/t/$slug/l/$venue/comunicaciones': typeof TSlugLVenueComunicacionesRoute
   '/t/$slug/l/$venue/fichaje': typeof TSlugLVenueFichajeRoute
+  '/t/$slug/l/$venue/fichaje-terminal': typeof TSlugLVenueFichajeTerminalRoute
   '/t/$slug/l/$venue/informes': typeof TSlugLVenueInformesRoute
   '/t/$slug/l/$venue/plano': typeof TSlugLVenuePlanoRoute
   '/t/$slug/l/$venue/productos': typeof TSlugLVenueProductosRoute
@@ -440,6 +448,7 @@ export interface FileRoutesByTo {
   '/t/$slug/l/$venue/clientes': typeof TSlugLVenueClientesRoute
   '/t/$slug/l/$venue/comunicaciones': typeof TSlugLVenueComunicacionesRoute
   '/t/$slug/l/$venue/fichaje': typeof TSlugLVenueFichajeRoute
+  '/t/$slug/l/$venue/fichaje-terminal': typeof TSlugLVenueFichajeTerminalRoute
   '/t/$slug/l/$venue/informes': typeof TSlugLVenueInformesRoute
   '/t/$slug/l/$venue/plano': typeof TSlugLVenuePlanoRoute
   '/t/$slug/l/$venue/productos': typeof TSlugLVenueProductosRoute
@@ -497,6 +506,7 @@ export interface FileRoutesById {
   '/t/$slug/l/$venue/clientes': typeof TSlugLVenueClientesRoute
   '/t/$slug/l/$venue/comunicaciones': typeof TSlugLVenueComunicacionesRoute
   '/t/$slug/l/$venue/fichaje': typeof TSlugLVenueFichajeRoute
+  '/t/$slug/l/$venue/fichaje-terminal': typeof TSlugLVenueFichajeTerminalRoute
   '/t/$slug/l/$venue/informes': typeof TSlugLVenueInformesRoute
   '/t/$slug/l/$venue/plano': typeof TSlugLVenuePlanoRoute
   '/t/$slug/l/$venue/productos': typeof TSlugLVenueProductosRoute
@@ -555,6 +565,7 @@ export interface FileRouteTypes {
     | '/t/$slug/l/$venue/clientes'
     | '/t/$slug/l/$venue/comunicaciones'
     | '/t/$slug/l/$venue/fichaje'
+    | '/t/$slug/l/$venue/fichaje-terminal'
     | '/t/$slug/l/$venue/informes'
     | '/t/$slug/l/$venue/plano'
     | '/t/$slug/l/$venue/productos'
@@ -608,6 +619,7 @@ export interface FileRouteTypes {
     | '/t/$slug/l/$venue/clientes'
     | '/t/$slug/l/$venue/comunicaciones'
     | '/t/$slug/l/$venue/fichaje'
+    | '/t/$slug/l/$venue/fichaje-terminal'
     | '/t/$slug/l/$venue/informes'
     | '/t/$slug/l/$venue/plano'
     | '/t/$slug/l/$venue/productos'
@@ -664,6 +676,7 @@ export interface FileRouteTypes {
     | '/t/$slug/l/$venue/clientes'
     | '/t/$slug/l/$venue/comunicaciones'
     | '/t/$slug/l/$venue/fichaje'
+    | '/t/$slug/l/$venue/fichaje-terminal'
     | '/t/$slug/l/$venue/informes'
     | '/t/$slug/l/$venue/plano'
     | '/t/$slug/l/$venue/productos'
@@ -1029,6 +1042,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TSlugLVenueFichajeRouteImport
       parentRoute: typeof TSlugLVenueRoute
     }
+    '/t/$slug/l/$venue/fichaje-terminal': {
+      id: '/t/$slug/l/$venue/fichaje-terminal'
+      path: '/fichaje-terminal'
+      fullPath: '/t/$slug/l/$venue/fichaje-terminal'
+      preLoaderRoute: typeof TSlugLVenueFichajeTerminalRouteImport
+      parentRoute: typeof TSlugLVenueRoute
+    }
     '/t/$slug/l/$venue/informes': {
       id: '/t/$slug/l/$venue/informes'
       path: '/informes'
@@ -1127,6 +1147,7 @@ interface TSlugLVenueRouteChildren {
   TSlugLVenueClientesRoute: typeof TSlugLVenueClientesRoute
   TSlugLVenueComunicacionesRoute: typeof TSlugLVenueComunicacionesRoute
   TSlugLVenueFichajeRoute: typeof TSlugLVenueFichajeRoute
+  TSlugLVenueFichajeTerminalRoute: typeof TSlugLVenueFichajeTerminalRoute
   TSlugLVenueInformesRoute: typeof TSlugLVenueInformesRoute
   TSlugLVenuePlanoRoute: typeof TSlugLVenuePlanoRoute
   TSlugLVenueProductosRoute: typeof TSlugLVenueProductosRoute
@@ -1143,6 +1164,7 @@ const TSlugLVenueRouteChildren: TSlugLVenueRouteChildren = {
   TSlugLVenueClientesRoute: TSlugLVenueClientesRoute,
   TSlugLVenueComunicacionesRoute: TSlugLVenueComunicacionesRoute,
   TSlugLVenueFichajeRoute: TSlugLVenueFichajeRoute,
+  TSlugLVenueFichajeTerminalRoute: TSlugLVenueFichajeTerminalRoute,
   TSlugLVenueInformesRoute: TSlugLVenueInformesRoute,
   TSlugLVenuePlanoRoute: TSlugLVenuePlanoRoute,
   TSlugLVenueProductosRoute: TSlugLVenueProductosRoute,

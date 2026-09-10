@@ -85,6 +85,16 @@ export function PosTerminalPage({
             Consultar llegadas, lista de espera y próximos servicios.
           </span>
         </Link>
+        <Link
+          className="bg-card hover:bg-muted/60 rounded-xl border p-5 transition-colors"
+          params={params}
+          to="/t/$slug/l/$venue/fichaje-terminal"
+        >
+          <span className="font-semibold">Fichaje</span>
+          <span className="text-muted-foreground mt-1 block text-sm">
+            Registra entrada, pausas y salida antes de empezar el servicio.
+          </span>
+        </Link>
         {canManageCash && (
           <Link
             className="bg-card hover:bg-muted/60 rounded-xl border p-5 transition-colors"

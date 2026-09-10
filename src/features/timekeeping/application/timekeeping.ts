@@ -1,5 +1,3 @@
-import { createHash } from 'node:crypto'
-
 import { createServerFn } from '@tanstack/react-start'
 
 import { authMiddleware } from '@/features/auth/infrastructure/server/auth-middleware'
@@ -23,7 +21,6 @@ const middleware = [
   tenantMembershipMiddleware,
   operationalTenantMiddleware,
 ] as const
-const pinHash = (pin: string) => createHash('sha256').update(pin).digest('hex')
 export const getMyTimekeeping = createServerFn({ method: 'GET' })
   .middleware(middleware)
   .validator(timekeepingInput)
@@ -48,35 +45,21 @@ export const recordTimeEvent = createServerFn({ method: 'POST' })
   .middleware(middleware)
   .validator(recordTimeEventInput)
   .handler(async ({ context, data }) => {
-    const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
-    const { data: last } = await supabase
-      .from('timekeeping_events')
-      .select('event_type')
-      .eq('tenant_id', data.tenantId)
-      .eq('venue_id', data.venueId)
-      .eq('employee_id', context.tenantMembership.userId)
-      .order('occurred_at', { ascending: false })
-      .limit(1)
-      .maybeSingle()
-    if (
-      !allowedNextEvent(
-        (last?.event_type as Parameters<typeof allowedNextEvent>[0]) ?? null,
-      ).includes(data.eventType)
-    )
+    const { data: result, error } = await createRequestSupabaseClient(
+      context.tenantMembership.accessToken,
+    ).rpc('record_timekeeping_event', {
+      p_employee_id: context.tenantMembership.userId,
+      p_event_type: data.eventType,
+      p_pin: null,
+      p_tenant_id: data.tenantId,
+      p_terminal_id: data.terminalId ?? null,
+      p_venue_id: data.venueId,
+    })
+    if (error || !result?.[0])
+      throw new Error(`timekeeping_event_failed:${error?.code ?? 'unknown'}`)
+    if (result[0].result !== 'recorded')
       throw new Response('Invalid timekeeping transition', { status: 409 })
-    const { data: event, error } = await supabase
-      .from('timekeeping_events')
-      .insert({
-        tenant_id: data.tenantId,
-        venue_id: data.venueId,
-        employee_id: context.tenantMembership.userId,
-        event_type: data.eventType,
-        terminal_id: data.terminalId ?? null,
-      })
-      .select('id')
-      .single()
-    if (error || !event) throw new Error(`timekeeping_event_failed:${error?.code ?? 'unknown'}`)
-    return { eventId: event.id as string, eventType: data.eventType }
+    return { eventId: result[0].event_id as string, eventType: data.eventType }
   })
 
 export const exportTimekeepingCsv = createServerFn({ method: 'GET' })
@@ -111,78 +94,89 @@ export const setMyTimekeepingPin = createServerFn({ method: 'POST' })
   .middleware(middleware)
   .validator(setPinInput)
   .handler(async ({ context, data }) => {
-    const { error } = await createRequestSupabaseClient(context.tenantMembership.accessToken)
-      .from('timekeeping_pins')
-      .upsert({
-        tenant_id: data.tenantId,
-        employee_id: context.tenantMembership.userId,
-        pin_hash: pinHash(data.pin),
-      })
-    if (error) throw new Error(`timekeeping_pin_save_failed:${error.code}`)
-    return { saved: true }
-  })
-
-export const verifyTimekeepingPin = createServerFn({ method: 'POST' })
-  .middleware(middleware)
-  .validator(verifyPinInput)
-  .handler(async ({ context, data }) => {
-    if (
-      !['owner', 'manager'].includes(context.tenantMembership.role) &&
-      data.employeeId !== context.tenantMembership.userId
-    )
-      throw new Response('Forbidden', { status: 403 })
-    const { data: row, error } = await createRequestSupabaseClient(
+    const { data: saved, error } = await createRequestSupabaseClient(
       context.tenantMembership.accessToken,
-    )
-      .from('timekeeping_pins')
-      .select('pin_hash')
-      .eq('tenant_id', data.tenantId)
-      .eq('employee_id', data.employeeId)
-      .maybeSingle()
-    if (error) throw new Error(`timekeeping_pin_load_failed:${error.code}`)
-    return { valid: Boolean(row && row.pin_hash === pinHash(data.pin)) }
+    ).rpc('set_my_timekeeping_pin', { p_pin: data.pin, p_tenant_id: data.tenantId })
+    if (error || !saved) throw new Error(`timekeeping_pin_save_failed:${error?.code ?? 'unknown'}`)
+    return { saved: true }
   })
 
 export const recordTerminalTimeEvent = createServerFn({ method: 'POST' })
   .middleware(middleware)
   .validator(terminalTimeEventInput)
   .handler(async ({ context, data }) => {
-    const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
-    const { data: pin, error: pinError } = await supabase
-      .from('timekeeping_pins')
-      .select('pin_hash')
-      .eq('tenant_id', data.tenantId)
-      .eq('employee_id', data.employeeId)
-      .maybeSingle()
-    if (pinError) throw new Error(`timekeeping_pin_load_failed:${pinError.code}`)
-    if (!pin || pin.pin_hash !== pinHash(data.pin))
+    const { data: result, error } = await createRequestSupabaseClient(
+      context.tenantMembership.accessToken,
+    ).rpc('record_timekeeping_event', {
+      p_employee_id: data.employeeId,
+      p_event_type: data.eventType,
+      p_pin: data.pin,
+      p_tenant_id: data.tenantId,
+      p_terminal_id: data.terminalId,
+      p_venue_id: data.venueId,
+    })
+    if (error || !result?.[0])
+      throw new Error(`terminal_timekeeping_event_failed:${error?.code ?? 'unknown'}`)
+    const event = result[0]
+    if (event.result === 'locked')
+      throw new Response('Terminal temporarily locked', { status: 429 })
+    if (event.result === 'invalid_pin' || event.result === 'invalid_employee')
       throw new Response('Invalid PIN', { status: 401 })
-    const { data: last } = await supabase
-      .from('timekeeping_events')
-      .select('event_type')
-      .eq('tenant_id', data.tenantId)
-      .eq('venue_id', data.venueId)
-      .eq('employee_id', data.employeeId)
-      .order('occurred_at', { ascending: false })
-      .limit(1)
-      .maybeSingle()
-    if (
-      !allowedNextEvent(
-        (last?.event_type as Parameters<typeof allowedNextEvent>[0]) ?? null,
-      ).includes(data.eventType)
-    )
+    if (event.result !== 'recorded')
       throw new Response('Invalid timekeeping transition', { status: 409 })
-    const { data: event, error } = await supabase
-      .from('timekeeping_events')
-      .insert({
-        tenant_id: data.tenantId,
-        venue_id: data.venueId,
-        employee_id: data.employeeId,
-        event_type: data.eventType,
-        terminal_id: data.terminalId ?? null,
-      })
-      .select('id')
-      .single()
-    if (error || !event) throw new Error(`timekeeping_event_failed:${error?.code ?? 'unknown'}`)
-    return { eventId: event.id as string, eventType: data.eventType }
+    return { eventId: event.event_id as string, eventType: data.eventType }
+  })
+
+export const getTimekeepingTerminalStaff = createServerFn({ method: 'GET' })
+  .middleware(middleware)
+  .validator(timekeepingInput)
+  .handler(async ({ context, data }) => {
+    const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    const { data: memberships, error: membershipsError } = await supabase
+      .from('memberships')
+      .select('id, role, user_id')
+      .eq('tenant_id', data.tenantId)
+      .eq('status', 'active')
+      .order('created_at')
+    if (membershipsError) throw new Error(`timekeeping_staff_load_failed:${membershipsError.code}`)
+    const membershipIds = (memberships ?? []).map((member) => member.id)
+    const userIds = (memberships ?? []).map((member) => member.user_id)
+    const [profilesResult, venueAssignmentsResult] = await Promise.all([
+      userIds.length
+        ? supabase.from('profiles').select('display_name, user_id').in('user_id', userIds)
+        : Promise.resolve({ data: [], error: null }),
+      membershipIds.length
+        ? supabase
+            .from('membership_venues')
+            .select('membership_id, venue_id')
+            .in('membership_id', membershipIds)
+        : Promise.resolve({ data: [], error: null }),
+    ])
+    const { data: profiles, error: profilesError } = profilesResult
+    if (profilesError)
+      throw new Error(`timekeeping_staff_profiles_load_failed:${profilesError.code}`)
+    if (venueAssignmentsResult.error)
+      throw new Error(
+        `timekeeping_staff_assignments_load_failed:${venueAssignmentsResult.error.code}`,
+      )
+    const names = new Map(
+      (profiles ?? []).map((profile) => [profile.user_id, profile.display_name]),
+    )
+    const assignedMembershipIds = new Set(
+      (venueAssignmentsResult.data ?? []).map((assignment) => assignment.membership_id),
+    )
+    const venueMembershipIds = new Set(
+      (venueAssignmentsResult.data ?? [])
+        .filter((assignment) => assignment.venue_id === data.venueId)
+        .map((assignment) => assignment.membership_id),
+    )
+    return (memberships ?? [])
+      .filter(
+        (member) => !assignedMembershipIds.has(member.id) || venueMembershipIds.has(member.id),
+      )
+      .map((member) => ({
+        displayName: names.get(member.user_id) ?? 'Empleado',
+        role: member.role as 'accountant' | 'host' | 'manager' | 'owner' | 'waiter',
+        userId: member.user_id as string,
+      }))
   })
