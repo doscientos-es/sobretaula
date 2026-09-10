@@ -4,6 +4,7 @@ import type { ServiceTableState, ServiceTableStatus } from '../domain/service-bo
 
 const STATUS_FILL: Record<ServiceTableStatus, string> = {
   blocked: 'fill-muted-foreground/40',
+  cleaning: 'fill-amber-500/70',
   free: 'var(--muted-foreground)',
   occupied: 'var(--destructive)',
   reserved: 'var(--primary)',

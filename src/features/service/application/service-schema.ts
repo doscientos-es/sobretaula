@@ -49,6 +49,8 @@ export const updateTableBlockInput = serviceVenueInput.extend({
   tableIds,
 })
 
+export const cleanTablesInput = serviceVenueInput.extend({ tableIds })
+
 export const noShowReservationInput = serviceVenueInput.extend({
   reason: z.string().trim().max(500).optional(),
   reservationId: z.string().uuid(),

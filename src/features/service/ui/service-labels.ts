@@ -2,6 +2,7 @@ import type { ServiceSession, ServiceTableState, ServiceTableStatus } from '../d
 
 const STATUS_LABEL: Record<ServiceTableStatus, string> = {
   blocked: 'Bloqueada',
+  cleaning: 'Pendiente de limpiar',
   free: 'Libre',
   occupied: 'Ocupada',
   reserved: 'Reservada',

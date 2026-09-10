@@ -67,8 +67,15 @@ describe('service board', () => {
       reservations: [],
       sessions: [],
       tables: [
-        { ...tables[0]!, isBlocked: true, blockReason: 'Mantenimiento' },
-        tables[1]!,
+        {
+          blockReason: 'Mantenimiento',
+          code: '1',
+          id: 'table-1',
+          isBlocked: true,
+          maxSeats: 4,
+          minSeats: 2,
+        },
+        { code: '2', id: 'table-2', maxSeats: 2, minSeats: 1 },
       ],
     })
 

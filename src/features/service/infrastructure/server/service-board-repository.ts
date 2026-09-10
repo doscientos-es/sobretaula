@@ -30,7 +30,7 @@ export async function loadServiceBoard(
   const [tablesResult, sessionsResult, reservationsResult, waitlistResult] = await Promise.all([
     supabase
       .from('tables')
-      .select('area_id, code, id, is_service_blocked, max_seats, min_seats, service_block_reason')
+      .select('area_id, code, id, is_pending_cleaning, is_service_blocked, max_seats, min_seats, service_block_reason')
       .eq('tenant_id', tenantId)
       .eq('venue_id', venueId)
       .eq('is_active', true)
@@ -124,6 +124,7 @@ export async function loadServiceBoard(
     code: table.code,
     id: table.id,
     isBlocked: table.is_service_blocked,
+    isPendingCleaning: table.is_pending_cleaning,
     maxSeats: table.max_seats,
     minSeats: table.min_seats,
   }))

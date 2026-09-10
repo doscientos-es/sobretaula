@@ -8,7 +8,7 @@ import {
   Scripts,
 } from '@tanstack/react-router'
 import { CircleAlert, House, RefreshCw, Utensils } from 'lucide-react'
-import { useEffect, useState, type ReactNode } from 'react'
+import { useSyncExternalStore, type ReactNode } from 'react'
 
 import { isPasswordRecoveryHash, PasswordResetPage } from '@/features/auth'
 import { DEFAULT_LOCALE } from '@/shared/lib/i18n/locale'
@@ -17,6 +17,15 @@ import { createTranslator } from '@/shared/lib/i18n/messages'
 import appCss from '../styles.css?url'
 
 const t = createTranslator(DEFAULT_LOCALE)
+
+function subscribeToLocationHash(onStoreChange: () => void): () => void {
+  window.addEventListener('hashchange', onStoreChange)
+  return () => window.removeEventListener('hashchange', onStoreChange)
+}
+
+function isPasswordRecoveryLocation(): boolean {
+  return typeof window !== 'undefined' && isPasswordRecoveryHash(window.location.hash)
+}
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
@@ -53,11 +62,11 @@ function RootLayout() {
 }
 
 function RootError({ reset }: { reset: () => void }) {
-  const [isPasswordRecovery, setPasswordRecovery] = useState(false)
-
-  useEffect(() => {
-    setPasswordRecovery(isPasswordRecoveryHash(window.location.hash))
-  }, [])
+  const isPasswordRecovery = useSyncExternalStore(
+    subscribeToLocationHash,
+    isPasswordRecoveryLocation,
+    () => false,
+  )
 
   if (isPasswordRecovery) {
     return <PasswordResetPage />

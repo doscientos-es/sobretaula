@@ -56,6 +56,17 @@ import {
 } from '../domain/geometry'
 import { inspectTableGroupPresetAvailability } from '../domain/table-group-presets'
 
+function readLockedIds(lockStorageKey: string | undefined): string[] {
+  if (!lockStorageKey || typeof window === 'undefined') return []
+  try {
+    const raw = window.localStorage.getItem(lockStorageKey)
+    const parsed = raw ? JSON.parse(raw) : []
+    return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === 'string') : []
+  } catch {
+    return []
+  }
+}
+
 export function FloorPlanPage({
   data,
   tenantId,
@@ -88,16 +99,11 @@ export function FloorPlanPage({
   const [draggingTableId, setDraggingTableId] = useState<string>()
   const [selectedId, setSelectedId] = useState<string>()
   const [selectedIds, setSelectedIds] = useState<string[]>([])
-  const [lockedIds, setLockedIds] = useState<string[]>([])
   const [zoom, setZoom] = useState(1)
   const [gridSize, setGridSize] = useState(DEFAULT_GRID_SIZE_CM)
   const [pan, setPan] = useState({ x: 0, y: 0 })
   const panPointer = useRef<{ id: number; x: number; y: number } | undefined>(undefined)
   const [selectedAreaId, setSelectedAreaId] = useState(data.areas[0]?.id)
-  useEffect(() => {
-    if (selectedAreaId && data.areas.some((area) => area.id === selectedAreaId)) return
-    setSelectedAreaId(data.areas[0]?.id)
-  }, [data.areas, selectedAreaId])
   const activeArea = data.areas.find((area) => area.id === selectedAreaId) ?? data.areas[0]
   const activePresets = data.tableGroupPresets.filter((preset) => preset.areaId === activeArea?.id)
   const activeVersion = activeArea
@@ -107,23 +113,9 @@ export function FloorPlanPage({
   const lockStorageKey = activeVersion
     ? `sobretaula:floor-plan-locks:${activeVersion.id}`
     : undefined
-  const lockHydrated = useRef<string | undefined>(undefined)
+  const [lockedIds, setLockedIds] = useState(() => readLockedIds(lockStorageKey))
   useEffect(() => {
     if (!lockStorageKey || typeof window === 'undefined') return
-    try {
-      const raw = window.localStorage.getItem(lockStorageKey)
-      const parsed = raw ? JSON.parse(raw) : []
-      setLockedIds(
-        Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === 'string') : [],
-      )
-    } catch {
-      setLockedIds([])
-    }
-    lockHydrated.current = lockStorageKey
-  }, [lockStorageKey])
-  useEffect(() => {
-    if (!lockStorageKey || lockHydrated.current !== lockStorageKey || typeof window === 'undefined')
-      return
     try {
       window.localStorage.setItem(lockStorageKey, JSON.stringify(lockedIds))
     } catch {
@@ -290,7 +282,9 @@ export function FloorPlanPage({
     setSelectedAreaId(areaId)
     setSelectedId(undefined)
     setSelectedIds([])
-    setLockedIds([])
+    setLockedIds(
+      readLockedIds(version ? `sobretaula:floor-plan-locks:${version.id}` : undefined),
+    )
     setHistory(
       createEditorHistory({
         elements: data.elements.filter((element) => element.floorPlanVersionId === version?.id),
@@ -893,86 +887,9 @@ export function FloorPlanPage({
                 className={`mx-auto transition-[max-width] ${previewDevice === 'mobile' ? 'max-w-[390px]' : previewDevice === 'tablet' ? 'max-w-[768px]' : 'max-w-none'}`}
               >
                 <svg
-                  aria-label={`Plano ${activeVersion.name}`}
+                  aria-hidden="true"
                   className="border-border bg-muted/30 h-auto w-full rounded-xl border shadow-inner"
-                  onClick={(event) => {
-                    if (event.target === event.currentTarget) {
-                      setSelectedId(undefined)
-                      setSelectedIds([])
-                    }
-                  }}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Escape') {
-                      event.preventDefault()
-                      setSelectedId(undefined)
-                      setSelectedIds([])
-                    } else if (event.key === 'Delete' || event.key === 'Backspace') {
-                      if (selectedId) {
-                        event.preventDefault()
-                        removeSelected()
-                      }
-                    } else if (
-                      (event.ctrlKey || event.metaKey) &&
-                      event.key.toLowerCase() === 'a'
-                    ) {
-                      event.preventDefault()
-                      const ids = [...elements, ...placements].map((item) => item.id)
-                      setSelectedIds(ids)
-                      setSelectedId(ids[0])
-                    } else if (
-                      (event.ctrlKey || event.metaKey) &&
-                      event.key.toLowerCase() === 'd'
-                    ) {
-                      if (selectedId) {
-                        event.preventDefault()
-                        duplicateSelected()
-                      }
-                    } else if (
-                      !event.ctrlKey &&
-                      !event.metaKey &&
-                      event.key.toLowerCase() === 'r'
-                    ) {
-                      const selected =
-                        placements.find((item) => item.id === selectedId) ??
-                        elements.find((item) => item.id === selectedId)
-                      if (selected) {
-                        event.preventDefault()
-                        updateSelected({ rotationDeg: (selected.rotationDeg + 90) % 360 })
-                      }
-                    } else if (event.key === '+' || event.key === '=') {
-                      event.preventDefault()
-                      setZoom((current) => Math.min(3, current + 0.25))
-                    } else if (event.key === '-') {
-                      event.preventDefault()
-                      setZoom((current) => Math.max(1, current - 0.25))
-                    } else if (event.key === '0') {
-                      event.preventDefault()
-                      setZoom(1)
-                      setPan({ x: 0, y: 0 })
-                    } else if (
-                      event.altKey &&
-                      ['ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowUp'].includes(event.key)
-                    ) {
-                      event.preventDefault()
-                      const distance = 100 / zoom
-                      setPan((current) => ({
-                        x:
-                          current.x +
-                          (event.key === 'ArrowRight'
-                            ? distance
-                            : event.key === 'ArrowLeft'
-                              ? -distance
-                              : 0),
-                        y:
-                          current.y +
-                          (event.key === 'ArrowDown'
-                            ? distance
-                            : event.key === 'ArrowUp'
-                              ? -distance
-                              : 0),
-                      }))
-                    }
-                  }}
+                  focusable="false"
                   onPointerDown={(event) => {
                     if (event.button !== 1 && !event.altKey) return
                     event.preventDefault()
@@ -1011,8 +928,6 @@ export function FloorPlanPage({
                       Math.min(3, Math.max(1, current + (event.deltaY < 0 ? 0.25 : -0.25))),
                     )
                   }}
-                  role="application"
-                  tabIndex={0}
                   viewBox={viewBox}
                 >
                   <defs>
@@ -1033,6 +948,10 @@ export function FloorPlanPage({
                   <rect
                     fill="url(#floor-plan-grid)"
                     height={activeVersion.heightCm}
+                    onPointerDown={() => {
+                      setSelectedId(undefined)
+                      setSelectedIds([])
+                    }}
                     width={activeVersion.widthCm}
                   />
                   {(() => {
@@ -1089,25 +1008,15 @@ export function FloorPlanPage({
                     ),
                   )}
                   {elements.map((element) => (
-                    <g
-                      key={element.id}
-                      aria-label={`${element.label ?? `Elemento ${element.kind}`}${lockedIds.includes(element.id) ? ' (bloqueado)' : ''}`}
-                      className="cursor-pointer"
-                      onClick={(event) => selectItem(element.id, event.ctrlKey || event.metaKey)}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter' || event.key === ' ') {
-                          event.preventDefault()
-                          selectItem(element.id, event.ctrlKey || event.metaKey)
-                        }
-                      }}
-                      role="button"
-                      tabIndex={0}
-                    >
+                    <g key={element.id}>
                       <rect
                         fill={
                           element.kind === 'wall' ? 'var(--foreground)' : 'var(--muted-foreground)'
                         }
                         height={element.heightCm}
+                        onPointerDown={(event) =>
+                          selectItem(element.id, event.ctrlKey || event.metaKey)
+                        }
                         opacity={lockedIds.includes(element.id) ? 0.48 : 0.65}
                         rx="8"
                         stroke={selectedIds.includes(element.id) ? 'var(--ring)' : 'transparent'}
@@ -1118,27 +1027,14 @@ export function FloorPlanPage({
                         y={element.yCm}
                       />
                       {element.label && (
-                        <text fontSize="20" x={element.xCm + 8} y={element.yCm + 28}>
+                        <text pointerEvents="none" fontSize="20" x={element.xCm + 8} y={element.yCm + 28}>
                           {element.label}
                         </text>
                       )}
                     </g>
                   ))}
                   {placements.map((placement) => (
-                    <g
-                      key={placement.id}
-                      aria-label={`Mesa ${placement.code}${lockedIds.includes(placement.id) ? ' (bloqueada)' : ''}`}
-                      className="cursor-pointer"
-                      onClick={(event) => selectItem(placement.id, event.ctrlKey || event.metaKey)}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter' || event.key === ' ') {
-                          event.preventDefault()
-                          selectItem(placement.id, event.ctrlKey || event.metaKey)
-                        }
-                      }}
-                      role="button"
-                      tabIndex={0}
-                    >
+                    <g key={placement.id}>
                       <rect
                         fill={
                           layoutIssues.some((issue) => issue.placementId === placement.id)
@@ -1146,7 +1042,8 @@ export function FloorPlanPage({
                             : 'var(--primary)'
                         }
                         height={placement.heightCm}
-                        onPointerDown={() => {
+                        onPointerDown={(event) => {
+                          selectItem(placement.id, event.ctrlKey || event.metaKey)
                           if (!lockedIds.includes(placement.id)) setDraggingTableId(placement.id)
                         }}
                         opacity={lockedIds.includes(placement.id) ? 0.62 : 0.85}
@@ -1161,6 +1058,7 @@ export function FloorPlanPage({
                       <text
                         fill="var(--primary-foreground)"
                         fontSize="32"
+                        pointerEvents="none"
                         textAnchor="middle"
                         x={placement.xCm + placement.widthCm / 2}
                         y={placement.yCm + placement.heightCm / 2}

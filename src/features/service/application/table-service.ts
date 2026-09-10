@@ -13,6 +13,7 @@ import { findSeatingConflicts, mergeTableIds, seatingCapacity } from '../domain/
 import { loadServiceBoard } from '../infrastructure/server/service-board-repository'
 import {
   closeSessionInput,
+  cleanTablesInput,
   mergeSessionsInput,
   moveSessionInput,
   noShowReservationInput,
@@ -115,6 +116,25 @@ export const updateTableBlock = createServerFn({ method: 'POST' })
     if ((updated?.length ?? 0) !== data.tableIds.length)
       throw new Response('Table not found', { status: 404 })
     return { tableIds: data.tableIds, isBlocked: data.isBlocked }
+  })
+
+/** Marks selected tables ready for the next party after cleaning. */
+export const cleanTables = createServerFn({ method: 'POST' })
+  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .validator(cleanTablesInput)
+  .handler(async ({ context, data }) => {
+    requireServiceEditor(context.tenantMembership.role)
+    const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    const { data: updated, error } = await supabase
+      .from('tables')
+      .update({ is_pending_cleaning: false })
+      .in('id', data.tableIds)
+      .eq('tenant_id', data.tenantId)
+      .eq('venue_id', data.venueId)
+      .eq('is_pending_cleaning', true)
+      .select('id')
+    if (error) throw new Error(`table_clean_failed:${error.code}`)
+    return { tableIds: (updated ?? []).map((table) => table.id as string) }
   })
 
 /** Opens the live table session and converts its pending reservation into seated. */
@@ -449,6 +469,14 @@ export const closeSession = createServerFn({ method: 'POST' })
       })
       .eq('id', session.id)
     if (error) throw new Error(`table_session_close_failed:${error.code}`)
+
+    const { error: cleaningError } = await supabase
+      .from('tables')
+      .update({ is_pending_cleaning: true })
+      .in('id', session.tableIds)
+      .eq('tenant_id', data.tenantId)
+      .eq('venue_id', data.venueId)
+    if (cleaningError) throw new Error(`table_cleaning_mark_failed:${cleaningError.code}`)
 
     if (session.reservationId) {
       const { error: reservationError } = await supabase
