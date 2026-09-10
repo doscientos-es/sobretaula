@@ -56,8 +56,9 @@ del diseñador y su uso diario.
 - [x] Acción para seleccionar la combinación sugerida desde el panel operativo.
 - [x] Realtime para reservas, asignaciones y sesiones, aviso de modo degradado
       y bloqueo de mutaciones sin conexión.
-- [ ] Conectar la cola persistente local (modelo, backoff y almacenamiento ya
-      preparados) a las mutaciones con reintentos idempotentes.
+- [ ] Conectar la cola persistente local (modelo, backoff, almacenamiento y
+      ejecutor ya preparados) a las mutaciones de sala con reintentos
+      idempotentes.
 
 ### P3 · Inteligencia y casos avanzados
 

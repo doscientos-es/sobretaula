@@ -39,6 +39,7 @@ export function ServicePage({
   venueId: string
 }) {
   const [selectedTableIds, setSelectedTableIds] = useState<readonly string[]>([])
+  const [serviceView, setServiceView] = useState<'plan' | 'list'>('plan')
   const [selectedAreaId, setSelectedAreaId] = useState<string>(
     plan.areas.length === 1 ? (plan.areas[0]?.id ?? 'all') : 'all',
   )
@@ -334,7 +335,23 @@ export function ServicePage({
                   <li className="bg-primary/15 rounded-full px-2 py-1">● Reservada</li>
                   <li className="bg-warning/15 rounded-full px-2 py-1">● Limpieza</li>
                 </ul>
-                {visiblePlacements.length === 0 ? (
+                <div className="mb-4 flex gap-2" aria-label="Vista del servicio">
+                  <Button
+                    onClick={() => setServiceView('plan')}
+                    type="button"
+                    variant={serviceView === 'plan' ? 'default' : 'outline'}
+                  >
+                    Plano en vivo
+                  </Button>
+                  <Button
+                    onClick={() => setServiceView('list')}
+                    type="button"
+                    variant={serviceView === 'list' ? 'default' : 'outline'}
+                  >
+                    Vista lista
+                  </Button>
+                </div>
+                {serviceView === 'plan' && (visiblePlacements.length === 0 ? (
                   <p className="text-muted-foreground rounded-lg border border-dashed p-6 text-center text-sm">
                     Esta zona todavía no tiene mesas configuradas en el plano activo.
                   </p>
@@ -346,7 +363,7 @@ export function ServicePage({
                     states={visibleTables}
                     version={activeVersion}
                   />
-                )}
+                ))}
               </CardContent>
             </Card>
           )}
@@ -360,7 +377,7 @@ export function ServicePage({
               </CardContent>
             </Card>
           )}
-          <Card>
+          {serviceView === 'list' && <Card>
             <CardHeader>
               <CardTitle>Mesas</CardTitle>
               <CardDescription>Alternativa accesible al plano en vivo.</CardDescription>
@@ -387,7 +404,7 @@ export function ServicePage({
                 </ul>
               )}
             </CardContent>
-          </Card>
+          </Card>}
         </div>
         <aside className="space-y-6 lg:sticky lg:top-6 lg:self-start">
           <ServiceActions
