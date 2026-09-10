@@ -38,15 +38,15 @@ function reservationTableLabel(
   return labels.length > 0 ? labels.join(', ') : 'Sin mesa'
 }
 
-function reservationTiming(startsAt: string): { label: string; tone: string } {
-  const minutes = (new Date(startsAt).getTime() - Date.now()) / 60_000
+function reservationTiming(startsAt: string, now: Date): { label: string; tone: string } {
+  const minutes = (new Date(startsAt).getTime() - now.getTime()) / 60_000
   if (minutes < -15) return { label: 'Retrasada', tone: 'text-destructive' }
   if (minutes <= 30) return { label: 'Llega ahora', tone: 'text-amber-700' }
   return { label: 'Próxima', tone: 'text-muted-foreground' }
 }
 
-function canMarkNoShow(startsAt: string): boolean {
-  return Date.now() - new Date(startsAt).getTime() >= 15 * 60_000
+function canMarkNoShow(startsAt: string, now: Date): boolean {
+  return now.getTime() - new Date(startsAt).getTime() >= 15 * 60_000
 }
 
 /** The door: bookings about to arrive and parties waiting without one. */
@@ -55,6 +55,7 @@ export function ServiceQueue({
   onDone,
   selectedTableIds,
   isOnline = true,
+  now = new Date(0),
   tenantId,
   venueId,
 }: {
@@ -62,6 +63,7 @@ export function ServiceQueue({
   onDone: () => void
   selectedTableIds: readonly string[]
   isOnline?: boolean
+  now?: Date
   tenantId: string
   venueId: string
 }) {
@@ -88,12 +90,12 @@ export function ServiceQueue({
   }, [isOnline, onDone, offlineStore])
   const reservations = [...board.reservations]
     .filter((reservation) => {
-      const minutes = (new Date(reservation.startsAt).getTime() - Date.now()) / 60_000
+      const minutes = (new Date(reservation.startsAt).getTime() - now.getTime()) / 60_000
       return queueFilter === 'all' || (queueFilter === 'delayed' ? minutes < -15 : minutes >= -15)
     })
     .sort(
       (left, right) =>
-        Number(canMarkNoShow(right.startsAt)) - Number(canMarkNoShow(left.startsAt)) ||
+        Number(canMarkNoShow(right.startsAt, now)) - Number(canMarkNoShow(left.startsAt, now)) ||
         new Date(left.startsAt).getTime() - new Date(right.startsAt).getTime(),
     )
 
@@ -210,10 +212,10 @@ export function ServiceQueue({
                     </span>
                   </span>
                   <output
-                    aria-label={`Estado: ${reservationTiming(reservation.startsAt).label}`}
-                    className={`shrink-0 text-xs font-medium ${reservationTiming(reservation.startsAt).tone}`}
+                    aria-label={`Estado: ${reservationTiming(reservation.startsAt, now).label}`}
+                    className={`shrink-0 text-xs font-medium ${reservationTiming(reservation.startsAt, now).tone}`}
                   >
-                    {reservationTiming(reservation.startsAt).label}
+                    {reservationTiming(reservation.startsAt, now).label}
                   </output>
                   <span className="flex max-w-full shrink flex-wrap justify-end gap-2">
                     <Button
@@ -238,7 +240,7 @@ export function ServiceQueue({
                       Sentar
                     </Button>
                     <Button
-                      disabled={feedback.pending || !canMarkNoShow(reservation.startsAt)}
+                      disabled={feedback.pending || !canMarkNoShow(reservation.startsAt, now)}
                       onClick={() =>
                         window.confirm('¿Marcar esta reserva como no presentada?')
                           ? void run(

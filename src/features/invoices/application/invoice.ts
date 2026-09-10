@@ -49,6 +49,7 @@ import {
 export interface FiscalSettingsView {
   certificate: VerifactuCertificateMetadata | null
   settings: FiscalSettings | null
+  prefill: Partial<FiscalSettings> | null
   series: InvoiceSeries[]
   invoices: Invoice[]
 }
@@ -80,17 +81,34 @@ export const getBillingOverview = createServerFn({ method: 'GET' })
   .handler(async ({ context, data }): Promise<FiscalSettingsView> => {
     requireInvoiceReader(context.tenantMembership.role)
     const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
-    const [settings, certificate, series, invoices] = await Promise.all([
+    const [settings, certificate, series, invoices, billingProfile] = await Promise.all([
       findFiscalSettings(supabase, data.tenantId),
       findVerifactuCertificateMetadata(supabase, data.tenantId),
       listSeries(supabase, data.tenantId),
       listInvoices(supabase, data.tenantId),
+      supabase
+        .from('platform_billing_customers')
+        .select('address_line, city, postal_code, tax_id, legal_name')
+        .eq('tenant_id', data.tenantId)
+        .maybeSingle(),
     ])
     return {
       certificate,
       invoices,
       series,
       settings: settings ? validateFiscalSettings(settings) : null,
+      prefill:
+        settings || !billingProfile.data
+          ? null
+          : {
+              addressLine: billingProfile.data.address_line,
+              city: billingProfile.data.city,
+              issuerNif: billingProfile.data.tax_id,
+              legalName: billingProfile.data.legal_name,
+              postalCode: billingProfile.data.postal_code,
+              countryCode: 'ES',
+              environment: 'test',
+            },
     }
   })
 

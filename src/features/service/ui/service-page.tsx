@@ -428,6 +428,7 @@ export function ServicePage({
             onDone={reload}
             selectedTableIds={selectedTableIds}
             isOnline={isOnline}
+            now={clock}
             tenantId={tenantId}
             venueId={venueId}
           />

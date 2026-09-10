@@ -80,7 +80,12 @@ export function BillingPage({
           </PageHeaderDescription>
         </div>
       </PageHeader>
-      <FiscalSettingsCard onDone={onDone} settings={overview.settings} tenantId={tenantId} />
+      <FiscalSettingsCard
+        onDone={onDone}
+        prefill={overview.prefill}
+        settings={overview.settings}
+        tenantId={tenantId}
+      />
       <VerifactuCertificateCard
         certificate={overview.certificate}
         isOwner={isOwner}
@@ -251,21 +256,24 @@ function AdvisorCertificateDialog() {
 
 function FiscalSettingsCard({
   onDone,
+  prefill,
   settings,
   tenantId,
 }: {
   onDone: () => void
+  prefill: FiscalSettingsView['prefill']
   settings: FiscalSettingsView['settings']
   tenantId: string
 }) {
   const feedback = useFormFeedback()
-  const [issuerNif, setIssuerNif] = useState(settings?.issuerNif ?? '')
-  const [legalName, setLegalName] = useState(settings?.legalName ?? '')
-  const [addressLine, setAddressLine] = useState(settings?.addressLine ?? '')
-  const [city, setCity] = useState(settings?.city ?? '')
-  const [postalCode, setPostalCode] = useState(settings?.postalCode ?? '')
-  const [countryCode, setCountryCode] = useState(settings?.countryCode ?? 'ES')
-  const [environment, setEnvironment] = useState<VerifactuEnv>(settings?.environment ?? 'test')
+  const source = settings ?? prefill
+  const [issuerNif, setIssuerNif] = useState(source?.issuerNif ?? '')
+  const [legalName, setLegalName] = useState(source?.legalName ?? '')
+  const [addressLine, setAddressLine] = useState(source?.addressLine ?? '')
+  const [city, setCity] = useState(source?.city ?? '')
+  const [postalCode, setPostalCode] = useState(source?.postalCode ?? '')
+  const [countryCode, setCountryCode] = useState(source?.countryCode ?? 'ES')
+  const [environment, setEnvironment] = useState<VerifactuEnv>(source?.environment ?? 'test')
 
   function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -293,6 +301,9 @@ function FiscalSettingsCard({
         <CardTitle>Datos fiscales del emisor</CardTitle>
         <CardDescription>
           Identidad fiscal con la que el restaurante emite sus facturas (modo {environment}).
+          {prefill && !settings
+            ? ' Hemos recuperado los datos del alta; revísalos antes de guardar.'
+            : ''}
         </CardDescription>
       </CardHeader>
       <CardContent>

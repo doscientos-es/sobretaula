@@ -120,7 +120,9 @@ function TenantLayout() {
                 ['3', 'Abrir operaciones', 'Se activa al confirmar'],
               ].map(([step, title, detail]) => (
                 <div className="bg-background rounded-xl border p-4" key={title}>
-                  <span className="bg-primary/10 text-primary inline-flex size-8 items-center justify-center rounded-full text-sm font-semibold">{step}</span>
+                  <span className="bg-primary/10 text-primary inline-flex size-8 items-center justify-center rounded-full text-sm font-semibold">
+                    {step}
+                  </span>
                   <p className="mt-3 text-sm font-medium">{title}</p>
                   <p className="text-muted-foreground mt-1 text-xs">{detail}</p>
                 </div>
@@ -133,36 +135,36 @@ function TenantLayout() {
                 ? 'Tus datos de facturación se han guardado. Falta autorizar el método de pago seguro para activar el restaurante.'
                 : 'Este restaurante está temporalmente en pausa por un cobro pendiente.'}
             </p>
-          {setupPending && (
-            <div className="mt-5 flex flex-wrap gap-4 text-sm">
-              <Link className="text-primary underline" to="/onboarding">
-                Revisar configuración de alta
-              </Link>
+            {setupPending && (
+              <div className="mt-5 flex flex-wrap gap-4 text-sm">
+                <Link className="text-primary underline" to="/onboarding">
+                  Revisar configuración de alta
+                </Link>
+                <Link
+                  className="text-primary underline"
+                  params={{ slug: tenant.slug }}
+                  to="/t/$slug/suscripcion/facturas"
+                >
+                  Ver facturas de SobreTaula
+                </Link>
+                <Link
+                  className="text-primary underline"
+                  params={{ slug: tenant.slug }}
+                  to="/t/$slug/equipo"
+                >
+                  Preparar equipo
+                </Link>
+              </div>
+            )}
+            {!setupPending && (
               <Link
-                className="text-primary underline"
+                className="text-primary mt-5 inline-block text-sm underline"
                 params={{ slug: tenant.slug }}
                 to="/t/$slug/suscripcion/facturas"
               >
                 Ver facturas de SobreTaula
               </Link>
-              <Link
-                className="text-primary underline"
-                params={{ slug: tenant.slug }}
-                to="/t/$slug/equipo"
-              >
-                Preparar equipo
-              </Link>
-            </div>
-          )}
-          {!setupPending && (
-            <Link
-              className="text-primary mt-5 inline-block text-sm underline"
-              params={{ slug: tenant.slug }}
-              to="/t/$slug/suscripcion/facturas"
-            >
-              Ver facturas de SobreTaula
-            </Link>
-          )}
+            )}
           </div>
         </div>
       </main>
