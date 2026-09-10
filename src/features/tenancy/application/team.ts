@@ -8,6 +8,7 @@ import {
   createRequestSupabaseClient,
   createServiceSupabaseClient,
 } from '@/shared/lib/supabase/server/create-server-client'
+import { isAuthEmailRateLimited } from '@/shared/lib/supabase/auth-email-rate-limit'
 import { indexProfilesByUserId } from '@/shared/lib/supabase/profile-index'
 
 import { ASSIGNABLE_TENANT_ROLES, canAssignTeamRole } from '../domain/team'
@@ -159,6 +160,9 @@ export const inviteTenantMember = createServerFn({ method: 'POST' })
       data: { display_name: data.name },
       redirectTo: invitationRedirect(token),
     })
+    if (isAuthEmailRateLimited(inviteError)) {
+      throw new Response('Invitation email rate limited', { status: 429 })
+    }
     if (inviteError) throw new Error('tenant_invitation_delivery_failed')
     return { kind: 'invitation_sent' as const }
   })

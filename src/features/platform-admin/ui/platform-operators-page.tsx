@@ -17,6 +17,10 @@ import {
 import { useState, type FormEvent } from 'react'
 
 import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
+import {
+  invitationEmailRateLimitMessage,
+  isInvitationEmailRateLimited,
+} from '@/shared/lib/supabase/auth-email-rate-limit'
 
 import {
   type PlatformOperator,
@@ -54,8 +58,12 @@ export function PlatformOperatorsPage({
       await action()
       feedback.setSuccess(success)
       reload()
-    } catch {
-      feedback.setError('No se ha podido actualizar el acceso de plataforma. Inténtalo de nuevo.')
+    } catch (error) {
+      feedback.setError(
+        isInvitationEmailRateLimited(error)
+          ? invitationEmailRateLimitMessage
+          : 'No se ha podido actualizar el acceso de plataforma. Inténtalo de nuevo.',
+      )
     }
   }
 

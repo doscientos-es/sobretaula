@@ -14,6 +14,10 @@ import {
 import { useState, type FormEvent } from 'react'
 
 import { tenantSlugCandidate } from '@/features/tenancy'
+import {
+  invitationEmailRateLimitMessage,
+  isInvitationEmailRateLimited,
+} from '@/shared/lib/supabase/auth-email-rate-limit'
 
 import { provisionPlatformTenant } from '../application/platform-tenant-provisioning'
 
@@ -71,6 +75,8 @@ export function PlatformTenantProvisioningForm() {
       feedback.setError(
         error instanceof Response && error.status === 409
           ? 'Esta dirección de restaurante ya está en uso.'
+          : isInvitationEmailRateLimited(error)
+            ? `El tenant se ha creado, pero no se ha enviado la invitación al propietario. ${invitationEmailRateLimitMessage}`
           : 'No se ha podido crear el tenant. Revisa los datos e inténtalo de nuevo.',
       )
     }

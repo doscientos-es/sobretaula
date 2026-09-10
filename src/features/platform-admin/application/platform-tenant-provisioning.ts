@@ -5,6 +5,7 @@ import { z } from 'zod'
 
 import { authMiddleware } from '@/features/auth/infrastructure/server/auth-middleware'
 import { tenantOnboardingInput } from '@/features/tenancy/application/onboarding-schema'
+import { isAuthEmailRateLimited } from '@/shared/lib/supabase/auth-email-rate-limit'
 import { createServiceSupabaseClient } from '@/shared/lib/supabase/server/create-server-client'
 
 import { createPlatformOwnerClient } from './platform-dashboard'
@@ -74,6 +75,9 @@ export const provisionPlatformTenant = createServerFn({ method: 'POST' })
           data: { display_name: data.ownerName },
           redirectTo: invitationRedirect(token),
         })
+      if (isAuthEmailRateLimited(inviteError)) {
+        throw new Response('Tenant owner invitation email rate limited', { status: 429 })
+      }
       if (inviteError) throw new Error('platform_tenant_owner_invitation_delivery_failed')
     }
 

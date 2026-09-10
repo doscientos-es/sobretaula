@@ -4,6 +4,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 
 import { authMiddleware } from '@/features/auth/infrastructure/server/auth-middleware'
+import { isAuthEmailRateLimited } from '@/shared/lib/supabase/auth-email-rate-limit'
 import { indexProfilesByUserId } from '@/shared/lib/supabase/profile-index'
 import {
   createRequestSupabaseClient,
@@ -148,6 +149,9 @@ export const invitePlatformOperator = createServerFn({ method: 'POST' })
       data: { display_name: data.name },
       redirectTo: invitationRedirect(token),
     })
+    if (isAuthEmailRateLimited(deliveryError)) {
+      throw new Response('Platform invitation email rate limited', { status: 429 })
+    }
     if (deliveryError) throw new Error('platform_invitation_delivery_failed')
     return { kind: 'invitation_sent' as const }
   })

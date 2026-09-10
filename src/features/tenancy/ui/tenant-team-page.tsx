@@ -20,6 +20,10 @@ import {
 import { useState, type FormEvent } from 'react'
 
 import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
+import {
+  invitationEmailRateLimitMessage,
+  isInvitationEmailRateLimited,
+} from '@/shared/lib/supabase/auth-email-rate-limit'
 
 import {
   inviteTenantMember,
@@ -76,9 +80,11 @@ export function TenantTeamPage({
       await action()
       feedback.setSuccess(success)
       reload()
-    } catch {
+    } catch (error) {
       feedback.setError(
-        'No se ha podido actualizar el equipo. Revisa tus permisos e inténtalo de nuevo.',
+        isInvitationEmailRateLimited(error)
+          ? invitationEmailRateLimitMessage
+          : 'No se ha podido actualizar el equipo. Revisa tus permisos e inténtalo de nuevo.',
       )
     }
   }
