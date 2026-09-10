@@ -20,6 +20,7 @@ import {
   addCashMovement,
   closeCashRegister,
   openCashRegister,
+  reconcileCashRegister,
   type getCashRegister,
   type listClosedCashRegisters,
 } from '../application/cash-register'
@@ -50,6 +51,7 @@ export function CashRegisterPage({
   const [outReason, setOutReason] = useState('')
   const [float, setFloat] = useState('')
   const [counted, setCounted] = useState('')
+  const [reconciliationNote, setReconciliationNote] = useState('')
   async function run(action: () => Promise<unknown>, success: string) {
     if (feedback.pending) return
     feedback.setPending()
@@ -249,6 +251,36 @@ export function CashRegisterPage({
                     value={counted}
                   />
                 </Field>
+                <Field>
+                  <FieldLabel htmlFor="reconciliation-note">Nota del arqueo</FieldLabel>
+                  <Input
+                    id="reconciliation-note"
+                    onChange={(e) => setReconciliationNote(e.target.value)}
+                    value={reconciliationNote}
+                  />
+                </Field>
+                <Button
+                  onClick={() =>
+                    void run(
+                      () =>
+                        reconcileCashRegister({
+                          data: {
+                            countedCashCents: Math.round(Number(counted) * 100),
+                            note: reconciliationNote || undefined,
+                            registerId: register.id as string,
+                            tenantId,
+                            venueId,
+                          },
+                        }),
+                      'Arqueo guardado.',
+                    )
+                  }
+                  disabled={feedback.pending || !counted}
+                  type="button"
+                  variant="outline"
+                >
+                  Guardar arqueo
+                </Button>
                 <Button type="submit" variant="destructive">
                   Cerrar y arquear
                 </Button>
@@ -259,6 +291,22 @@ export function CashRegisterPage({
                   Diferencia prevista:{' '}
                   {money(cashDifferenceCents(expected, Math.round(Number(counted) * 100)))}
                 </p>
+              )}
+              {(register.reconciliations as { id: string; variance_cents: number }[]).length >
+                0 && (
+                <div className="border-t pt-3 text-sm">
+                  <p className="font-medium">Arqueos guardados en este turno</p>
+                  <ul className="mt-2 space-y-1">
+                    {(register.reconciliations as { id: string; variance_cents: number }[]).map(
+                      (entry) => (
+                        <li className="flex justify-between" key={entry.id}>
+                          <span>Diferencia</span>
+                          <span className="tabular-nums">{money(entry.variance_cents)}</span>
+                        </li>
+                      ),
+                    )}
+                  </ul>
+                </div>
               )}
             </CardContent>
           </Card>

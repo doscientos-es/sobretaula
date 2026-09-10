@@ -87,6 +87,14 @@ export function SalesReportPage({
             {euro(report.ticketAverageCents)}
           </CardContent>
         </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Propinas</CardTitle>
+          </CardHeader>
+          <CardContent className="text-2xl font-semibold">
+            {euro(report.financial.totalTipsCents)}
+          </CardContent>
+        </Card>
       </div>
       <Card>
         <CardHeader>
@@ -101,6 +109,28 @@ export function SalesReportPage({
               </li>
             ))}
           </ul>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Conciliación y cierres</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm">
+          <p>
+            {report.financial.closedRegisters.length} cierres ·{' '}
+            {report.financial.mixedPaymentBatches} pagos mixtos ·{' '}
+            {report.financial.reconciliations.length} arqueos registrados
+          </p>
+          {report.financial.reconciliations.length > 0 && (
+            <ul className="space-y-1">
+              {report.financial.reconciliations.slice(0, 10).map((entry) => (
+                <li className="flex justify-between" key={entry.id as string}>
+                  <span>{new Date(entry.reconciled_at as string).toLocaleString('es-ES')}</span>
+                  <span className="tabular-nums">{euro(entry.variance_cents as number)}</span>
+                </li>
+              ))}
+            </ul>
+          )}
         </CardContent>
       </Card>
     </section>

@@ -86,6 +86,13 @@ describe('computeAccountTotals', () => {
     expect(totals.tipCents).toBe(500)
   })
 
+  it('subtracts an audited discount from the amount still due', () => {
+    const totals = computeAccountTotals([line({})], [], 250)
+
+    expect(totals.grossCents).toBe(750)
+    expect(totals.balanceCents).toBe(750)
+  })
+
   it('handles an empty account', () => {
     expect(computeAccountTotals([], [])).toEqual({
       balanceCents: 0,

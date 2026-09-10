@@ -27,7 +27,28 @@ export const getSalesReport = createServerFn({ method: 'GET' })
       (sum, session) => sum + Number(session.discount_cents ?? 0),
       0,
     )
-    if (!sessionIds.length)
+    if (!sessionIds.length) {
+      const [closedRegisters, reconciliations] = await Promise.all([
+        supabase
+          .from('cash_registers')
+          .select('id, opened_at, closed_at, counted_cash_cents, sales_by_method, status')
+          .eq('tenant_id', data.tenantId)
+          .eq('venue_id', data.venueId)
+          .eq('status', 'closed')
+          .gte('closed_at', data.from)
+          .lt('closed_at', data.to),
+        supabase
+          .from('cash_reconciliations')
+          .select(
+            'id, register_id, expected_cash_cents, counted_cash_cents, variance_cents, note, reconciled_at',
+          )
+          .eq('tenant_id', data.tenantId)
+          .eq('venue_id', data.venueId)
+          .gte('reconciled_at', data.from)
+          .lt('reconciled_at', data.to),
+      ])
+      if (closedRegisters.error || reconciliations.error)
+        throw new Error('sales_financial_history_failed')
       return {
         grossCents: 0,
         byMethod: {},
@@ -38,11 +59,18 @@ export const getSalesReport = createServerFn({ method: 'GET' })
         discountsCents: 0,
         products: [],
         productSummary: [],
+        financial: {
+          closedRegisters: closedRegisters.data ?? [],
+          mixedPaymentBatches: 0,
+          reconciliations: reconciliations.data ?? [],
+          totalTipsCents: 0,
+        },
       }
-    const [payments, orders] = await Promise.all([
+    }
+    const [payments, orders, closedRegisters, reconciliations] = await Promise.all([
       supabase
         .from('payments')
-        .select('id, method, amount_cents')
+        .select('batch_id, id, method, amount_cents, tip_cents')
         .eq('tenant_id', data.tenantId)
         .in('session_id', sessionIds)
         .gte('paid_at', data.from)
@@ -52,8 +80,28 @@ export const getSalesReport = createServerFn({ method: 'GET' })
         .select('id')
         .eq('tenant_id', data.tenantId)
         .in('session_id', sessionIds),
+      supabase
+        .from('cash_registers')
+        .select('id, opened_at, closed_at, counted_cash_cents, sales_by_method, status')
+        .eq('tenant_id', data.tenantId)
+        .eq('venue_id', data.venueId)
+        .eq('status', 'closed')
+        .gte('closed_at', data.from)
+        .lt('closed_at', data.to)
+        .order('closed_at', { ascending: false }),
+      supabase
+        .from('cash_reconciliations')
+        .select(
+          'id, register_id, expected_cash_cents, counted_cash_cents, variance_cents, note, reconciled_at',
+        )
+        .eq('tenant_id', data.tenantId)
+        .eq('venue_id', data.venueId)
+        .gte('reconciled_at', data.from)
+        .lt('reconciled_at', data.to)
+        .order('reconciled_at', { ascending: false }),
     ])
-    if (payments.error || orders.error) throw new Error('sales_report_load_failed')
+    if (payments.error || orders.error || closedRegisters.error || reconciliations.error)
+      throw new Error('sales_report_load_failed')
     const orderIds = (orders.data ?? []).map((order) => order.id as string)
     const items = orderIds.length
       ? await supabase
@@ -104,6 +152,19 @@ export const getSalesReport = createServerFn({ method: 'GET' })
       discountsCents,
       products: items.data ?? [],
       productSummary: summarizeProducts(soldProducts),
+      financial: {
+        closedRegisters: closedRegisters.data ?? [],
+        mixedPaymentBatches: new Set(
+          (payments.data ?? [])
+            .map((payment) => payment.batch_id as string | null)
+            .filter((batchId): batchId is string => Boolean(batchId)),
+        ).size,
+        reconciliations: reconciliations.data ?? [],
+        totalTipsCents: (payments.data ?? []).reduce(
+          (sum, payment) => sum + Number(payment.tip_cents ?? 0),
+          0,
+        ),
+      },
     }
   })
 

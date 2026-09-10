@@ -785,3 +785,18 @@ select:not([data-slot]):focus-visible {
     opacity: 1;
   }
 }
+
+.st-print-only {
+  display: none;
+}
+
+@media print {
+  .st-no-print {
+    display: none !important;
+  }
+
+  .st-print-only {
+    display: block;
+    padding: 1.5rem;
+  }
+}

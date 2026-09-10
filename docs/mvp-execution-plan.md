@@ -38,11 +38,10 @@ Esta sección prevalece sobre las dependencias históricas de este backlog.
 - Base disponible: tenancy, Auth y roles; plano y servicio; reservas internas y
   públicas parciales; agenda diaria; clientes básicos; cuenta, pagos simples y
   facturación en modo test; outbox de correo y depósitos modelados.
-- Brechas de producto: el TPV unificado ya cubre cuenta, comandas, cola,
-  cobro manual, caja e informe diario; siguen pendientes modificadores,
-  edición rápida, reimpresión, informe financiero completo, sincronización
-  offline del fichaje e inventario/escandallos de punta a punta. Hardware queda
-  explícitamente fuera de esta fase.
+- Brechas de producto: el TPV unificado cubre cuenta, comandas, cola, cobro
+  manual y mixto, caja, conciliación, informe financiero y reimpresión web;
+  siguen pendientes sincronización offline del fichaje e inventario/escandallos
+  de punta a punta. Hardware queda explícitamente fuera de esta fase.
 - Brechas de fiabilidad: las tres pruebas RLS están omitidas porque no se
   conectan pruebas al único proyecto con datos reales; tampoco hay humo E2E ni
   concurrencia real contra ese proyecto.
@@ -132,9 +131,9 @@ historial y la agenda actualizada bajo las políticas aprobadas.
 
 ### E3 — Catálogo y comandas para TPV (P1)
 
-- [ ] **E3.1 · Catálogo operativo.** Categorías, productos, IVA, precios por
+- [x] **E3.1 · Catálogo operativo.** Categorías, productos, IVA, precios por
       local/canal, disponibilidad, alérgenos, modificadores y destino cocina/barra.
-- [ ] **E3.2 · Comanda.** Añadir/editar/anular cantidades y notas rápidamente,
+- [x] **E3.2 · Comanda.** Añadir/editar/anular cantidades y notas rápidamente,
       congelar precio/modificador/IVA/destino y asociar cada línea a la sesión.
 - [ ] **E3.3 · Envío fiable.** Estados enviados/recibidos/preparando/listo/
       entregado, reenvío idempotente, cola offline y auditoría de anulaciones.
@@ -158,9 +157,9 @@ listas sin comunicación paralela.
       y porcentaje; mover líneas entre sesiones y preservar inmutabilidad/auditoría.
 - [ ] **E5.2 · Ajustes controlados.** Descuentos, invitaciones, anulaciones,
       reapertura y correcciones con permiso, motivo y reglas fiscales.
-- [ ] **E5.3 · Pago robusto.** Efectivo/tarjeta/transferencia/vale/propina y pago
+- [x] **E5.3 · Pago robusto.** Efectivo/tarjeta/transferencia/vale/propina y pago
       mixto idempotentes; devoluciones y conciliación por método.
-- [ ] **E5.4 · Salida fiscal.** Ticket/reimpresión, factura simplificada/completa,
+- [x] **E5.4 · Salida fiscal.** Ticket/reimpresión web, factura simplificada/completa,
       rectificativas y cadena VERI*FACTU test. Activación prod solo tras G5.
 
 **Salida:** una mesa se cobra y documenta correctamente, incluso dividida y con
@@ -177,6 +176,13 @@ pagos mixtos, sin sobrecobro ni pérdida de trazabilidad.
 operar según su rol sin exponer credenciales. La integración con hardware queda
 fuera de esta fase.
 
+### Entregas TPV financieras completadas (D9)
+
+- [x] Pagos mixtos atómicos e idempotentes, con lote auditable por cuenta.
+- [x] Histórico financiero por rango: propinas, pagos mixtos, cierres y arqueos.
+- [x] Conciliación avanzada de efectivo por local, turno y devoluciones.
+- [x] Reimpresión web del ticket de cuenta, sin hardware.
+
 ### Entregas TPV completadas (D1–D3)
 
 - [x] **D1 · Entrada única.** `/t/:slug/l/:venue/tpv` centraliza el resumen de
@@ -189,8 +195,9 @@ fuera de esta fase.
 
 ### E7 — Informes y activación del propietario (P1)
 
-- [ ] **E7.1 · Informes mínimos.** Ventas/IVA/método/producto/ticket medio,
-      descuentos y cierres por local, día y turno, con exportación compatible.
+- [x] **E7.1 · Informes mínimos.** Ventas/IVA/método/producto/ticket medio,
+      descuentos, propinas, pagos mixtos y cierres/arqueos por local, día y turno,
+      con exportación compatible.
 - [ ] **E7.2 · Onboarding/importación.** Asistente de local, turnos, zonas,
       mesas, carta, impuestos y equipo; importación CSV con preview y errores.
 - [ ] **E7.3 · Inventario y producto.** Existencias, movimientos, escandallos,

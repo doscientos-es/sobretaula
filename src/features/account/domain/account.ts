@@ -79,7 +79,7 @@ export function computeAccountTotals(
   )
   const tipCents = payments.reduce((sum, payment) => sum + payment.tipCents, 0)
   return {
-    balanceCents: grossCents - paidCents,
+    balanceCents: Math.max(0, grossCents - discountCents - paidCents),
     grossCents: Math.max(0, grossCents - discountCents),
     netCents,
     paidCents,

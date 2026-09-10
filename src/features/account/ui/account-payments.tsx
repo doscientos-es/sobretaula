@@ -18,6 +18,7 @@ import { formatMoney, parsePriceToCents } from '@/shared/lib/money/money'
 
 import {
   applyDiscount,
+  recordMixedPayment,
   recordPayment,
   refundPayment,
   type AccountView,
@@ -53,8 +54,18 @@ export function AccountPayments({
   const { payments, session, totals } = account
   const feedback = useFormFeedback()
   const [method, setMethod] = useState<PaymentMethod>('cash')
+  const [mixedMethodA, setMixedMethodA] = useState<PaymentMethod>('cash')
+  const [mixedMethodB, setMixedMethodB] = useState<PaymentMethod>('card')
   const [amountDraft, setAmountDraft] = useState((totals.balanceCents / 100).toFixed(2))
   const [tipDraft, setTipDraft] = useState('')
+  const [mixedAmountA, setMixedAmountA] = useState(
+    (Math.floor(totals.balanceCents / 2) / 100).toFixed(2),
+  )
+  const [mixedAmountB, setMixedAmountB] = useState(
+    (Math.ceil(totals.balanceCents / 2) / 100).toFixed(2),
+  )
+  const [mixedTipA, setMixedTipA] = useState('')
+  const [mixedTipB, setMixedTipB] = useState('')
   const [parts, setParts] = useState<number>(2)
   const [discountDraft, setDiscountDraft] = useState('')
   const [discountReason, setDiscountReason] = useState('')
@@ -118,6 +129,51 @@ export function AccountPayments({
         onDone()
       })
       .catch(() => feedback.setError('No se ha podido registrar la devolución.'))
+  }
+
+  function mixedCharge(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const amountA = parsePriceToCents(mixedAmountA)
+    const amountB = parsePriceToCents(mixedAmountB)
+    const tipA = mixedTipA.trim() === '' ? 0 : parsePriceToCents(mixedTipA)
+    const tipB = mixedTipB.trim() === '' ? 0 : parsePriceToCents(mixedTipB)
+    if (amountA === null || amountB === null || tipA === null || tipB === null) {
+      feedback.setError('Importes mixtos no válidos.')
+      return
+    }
+    if (amountA <= 0 || amountB <= 0) {
+      feedback.setError('Cada parte del pago mixto debe ser mayor que cero.')
+      return
+    }
+    if (mixedMethodA === mixedMethodB) {
+      feedback.setError('Elige dos métodos de pago diferentes.')
+      return
+    }
+    if (amountA + amountB > totals.balanceCents) {
+      feedback.setError(
+        `El importe supera el pendiente de ${formatMoney(totals.balanceCents, locale)}.`,
+      )
+      return
+    }
+    if (feedback.pending) return
+    feedback.setPending()
+    void recordMixedPayment({
+      data: {
+        lines: [
+          { amountCents: amountA, method: mixedMethodA, tipCents: tipA },
+          { amountCents: amountB, method: mixedMethodB, tipCents: tipB },
+        ],
+        operationId: crypto.randomUUID(),
+        sessionId: session.id,
+        tenantId,
+        venueId,
+      },
+    })
+      .then(() => {
+        feedback.setSuccess('Pago mixto registrado.')
+        onDone()
+      })
+      .catch(() => feedback.setError('No se ha podido registrar el pago mixto.'))
   }
 
   function discount(event: FormEvent<HTMLFormElement>) {
@@ -273,6 +329,94 @@ export function AccountPayments({
             <FormFeedback pendingLabel="Registrando cobro…" state={feedback.state} />
             <Button disabled={feedback.pending} type="submit">
               Registrar cobro
+            </Button>
+          </form>
+        )}
+        {open && !settled && (
+          <form className="grid gap-4 border-t pt-4" onSubmit={mixedCharge}>
+            <div>
+              <h3 className="font-medium">Pago mixto</h3>
+              <p className="text-muted-foreground text-sm">
+                Registra varios métodos en una sola operación atómica.
+              </p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field>
+                <FieldLabel htmlFor="mixed-method-a">Primer método</FieldLabel>
+                <select
+                  id="mixed-method-a"
+                  onChange={(event) => setMixedMethodA(event.target.value as PaymentMethod)}
+                  value={mixedMethodA}
+                >
+                  {PAYMENT_METHODS.map((option) => (
+                    <option key={option} value={option}>
+                      {PAYMENT_METHOD_LABEL[option]}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="mixed-amount-a">Importe (€)</FieldLabel>
+                <Input
+                  id="mixed-amount-a"
+                  inputMode="decimal"
+                  onChange={(event) => setMixedAmountA(event.target.value)}
+                  required
+                  value={mixedAmountA}
+                />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="mixed-method-b">Segundo método</FieldLabel>
+                <select
+                  id="mixed-method-b"
+                  onChange={(event) => setMixedMethodB(event.target.value as PaymentMethod)}
+                  value={mixedMethodB}
+                >
+                  {PAYMENT_METHODS.map((option) => (
+                    <option key={option} value={option}>
+                      {PAYMENT_METHOD_LABEL[option]}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="mixed-amount-b">Importe (€)</FieldLabel>
+                <Input
+                  id="mixed-amount-b"
+                  inputMode="decimal"
+                  onChange={(event) => setMixedAmountB(event.target.value)}
+                  required
+                  value={mixedAmountB}
+                />
+              </Field>
+            </div>
+            <details className="text-sm">
+              <summary className="cursor-pointer">Propinas opcionales</summary>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <Field>
+                  <FieldLabel htmlFor="mixed-tip-a">Propina primer método (€)</FieldLabel>
+                  <Input
+                    id="mixed-tip-a"
+                    inputMode="decimal"
+                    onChange={(event) => setMixedTipA(event.target.value)}
+                    placeholder="0,00"
+                    value={mixedTipA}
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="mixed-tip-b">Propina segundo método (€)</FieldLabel>
+                  <Input
+                    id="mixed-tip-b"
+                    inputMode="decimal"
+                    onChange={(event) => setMixedTipB(event.target.value)}
+                    placeholder="0,00"
+                    value={mixedTipB}
+                  />
+                </Field>
+              </div>
+            </details>
+            <Button disabled={feedback.pending} type="submit">
+              Registrar pago mixto
             </Button>
           </form>
         )}

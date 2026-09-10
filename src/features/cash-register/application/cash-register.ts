@@ -11,6 +11,7 @@ import {
   addCashMovementInput,
   closeCashRegisterInput,
   openCashRegisterInput,
+  reconcileCashRegisterInput,
   venueCashInput,
 } from './cash-register-schema'
 
@@ -34,7 +35,7 @@ export const getCashRegister = createServerFn({ method: 'GET' })
       .maybeSingle()
     if (error) throw new Error(`cash_register_load_failed:${error.code}`)
     if (!register) return null
-    const [movements, sales] = await Promise.all([
+    const [movements, sales, reconciliations] = await Promise.all([
       supabase
         .from('cash_movements')
         .select('amount_cents, kind')
@@ -42,11 +43,20 @@ export const getCashRegister = createServerFn({ method: 'GET' })
         .eq('register_id', register.id),
       supabase
         .from('payments')
-        .select('amount_cents, method')
+        .select('amount_cents, method, table_sessions!inner(venue_id)')
         .eq('tenant_id', data.tenantId)
+        .eq('table_sessions.venue_id', data.venueId)
         .gte('paid_at', register.opened_at),
+      supabase
+        .from('cash_reconciliations')
+        .select('id, expected_cash_cents, counted_cash_cents, variance_cents, note, reconciled_at')
+        .eq('tenant_id', data.tenantId)
+        .eq('venue_id', data.venueId)
+        .eq('register_id', register.id)
+        .order('reconciled_at', { ascending: false }),
     ])
-    if (movements.error || sales.error) throw new Error('cash_register_totals_failed')
+    if (movements.error || sales.error || reconciliations.error)
+      throw new Error('cash_register_totals_failed')
     const byMethod: Record<string, number> = {}
     for (const row of sales.data ?? [])
       byMethod[row.method as string] =
@@ -55,6 +65,7 @@ export const getCashRegister = createServerFn({ method: 'GET' })
       ...register,
       movements: movements.data ?? [],
       cashSalesCents: byMethod.cash ?? 0,
+      reconciliations: reconciliations.data ?? [],
       salesByMethod: byMethod,
     }
   })
@@ -140,8 +151,9 @@ export const closeCashRegister = createServerFn({ method: 'POST' })
       throw new Response('Cash register not found or already closed', { status: 409 })
     const { data: payments, error: paymentsError } = await supabase
       .from('payments')
-      .select('method, amount_cents')
+      .select('method, amount_cents, table_sessions!inner(venue_id)')
       .eq('tenant_id', data.tenantId)
+      .eq('table_sessions.venue_id', data.venueId)
       .gte('paid_at', openRegister.opened_at)
     if (paymentsError) throw new Error(`cash_close_payments_failed:${paymentsError.code}`)
     const salesByMethod: Record<string, number> = {}
@@ -166,4 +178,22 @@ export const closeCashRegister = createServerFn({ method: 'POST' })
     if (error || !register)
       throw new Response('Cash register not found or already closed', { status: 409 })
     return { registerId: register.id as string, countedCashCents: data.countedCashCents }
+  })
+
+export const reconcileCashRegister = createServerFn({ method: 'POST' })
+  .middleware(secured)
+  .validator(reconcileCashRegisterInput)
+  .handler(async ({ context, data }) => {
+    requireManager(context.tenantMembership.role)
+    const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    const { data: result, error } = await supabase.rpc('reconcile_cash_register', {
+      p_counted_cash_cents: data.countedCashCents,
+      p_note: data.note ?? null,
+      p_register_id: data.registerId,
+      p_tenant_id: data.tenantId,
+      p_venue_id: data.venueId,
+    })
+    if (error || !result?.[0])
+      throw new Error(`cash_reconciliation_failed:${error?.code ?? 'unknown'}`)
+    return result[0]
   })

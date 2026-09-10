@@ -16,3 +16,6 @@ export const closeCashRegisterInput = venueCashInput.extend({
   registerId: z.string().uuid(),
   countedCashCents: z.number().int().min(0).max(10_000_000),
 })
+export const reconcileCashRegisterInput = closeCashRegisterInput.extend({
+  note: z.string().trim().max(200).optional(),
+})

@@ -19,6 +19,7 @@ import {
   accountSessionInput,
   addOrderItemInput,
   recordPaymentInput,
+  recordMixedPaymentInput,
   refundPaymentInput,
   applyDiscountInput,
   removeOrderItemInput,
@@ -436,6 +437,32 @@ export const recordPayment = createServerFn({ method: 'POST' })
       .single()
     if (error || !payment) throw new Error(`account_payment_failed:${error?.code ?? 'unknown'}`)
     return { balanceCents: balanceCents - data.amountCents, paymentId: payment.id as string }
+  })
+
+/** Records two or more payment methods atomically as one idempotent batch. */
+export const recordMixedPayment = createServerFn({ method: 'POST' })
+  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .validator(recordMixedPaymentInput)
+  .handler(async ({ context, data }) => {
+    requireAccountEditor(context.tenantMembership.role)
+    const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    const { data: paymentRows, error } = await supabase.rpc('record_mixed_payment', {
+      p_lines: data.lines,
+      p_operation_id: data.operationId,
+      p_session_id: data.sessionId,
+      p_tenant_id: data.tenantId,
+      p_venue_id: data.venueId,
+    })
+    if (error) {
+      if (error.message.includes('payment_exceeds_balance'))
+        throw new Response('Payment exceeds balance', { status: 422 })
+      if (error.message.includes('payment_session_not_open'))
+        throw new Response('Not found', { status: 404 })
+      throw new Error(`account_mixed_payment_failed:${error.code}`)
+    }
+    return {
+      paymentIds: (paymentRows ?? []).map((row: { payment_id: string }) => row.payment_id),
+    }
   })
 
 export const refundPayment = createServerFn({ method: 'POST' })

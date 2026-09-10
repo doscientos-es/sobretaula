@@ -31,7 +31,7 @@ reproducible (comando ejecutado y su resultado).
 | F4 · Vista de servicio | Plano en vivo, sentar/mover/unir, walk-ins, espera, no-show                 | Implementado; entrega bloqueada                                                                                                                                                                                                                                                                                         |
 | F5 · Cuenta de mesa    | Catálogo, líneas, dividir, cerrar, cobrar                                   | Implementado; las comandas son reintentables y las anulaciones quedan auditadas; entrega bloqueada                                                                                                                                                                                                                      |
 | F6 · Facturación       | Ajustes fiscales, series, ledger/outbox, PDF, modo test                     | Implementado en modo test; la emisión `prod` permanece bloqueada hasta completar la checklist VERI*FACTU y el adaptador AEAT                                                                                                                                                                                            |
-| F7 · TPV ampliado      | Catálogo, comandas, cocina/barra, cobros, caja y arqueo                     | Parcial; el TPV integra cuenta, comandas, cocina/barra, cobro manual, caja e informe diario con permisos; faltan modificadores, edición rápida, reimpresión e informe financiero completo; hardware queda fuera de esta fase                                                                                            |
+| F7 · TPV ampliado      | Catálogo, comandas, cocina/barra, cobros, caja y arqueo                     | Implementado en navegador/tablet; incluye modificadores, disponibilidad/precio local-canal, edición rápida, pagos mixtos atómicos e idempotentes, histórico financiero, conciliación avanzada, caja e impresión web; hardware queda fuera de esta fase                                                                  |
 | F8 · Reservas públicas | Reserva sin cuenta, gestión, avisos, espera y ficha de cliente              | Parcial; reserva, disponibilidad, gestión por token, confirmación por email y recordatorio 24 h activos; rate limiting por contacto, condiciones versionadas, espera futura, historial ampliado, etiquetas, alergias y preferencias ya están implementados; faltan validación operativa y retención/privacidad avanzada |
 | F9 · Control horario   | PIN, pausas, jornadas, auditoría y exportación                              | Parcial; portal personal, terminal compartido, PIN bcrypt, límites de intentos, eventos inmutables, exportación CSV y motor laboral español indicativo implementados; persisten condiciones/calendario y se explotan en el portal, pero faltan informes laborales avanzados y sincronización offline                    |
 | F10 · Producto         | Inventario, escandallos, alérgenos, precios por canal y carta               | Parcial; ingredientes, recetas, escandallo, inventario, UI, canales y carta pública enriquecida implementados; faltan versionado y validación visual final                                                                                                                                                              |
@@ -330,12 +330,17 @@ comandas, pero descuentos y devoluciones sólo se muestran a responsables y las
 acciones de servidor mantienen esa autorización.
 
 Los responsables ven además apertura, entradas y salidas de efectivo, desglose
-por método, arqueo e histórico de cierres, junto con el informe de ventas y el
-resumen de productos. Todos estos datos reutilizan los contratos existentes de
-caja, informes y servicio; no hay una segunda fuente de verdad. Se han validado
-el ensamblaje con TypeScript y 21 pruebas unitarias de cuenta, TPV, caja e
-informes. La integración física de datáfonos y el informe financiero/contable
-completo siguen fuera del alcance actual.
+por método, arqueos repetibles con diferencia y notas, histórico de cierres y un
+informe financiero por rango con propinas, pagos mixtos, cierres y conciliaciones.
+Los pagos mixtos se agrupan en una RPC transaccional con clave idempotente para
+evitar cobros parciales. La cuenta ofrece también una vista de ticket imprimible
+desde navegador, sin depender de impresora, cajón o datáfono.
+
+Todos estos datos reutilizan los contratos existentes de caja, informes y
+servicio; no hay una segunda fuente de verdad. La migración
+`20260910000089_mixed_payments_financial_reconciliation.sql` está aplicada y
+verificada en el proyecto autorizado. La validación contable/fiscal externa y el
+hardware permanecen fuera de esta fase.
 
 ### Refuerzo de reserva pública por email (en validación)
 
