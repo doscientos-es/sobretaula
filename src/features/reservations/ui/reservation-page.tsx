@@ -26,10 +26,12 @@ import {
   createReservationService,
   getReservationsForDate,
   getReservationEvents,
+  publishReservationTerms,
   rescheduleReservation,
   type ReservationAgendaItem,
   type ReservationEvent,
   type ReservationService,
+  type ReservationTermsVersion,
 } from '../application/reservations'
 import { reservationStatusLabel } from '../domain/reservation-labels'
 
@@ -90,12 +92,14 @@ export function ReservationPage({
   venueId,
   locale,
   timezone,
+  terms,
 }: {
   services: readonly ReservationService[]
   tenantId: string
   venueId: string
   locale: Locale
   timezone: string
+  terms: readonly ReservationTermsVersion[]
 }) {
   const feedback = useFormFeedback()
   const [serviceName, setServiceName] = useState('Comida')
@@ -123,6 +127,8 @@ export function ReservationPage({
   const [transitionReason, setTransitionReason] = useState('')
   const [editingStartsAt, setEditingStartsAt] = useState('')
   const [editingPartySize, setEditingPartySize] = useState(1)
+  const [termsTitle, setTermsTitle] = useState(terms[0]?.title ?? 'Condiciones de reserva')
+  const [termsBody, setTermsBody] = useState(terms[0]?.body ?? '')
   const visibleAgenda = agenda.filter((item) => {
     if (depositFilter === 'all') return true
     if (!item.deposit) return false
@@ -151,6 +157,20 @@ export function ReservationPage({
       reload()
     } catch {
       feedback.setError('No se ha podido crear el turno. Comprueba que no esté duplicado.')
+    }
+  }
+
+  async function publishTerms(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    feedback.setPending()
+    try {
+      await publishReservationTerms({
+        data: { body: termsBody, tenantId, title: termsTitle, venueId },
+      })
+      feedback.setSuccess('Nueva versión de condiciones publicada.')
+      reload()
+    } catch {
+      feedback.setError('No se han podido publicar las condiciones.')
     }
   }
 
@@ -296,6 +316,43 @@ export function ReservationPage({
           </PageHeaderDescription>
         </div>
       </PageHeader>
+      <Card className="max-w-xl">
+        <CardHeader>
+          <CardTitle>Condiciones de reserva</CardTitle>
+          <CardDescription>
+            Cada publicación crea una versión nueva y queda congelada en las reservas aceptadas.
+            {terms[0]
+              ? ` Versión activa: ${terms[0].version}.`
+              : ' Todavía no hay una versión publicada.'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form className="grid gap-3" onSubmit={(event) => void publishTerms(event)}>
+            <Field>
+              <FieldLabel htmlFor="reservation-terms-title">Título</FieldLabel>
+              <Input
+                id="reservation-terms-title"
+                onChange={(event) => setTermsTitle(event.target.value)}
+                required
+                value={termsTitle}
+              />
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="reservation-terms-body">Texto</FieldLabel>
+              <textarea
+                className="min-h-28 w-full rounded-md border px-3 py-2"
+                id="reservation-terms-body"
+                onChange={(event) => setTermsBody(event.target.value)}
+                required
+                value={termsBody}
+              />
+            </Field>
+            <Button disabled={feedback.pending} type="submit">
+              Publicar nueva versión
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
       {services.length === 0 ? (
         <Card className="max-w-xl">
           <CardHeader>

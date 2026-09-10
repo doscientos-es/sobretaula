@@ -121,7 +121,8 @@ export const getPublicReservationProfile = createServerFn({ method: 'GET' })
       createAnonSupabaseClient().rpc('public_reservation_areas', { p_slug: data.slug }),
       createAnonSupabaseClient().rpc('public_reservation_terms', { p_slug: data.slug }),
     ])
-    if (termsResult.error) throw new Error(`public_reservation_terms_failed:${termsResult.error.code}`)
+    if (termsResult.error)
+      throw new Error(`public_reservation_terms_failed:${termsResult.error.code}`)
     const areaRows = areasResult.data
     const typedAreaRows = (areaRows ?? []) as PublicReservationAreaRow[]
     const terms = ((termsResult.data ?? []) as PublicReservationTermsRow[])[0]

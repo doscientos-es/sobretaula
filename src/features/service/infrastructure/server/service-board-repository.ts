@@ -62,6 +62,7 @@ export async function loadServiceBoard(
         .select('estimated_wait_minutes, guest_id, id, party_size, requested_for')
         .eq('tenant_id', tenantId)
         .eq('venue_id', venueId)
+        .in('status', ['waiting', 'offered'])
         .order('created_at'),
     ])
   let tablesResult = initialTablesResult

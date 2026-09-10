@@ -39,6 +39,12 @@ const rescheduleReservationInput = venueInput.extend({
   startsAt: z.string().datetime({ offset: true }),
 })
 const reservationEventsInput = venueInput.extend({ reservationId: z.string().uuid() })
+const reservationTermsInput = venueInput
+const publishReservationTermsInput = venueInput.extend({
+  body: z.string().trim().min(1).max(10000),
+  locale: z.enum(['es', 'ca']).default('es'),
+  title: z.string().trim().min(1).max(160),
+})
 
 export interface ReservationService {
   endsAtTime: string
@@ -71,8 +77,21 @@ export interface ReservationEvent {
   reason: string | null
 }
 
+export interface ReservationTermsVersion {
+  body: string
+  id: string
+  locale: string
+  publishedAt: string
+  title: string
+  version: number
+}
+
 function requireReservationEditor(role: string): void {
   if (!['owner', 'manager', 'host'].includes(role)) throw new Response('Forbidden', { status: 403 })
+}
+
+function requireTermsEditor(role: string): void {
+  if (!['owner', 'manager'].includes(role)) throw new Response('Forbidden', { status: 403 })
 }
 
 function serviceBoundary(date: Date, time: string): Date {
@@ -124,6 +143,63 @@ export const getReservationServices = createServerFn({ method: 'GET' })
       maxCoversPerSlot: rulesByService.get(service.id)?.max_covers_per_slot ?? null,
       maxReservationsPerSlot: rulesByService.get(service.id)?.max_reservations_per_slot ?? null,
     }))
+  })
+
+export const getReservationTerms = createServerFn({ method: 'GET' })
+  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .validator(reservationTermsInput)
+  .handler(async ({ context, data }): Promise<ReservationTermsVersion[]> => {
+    const { data: terms, error } = await createRequestSupabaseClient(
+      context.tenantMembership.accessToken,
+    )
+      .from('reservation_terms_versions')
+      .select('body, id, locale, published_at, title, version')
+      .eq('tenant_id', data.tenantId)
+      .eq('venue_id', data.venueId)
+      .order('version', { ascending: false })
+    if (error) throw new Error(`reservation_terms_load_failed:${error.code}`)
+    return (terms ?? []).map((term) => ({
+      body: term.body,
+      id: term.id,
+      locale: term.locale,
+      publishedAt: term.published_at,
+      title: term.title,
+      version: term.version,
+    }))
+  })
+
+export const publishReservationTerms = createServerFn({ method: 'POST' })
+  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .validator(publishReservationTermsInput)
+  .handler(async ({ context, data }) => {
+    requireTermsEditor(context.tenantMembership.role)
+    const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    const { data: latest, error: latestError } = await supabase
+      .from('reservation_terms_versions')
+      .select('version')
+      .eq('tenant_id', data.tenantId)
+      .eq('venue_id', data.venueId)
+      .eq('locale', data.locale)
+      .order('version', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    if (latestError) throw new Error(`reservation_terms_latest_failed:${latestError.code}`)
+    const { data: term, error } = await supabase
+      .from('reservation_terms_versions')
+      .insert({
+        body: data.body,
+        created_by: context.principal.userId,
+        locale: data.locale,
+        tenant_id: data.tenantId,
+        title: data.title,
+        venue_id: data.venueId,
+        version: (latest?.version ?? 0) + 1,
+      })
+      .select('id, version')
+      .single()
+    if (error || !term)
+      throw new Error(`reservation_terms_publish_failed:${error?.code ?? 'unknown'}`)
+    return term
   })
 
 export const getReservationsForDate = createServerFn({ method: 'GET' })

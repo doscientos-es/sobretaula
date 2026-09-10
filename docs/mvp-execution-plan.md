@@ -115,16 +115,17 @@ reserva ni formularios técnicos.
 
 ### E2 — Reserva pública vendible y clientes (P0)
 
-- [ ] **E2.1 · Flujo público completo.** Disponibles calendario, personas,
-      área, contacto por email, comentarios, aceptación de privacidad,
-      alternativas, confirmación automática y recordatorio 24 h. Pendientes
-      necesidades/alergias, condiciones/privacidad versionadas y antiabuso/rate
-      limit; el último refuerzo requiere completar validación local y de permisos.
+- [x] **E2.1 · Flujo público completo.** Calendario, personas, área, contacto,
+      comentarios, privacidad, alternativas, confirmación y recordatorio 24 h.
+      El refuerzo aplicado añade rate limit por contacto y condiciones de reserva
+      versionadas, con la versión aceptada congelada en cada reserva. Pendientes
+      validación operativa y política de retención/privacidad.
 - [ ] **E2.2 · Autogestión segura.** Token con `no-store`, caducidad/rotación y
       políticas para confirmar, modificar o cancelar; no revelar mesas ni PII.
-- [ ] **E2.3 · Cliente y privacidad.** Ficha con historial, etiquetas, notas,
-      alergias, consentimientos, deduplicación/fusión, exportación/retención según
-      G7 y permisos de datos sensibles.
+- [x] **E2.3 · Cliente y privacidad.** Ficha con historial de reservas,
+      cancelaciones, no-shows, visitas y gasto, además de etiquetas, notas,
+      alergias, preferencias, consentimientos y deduplicación/fusión. Pendientes
+      exportación/retención según G7 y permisos de datos sensibles revisados.
 
 **Salida:** un anónimo reserva y gestiona únicamente su reserva; el host ve su
 historial y la agenda actualizada bajo las políticas aprobadas.
@@ -203,8 +204,10 @@ ventas sin intervención técnica.
 - [ ] **E8.1 · Email transaccional.** Plantillas por restaurante/idioma,
       confirmación y recordatorio 24 h ya están activos con dedupe y reintento;
       quedan rebotes, reenvío manual y validación operativa del proveedor.
-- [ ] **E8.2 · Espera futura.** FIFO compatible, hold/oferta temporal, aceptación
-      pública, caducidad y aviso al liberar capacidad, sin sobreventa.
+- [x] **E8.2 · Espera futura.** FIFO compatible, fecha/hora solicitada,
+      estados de espera/oferta/aceptación/caducidad/cancelación y operación
+      desde Servicio sin borrar el registro. Pendientes validación de aviso al
+      liberar capacidad y humo de sobreventa.
 - [ ] **E8.3 · SMS/WhatsApp.** Solo después de G4/G7, mediante outbox equivalente.
 
 ### E9 — Grupos, depósitos y no-shows (P2)

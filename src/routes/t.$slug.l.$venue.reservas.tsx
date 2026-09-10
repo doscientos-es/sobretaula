@@ -1,16 +1,26 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-import { getReservationServices, ReservationPage } from '@/features/reservations'
+import {
+  getReservationServices,
+  getReservationTerms,
+  ReservationPage,
+} from '@/features/reservations'
 
 export const Route = createFileRoute('/t/$slug/l/$venue/reservas')({
-  loader: ({ context }) =>
-    getReservationServices({ data: { tenantId: context.tenant.id, venueId: context.venue.id } }),
+  loader: async ({ context }) => {
+    const data = { tenantId: context.tenant.id, venueId: context.venue.id }
+    const [services, terms] = await Promise.all([
+      getReservationServices({ data }),
+      getReservationTerms({ data }),
+    ])
+    return { services, terms }
+  },
   component: ReservationsRoute,
 })
 
 function ReservationsRoute() {
   const { tenant, venue } = Route.useRouteContext()
-  const services = Route.useLoaderData()
+  const { services, terms } = Route.useLoaderData()
 
   return (
     <ReservationPage
@@ -19,6 +29,7 @@ function ReservationsRoute() {
       tenantId={tenant.id}
       timezone={tenant.timezone}
       venueId={venue.id}
+      terms={terms}
     />
   )
 }

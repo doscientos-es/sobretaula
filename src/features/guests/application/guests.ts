@@ -186,7 +186,10 @@ export const searchGuests = createServerFn({ method: 'GET' })
         },
       ])
     }
-    const allergies = new Map<string, Array<{ allergen: string; notes: string | null; severity: string }>>()
+    const allergies = new Map<
+      string,
+      Array<{ allergen: string; notes: string | null; severity: string }>
+    >()
     for (const allergy of allergiesResult.data ?? [])
       allergies.set(allergy.guest_id, [
         ...(allergies.get(allergy.guest_id) ?? []),

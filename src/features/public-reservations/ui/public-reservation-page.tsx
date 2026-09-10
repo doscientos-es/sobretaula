@@ -453,7 +453,9 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                   <p className="font-semibold text-[#292d34]">
                     {profile.terms.title} · versión {profile.terms.version}
                   </p>
-                  <p className="max-h-28 overflow-y-auto whitespace-pre-wrap">{profile.terms.body}</p>
+                  <p className="max-h-28 overflow-y-auto whitespace-pre-wrap">
+                    {profile.terms.body}
+                  </p>
                   <label className="flex items-start gap-2">
                     <input
                       checked={termsAccepted}

@@ -84,9 +84,13 @@ export const noShowReservationInput = serviceVenueInput.extend({
 
 export const waitlistEntryInput = serviceVenueInput.extend({
   estimatedWaitMinutes: z.number().int().min(0).max(480).nullable(),
+  expiresAt: z.string().datetime({ offset: true }).optional(),
   guestName: z.string().trim().min(1).max(200).optional(),
   guestPhone: z.string().trim().min(3).max(40).optional(),
   partySize: z.number().int().min(1).max(50),
+  preferredAreaId: z.string().uuid().optional(),
+  requestedFor: z.string().datetime({ offset: true }).optional(),
+  serviceId: z.string().uuid().optional(),
   operationId: operationId.optional(),
 })
 

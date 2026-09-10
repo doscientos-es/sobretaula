@@ -64,9 +64,12 @@ export const addToWaitlist = createServerFn({ method: 'POST' })
       .from('waitlist')
       .insert({
         estimated_wait_minutes: data.estimatedWaitMinutes,
+        expires_at: data.expiresAt ?? null,
         guest_id: guestId,
         party_size: data.partySize,
-        requested_for: new Date().toISOString(),
+        preferred_area_id: data.preferredAreaId ?? null,
+        requested_for: data.requestedFor ?? new Date().toISOString(),
+        service_id: data.serviceId ?? null,
         tenant_id: data.tenantId,
         venue_id: data.venueId,
         operation_id: data.operationId ?? null,
@@ -85,11 +88,11 @@ export const removeFromWaitlist = createServerFn({ method: 'POST' })
     requireWaitlistEditor(context.tenantMembership.role)
     const { error } = await createRequestSupabaseClient(context.tenantMembership.accessToken)
       .from('waitlist')
-      .delete()
+      .update({ exit_reason: 'cancelled', status: 'cancelled' })
       .eq('id', data.waitlistEntryId)
       .eq('tenant_id', data.tenantId)
       .eq('venue_id', data.venueId)
-    if (error) throw new Error(`waitlist_delete_failed:${error.code}`)
+    if (error) throw new Error(`waitlist_cancel_failed:${error.code}`)
 
     return { waitlistEntryId: data.waitlistEntryId }
   })
@@ -152,12 +155,12 @@ export const seatWaitlistEntry = createServerFn({ method: 'POST' })
     if (error || !session)
       throw new Error(`table_session_create_failed:${error?.code ?? 'unknown'}`)
 
-    const { error: deleteError } = await supabase
+    const { error: updateError } = await supabase
       .from('waitlist')
-      .delete()
+      .update({ exit_reason: 'seated', status: 'seated' })
       .eq('id', entry.id)
       .eq('tenant_id', data.tenantId)
-    if (deleteError) throw new Error(`waitlist_delete_failed:${deleteError.code}`)
+    if (updateError) throw new Error(`waitlist_update_failed:${updateError.code}`)
 
     return { sessionId: session.id as string }
   })

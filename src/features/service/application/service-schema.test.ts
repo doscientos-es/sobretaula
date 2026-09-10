@@ -197,6 +197,18 @@ describe('waitlistEntryInput', () => {
       }).success,
     ).toBe(false)
   })
+
+  it('accepts a scheduled future request', () => {
+    expect(
+      waitlistEntryInput.safeParse({
+        estimatedWaitMinutes: null,
+        partySize: 2,
+        requestedFor: '2026-09-12T20:00:00.000Z',
+        tenantId,
+        venueId,
+      }).success,
+    ).toBe(true)
+  })
 })
 
 describe('seatWaitlistEntryInput', () => {

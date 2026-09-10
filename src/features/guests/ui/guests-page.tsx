@@ -226,17 +226,25 @@ export function GuestsPage({ tenantId, venueId }: { tenantId: string; venueId: s
                         <p className="font-medium">Alergias y preferencias</p>
                         <div className="flex flex-wrap gap-1">
                           {guest.allergies.map((allergy) => (
-                            <span className="rounded-full bg-red-100 px-2 py-0.5 text-red-800" key={allergy.allergen}>
+                            <span
+                              className="rounded-full bg-red-100 px-2 py-0.5 text-red-800"
+                              key={allergy.allergen}
+                            >
                               {allergy.allergen} · {allergy.severity}
                             </span>
                           ))}
                           {guest.preferences.map((preference) => (
-                            <span className="rounded-full bg-blue-100 px-2 py-0.5 text-blue-800" key={preference.preference}>
+                            <span
+                              className="rounded-full bg-blue-100 px-2 py-0.5 text-blue-800"
+                              key={preference.preference}
+                            >
                               {preference.preference}
                             </span>
                           ))}
                           {!guest.allergies.length && !guest.preferences.length ? (
-                            <span className="text-muted-foreground">Sin atributos registrados.</span>
+                            <span className="text-muted-foreground">
+                              Sin atributos registrados.
+                            </span>
                           ) : null}
                         </div>
                         <div className="flex flex-wrap gap-2">
@@ -256,7 +264,9 @@ export function GuestsPage({ tenantId, venueId }: { tenantId: string; venueId: s
                                     data: { guestId: guest.id, tenantId, value: attribute },
                                   })
                                   setAttribute('')
-                                  setGuests(await searchGuests({ data: { tenantId, venueId, query } }))
+                                  setGuests(
+                                    await searchGuests({ data: { tenantId, venueId, query } }),
+                                  )
                                 } catch {
                                   setError('No se ha podido guardar la preferencia.')
                                 } finally {
@@ -280,7 +290,9 @@ export function GuestsPage({ tenantId, venueId }: { tenantId: string; venueId: s
                                     data: { guestId: guest.id, tenantId, value: attribute },
                                   })
                                   setAttribute('')
-                                  setGuests(await searchGuests({ data: { tenantId, venueId, query } }))
+                                  setGuests(
+                                    await searchGuests({ data: { tenantId, venueId, query } }),
+                                  )
                                 } catch {
                                   setError('No se ha podido guardar la alergia.')
                                 } finally {

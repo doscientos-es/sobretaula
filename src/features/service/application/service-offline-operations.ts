@@ -42,9 +42,13 @@ export interface AddWaitlistOperation {
   kind: 'add-waitlist'
   operationId: string
   estimatedWaitMinutes: number | null
+  expiresAt?: string
   guestName?: string
   guestPhone?: string
   partySize: number
+  preferredAreaId?: string
+  requestedFor?: string
+  serviceId?: string
   tenantId: string
   venueId: string
 }

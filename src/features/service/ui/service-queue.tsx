@@ -76,6 +76,7 @@ export function ServiceQueue({
   const [guestPhone, setGuestPhone] = useState('')
   const [partySize, setPartySize] = useState(2)
   const [estimatedWait, setEstimatedWait] = useState('')
+  const [requestedAt, setRequestedAt] = useState('')
   const [queueFilter, setQueueFilter] = useState<'all' | 'delayed' | 'upcoming'>('all')
   const offlineStore = useMemo(
     () => createServiceOfflineStore(tenantId, venueId),
@@ -121,6 +122,7 @@ export function ServiceQueue({
 
   function addWaiting(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    const requestedFor = requestedAt ? new Date(requestedAt).toISOString() : undefined
     if (!isOnline) {
       enqueueServiceOperation(
         offlineStore,
@@ -129,6 +131,7 @@ export function ServiceQueue({
           ...(guestName ? { guestName } : {}),
           ...(guestPhone ? { guestPhone } : {}),
           partySize,
+          ...(requestedFor ? { requestedFor } : {}),
           tenantId,
           venueId,
         }),
@@ -138,6 +141,7 @@ export function ServiceQueue({
       setGuestName('')
       setGuestPhone('')
       setEstimatedWait('')
+      setRequestedAt('')
       setPartySize(2)
       return
     }
@@ -149,6 +153,7 @@ export function ServiceQueue({
             ...(guestName ? { guestName } : {}),
             ...(guestPhone ? { guestPhone } : {}),
             partySize,
+            ...(requestedFor ? { requestedFor } : {}),
             tenantId,
             venueId,
           },
@@ -158,6 +163,7 @@ export function ServiceQueue({
         setGuestName('')
         setGuestPhone('')
         setEstimatedWait('')
+        setRequestedAt('')
         setPartySize(2)
       },
     )
@@ -446,6 +452,18 @@ export function ServiceQueue({
               onChange={(event) => setEstimatedWait(event.target.value)}
               type="number"
               value={estimatedWait}
+            />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="waitlist-requested-at">
+              Fecha y hora preferida (opcional)
+            </FieldLabel>
+            <Input
+              id="waitlist-requested-at"
+              min={new Date().toISOString().slice(0, 16)}
+              onChange={(event) => setRequestedAt(event.target.value)}
+              type="datetime-local"
+              value={requestedAt}
             />
           </Field>
           <Button disabled={feedback.pending} type="submit">
