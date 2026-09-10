@@ -61,6 +61,18 @@ describe('service board', () => {
     expect(states.every((state) => state.status === 'free')).toBe(true)
   })
 
+  it('marks blocked tables and excludes them from suggestions', () => {
+    const states = buildServiceTableStates({
+      now,
+      reservations: [],
+      sessions: [],
+      tables: [{ ...tables[0], isBlocked: true, blockReason: 'Mantenimiento' }, tables[1]],
+    })
+
+    expect(states[0]).toMatchObject({ blockReason: 'Mantenimiento', status: 'blocked' })
+    expect(suggestTableCombination(states, 2)).toEqual(['table-2'])
+  })
+
   it('keeps the earliest reservation when two share a table', () => {
     const later = { ...soonReservation, id: 'reservation-3', startsAt: '2026-09-09T20:30:00.000Z' }
     const states = buildServiceTableStates({

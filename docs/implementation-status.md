@@ -42,10 +42,10 @@ cada sesión abierta para handover y contexto operativo. La migración
 `20260910000046_service_session_notes.sql` debe aplicarse en Supabase antes de
 usar esta capacidad en el entorno conectado.
 
-El modelo operativo también soporta mesas bloqueadas con motivo y las excluye
-del cálculo de mesas libres y sugerencias. La mutación de bloqueo/desbloqueo y
-su interfaz quedan pendientes de la siguiente iteración; requiere aplicar
-`20260910000047_service_table_blocks.sql`.
+El modelo operativo soporta mesas bloqueadas con motivo y las excluye del
+cálculo de mesas libres y sugerencias. La vista de servicio permite bloquear y
+reabrir la selección; el servidor rechaza bloquear mesas con sesiones abiertas.
+Requiere aplicar `20260910000047_service_table_blocks.sql`.
 
 Las acciones de sentar una reserva, abrir un walk-in y sentar una espera soportan
 ahora modo offline: guardan una operación local, la reintentan al recuperar la
