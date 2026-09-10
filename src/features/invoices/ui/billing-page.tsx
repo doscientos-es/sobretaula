@@ -399,10 +399,14 @@ function SeriesCard({
   const feedback = useFormFeedback()
   const [code, setCode] = useState(`A-${CURRENT_YEAR}`)
   const [fiscalYear, setFiscalYear] = useState(CURRENT_YEAR)
+  const normalizedCode = code.trim().toUpperCase()
+  const alreadyExists = series.some(
+    (item) => item.code === normalizedCode && item.fiscalYear === fiscalYear,
+  )
 
   function create(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (feedback.pending) return
+    if (feedback.pending || alreadyExists) return
     feedback.setPending()
     void createInvoiceSeries({ data: { code, fiscalYear, tenantId } })
       .then(onDone)
@@ -460,10 +464,15 @@ function SeriesCard({
               value={fiscalYear}
             />
           </Field>
-          <Button disabled={feedback.pending} type="submit">
+          <Button disabled={feedback.pending || alreadyExists} type="submit">
             Crear serie
           </Button>
         </form>
+        {alreadyExists && (
+          <p className="text-muted-foreground text-sm">
+            Ya existe la serie {normalizedCode} para el ejercicio {fiscalYear}.
+          </p>
+        )}
         <FormFeedback pendingLabel="Creando serie…" state={feedback.state} />
       </CardContent>
     </Card>
