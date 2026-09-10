@@ -11,8 +11,14 @@ import {
   Input,
   useFormFeedback,
 } from '@doscientos/ui'
-import { useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 
+import {
+  createSeatReservationOperation,
+  createServiceOfflineStore,
+  enqueueServiceOperation,
+  flushServiceOperations,
+} from '../application/service-offline-operations'
 import {
   cancelReservation,
   markReservationNoShow,
@@ -64,6 +70,21 @@ export function ServiceQueue({
   const [partySize, setPartySize] = useState(2)
   const [estimatedWait, setEstimatedWait] = useState('')
   const [queueFilter, setQueueFilter] = useState<'all' | 'delayed' | 'upcoming'>('all')
+  const offlineStore = useMemo(
+    () => createServiceOfflineStore(tenantId, venueId),
+    [tenantId, venueId],
+  )
+
+  useEffect(() => {
+    const flush = () => {
+      void flushServiceOperations(offlineStore).then((result) => {
+        if (result.completed > 0) onDone()
+      })
+    }
+    if (isOnline) flush()
+    window.addEventListener('online', flush)
+    return () => window.removeEventListener('online', flush)
+  }, [isOnline, onDone, offlineStore])
   const reservations = [...board.reservations]
     .filter((reservation) => {
       const minutes = (new Date(reservation.startsAt).getTime() - Date.now()) / 60_000
@@ -113,6 +134,13 @@ export function ServiceQueue({
         setPartySize(2)
       },
     )
+  }
+
+  function seatReservationOffline(reservationId: string) {
+    const operation = createSeatReservationOperation({ reservationId, tenantId, venueId })
+    enqueueServiceOperation(offlineStore, operation)
+    feedback.setPending()
+    feedback.setSuccess('Reserva guardada. Se sentará automáticamente al recuperar la conexión.')
   }
 
   return (
@@ -177,17 +205,19 @@ export function ServiceQueue({
                     <Button
                       disabled={feedback.pending}
                       onClick={() =>
-                        void run(
-                          () =>
-                            seatReservation({
-                              data: {
-                                reservationId: reservation.id,
-                                tenantId,
-                                venueId,
-                              },
-                            }),
-                          'No se ha podido sentar la reserva.',
-                        )
+                        isOnline
+                          ? void run(
+                              () =>
+                                seatReservation({
+                                  data: {
+                                    reservationId: reservation.id,
+                                    tenantId,
+                                    venueId,
+                                  },
+                                }),
+                              'No se ha podido sentar la reserva.',
+                            )
+                          : seatReservationOffline(reservation.id)
                       }
                       type="button"
                     >

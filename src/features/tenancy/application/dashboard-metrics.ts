@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { authMiddleware } from '@/features/auth/infrastructure/server/auth-middleware'
 import { createRequestSupabaseClient } from '@/shared/lib/supabase/server/create-server-client'
 
+import { getDashboardActions, type TenantDashboardAction } from '../domain/dashboard-actions'
 import {
   operationalTenantMiddleware,
   tenantMembershipMiddleware,
@@ -15,13 +16,16 @@ const input = z.object({
 })
 
 export interface DashboardMetrics {
+  actionItems: TenantDashboardAction[]
   nextReservationCovers: number | null
   nextReservationStartsAt: string | null
+  openSessionCount: number
   reservationsToday: number
   reservationsThisWeek: number
   noShowsThisWeek: number
   occupiedTables: number
   paidTodayCents: number
+  pendingReservationsToday: number
 }
 
 export const getDashboardMetrics = createServerFn({ method: 'GET' })
@@ -30,10 +34,13 @@ export const getDashboardMetrics = createServerFn({ method: 'GET' })
   .handler(async ({ context, data }): Promise<DashboardMetrics> => {
     if (data.venueIds.length === 0) {
       return {
+        actionItems: [],
         nextReservationCovers: null,
         nextReservationStartsAt: null,
+        openSessionCount: 0,
         occupiedTables: 0,
         paidTodayCents: 0,
+        pendingReservationsToday: 0,
         reservationsToday: 0,
         reservationsThisWeek: 0,
         noShowsThisWeek: 0,
@@ -49,53 +56,81 @@ export const getDashboardMetrics = createServerFn({ method: 'GET' })
     const weekEnd = new Date(weekStart)
     weekEnd.setDate(weekEnd.getDate() + 7)
     const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
-    const [reservations, noShowsWeek, reservationsWeek, sessions, nextReservation] =
-      await Promise.all([
-        supabase
-          .from('reservations')
-          .select('id', { count: 'exact', head: true })
-          .eq('tenant_id', data.tenantId)
-          .in('venue_id', data.venueIds)
-          .gte('starts_at', start.toISOString())
-          .lt('starts_at', end.toISOString())
-          .in('status', ['pending', 'confirmed', 'seated']),
-        supabase
-          .from('reservations')
-          .select('id', { count: 'exact', head: true })
-          .eq('tenant_id', data.tenantId)
-          .in('venue_id', data.venueIds)
-          .gte('starts_at', weekStart.toISOString())
-          .lt('starts_at', weekEnd.toISOString())
-          .eq('status', 'no_show'),
-        supabase
-          .from('reservations')
-          .select('id', { count: 'exact', head: true })
-          .eq('tenant_id', data.tenantId)
-          .in('venue_id', data.venueIds)
-          .gte('starts_at', weekStart.toISOString())
-          .lt('starts_at', weekEnd.toISOString())
-          .in('status', ['pending', 'confirmed', 'seated']),
-        supabase
-          .from('table_sessions')
-          .select('id, status, table_ids')
-          .eq('tenant_id', data.tenantId)
-          .in('venue_id', data.venueIds),
-        supabase
-          .from('reservations')
-          .select('party_size, starts_at')
-          .eq('tenant_id', data.tenantId)
-          .in('venue_id', data.venueIds)
-          .in('status', ['pending', 'confirmed'])
-          .gte('starts_at', new Date().toISOString())
-          .order('starts_at')
-          .limit(1),
-      ])
+    const [
+      reservations,
+      noShowsWeek,
+      reservationsWeek,
+      sessions,
+      nextReservation,
+      pendingReservationCount,
+      pendingReservations,
+    ] = await Promise.all([
+      supabase
+        .from('reservations')
+        .select('id', { count: 'exact', head: true })
+        .eq('tenant_id', data.tenantId)
+        .in('venue_id', data.venueIds)
+        .gte('starts_at', start.toISOString())
+        .lt('starts_at', end.toISOString())
+        .in('status', ['pending', 'confirmed', 'seated']),
+      supabase
+        .from('reservations')
+        .select('id', { count: 'exact', head: true })
+        .eq('tenant_id', data.tenantId)
+        .in('venue_id', data.venueIds)
+        .gte('starts_at', weekStart.toISOString())
+        .lt('starts_at', weekEnd.toISOString())
+        .eq('status', 'no_show'),
+      supabase
+        .from('reservations')
+        .select('id', { count: 'exact', head: true })
+        .eq('tenant_id', data.tenantId)
+        .in('venue_id', data.venueIds)
+        .gte('starts_at', weekStart.toISOString())
+        .lt('starts_at', weekEnd.toISOString())
+        .in('status', ['pending', 'confirmed', 'seated']),
+      supabase
+        .from('table_sessions')
+        .select('id, opened_at, status, table_ids, venue_id')
+        .eq('tenant_id', data.tenantId)
+        .in('venue_id', data.venueIds)
+        .eq('status', 'open'),
+      supabase
+        .from('reservations')
+        .select('party_size, starts_at')
+        .eq('tenant_id', data.tenantId)
+        .in('venue_id', data.venueIds)
+        .in('status', ['pending', 'confirmed'])
+        .gte('starts_at', new Date().toISOString())
+        .order('starts_at')
+        .limit(1),
+      supabase
+        .from('reservations')
+        .select('id', { count: 'exact', head: true })
+        .eq('tenant_id', data.tenantId)
+        .in('venue_id', data.venueIds)
+        .gte('starts_at', start.toISOString())
+        .lt('starts_at', end.toISOString())
+        .eq('status', 'pending'),
+      supabase
+        .from('reservations')
+        .select('id, party_size, starts_at, venue_id')
+        .eq('tenant_id', data.tenantId)
+        .in('venue_id', data.venueIds)
+        .gte('starts_at', start.toISOString())
+        .lt('starts_at', end.toISOString())
+        .eq('status', 'pending')
+        .order('starts_at')
+        .limit(3),
+    ])
     if (
       reservations.error ||
       reservationsWeek.error ||
       noShowsWeek.error ||
       sessions.error ||
-      nextReservation.error
+      nextReservation.error ||
+      pendingReservationCount.error ||
+      pendingReservations.error
     )
       throw new Error('dashboard_metrics_load_failed')
     const sessionIds = (sessions.data ?? []).map((session) => session.id as string)
@@ -120,8 +155,23 @@ export const getDashboardMetrics = createServerFn({ method: 'GET' })
       0,
     )
     return {
+      actionItems: getDashboardActions({
+        openSessions: (sessions.data ?? []).map((session) => ({
+          id: session.id as string,
+          openedAt: session.opened_at as string,
+          venueId: session.venue_id as string,
+        })),
+        pendingReservations: (pendingReservations.data ?? []).map((reservation) => ({
+          id: reservation.id as string,
+          partySize: reservation.party_size as number,
+          startsAt: reservation.starts_at as string,
+          venueId: reservation.venue_id as string,
+        })),
+      }),
       occupiedTables,
+      openSessionCount: sessions.data?.length ?? 0,
       paidTodayCents,
+      pendingReservationsToday: pendingReservationCount.count ?? 0,
       reservationsToday: reservations.count ?? 0,
       reservationsThisWeek: reservationsWeek.count ?? 0,
       noShowsThisWeek: noShowsWeek.count ?? 0,

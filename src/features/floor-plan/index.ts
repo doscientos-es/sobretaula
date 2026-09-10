@@ -30,6 +30,11 @@ export type {
   PlanElementKind,
 } from './domain/floor-plan'
 export {
+  normalizeTableGroupPreset,
+  type TableGroupPresetInput,
+  type NormalizedTableGroupPreset,
+} from './domain/table-group-presets'
+export {
   describeSpaceType,
   findVersionScheduleConflicts,
   groupAreasByFloor,

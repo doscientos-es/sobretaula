@@ -57,7 +57,7 @@ export function TenantAdminFrame({
           </span>
           <span className="font-semibold tracking-[-0.03em]">{t('app.name')}</span>
         </Link>
-        <p className="st-saas-section-label mt-6 px-1.5">Espacio de trabajo</p>
+        <p className="st-saas-section-label mt-6 px-1.5">Restaurante</p>
         <nav aria-label="Principal" className="mt-3 space-y-0.5">
           <Link
             to="/t/$slug"
@@ -69,8 +69,17 @@ export function TenantAdminFrame({
             <LayoutDashboard className="size-3" />
             Resumen
           </Link>
-          {activeVenue && (
-            <>
+        </nav>
+        <VenueSwitcher
+          activeVenueSlug={activeVenue?.slug ?? null}
+          locale={locale}
+          tenantSlug={slug}
+          venues={venues}
+        />
+        {activeVenue && (
+          <div className="st-saas-nav-group mt-5 pt-4">
+            <p className="st-saas-section-label px-1.5">Operativa del local</p>
+            <nav aria-label="Operativa del local" className="mt-2 space-y-0.5">
               <Link
                 to="/t/$slug/l/$venue/plano"
                 params={{ slug, venue: activeVenue.slug }}
@@ -99,51 +108,50 @@ export function TenantAdminFrame({
                 <CalendarDays className="size-3" />
                 {t('nav.reservations')}
               </Link>
-            </>
-          )}
-          <Link
-            to="/t/$slug/carta"
-            params={{ slug }}
-            activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
-            className={navLinkClass}
-          >
-            <UtensilsCrossed className="size-3" />
-            {t('nav.menu')}
-          </Link>
-          <Link
-            to="/t/$slug/facturacion"
-            params={{ slug }}
-            activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
-            className={navLinkClass}
-          >
-            <FileText className="size-3" />
-            {t('nav.billing')}
-          </Link>
-          <Link
-            to="/t/$slug/facturas"
-            params={{ slug }}
-            activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
-            className={navLinkClass}
-          >
-            <FileText className="size-3" />
-            {t('nav.invoices')}
-          </Link>
-          <Link
-            to="/t/$slug/equipo"
-            params={{ slug }}
-            activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
-            className={navLinkClass}
-          >
-            <Users className="size-3" />
-            Equipo
-          </Link>
-        </nav>
-        <VenueSwitcher
-          activeVenueSlug={activeVenue?.slug ?? null}
-          locale={locale}
-          tenantSlug={slug}
-          venues={venues}
-        />
+            </nav>
+          </div>
+        )}
+        <div className="st-saas-nav-group mt-5 pt-4">
+          <p className="st-saas-section-label px-1.5">Gestión del restaurante</p>
+          <nav aria-label="Gestión del restaurante" className="mt-2 space-y-0.5">
+            <Link
+              to="/t/$slug/carta"
+              params={{ slug }}
+              activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
+              className={navLinkClass}
+            >
+              <UtensilsCrossed className="size-3" />
+              {t('nav.menu')}
+            </Link>
+            <Link
+              to="/t/$slug/facturacion"
+              params={{ slug }}
+              activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
+              className={navLinkClass}
+            >
+              <FileText className="size-3" />
+              {t('nav.billing')}
+            </Link>
+            <Link
+              to="/t/$slug/facturas"
+              params={{ slug }}
+              activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
+              className={navLinkClass}
+            >
+              <FileText className="size-3" />
+              {t('nav.invoices')}
+            </Link>
+            <Link
+              to="/t/$slug/equipo"
+              params={{ slug }}
+              activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
+              className={navLinkClass}
+            >
+              <Users className="size-3" />
+              Equipo
+            </Link>
+          </nav>
+        </div>
         <div className="st-saas-nav-group mt-5 pt-4">
           <p className="st-saas-section-label px-1.5">Cuenta</p>
           <nav className="mt-2">
@@ -191,6 +199,11 @@ export function TenantAdminFrame({
             Resumen
           </Link>
           {activeVenue && (
+            <Link params={{ slug, venue: activeVenue.slug }} to="/t/$slug/l/$venue/plano">
+              Plano
+            </Link>
+          )}
+          {activeVenue && (
             <Link params={{ slug, venue: activeVenue.slug }} to="/t/$slug/l/$venue/servicio">
               Servicio
             </Link>
@@ -205,6 +218,15 @@ export function TenantAdminFrame({
           </Link>
           <Link params={{ slug }} to="/t/$slug/facturacion">
             Facturación
+          </Link>
+          <Link params={{ slug }} to="/t/$slug/facturas">
+            Facturas
+          </Link>
+          <Link params={{ slug }} to="/t/$slug/equipo">
+            Equipo
+          </Link>
+          <Link params={{ slug }} to="/t/$slug/suscripcion/facturas">
+            Cuenta
           </Link>
         </nav>
         <AppShellContent className="mx-auto max-w-7xl p-4 sm:p-6">{children}</AppShellContent>

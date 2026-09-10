@@ -37,6 +37,12 @@ La operación de sala permite marcar una reserva como `no_show` desde la puerta,
 libera su mesa mediante el trigger de sincronización y aplica también en servidor
 la espera mínima de 15 minutos para evitar ausencias prematuras.
 
+La acción de sentar una reserva soporta ahora modo offline: guarda una operación
+local, la reintenta al recuperar la conexión y envía un `operation_id` único. La
+restricción parcial `table_sessions_operation_id_idx` hace que los reintentos sean
+idempotentes y no abran una segunda sesión. Walk-ins, movimientos y lista de
+espera siguen bloqueados sin red hasta añadir su propia clave de idempotencia.
+
 Las migraciones de reservas públicas (`20260910000024`, `20260910000025` y
 `20260910000026`) están preparadas y revisadas localmente, pero deben aplicarse
 de forma explícita en el proyecto Supabase conectado antes de validar el flujo

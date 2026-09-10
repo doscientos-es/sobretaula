@@ -7,6 +7,8 @@ export const serviceVenueInput = z.object({
   venueId: z.string().uuid(),
 })
 
+export const operationId = z.string().uuid().optional()
+
 export const seatWalkInInput = serviceVenueInput.extend({
   covers: z.number().int().min(1).max(50),
   guestName: z.string().trim().min(1).max(200).optional(),

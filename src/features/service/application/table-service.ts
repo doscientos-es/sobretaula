@@ -16,12 +16,14 @@ import {
   mergeSessionsInput,
   moveSessionInput,
   noShowReservationInput,
+  operationId,
   requireServiceEditor,
   seatWalkInInput,
   serviceVenueInput,
 } from './service-schema'
 
 const seatReservationInput = serviceVenueInput.extend({
+  operationId,
   reservationId: z.string().uuid(),
 })
 
@@ -76,17 +78,19 @@ export const seatReservation = createServerFn({ method: 'POST' })
       .eq('reservation_id', reservation.id)
     if (assignmentsError || !assignments?.length)
       throw new Response('Invalid reservation', { status: 422 })
+    const sessionInsert = {
+      covers: reservation.party_size,
+      opened_by: context.tenantMembership.userId,
+      operation_id: data.operationId ?? null,
+      reservation_id: reservation.id,
+      status: 'open' as const,
+      table_ids: assignments.map((assignment) => assignment.table_id),
+      tenant_id: data.tenantId,
+      venue_id: reservation.venue_id,
+    }
     const { data: session, error: sessionError } = await supabase
       .from('table_sessions')
-      .insert({
-        covers: reservation.party_size,
-        opened_by: context.tenantMembership.userId,
-        reservation_id: reservation.id,
-        status: 'open',
-        table_ids: assignments.map((assignment) => assignment.table_id),
-        tenant_id: data.tenantId,
-        venue_id: reservation.venue_id,
-      })
+      .upsert(sessionInsert, { onConflict: 'operation_id' })
       .select('id')
       .single()
     if (sessionError || !session)

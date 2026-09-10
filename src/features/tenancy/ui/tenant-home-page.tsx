@@ -9,7 +9,15 @@ import {
   PageHeaderTitle,
 } from '@doscientos/ui'
 import { Link } from '@tanstack/react-router'
-import { CalendarCheck2, Clock3, Euro, Users, type LucideIcon } from 'lucide-react'
+import {
+  CalendarCheck2,
+  CheckCircle2,
+  Clock3,
+  Euro,
+  TriangleAlert,
+  Users,
+  type LucideIcon,
+} from 'lucide-react'
 import { useState } from 'react'
 
 import type { Venue } from '@/features/venues'
@@ -33,6 +41,11 @@ export function TenantHomePage({
     typeof window === 'undefined'
       ? `/reservar/${tenant.slug}`
       : `${window.location.origin}/reservar/${tenant.slug}`
+  const nextService = metrics.nextReservationStartsAt
+    ? new Intl.DateTimeFormat(tenant.defaultLocale, { hour: '2-digit', minute: '2-digit' }).format(
+        new Date(metrics.nextReservationStartsAt),
+      )
+    : null
 
   return (
     <section className="space-y-7">
@@ -40,7 +53,13 @@ export function TenantHomePage({
         <div>
           <PageHeaderTitle>Buenos días</PageHeaderTitle>
           <PageHeaderDescription>
-            Esto es lo que está pasando hoy en {tenant.name}.
+            {metrics.pendingReservationsToday > 0
+              ? `Hay ${metrics.pendingReservationsToday} reserva${metrics.pendingReservationsToday === 1 ? '' : 's'} pendiente${metrics.pendingReservationsToday === 1 ? '' : 's'} de confirmar hoy.`
+              : metrics.openSessionCount > 0
+                ? `Hay ${metrics.openSessionCount} servicio${metrics.openSessionCount === 1 ? '' : 's'} en curso.`
+                : nextService
+                  ? `Todo preparado para el próximo servicio a las ${nextService}.`
+                  : `No hay incidencias operativas pendientes en ${tenant.name}.`}
           </PageHeaderDescription>
         </div>
       </PageHeader>
@@ -99,32 +118,74 @@ export function TenantHomePage({
       </div>
       <Card>
         <CardHeader className="border-b">
-          <CardTitle>Actividad reciente</CardTitle>
+          <CardTitle>Prioridades de hoy</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <p className="text-muted-foreground text-sm">
-            {metrics.noShowsThisWeek > 0
-              ? `${metrics.noShowsThisWeek} no presentada${metrics.noShowsThisWeek === 1 ? '' : 's'} esta semana. `
-              : ''}
-            La actividad detallada se consulta en tiempo real desde Servicio, Reservas y Cuenta.
-          </p>
-          {venues[0] ? (
-            <div className="flex flex-wrap gap-4 text-sm">
-              <Link
-                className="text-primary underline underline-offset-4"
-                params={{ slug: tenant.slug, venue: venues[0].slug }}
-                to="/t/$slug/l/$venue/servicio"
-              >
-                Abrir servicio
-              </Link>
-              <Link
-                className="text-primary underline underline-offset-4"
-                params={{ slug: tenant.slug, venue: venues[0].slug }}
-                to="/t/$slug/l/$venue/reservas"
-              >
-                Gestionar reservas
-              </Link>
+          {metrics.actionItems.length > 0 ? (
+            <ul className="divide-y">
+              {metrics.actionItems.map((item) => {
+                const venue = venues.find((candidate) => candidate.id === item.venueId)
+                if (!venue) return null
+
+                const isPendingReservation = item.kind === 'pending_reservation'
+                const actionLabel = isPendingReservation ? 'Revisar reserva' : 'Abrir servicio'
+                const occurredAt = isPendingReservation ? item.startsAt : item.openedAt
+                const time = new Intl.DateTimeFormat(tenant.defaultLocale, {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                }).format(new Date(occurredAt))
+                const detail = isPendingReservation
+                  ? `${item.partySize} comensales · ${time}`
+                  : `Abierto desde ${time}`
+
+                return (
+                  <li
+                    className="flex flex-wrap items-center justify-between gap-3 py-3 first:pt-0 last:pb-0"
+                    key={`${item.kind}-${item.id}`}
+                  >
+                    <div className="flex items-start gap-3">
+                      {isPendingReservation ? (
+                        <TriangleAlert className="text-warning mt-0.5 size-4" />
+                      ) : (
+                        <Clock3 className="text-info mt-0.5 size-4" />
+                      )}
+                      <div>
+                        <p className="text-sm font-medium">
+                          {isPendingReservation
+                            ? 'Reserva pendiente de confirmar'
+                            : 'Servicio en curso'}
+                        </p>
+                        <p className="text-muted-foreground mt-0.5 text-xs">
+                          {venue.name} · {detail}
+                        </p>
+                      </div>
+                    </div>
+                    <Link
+                      className="text-primary text-sm font-medium underline underline-offset-4"
+                      params={{ slug: tenant.slug, venue: venue.slug }}
+                      to={
+                        isPendingReservation
+                          ? '/t/$slug/l/$venue/reservas'
+                          : '/t/$slug/l/$venue/servicio'
+                      }
+                    >
+                      {actionLabel}
+                    </Link>
+                  </li>
+                )
+              })}
+            </ul>
+          ) : (
+            <div className="flex items-center gap-2 text-sm">
+              <CheckCircle2 className="text-success size-4" />
+              <p className="text-muted-foreground">No hay acciones pendientes ahora mismo.</p>
             </div>
+          )}
+          {metrics.noShowsThisWeek > 0 ? (
+            <p className="text-muted-foreground border-t pt-3 text-xs">
+              {metrics.noShowsThisWeek} no presentada{metrics.noShowsThisWeek === 1 ? '' : 's'} esta
+              semana.
+            </p>
           ) : null}
         </CardContent>
       </Card>

@@ -32,7 +32,8 @@ del diseñador y su uso diario.
 - [x] Biblioteca de elementos: mesa, pared, puerta, barra, pilar, escalera,
       baño, cocina, salida, ventana, obstáculo y etiqueta.
 - [x] Selección múltiple, duplicado, alineación por los cuatro bordes y distribución
-      horizontal/vertical ya disponibles; agrupar y bloquear siguen pendientes.
+      horizontal/vertical ya disponibles; bloqueo local disponible; agrupación y
+      persistencia de bloqueo siguen pendientes.
 - [x] Zoom/pan y guías de alineación: zoom accesible, pan con Alt+flechas,
       cuadrícula configurable de 25 cm/50 cm/1 m, snap sincronizado y ejes del
       elemento seleccionado.
@@ -44,7 +45,7 @@ del diseñador y su uso diario.
 
 ### P2 · Operación de turno
 
-- [ ] Plano en vivo y vista lista intercambiables.
+- [x] Plano en vivo y vista lista intercambiables.
 - [x] Estados de mesa con color + icono + texto, nunca solo color.
 - [ ] Acciones rápidas: sentar, liberar, limpiar, bloquear, nota y asignar.
 - [x] Pisos/zonas filtrables y vista global para encargados.
@@ -56,9 +57,11 @@ del diseñador y su uso diario.
 - [x] Acción para seleccionar la combinación sugerida desde el panel operativo.
 - [x] Realtime para reservas, asignaciones y sesiones, aviso de modo degradado
       y bloqueo de mutaciones sin conexión.
-- [ ] Conectar la cola persistente local (modelo, backoff, almacenamiento y
-      ejecutor ya preparados) a las mutaciones de sala con reintentos
-      idempotentes.
+- [~] Conectar la cola persistente local: `seatReservation` ya guarda
+  operaciones offline, las reintenta al volver la conexión y usa
+  `operation_id` único en `table_sessions` para no duplicar sesiones.
+  Extender el adaptador a walk-ins, movimientos y lista de espera requiere
+  idempotencia específica por operación.
 
 ### P3 · Inteligencia y casos avanzados
 
@@ -96,5 +99,9 @@ el servicio y latencia de sincronización.
 3. Añadir sincronización realtime, reintentos idempotentes y modo degradado.
 4. Cubrir validaciones de layout con pruebas unitarias y de UI.
 5. Ejecutar `pnpm lint`, `pnpm typecheck`, `pnpm test` y `pnpm build`.
+6. Conectar `table_group_presets` con el diseñador y servicio: guardar, aplicar y
+   separar combinaciones con preflight de reservas, cuentas y capacidad.
+   La normalización local de nombres, IDs y capacidad ya está cubierta por
+   pruebas de dominio.
    La decisión de persistencia de pisos y terrazas está documentada en
    [`adr/0008-pisos-y-terrazas.md`](./adr/0008-pisos-y-terrazas.md).

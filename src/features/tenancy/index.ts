@@ -2,6 +2,8 @@ export { getTenantBySlug, tenantBySlugQuery } from './application/get-tenant-by-
 export { getUserDestinations } from './application/get-user-destinations'
 export { getDashboardMetrics } from './application/dashboard-metrics'
 export type { DashboardMetrics } from './application/dashboard-metrics'
+export { getDashboardActions } from './domain/dashboard-actions'
+export type { TenantDashboardAction } from './domain/dashboard-actions'
 export type { UserDestinations, UserTenantDestination } from './application/get-user-destinations'
 export {
   canAccessTenantRoute,

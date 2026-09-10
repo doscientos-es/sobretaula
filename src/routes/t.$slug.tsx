@@ -64,10 +64,13 @@ export const Route = createFileRoute('/t/$slug')({
           },
         })
       : {
+          actionItems: [],
           nextReservationCovers: null,
           nextReservationStartsAt: null,
+          openSessionCount: 0,
           occupiedTables: 0,
           paidTodayCents: 0,
+          pendingReservationsToday: 0,
           reservationsToday: 0,
           reservationsThisWeek: 0,
           noShowsThisWeek: 0,
