@@ -119,15 +119,15 @@ pruebas RLS siguen omitidos por falta de entorno Supabase dedicado.
 
 La verificación posterior de producción (`pnpm build`) también completa
 correctamente y genera el artefacto Nitro/Vercel. La suite global actual queda
-en 48 archivos y 207 pruebas correctas; las 3 RLS continúan omitidas por el
-conector no autorizado.
+en 56 archivos y 229 pruebas correctas; 1 archivo y 3 pruebas RLS continúan
+omitidos por el conector no autorizado.
 
 | Comando                | Resultado                                                                                    |
 | ---------------------- | -------------------------------------------------------------------------------------------- |
 | `pnpm format:check`    | Pendiente por 5 archivos ajenos al alcance actual                                            |
 | `pnpm lint`            | Correcto                                                                                     |
 | `pnpm structure:check` | Correcto localmente; el asset de login vive en `public/` y los módulos usan nombres estándar |
-| `pnpm test`            | 38 archivos y 177 pruebas correctas; 1 archivo y 3 pruebas RLS omitidas                      |
+| `pnpm test`            | 56 archivos y 229 pruebas correctas; 1 archivo y 3 pruebas RLS omitidas                      |
 | `pnpm typecheck`       | Correcto                                                                                     |
 | `pnpm quality`         | Correcto                                                                                     |
 | `pnpm build`           | Correcto; solo avisos de Vite/chunks                                                         |
