@@ -17,6 +17,7 @@ export {
   createFloorPlanTable,
   createInitialFloorPlan,
   createTableGroupPreset,
+  deleteTableGroupPreset,
   getFloorPlan,
   saveFloorPlanVersion,
 } from './application/floor-plan'

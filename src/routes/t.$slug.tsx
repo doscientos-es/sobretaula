@@ -101,16 +101,40 @@ function TenantLayout() {
 
     const setupPending = tenant.status === 'setup_pending'
     return (
-      <main className="mx-auto max-w-2xl p-6">
-        <DataViewState>
-          <DataViewStateTitle>{tenant.name}</DataViewStateTitle>
-          <DataViewStateDescription>
-            {setupPending
-              ? 'Tus datos de facturación se han guardado. Falta autorizar el método de pago seguro para activar el restaurante.'
-              : 'Este restaurante está temporalmente en pausa por un cobro pendiente. Su información se conserva y se reactivará automáticamente al confirmarse el pago.'}
-          </DataViewStateDescription>
+      <main className="bg-muted/30 min-h-screen p-4 sm:p-8">
+        <div className="mx-auto max-w-3xl space-y-6">
+          <div className="border-primary/20 from-primary/10 rounded-2xl border bg-gradient-to-br to-transparent p-6 sm:p-8">
+            <p className="text-primary text-sm font-semibold tracking-wide uppercase">Sobretaula</p>
+            <h1 className="mt-2 text-3xl font-semibold tracking-tight">{tenant.name}</h1>
+            <p className="text-muted-foreground mt-2 max-w-xl text-sm leading-6">
+              {setupPending
+                ? 'Tu restaurante está casi listo. Completa estos últimos pasos para empezar a trabajar.'
+                : 'El restaurante está temporalmente en pausa por un cobro pendiente. Tu información se conserva.'}
+            </p>
+          </div>
           {setupPending && (
-            <div className="mt-5 flex gap-4 text-sm">
+            <div className="grid gap-4 sm:grid-cols-3">
+              {[
+                ['✓', 'Datos del restaurante', 'Completados'],
+                ['2', 'Método de pago', 'Requiere autorización'],
+                ['3', 'Abrir operaciones', 'Se activa al confirmar'],
+              ].map(([step, title, detail]) => (
+                <div className="bg-background rounded-xl border p-4" key={title}>
+                  <span className="bg-primary/10 text-primary inline-flex size-8 items-center justify-center rounded-full text-sm font-semibold">{step}</span>
+                  <p className="mt-3 text-sm font-medium">{title}</p>
+                  <p className="text-muted-foreground mt-1 text-xs">{detail}</p>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="bg-background rounded-2xl border p-6 shadow-sm">
+            <p className="text-sm leading-6">
+              {setupPending
+                ? 'Tus datos de facturación se han guardado. Falta autorizar el método de pago seguro para activar el restaurante.'
+                : 'Este restaurante está temporalmente en pausa por un cobro pendiente.'}
+            </p>
+          {setupPending && (
+            <div className="mt-5 flex flex-wrap gap-4 text-sm">
               <Link className="text-primary underline" to="/onboarding">
                 Revisar configuración de alta
               </Link>
@@ -139,7 +163,8 @@ function TenantLayout() {
               Ver facturas de SobreTaula
             </Link>
           )}
-        </DataViewState>
+          </div>
+        </div>
       </main>
     )
   }

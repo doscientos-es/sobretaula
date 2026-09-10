@@ -1,10 +1,7 @@
 import forge from 'node-forge'
 import { describe, expect, it } from 'vitest'
 
-import {
-  validateVerifactuCertificate,
-  VerifactuCertificateError,
-} from './verifactu-certificate.server'
+import { validateVerifactuCertificate, VerifactuCertificateError } from './verifactu-certificate'
 
 function createCertificate({ expiresAt, subject }: { expiresAt: Date; subject: string }): Buffer {
   const keys = forge.pki.rsa.generateKeyPair(512)

@@ -56,6 +56,18 @@ function rolesFor(viewerRole: TenantRole) {
   )
 }
 
+function teamErrorMessage(error: unknown): string {
+  if (isInvitationEmailRateLimited(error)) return invitationEmailRateLimitMessage
+  const code = error instanceof Error ? error.message : ''
+  if (code.includes('tenant_invitation_delivery_failed'))
+    return 'No se pudo enviar la invitación. Comprueba el correo e inténtalo de nuevo.'
+  if (code.includes('team_profile_lookup_failed'))
+    return 'No se pudo consultar la cuenta del trabajador. Inténtalo de nuevo.'
+  if (error instanceof Response && error.status === 403)
+    return 'No tienes permisos para añadir este rol.'
+  return 'No se ha podido actualizar el equipo. Revisa tus permisos e inténtalo de nuevo.'
+}
+
 /** Lets owners and managers add staff, while every team member can see who operates the venue. */
 export function TenantTeamPage({
   team,
@@ -81,11 +93,7 @@ export function TenantTeamPage({
       feedback.setSuccess(success)
       reload()
     } catch (error) {
-      feedback.setError(
-        isInvitationEmailRateLimited(error)
-          ? invitationEmailRateLimitMessage
-          : 'No se ha podido actualizar el equipo. Revisa tus permisos e inténtalo de nuevo.',
-      )
+      feedback.setError(teamErrorMessage(error))
     }
   }
 

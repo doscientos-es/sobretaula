@@ -30,7 +30,7 @@ export async function loadServiceBoard(
   const [tablesResult, sessionsResult, reservationsResult, waitlistResult] = await Promise.all([
     supabase
       .from('tables')
-      .select('code, id, max_seats, min_seats')
+      .select('area_id, code, id, max_seats, min_seats')
       .eq('tenant_id', tenantId)
       .eq('venue_id', venueId)
       .eq('is_active', true)
@@ -66,6 +66,18 @@ export async function loadServiceBoard(
     waitlistResult.error,
   ].find(Boolean)
   if (error) throw new Error(`service_board_load_failed:${error.code}`)
+
+  const areaIds = [...new Set((tablesResult.data ?? []).map((table) => table.area_id))]
+  const presetsResult = areaIds.length
+    ? await supabase
+        .from('table_group_presets')
+        .select('id, max_seats, name, table_ids')
+        .eq('tenant_id', tenantId)
+        .in('area_id', areaIds)
+        .order('name')
+    : { data: [], error: null }
+  if (presetsResult.error)
+    throw new Error(`service_board_presets_load_failed:${presetsResult.error.code}`)
 
   const reservationIds = (reservationsResult.data ?? []).map((reservation) => reservation.id)
   const guestIds = [
@@ -107,6 +119,7 @@ export async function loadServiceBoard(
   )
 
   const tables: ServiceTable[] = (tablesResult.data ?? []).map((table) => ({
+    areaId: table.area_id,
     code: table.code,
     id: table.id,
     maxSeats: table.max_seats,
@@ -146,6 +159,12 @@ export async function loadServiceBoard(
       tables,
       windowMinutes: SERVICE_SHIFT_WINDOW_MINUTES,
     }),
+    tableGroupPresets: (presetsResult.data ?? []).map((preset) => ({
+      id: preset.id,
+      maxSeats: preset.max_seats,
+      name: preset.name,
+      tableIds: preset.table_ids as string[],
+    })),
     waitlist,
   }
 }

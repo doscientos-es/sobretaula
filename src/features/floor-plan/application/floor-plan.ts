@@ -232,6 +232,22 @@ export const createTableGroupPreset = createServerFn({ method: 'POST' })
     return { presetId: preset.id as string }
   })
 
+const deleteTableGroupPresetInput = venueInput.extend({ presetId: z.string().uuid() })
+
+export const deleteTableGroupPreset = createServerFn({ method: 'POST' })
+  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .validator(deleteTableGroupPresetInput)
+  .handler(async ({ context, data }) => {
+    requireManager(context.tenantMembership.role)
+    const { error } = await createRequestSupabaseClient(context.tenantMembership.accessToken)
+      .from('table_group_presets')
+      .delete()
+      .eq('id', data.presetId)
+      .eq('tenant_id', data.tenantId)
+    if (error) throw new Error(`table_group_preset_delete_failed:${error.code}`)
+    return { presetId: data.presetId }
+  })
+
 export const createInitialFloorPlan = createServerFn({ method: 'POST' })
   .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
   .validator(initialFloorPlanInput)

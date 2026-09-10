@@ -29,6 +29,7 @@ import {
   createFloorPlanTable,
   createInitialFloorPlan,
   createTableGroupPreset,
+  deleteTableGroupPreset,
   saveFloorPlanVersion,
 } from '../application/floor-plan'
 import {
@@ -53,6 +54,7 @@ import {
   movePlacement,
   validateLayout,
 } from '../domain/geometry'
+import { inspectTableGroupPresetAvailability } from '../domain/table-group-presets'
 
 export function FloorPlanPage({
   data,
@@ -578,6 +580,18 @@ export function FloorPlanPage({
     }
   }
 
+  async function removeTableGroupPreset(presetId: string) {
+    if (!window.confirm('¿Eliminar esta combinación guardada?')) return
+    feedback.setPending()
+    try {
+      await deleteTableGroupPreset({ data: { presetId, tenantId, venueId } })
+      feedback.setSuccess('Combinación eliminada.')
+      reload()
+    } catch {
+      feedback.setError('No se ha podido eliminar la combinación.')
+    }
+  }
+
   async function saveVersion() {
     if (!activeVersion) return
     if (layoutIssues.length > 0) {
@@ -625,30 +639,6 @@ export function FloorPlanPage({
       reload()
     } catch {
       feedback.setError('No se ha podido guardar la versión del plano.')
-    }
-  }
-
-  async function savePreset() {
-    if (!activeArea || selectedIds.length < 2) {
-      feedback.setError('Selecciona al menos dos mesas para guardar una combinación.')
-      return
-    }
-    feedback.setPending()
-    try {
-      await createTableGroupPreset({
-        data: {
-          areaId: activeArea.id,
-          maxSeats: presetMaxSeats,
-          name: presetName,
-          tableIds: selectedIds.filter((id) => placements.some((table) => table.id === id)),
-          tenantId,
-          venueId,
-        },
-      })
-      feedback.setSuccess('Combinación guardada.')
-      await reload()
-    } catch (error) {
-      feedback.setError(error instanceof Error ? error.message : 'No se pudo guardar la combinación.')
     }
   }
 
@@ -1270,6 +1260,70 @@ export function FloorPlanPage({
                   </Button>
                 </div>
               )}
+              {selectedIds.length > 1 && (
+                <div className="border-border mt-4 grid gap-2 rounded-lg border p-3">
+                  <p className="text-sm font-medium">Guardar combinación</p>
+                  <Input
+                    aria-label="Nombre de la combinación"
+                    onChange={(event) => setPresetName(event.target.value)}
+                    placeholder="Nombre de la combinación"
+                    value={presetName}
+                  />
+                  <Input
+                    aria-label="Capacidad máxima de la combinación"
+                    min={1}
+                    onChange={(event) => setPresetMaxSeats(Number(event.target.value))}
+                    type="number"
+                    value={presetMaxSeats}
+                  />
+                  <Button
+                    disabled={feedback.pending}
+                    onClick={() => void saveTableGroupPreset()}
+                    type="button"
+                  >
+                    Guardar preset
+                  </Button>
+                </div>
+              )}
+              {activePresets.length > 0 && (
+                <div className="border-border mt-4 grid gap-2 rounded-lg border p-3">
+                  <p className="text-sm font-medium">Combinaciones guardadas</p>
+                  {activePresets.map((preset) => (
+                    <div className="flex gap-2" key={preset.id}>
+                      <Button
+                        className="min-w-0 flex-1"
+                        onClick={() => {
+                          const availability = inspectTableGroupPresetAvailability(
+                            preset,
+                            new Map(placements.map((table) => [table.id, 1])),
+                          )
+                          if (availability.missingTableIds.length > 0) {
+                            feedback.setError(
+                              `La combinación contiene ${availability.missingTableIds.length} mesa(s) que ya no existen en esta zona.`,
+                            )
+                            return
+                          }
+                          setSelectedIds(availability.availableTableIds)
+                          setSelectedId(availability.availableTableIds[0])
+                        }}
+                        type="button"
+                        variant="outline"
+                      >
+                        {preset.name} · {preset.maxSeats} pax
+                      </Button>
+                      <Button
+                        aria-label={`Eliminar combinación ${preset.name}`}
+                        disabled={feedback.pending}
+                        onClick={() => void removeTableGroupPreset(preset.id)}
+                        type="button"
+                        variant="ghost"
+                      >
+                        ×
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
               {selectedId &&
                 (() => {
                   const selected =
@@ -1445,18 +1499,6 @@ export function FloorPlanPage({
                     value={versionDeactivation}
                   />
                 </Field>
-                <div className="mt-4 rounded-lg border p-3">
-                  <p className="font-medium">Guardar combinación seleccionada</p>
-                  <p className="text-muted-foreground text-xs">{selectedIds.length} mesas seleccionadas</p>
-                  <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                    <Input aria-label="Nombre de combinación" onChange={(event) => setPresetName(event.target.value)} value={presetName} />
-                    <Input aria-label="Capacidad máxima" min={1} onChange={(event) => setPresetMaxSeats(Number(event.target.value))} type="number" value={presetMaxSeats} />
-                  </div>
-                  <Button className="mt-2" disabled={feedback.pending || selectedIds.length < 2} onClick={() => void savePreset()} type="button">
-                    Guardar combinación
-                  </Button>
-                  {activePresets.length > 0 && <p className="text-muted-foreground mt-2 text-xs">{activePresets.length} combinaciones guardadas en esta zona.</p>}
-                </div>
                 <div className="mt-3 flex gap-2">
                   <Button
                     disabled={history.past.length === 0}

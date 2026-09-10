@@ -6,10 +6,25 @@ export const SERVICE_SHIFT_WINDOW_MINUTES = 720
 export type ServiceTableStatus = 'free' | 'occupied' | 'reserved'
 
 export interface ServiceTable {
+  areaId?: string
   code: string
   id: string
   maxSeats: number
   minSeats: number
+}
+
+export interface ServiceTableGroupPreset {
+  id: string
+  maxSeats: number
+  name: string
+  tableIds: string[]
+}
+
+export interface ServicePresetPreflight {
+  capacity: number
+  missingTableIds: string[]
+  reason: 'available' | 'missing_tables' | 'occupied' | 'over_capacity'
+  tableIds: string[]
 }
 
 export interface ServiceSession {
@@ -49,6 +64,7 @@ export interface ServiceBoard {
   reservations: readonly ServiceReservation[]
   sessions: readonly ServiceSession[]
   tables: readonly ServiceTableState[]
+  tableGroupPresets?: readonly ServiceTableGroupPreset[]
   waitlist: readonly WaitlistEntry[]
 }
 
@@ -116,6 +132,26 @@ export function seatingCapacity(
     const table = tables.find((candidate) => candidate.id === tableId)
     return total + (table?.maxSeats ?? 0)
   }, 0)
+}
+
+export function inspectServiceTableGroupPreset(
+  preset: ServiceTableGroupPreset,
+  tables: readonly ServiceTableState[],
+): ServicePresetPreflight {
+  const states = preset.tableIds
+    .map((id) => tables.find((table) => table.id === id))
+    .filter((table): table is ServiceTableState => Boolean(table))
+  const missingTableIds = preset.tableIds.filter((id) => !states.some((table) => table.id === id))
+  const capacity = states.reduce((total, table) => total + table.maxSeats, 0)
+  const reason =
+    missingTableIds.length > 0
+      ? 'missing_tables'
+      : states.some((table) => table.status !== 'free')
+        ? 'occupied'
+        : capacity > preset.maxSeats
+          ? 'over_capacity'
+          : 'available'
+  return { capacity, missingTableIds, reason, tableIds: preset.tableIds }
 }
 
 /** Returns the codes of the requested tables that another open session already holds. */

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  inspectServiceTableGroupPreset,
   buildServiceTableStates,
   findSeatingConflicts,
   mergeTableIds,
@@ -127,5 +128,23 @@ describe('service board', () => {
     const pairA = { ...second, maxSeats: 3 }
     const pairB = { ...third, maxSeats: 3 }
     expect(suggestTableCombination([compact, pairA, pairB], 6)).toEqual(['table-1'])
+  })
+
+  it('explains why a saved table combination cannot be applied', () => {
+    const states = buildServiceTableStates({ now, reservations: [], sessions: [], tables })
+    const [first, second] = states
+    if (!first || !second) throw new Error('test fixture incomplete')
+    expect(
+      inspectServiceTableGroupPreset(
+        { id: 'preset', maxSeats: 8, name: 'Familia', tableIds: ['table-1', 'gone'] },
+        [first, second],
+      ).reason,
+    ).toBe('missing_tables')
+    expect(
+      inspectServiceTableGroupPreset(
+        { id: 'preset', maxSeats: 8, name: 'Familia', tableIds: ['table-1', 'table-2'] },
+        [{ ...first, status: 'occupied', sessionId: 'busy' }, second],
+      ).reason,
+    ).toBe('occupied')
   })
 })

@@ -16,7 +16,7 @@ import { Link } from '@tanstack/react-router'
 import { ArrowRight, Eye, EyeOff, Mail, Utensils } from 'lucide-react'
 import { useRef, useState, type FormEvent } from 'react'
 
-import abstractRestaurant from '@/shared/media/abstract-restaurant.avif'
+const abstractRestaurant = '/abstract-restaurant-image.avif'
 
 import { login } from '../application/authentication'
 import { isSafeInternalRedirect } from '../domain/auth'

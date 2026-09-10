@@ -40,6 +40,22 @@ import type { VerifactuEnv } from '../domain/invoice'
 
 const CURRENT_YEAR = new Date().getFullYear()
 
+function fiscalErrorMessage(error: unknown): string {
+  const code = error instanceof Error ? error.message : ''
+  const messages: Record<string, string> = {
+    fiscal_settings_invalid_address: 'Indica una dirección fiscal válida.',
+    fiscal_settings_invalid_city: 'Indica una población válida.',
+    fiscal_settings_invalid_country: 'Usa un código de país de dos letras, por ejemplo ES.',
+    fiscal_settings_invalid_nif: 'Revisa el NIF/CIF introducido.',
+    fiscal_settings_invalid_postal_code: 'El código postal debe tener 5 cifras.',
+    fiscal_settings_invalid_legal_name: 'Indica la razón social.',
+  }
+  return (
+    messages[code] ??
+    'No se han podido guardar los datos fiscales. Revisa los campos e inténtalo de nuevo.'
+  )
+}
+
 /** Billing cockpit: fiscal identity, series and the invoice book. */
 export function BillingPage({
   locale,
@@ -268,7 +284,7 @@ function FiscalSettingsCard({
       },
     })
       .then(onDone)
-      .catch(() => feedback.setError('No se han podido guardar los datos fiscales.'))
+      .catch((error) => feedback.setError(fiscalErrorMessage(error)))
   }
 
   return (

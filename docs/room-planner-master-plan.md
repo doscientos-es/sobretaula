@@ -25,7 +25,7 @@ del diseñador y su uso diario.
 - [x] Detectar conflictos entre layouts temporales.
 - [x] Añadir pisos, zonas y tipo de espacio (interior, terraza cubierta,
       terraza exterior), incluyendo el estado operativo de terrazas.
-- [ ] Documentar estados de carga, error, vacío, permisos y red inestable.
+- [x] Documentar estados de carga, error, vacío, permisos y red inestable.
 
 #### Contrato de estados del diseñador y la vista operativa
 
@@ -67,6 +67,15 @@ Los estados deben probarse en escritorio, tablet y móvil, con foco visible,
 - [x] Plano en vivo y vista lista intercambiables.
 - [x] Estados de mesa con color + icono + texto, nunca solo color.
 - [ ] Acciones rápidas: sentar, liberar, limpiar, bloquear, nota y asignar.
+
+Contrato de acciones rápidas: `sentar` sólo desde libre/reservada, `liberar`
+sólo desde ocupada, `limpiar` desde ocupada o pendiente de limpieza,
+`bloquear` requiere motivo y oculta la mesa del seating, `nota` no cambia el
+estado y `asignar` exige trabajador activo. Todas deben validar la versión de
+la mesa, usar `operation_id` idempotente, registrar actor/motivo y mostrar
+confirmación reversible; sin conexión sólo se encolan las transiciones
+seguras y se bloquean las que puedan perder una reserva o cuenta.
+
 - [x] Pisos/zonas filtrables y vista global para encargados.
 - [ ] Combinar/separar mesas preservando reservas y cuentas.
 - [x] Combinar/mover sesiones con validación de ocupación y capacidad en servidor.
@@ -99,6 +108,15 @@ cambio concurrente, pérdida de red, dispositivo con datos antiguos, terraza
 cerrada inesperadamente, mesa combinada con clientes sentados, cambio de
 numeración, layouts que cruzan medianoche y permisos por piso/zona.
 
+### Estados de interfaz acordados
+
+Todas las vistas operativas deben mostrar una señal textual para carga, error,
+vacío, permisos insuficientes y pérdida de red. Las mutaciones quedan
+deshabilitadas sin conexión cuando no existe una operación idempotente; las que
+sí tienen cola local muestran confirmación de guardado y se reintentan al
+reconectar. El plano mantiene además una alternativa de lista accesible para
+teclado y lectores de pantalla.
+
 ## Definition of Done
 
 Cada entrega debe tener pruebas de dominio y de interacción, estados de carga,
@@ -120,9 +138,12 @@ el servicio y latencia de sincronización.
 4. Cubrir validaciones de layout con pruebas unitarias y de UI.
 5. Ejecutar `pnpm lint`, `pnpm typecheck`, `pnpm test` y `pnpm build`.
 6. Conectar `table_group_presets` con el diseñador y servicio: el loader del
-   plano ya devuelve presets y existe la acción validada para guardarlos;
-   quedan la UI de aplicar/separar y el preflight de reservas, cuentas y
-   capacidad. La normalización local de nombres, IDs y capacidad ya está
-   cubierta por pruebas de dominio.
+   plano devuelve presets, se pueden guardar desde la selección y aplicar de
+   nuevo desde la lista accesible, o eliminarlos con confirmación. Queda el
+   preflight de reservas, cuentas y capacidad antes de separar o usar una
+   combinación en servicio; Servicio ya carga los presets y deshabilita los que
+   están obsoletos, ocupados o superan su capacidad máxima. La
+   normalización local de nombres, IDs y capacidad ya está cubierta por pruebas
+   de dominio.
    La decisión de persistencia de pisos y terrazas está documentada en
    [`adr/0008-pisos-y-terrazas.md`](./adr/0008-pisos-y-terrazas.md).

@@ -23,7 +23,11 @@ import {
   enqueueServiceOperation,
 } from '../application/service-offline-operations'
 import { closeSession, mergeSessions, moveSession, seatWalkIn } from '../application/table-service'
-import { suggestTableCombination, type ServiceBoard } from '../domain/service-board'
+import {
+  inspectServiceTableGroupPreset,
+  suggestTableCombination,
+  type ServiceBoard,
+} from '../domain/service-board'
 import { describeSession } from './service-labels'
 
 /** Everything the host does with the tables already selected on the plan. */
@@ -127,6 +131,40 @@ export function ServiceActions({
             <Button onClick={() => onSuggest(suggestedIds ?? [])} type="button" variant="outline">
               Seleccionar sugerencia
             </Button>
+          </div>
+        )}
+        {(board.tableGroupPresets?.length ?? 0) > 0 && (
+          <div className="border-border grid gap-2 border-t pt-4">
+            <p className="text-muted-foreground text-xs">
+              Combinaciones guardadas · solo se pueden aplicar si las mesas siguen libres.
+            </p>
+            {board.tableGroupPresets?.map((preset) => {
+              const preflight = inspectServiceTableGroupPreset(preset, board.tables)
+              const preflightLabel =
+                preflight.reason === 'available'
+                  ? 'Disponible'
+                  : preflight.reason === 'missing_tables'
+                    ? 'Faltan mesas del preset'
+                    : preflight.reason === 'occupied'
+                      ? 'Hay mesas ocupadas'
+                      : 'Supera la capacidad máxima'
+              return (
+                <div className="grid gap-1" key={preset.id}>
+                  <Button
+                    aria-label={`${preset.name}: ${preflightLabel}`}
+                    disabled={preflight.reason !== 'available'}
+                    onClick={() => onSuggest(preset.tableIds)}
+                    type="button"
+                    variant="outline"
+                  >
+                    {preset.name} · {preflight.capacity} pax
+                  </Button>
+                  {preflight.reason !== 'available' ? (
+                    <p className="text-muted-foreground text-xs">{preflightLabel}</p>
+                  ) : null}
+                </div>
+              )
+            })}
           </div>
         )}
       </CardHeader>

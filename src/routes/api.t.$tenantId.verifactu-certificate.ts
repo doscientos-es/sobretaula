@@ -4,7 +4,7 @@ import { getAuthenticatedPrincipal } from '@/features/auth/infrastructure/server
 import {
   storeVerifactuCertificate,
   VerifactuCertificateError,
-} from '@/features/invoices/application/verifactu-certificate.server'
+} from '@/features/invoices/application/verifactu-certificate'
 
 const MAX_CERTIFICATE_BYTES = 2 * 1024 * 1024
 

@@ -104,15 +104,15 @@ correctamente y genera el artefacto Nitro/Vercel. La suite global actual queda
 en 48 archivos y 207 pruebas correctas; las 3 RLS continúan omitidas por el
 conector no autorizado.
 
-| Comando                | Resultado                                                                 |
-| ---------------------- | ------------------------------------------------------------------------- |
-| `pnpm format:check`    | Pendiente por 5 archivos ajenos al alcance actual                         |
-| `pnpm lint`            | Correcto                                                                  |
-| `pnpm structure:check` | Pendiente por 2 nombres `.server*` heredados y `abstract-restaurant.avif` |
-| `pnpm test`            | 38 archivos y 177 pruebas correctas; 1 archivo y 3 pruebas RLS omitidas   |
-| `pnpm typecheck`       | Correcto                                                                  |
-| `pnpm quality`         | Correcto                                                                  |
-| `pnpm build`           | Correcto; solo avisos de Vite/chunks                                      |
+| Comando                | Resultado                                                                                    |
+| ---------------------- | -------------------------------------------------------------------------------------------- |
+| `pnpm format:check`    | Pendiente por 5 archivos ajenos al alcance actual                                            |
+| `pnpm lint`            | Correcto                                                                                     |
+| `pnpm structure:check` | Correcto localmente; el asset de login vive en `public/` y los módulos usan nombres estándar |
+| `pnpm test`            | 38 archivos y 177 pruebas correctas; 1 archivo y 3 pruebas RLS omitidas                      |
+| `pnpm typecheck`       | Correcto                                                                                     |
+| `pnpm quality`         | Correcto                                                                                     |
+| `pnpm build`           | Correcto; solo avisos de Vite/chunks                                                         |
 
 Las pruebas de integración de RLS (`tenant-rls.test.ts`) requieren un proyecto
 Supabase de pruebas dedicado (`SUPABASE_TEST_URL`,
@@ -132,3 +132,9 @@ evidencia.
 - Selección múltiple con Ctrl/Cmd y limpieza con Escape.
 - Validación visual de mesas que bloquean puertas o salidas, cubierta con
   pruebas de dominio.
+- Previsualización del lienzo en escritorio, tablet y móvil mediante anchos
+  objetivo, sin alterar coordenadas ni datos persistidos.
+- Publicación programada con inicio y fin opcional, validación de intervalos y
+  protección frente a versiones temporales inválidas.
+- Presets de combinaciones: guardar desde selección y reaplicar mesas de una
+  zona desde la lista de combinaciones guardadas.
