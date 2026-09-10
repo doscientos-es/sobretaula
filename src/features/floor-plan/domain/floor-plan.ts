@@ -37,6 +37,24 @@ export interface FloorPlanVersion {
   id: string
   name: string
   widthCm: number
+  activeFrom?: string
+  activeTo?: string | null
+}
+
+export function selectFloorPlanVersion(
+  versions: readonly FloorPlanVersion[],
+  areaId: string,
+  at = new Date(),
+): FloorPlanVersion | undefined {
+  const timestamp = at.getTime()
+  return versions
+    .filter((version) => version.areaId === areaId)
+    .filter((version) => {
+      const from = version.activeFrom ? new Date(version.activeFrom).getTime() : Number.NEGATIVE_INFINITY
+      const to = version.activeTo ? new Date(version.activeTo).getTime() : Number.POSITIVE_INFINITY
+      return !Number.isNaN(from) && !Number.isNaN(to) && from <= timestamp && timestamp < to
+    })
+    .sort((a, b) => (b.activeFrom ?? '').localeCompare(a.activeFrom ?? ''))[0]
 }
 
 export interface FloorPlanTablePlacement extends PlanPlacement {

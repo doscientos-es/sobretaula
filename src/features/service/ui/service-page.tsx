@@ -12,7 +12,7 @@ import {
 import { RefreshCw } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
-import { groupAreasByFloor, type FloorPlanData } from '@/features/floor-plan'
+import { groupAreasByFloor, selectFloorPlanVersion, type FloorPlanData } from '@/features/floor-plan'
 import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
 
 import type { ServiceBoard } from '../domain/service-board'
@@ -45,7 +45,7 @@ export function ServicePage({
     }
   }, [reload])
   const activeVersion =
-    plan.versions.find((version) => selectedAreaId === 'all' || version.areaId === selectedAreaId) ??
+    (selectedAreaId === 'all' ? plan.versions[0] : selectFloorPlanVersion(plan.versions, selectedAreaId)) ??
     (selectedAreaId === 'all' ? plan.versions[0] : undefined)
   const placements = activeVersion
     ? plan.placements.filter((placement) => placement.floorPlanVersionId === activeVersion.id)

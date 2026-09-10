@@ -1,15 +1,15 @@
 import { describe, expect, it } from 'vitest'
 
-import { groupAreasByFloor } from './floor-plan'
+import { selectFloorPlanVersion } from './floor-plan'
 
-describe('floor plan areas', () => {
-  it('groups areas by floor and keeps legacy areas compatible', () => {
-    const groups = groupAreasByFloor([
-      { id: 'terrace', name: 'Terraza', venueId: 'v', isOnlineBookable: true, floorNumber: 1 },
-      { id: 'main', name: 'Sala', venueId: 'v', isOnlineBookable: true, floorNumber: 0 },
-      { id: 'legacy', name: 'Antigua', venueId: 'v', isOnlineBookable: true },
-    ])
-    expect(groups.map((group) => group.label)).toEqual(['Sin planta asignada', 'Planta baja', 'Planta 1'])
-    expect(groups[1]?.areas[0]?.id).toBe('main')
+describe('floor plan versions', () => {
+  it('selects the scheduled version active at a given time', () => {
+    const versions = [
+      { id: 'normal', areaId: 'a', name: 'Normal', widthCm: 100, heightCm: 100, activeFrom: '2026-01-01T00:00:00Z', activeTo: '2026-06-01T00:00:00Z' },
+      { id: 'summer', areaId: 'a', name: 'Terraza verano', widthCm: 100, heightCm: 100, activeFrom: '2026-06-01T00:00:00Z' },
+    ]
+    expect(selectFloorPlanVersion(versions, 'a', new Date('2026-03-01T00:00:00Z'))?.id).toBe('normal')
+    expect(selectFloorPlanVersion(versions, 'a', new Date('2026-07-01T00:00:00Z'))?.id).toBe('summer')
+    expect(selectFloorPlanVersion(versions, 'missing', new Date('2026-07-01T00:00:00Z'))).toBeUndefined()
   })
 })
