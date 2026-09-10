@@ -141,6 +141,42 @@ export function PlatformTenantDetailsPage({
       .catch(() => statusFeedback.setError('No se ha podido actualizar el estado del tenant.'))
   }
 
+  function deleteTenant(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (deletionFeedback.pending) return
+    if (deletionConfirmation !== tenant.tenantSlug) return
+    const values = new FormData(event.currentTarget)
+    if (
+      !window.confirm(
+        `Vas a borrar PERMANENTEMENTE ${tenant.tenantName}. Esta acción no se puede deshacer.`,
+      )
+    ) {
+      return
+    }
+    deletionFeedback.setPending()
+    void deletePlatformTenant({
+      data: {
+        reason: formString(values, 'reason'),
+        tenantId: tenant.tenantId,
+      },
+    })
+      .then(() => {
+        void navigate({ to: '/admin/tenants' })
+      })
+      .catch((error: unknown) => {
+        const message = error instanceof Error ? error.message : ''
+        if (message === 'tenant_not_suspended') {
+          deletionFeedback.setError('El tenant debe estar suspendido para poder borrarlo.')
+        } else if (message === 'tenant_has_retained_records') {
+          deletionFeedback.setError(
+            'No se puede borrar: existen facturas que deben conservarse por obligación legal.',
+          )
+        } else {
+          deletionFeedback.setError('No se ha podido borrar el tenant.')
+        }
+      })
+  }
+
   return (
     <main className="st-platform-page space-y-6">
       <PageHeader className="border-border/70 border-b pb-6">
@@ -420,6 +456,57 @@ export function PlatformTenantDetailsPage({
             </form>
           </CardContent>
         </Card>
+
+        {tenant.tenantStatus === 'suspended' && (
+          <Card className="border-destructive/40 mt-6">
+            <CardHeader>
+              <CardTitle className="text-destructive">Borrado permanente</CardTitle>
+              <CardDescription>
+                Elimina el tenant y todos sus datos operativos de forma irreversible. Solo
+                disponible con el tenant suspendido y sin facturas que deban conservarse por
+                obligación legal.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form className="grid gap-4" onSubmit={deleteTenant}>
+                <Field>
+                  <FieldLabel htmlFor="tenant-deletion-reason">Motivo de la acción</FieldLabel>
+                  <Input
+                    id="tenant-deletion-reason"
+                    minLength={5}
+                    name="reason"
+                    placeholder="Motivo obligatorio"
+                    required
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="tenant-deletion-confirmation">
+                    Escribe <strong>{tenant.tenantSlug}</strong> para confirmar
+                  </FieldLabel>
+                  <Input
+                    id="tenant-deletion-confirmation"
+                    autoComplete="off"
+                    onChange={(event) => setDeletionConfirmation(event.currentTarget.value)}
+                    placeholder={tenant.tenantSlug}
+                    required
+                    value={deletionConfirmation}
+                  />
+                </Field>
+                <div>
+                  <Button
+                    className="border-destructive/40 text-destructive hover:bg-destructive/10"
+                    disabled={deletionFeedback.pending || deletionConfirmation !== tenant.tenantSlug}
+                    type="submit"
+                    variant="outline"
+                  >
+                    Borrar tenant definitivamente
+                  </Button>
+                  <FormFeedback pendingLabel="Borrando tenant…" state={deletionFeedback.state} />
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        )}
       </section>
     </main>
   )

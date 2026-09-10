@@ -16,6 +16,7 @@ export type {
 export {
   getPlatformOperators,
   acceptPlatformInvitation,
+  deletePlatformTenant,
   invitePlatformOperator,
   revokePlatformOperator,
   updatePlatformOperatorRole,
