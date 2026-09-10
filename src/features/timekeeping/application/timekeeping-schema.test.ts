@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
-import { terminalTimeEventInput, timekeepingHolidayInput, timekeepingTermInput } from './timekeeping-schema'
+import {
+  terminalTimeEventInput,
+  timekeepingHolidayInput,
+  timekeepingTermInput,
+} from './timekeeping-schema'
 
 const event = {
   employeeId: '00000000-0000-4000-8000-000000000001',
