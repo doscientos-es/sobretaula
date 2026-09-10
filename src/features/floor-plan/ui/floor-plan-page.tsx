@@ -1091,7 +1091,8 @@ export function FloorPlanPage({
                     ? `${selectedIds.length} elementos seleccionados · `
                     : 'Seleccionado: '}
                   {placements.find((item) => item.id === selectedId)?.code ?? 'elemento'} · usa las
-                  flechas para ajustar mesas. Mantén Ctrl/Cmd para seleccionar varios.
+                  flechas para ajustar. Pulsa R para girar y Ctrl/Cmd+D para duplicar; mantén
+                  Ctrl/Cmd para seleccionar varios.
                 </output>
               )}
               {selectedId && (

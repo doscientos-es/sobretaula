@@ -45,9 +45,9 @@ del diseñador y su uso diario.
 ### P2 · Operación de turno
 
 - [ ] Plano en vivo y vista lista intercambiables.
-- [ ] Estados de mesa con color + icono + texto, nunca solo color.
+- [x] Estados de mesa con color + icono + texto, nunca solo color.
 - [ ] Acciones rápidas: sentar, liberar, limpiar, bloquear, nota y asignar.
-- [ ] Pisos/zonas filtrables y vista global para encargados.
+- [x] Pisos/zonas filtrables y vista global para encargados.
 - [ ] Combinar/separar mesas preservando reservas y cuentas.
 - [x] Combinar/mover sesiones con validación de ocupación y capacidad en servidor.
 - [x] Filtrado por zona/planta y resumen de ocupación.
