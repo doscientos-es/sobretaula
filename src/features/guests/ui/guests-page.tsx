@@ -15,6 +15,7 @@ import { useEffect, useState } from 'react'
 import {
   addGuestNote,
   getGuestTags,
+  mergeGuests,
   searchGuests,
   toggleGuestTag,
   type GuestSummary,
@@ -26,15 +27,30 @@ export function GuestsPage({ tenantId, venueId }: { tenantId: string; venueId: s
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState<string | null>(null)
   const [note, setNote] = useState('')
+  const [noteCategory, setNoteCategory] = useState<
+    'general' | 'preference' | 'allergy' | 'incident'
+  >('general')
+  const [error, setError] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [mergeTarget, setMergeTarget] = useState('')
+  const [reloadToken, setReloadToken] = useState(0)
   const [tags, setTags] = useState<Array<{ id: string; label: string }>>([])
   useEffect(() => {
-    void getGuestTags({ data: { tenantId } }).then(setTags)
-  }, [tenantId])
+    void getGuestTags({ data: { tenantId } })
+      .then(setTags)
+      .catch(() => setError('No se han podido cargar las etiquetas.'))
+  }, [reloadToken, tenantId])
   useEffect(() => {
     let active = true
     void searchGuests({ data: { tenantId, venueId, query } })
       .then((result) => {
         if (active) setGuests(result)
+      })
+      .catch(() => {
+        if (active) {
+          setGuests([])
+          setError('No se han podido cargar los clientes. Reintenta la búsqueda.')
+        }
       })
       .finally(() => {
         if (active) setLoading(false)
@@ -42,7 +58,7 @@ export function GuestsPage({ tenantId, venueId }: { tenantId: string; venueId: s
     return () => {
       active = false
     }
-  }, [query, tenantId, venueId])
+  }, [query, reloadToken, tenantId, venueId])
   return (
     <section className="space-y-6">
       <PageHeader>
@@ -68,6 +84,23 @@ export function GuestsPage({ tenantId, venueId }: { tenantId: string; venueId: s
         <CardContent>
           {loading ? (
             <p className="text-muted-foreground text-sm">Cargando clientes…</p>
+          ) : error ? (
+            <div className="grid gap-2" role="alert">
+              <p className="text-destructive text-sm">{error}</p>
+              <Button
+                className="w-fit"
+                onClick={() => {
+                  setError(null)
+                  setLoading(true)
+                  setReloadToken((value) => value + 1)
+                }}
+                size="sm"
+                type="button"
+                variant="outline"
+              >
+                Reintentar
+              </Button>
+            </div>
           ) : guests.length ? (
             <ul className="divide-border divide-y">
               {guests.map((guest) => (
@@ -115,6 +148,67 @@ export function GuestsPage({ tenantId, venueId }: { tenantId: string; venueId: s
                           )
                         })}
                       </div>
+                      <div className="flex flex-wrap items-center gap-2 border-t pt-3">
+                        <label
+                          className="text-muted-foreground text-xs"
+                          htmlFor={`merge-${guest.id}`}
+                        >
+                          Fusionar este cliente en
+                        </label>
+                        <select
+                          className="border-border rounded-md border px-2 py-1 text-sm"
+                          id={`merge-${guest.id}`}
+                          onChange={(event) => setMergeTarget(event.target.value)}
+                          value={mergeTarget}
+                        >
+                          <option value="">Selecciona cliente destino</option>
+                          {guests
+                            .filter((candidate) => candidate.id !== guest.id)
+                            .map((candidate) => (
+                              <option key={candidate.id} value={candidate.id}>
+                                {candidate.name}
+                              </option>
+                            ))}
+                        </select>
+                        <Button
+                          disabled={!mergeTarget || saving}
+                          onClick={() =>
+                            void (async () => {
+                              if (
+                                !window.confirm(
+                                  '¿Fusionar este cliente? Esta acción no se puede deshacer.',
+                                )
+                              )
+                                return
+                              setSaving(true)
+                              try {
+                                await mergeGuests({
+                                  data: {
+                                    sourceGuestId: guest.id,
+                                    targetGuestId: mergeTarget,
+                                    tenantId,
+                                  },
+                                })
+                                setSelected(null)
+                                setMergeTarget('')
+                                setGuests(
+                                  await searchGuests({ data: { tenantId, venueId, query } }),
+                                )
+                                setError(null)
+                              } catch {
+                                setError('No se ha podido fusionar el cliente.')
+                              } finally {
+                                setSaving(false)
+                              }
+                            })()
+                          }
+                          size="sm"
+                          type="button"
+                          variant="outline"
+                        >
+                          Fusionar
+                        </Button>
+                      </div>
                       {guest.history.length ? (
                         <div className="grid gap-1 text-xs">
                           {guest.history.slice(0, 5).map((entry) => (
@@ -132,14 +226,45 @@ export function GuestsPage({ tenantId, venueId }: { tenantId: string; venueId: s
                           placeholder="Añadir nota interna…"
                           value={note}
                         />
+                        <select
+                          aria-label="Categoría de la nota"
+                          className="border-border rounded-md border px-2 text-sm"
+                          onChange={(event) =>
+                            setNoteCategory(event.target.value as typeof noteCategory)
+                          }
+                          value={noteCategory}
+                        >
+                          <option value="general">General</option>
+                          <option value="preference">Preferencia</option>
+                          <option value="allergy">Alergia</option>
+                          <option value="incident">Incidencia</option>
+                        </select>
                         <Button
-                          disabled={!note.trim()}
+                          disabled={!note.trim() || saving}
                           onClick={() =>
-                            void addGuestNote({
-                              data: { tenantId, guestId: guest.id, body: note },
-                            }).then(() => {
-                              setNote('')
-                            })
+                            void (async () => {
+                              setSaving(true)
+                              try {
+                                await addGuestNote({
+                                  data: {
+                                    body: note,
+                                    category: noteCategory,
+                                    guestId: guest.id,
+                                    tenantId,
+                                  },
+                                })
+                                setNote('')
+                                setError(null)
+                                const refreshed = await searchGuests({
+                                  data: { tenantId, venueId, query },
+                                })
+                                setGuests(refreshed)
+                              } catch {
+                                setError('No se ha podido guardar la nota.')
+                              } finally {
+                                setSaving(false)
+                              }
+                            })()
                           }
                           size="sm"
                           type="button"

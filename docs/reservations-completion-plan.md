@@ -54,8 +54,8 @@ comensales tanto en flujos internos como públicos. El trigger evita depender de
 que cada pantalla recuerde escribir auditoría y RLS limita la lectura al tenant.
 La agenda interna ya expone esta línea temporal al desplegar cada reserva, con
 actor, fecha, tipo de evento, filtro por tipo, cambios saneados y motivo opcional
-para cancelaciones y no-show. El siguiente paso de producto es sustituir el
-prompt por un formulario accesible dentro de la agenda.
+para cancelaciones y no-show. El motivo se recoge mediante un formulario
+accesible integrado en la propia fila de la agenda.
 
 ## 3. Decisiones necesarias antes de R1
 
@@ -117,9 +117,12 @@ probada contra un proyecto de Supabase dedicado.
 2. Crear `guest_notes` con categoría, visibilidad, autor y fecha, para no perder
    incidencias al sobrescribir la nota actual. Migrar `notes`/`allergies` de forma
    explícita o mantener un resumen temporal compatible. **Tabla histórica creada en
-   `20260910000029`; falta exponerla desde la ficha.**
+   `20260910000029` y expuesta desde la ficha con categorías, errores y refresco
+   tras guardar.**
 3. Canonizar teléfono y email y buscar por ambos dentro del tenant antes de crear
-   un perfil. Si faltan ambos, avisar de posible duplicado deliberado.
+   un perfil. Si faltan ambos, avisar de posible duplicado deliberado. La ficha
+   ya permite fusionar dos clientes desde una RPC atómica que conserva reservas,
+   notas y etiquetas.
 4. Registrar canal de contacto y consentimiento; aplicar la política aprobada de
    acceso, exportación, retención y anonimización.
 

@@ -78,6 +78,7 @@ export function FloorPlanPage({
   const [tableYCm, setTableYCm] = useState(50)
   const [versionName, setVersionName] = useState('Nueva versión')
   const [versionActivation, setVersionActivation] = useState('')
+  const [versionDeactivation, setVersionDeactivation] = useState('')
   const [draggingTableId, setDraggingTableId] = useState<string>()
   const [selectedId, setSelectedId] = useState<string>()
   const [selectedIds, setSelectedIds] = useState<string[]>([])
@@ -560,6 +561,14 @@ export function FloorPlanPage({
       return
     }
     const activeFrom = activationDate.toISOString()
+    const deactivationDate = versionDeactivation ? new Date(versionDeactivation) : undefined
+    if (
+      deactivationDate &&
+      (Number.isNaN(deactivationDate.getTime()) || deactivationDate <= activationDate)
+    ) {
+      feedback.setError('La fecha de fin debe ser posterior a la activación.')
+      return
+    }
     const scheduleConflicts = findVersionScheduleConflicts([
       ...data.versions,
       { ...activeVersion, id: 'draft-version', activeFrom },
@@ -575,6 +584,7 @@ export function FloorPlanPage({
       await saveFloorPlanVersion({
         data: {
           activeFrom,
+          activeTo: deactivationDate?.toISOString() ?? null,
           elements,
           name: versionName,
           placements,
@@ -1338,6 +1348,15 @@ export function FloorPlanPage({
                     required
                     type="datetime-local"
                     value={versionActivation}
+                  />
+                </Field>
+                <Field className="mt-3">
+                  <FieldLabel htmlFor="version-deactivation">Activar hasta (opcional)</FieldLabel>
+                  <Input
+                    id="version-deactivation"
+                    onChange={(event) => setVersionDeactivation(event.target.value)}
+                    type="datetime-local"
+                    value={versionDeactivation}
                   />
                 </Field>
                 <div className="mt-3 flex gap-2">

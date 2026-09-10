@@ -72,6 +72,7 @@ const planElementInput = z.object({
 })
 const saveFloorPlanVersionInput = venueInput.extend({
   activeFrom: z.string().datetime({ offset: true }),
+  activeTo: z.string().datetime({ offset: true }).nullable().optional(),
   elements: z.array(planElementInput).max(100),
   name: z.string().trim().min(1).max(100),
   placements: z.array(placementInput).max(150),
@@ -348,6 +349,7 @@ export const saveFloorPlanVersion = createServerFn({ method: 'POST' })
       .insert({
         area_id: source.area_id,
         active_from: data.activeFrom,
+        active_to: data.activeTo ?? null,
         created_by: context.tenantMembership.userId,
         height_cm: source.height_cm,
         name: data.name,

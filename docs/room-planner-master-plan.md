@@ -58,7 +58,8 @@ Los estados deben probarse en escritorio, tablet y móvil, con foco visible,
 - [x] Propiedades de elemento en panel lateral y numeración automática segura.
 - [x] Validación visual de solapes, límites y salidas bloqueadas; los pasillos
       quedan para P2.
-- [ ] Previsualización tablet/móvil y publicación programada.
+- [ ] Previsualización tablet/móvil.
+- [x] Publicación programada con inicio y fin opcional de vigencia.
 - [x] Selección, duplicado, eliminación y edición de propiedades.
 
 ### P2 · Operación de turno

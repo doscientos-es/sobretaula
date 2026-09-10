@@ -112,6 +112,14 @@ describe('floor plan versions', () => {
       'current',
     )
   })
+
+  it('does not report malformed schedules as conflicts', () => {
+    const versions = [
+      { id: 'bad', areaId: 'room', name: 'Bad', widthCm: 1, heightCm: 1, activeFrom: 'invalid' },
+      { id: 'good', areaId: 'room', name: 'Good', widthCm: 1, heightCm: 1 },
+    ]
+    expect(findVersionScheduleConflicts(versions)).toEqual([])
+  })
 })
 
 describe('floor plan space types', () => {

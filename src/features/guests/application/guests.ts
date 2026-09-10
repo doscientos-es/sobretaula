@@ -25,6 +25,11 @@ const tagInput = z.object({
   tagId: z.string().uuid(),
 })
 const tagsInput = z.object({ tenantId: z.string().uuid() })
+const mergeInput = z.object({
+  tenantId: z.string().uuid(),
+  sourceGuestId: z.string().uuid(),
+  targetGuestId: z.string().uuid(),
+})
 
 export interface GuestSummary {
   id: string
@@ -214,4 +219,20 @@ export const toggleGuestTag = createServerFn({ method: 'POST' })
     })
     if (error) throw new Error(`guest_tag_assign_failed:${error.code}`)
     return true
+  })
+
+export const mergeGuests = createServerFn({ method: 'POST' })
+  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .validator(mergeInput)
+  .handler(async ({ context, data }) => {
+    const { error } = await createRequestSupabaseClient(context.tenantMembership.accessToken).rpc(
+      'merge_guests',
+      {
+        p_source_guest_id: data.sourceGuestId,
+        p_target_guest_id: data.targetGuestId,
+        p_tenant_id: data.tenantId,
+      },
+    )
+    if (error) throw new Error(`guest_merge_failed:${error.code}`)
+    return data.targetGuestId
   })

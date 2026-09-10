@@ -71,12 +71,13 @@ export function selectFloorPlanVersion(
   const timestamp = at.getTime()
   return versions
     .filter((version) => version.areaId === areaId)
+    .filter(isFloorPlanVersionScheduleValid)
     .filter((version) => {
       const from = version.activeFrom
         ? new Date(version.activeFrom).getTime()
         : Number.NEGATIVE_INFINITY
       const to = version.activeTo ? new Date(version.activeTo).getTime() : Number.POSITIVE_INFINITY
-      return !Number.isNaN(from) && !Number.isNaN(to) && from <= timestamp && timestamp < to
+      return from <= timestamp && timestamp < to
     })
     .sort((a, b) => (b.activeFrom ?? '').localeCompare(a.activeFrom ?? ''))[0]
 }
@@ -87,6 +88,7 @@ export function selectActiveFloorPlanVersion(
 ): FloorPlanVersion | undefined {
   const timestamp = at.getTime()
   return versions
+    .filter(isFloorPlanVersionScheduleValid)
     .filter((version) => {
       const from = version.activeFrom
         ? new Date(version.activeFrom).getTime()
@@ -102,6 +104,7 @@ export function findVersionScheduleConflicts(
 ): Array<{ areaId: string; firstVersionId: string; secondVersionId: string }> {
   const conflicts: Array<{ areaId: string; firstVersionId: string; secondVersionId: string }> = []
   const byArea = new Map<string, FloorPlanVersion[]>()
+  for (const version of versions) if (!isFloorPlanVersionScheduleValid(version)) continue
   for (const version of versions)
     byArea.set(version.areaId, [...(byArea.get(version.areaId) ?? []), version])
   for (const [areaId, areaVersions] of byArea) {
