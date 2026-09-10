@@ -55,7 +55,10 @@ export const getAccount = createServerFn({ method: 'GET' })
     const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
     const account = await loadAccount(supabase, data)
     if (!account) throw new Response('Not found', { status: 404 })
-    return { ...account, totals: computeAccountTotals(account.lines, account.payments, account.session.discountCents) }
+    return {
+      ...account,
+      totals: computeAccountTotals(account.lines, account.payments, account.session.discountCents),
+    }
   })
 
 /** Adds a line with the catalog price and VAT frozen at this very moment. */
@@ -92,10 +95,25 @@ export const addOrderItem = createServerFn({ method: 'POST' })
     const { data: menuItem, error: menuError } = menuResult
     if (menuError || !menuItem) throw new Response('Not found', { status: 404 })
 
+    if (data.operationId) {
+      const { data: existingOrder, error: operationLookupError } = await supabase
+        .from('orders')
+        .select('id, order_items(id)')
+        .eq('operation_id', data.operationId)
+        .eq('tenant_id', data.tenantId)
+        .eq('session_id', sessionId)
+        .maybeSingle()
+      if (operationLookupError)
+        throw new Error(`account_operation_lookup_failed:${operationLookupError.code}`)
+      const existingItemId = (existingOrder?.order_items as { id: string }[] | null)?.[0]?.id
+      if (existingItemId) return { orderItemId: existingItemId }
+    }
+
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .insert({
         created_by: context.tenantMembership.userId,
+        operation_id: data.operationId ?? null,
         session_id: sessionId,
         tenant_id: data.tenantId,
       })
@@ -132,7 +150,10 @@ export const addOrderItem = createServerFn({ method: 'POST' })
       .eq('tenant_id', data.tenantId)
       .eq('menu_item_id', menuItem.id as string)
     if (recipeResult.error && recipeResult.error.code !== '42P01') {
-      await supabase.from('order_items').delete().eq('id', item.id as string)
+      await supabase
+        .from('order_items')
+        .delete()
+        .eq('id', item.id as string)
       await supabase.from('orders').delete().eq('id', order.id)
       throw new Error(`recipe_load_failed:${recipeResult.error.code}`)
     }
@@ -151,7 +172,10 @@ export const addOrderItem = createServerFn({ method: 'POST' })
         })),
       )
       if (inventoryError) {
-        await supabase.from('order_items').delete().eq('id', item.id as string)
+        await supabase
+          .from('order_items')
+          .delete()
+          .eq('id', item.id as string)
         await supabase.from('orders').delete().eq('id', order.id)
         throw new Error(`inventory_sale_failed:${inventoryError.code}`)
       }
@@ -184,7 +208,7 @@ export const updateOrderItemStatus = createServerFn({ method: 'POST' })
     return { orderItemId: data.orderItemId, status: data.status }
   })
 
-/** Lines can only leave the account while nothing has been charged yet. */
+/** Anulations remain in the order history and reverse stock before any payment exists. */
 export const removeOrderItem = createServerFn({ method: 'POST' })
   .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
   .validator(removeOrderItemInput)
@@ -203,11 +227,15 @@ export const removeOrderItem = createServerFn({ method: 'POST' })
 
     const { data: itemRow, error: itemLookupError } = await supabase
       .from('order_items')
-      .select('id, order_id, menu_item_id, quantity')
+      .select('id, menu_item_id, order_id, quantity, status, orders!inner(session_id)')
       .eq('id', data.orderItemId)
       .eq('tenant_id', data.tenantId)
+      .eq('orders.session_id', sessionId)
       .single()
     if (itemLookupError || !itemRow) throw new Response('Not found', { status: 404 })
+    if (itemRow.status === 'cancelled') return { orderItemId: data.orderItemId }
+    if (context.tenantMembership.role === 'waiter' && itemRow.status === 'served')
+      throw new Response('Manager approval required', { status: 403 })
 
     if (itemRow.menu_item_id) {
       const { data: recipeLines, error: recipeError } = await supabase
@@ -225,7 +253,8 @@ export const removeOrderItem = createServerFn({ method: 'POST' })
             ingredient_id: line.ingredient_id,
             kind: 'adjustment',
             quantity:
-              Number(line.quantity) * Number(itemRow.quantity) *
+              Number(line.quantity) *
+              Number(itemRow.quantity) *
               (1 + Number(line.waste_percent ?? 0) / 100),
             reason: `Reversión de comanda ${itemRow.order_id}`,
             created_by: context.tenantMembership.userId,
@@ -235,24 +264,22 @@ export const removeOrderItem = createServerFn({ method: 'POST' })
       }
     }
 
-    const { error: deleteError } = await supabase
-      .from('order_items')
-      .delete()
-      .eq('id', itemRow.id as string)
-    if (deleteError) throw new Error(`account_item_remove_failed:${deleteError.code}`)
+    const { error: auditError } = await supabase.from('order_item_cancellations').insert({
+      cancelled_by: context.tenantMembership.userId,
+      order_item_id: itemRow.id as string,
+      reason: data.reason,
+      tenant_id: data.tenantId,
+      venue_id: data.venueId,
+    })
+    if (auditError) throw new Error(`account_item_cancellation_audit_failed:${auditError.code}`)
 
-    // Si la comanda se queda sin líneas, desaparece con ellas.
-    const { count: remaining } = await supabase
+    const { error: cancellationError } = await supabase
       .from('order_items')
-      .select('id', { count: 'exact', head: true })
-      .eq('order_id', itemRow.order_id as string)
-    if ((remaining ?? 0) === 0) {
-      await supabase
-        .from('orders')
-        .delete()
-        .eq('id', itemRow.order_id as string)
-        .eq('tenant_id', data.tenantId)
-    }
+      .update({ status: 'cancelled' })
+      .eq('id', itemRow.id as string)
+      .eq('tenant_id', data.tenantId)
+    if (cancellationError)
+      throw new Error(`account_item_cancellation_failed:${cancellationError.code}`)
     return { orderItemId: data.orderItemId }
   })
 
@@ -267,7 +294,11 @@ export const recordPayment = createServerFn({ method: 'POST' })
 
     const account = await loadAccount(supabase, data)
     if (!account) throw new Response('Not found', { status: 404 })
-    const { balanceCents } = computeAccountTotals(account.lines, account.payments, account.session.discountCents)
+    const { balanceCents } = computeAccountTotals(
+      account.lines,
+      account.payments,
+      account.session.discountCents,
+    )
     if (data.amountCents > balanceCents)
       throw new Response('Payment exceeds balance', { status: 422 })
 
@@ -291,29 +322,77 @@ export const refundPayment = createServerFn({ method: 'POST' })
   .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
   .validator(refundPaymentInput)
   .handler(async ({ context, data }) => {
-    if (!['owner', 'manager'].includes(context.tenantMembership.role)) throw new Response('Forbidden', { status: 403 })
+    if (!['owner', 'manager'].includes(context.tenantMembership.role))
+      throw new Response('Forbidden', { status: 403 })
     const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
-    const { data: payment, error: paymentError } = await supabase.from('payments').select('amount_cents').eq('id', data.paymentId).eq('tenant_id', data.tenantId).eq('session_id', data.sessionId).single()
+    const { data: payment, error: paymentError } = await supabase
+      .from('payments')
+      .select('amount_cents')
+      .eq('id', data.paymentId)
+      .eq('tenant_id', data.tenantId)
+      .eq('session_id', data.sessionId)
+      .single()
     if (paymentError || !payment) throw new Response('Not found', { status: 404 })
-    const { data: refunds, error: refundLoadError } = await supabase.from('payment_refunds').select('amount_cents').eq('tenant_id', data.tenantId).eq('payment_id', data.paymentId)
+    const { data: refunds, error: refundLoadError } = await supabase
+      .from('payment_refunds')
+      .select('amount_cents')
+      .eq('tenant_id', data.tenantId)
+      .eq('payment_id', data.paymentId)
     if (refundLoadError) throw new Error(`refunds_load_failed:${refundLoadError.code}`)
-    const alreadyRefunded = (refunds ?? []).reduce((sum, refund) => sum + (refund.amount_cents as number), 0)
-    if (alreadyRefunded + data.amountCents > (payment.amount_cents as number)) throw new Response('Refund exceeds payment', { status: 422 })
-    const { data: refund, error } = await supabase.from('payment_refunds').insert({ amount_cents: data.amountCents, created_by: context.tenantMembership.userId, payment_id: data.paymentId, reason: data.reason, tenant_id: data.tenantId }).select('id').single()
+    const alreadyRefunded = (refunds ?? []).reduce(
+      (sum, refund) => sum + (refund.amount_cents as number),
+      0,
+    )
+    if (alreadyRefunded + data.amountCents > (payment.amount_cents as number))
+      throw new Response('Refund exceeds payment', { status: 422 })
+    const { data: refund, error } = await supabase
+      .from('payment_refunds')
+      .insert({
+        amount_cents: data.amountCents,
+        created_by: context.tenantMembership.userId,
+        payment_id: data.paymentId,
+        reason: data.reason,
+        tenant_id: data.tenantId,
+      })
+      .select('id')
+      .single()
     if (error || !refund) throw new Error(`refund_create_failed:${error?.code ?? 'unknown'}`)
     return { refundId: refund.id as string, refundedCents: alreadyRefunded + data.amountCents }
   })
 
-export const applyDiscount = createServerFn({ method: 'POST' }).middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware]).validator(applyDiscountInput).handler(async ({ context, data }) => {
-  if (!['owner', 'manager'].includes(context.tenantMembership.role)) throw new Response('Forbidden', { status: 403 })
-  const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
-  const account = await loadAccount(supabase, data)
-  if (!account) throw new Response('Not found', { status: 404 })
-  const totals = computeAccountTotals(account.lines, account.payments, account.session.discountCents)
-  if (data.discountCents > totals.grossCents) throw new Response('Discount exceeds account', { status: 422 })
-  const { error: auditError } = await supabase.from('session_discount_audits').insert({ tenant_id: data.tenantId, session_id: data.sessionId, discount_cents: data.discountCents, reason: data.reason, created_by: context.tenantMembership.userId })
-  if (auditError) throw new Error(`discount_audit_failed:${auditError.code}`)
-  const { error } = await supabase.from('table_sessions').update({ discount_cents: data.discountCents }).eq('id', data.sessionId).eq('tenant_id', data.tenantId).eq('venue_id', data.venueId).eq('status', 'open')
-  if (error) throw new Error(`discount_update_failed:${error.code}`)
-  return { discountCents: data.discountCents }
-})
+export const applyDiscount = createServerFn({ method: 'POST' })
+  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .validator(applyDiscountInput)
+  .handler(async ({ context, data }) => {
+    if (!['owner', 'manager'].includes(context.tenantMembership.role))
+      throw new Response('Forbidden', { status: 403 })
+    const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    const account = await loadAccount(supabase, data)
+    if (!account) throw new Response('Not found', { status: 404 })
+    const totals = computeAccountTotals(
+      account.lines,
+      account.payments,
+      account.session.discountCents,
+    )
+    if (data.discountCents > totals.grossCents)
+      throw new Response('Discount exceeds account', { status: 422 })
+    const { error: auditError } = await supabase
+      .from('session_discount_audits')
+      .insert({
+        tenant_id: data.tenantId,
+        session_id: data.sessionId,
+        discount_cents: data.discountCents,
+        reason: data.reason,
+        created_by: context.tenantMembership.userId,
+      })
+    if (auditError) throw new Error(`discount_audit_failed:${auditError.code}`)
+    const { error } = await supabase
+      .from('table_sessions')
+      .update({ discount_cents: data.discountCents })
+      .eq('id', data.sessionId)
+      .eq('tenant_id', data.tenantId)
+      .eq('venue_id', data.venueId)
+      .eq('status', 'open')
+    if (error) throw new Error(`discount_update_failed:${error.code}`)
+    return { discountCents: data.discountCents }
+  })

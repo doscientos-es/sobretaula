@@ -84,6 +84,19 @@ describe('computeAccountTotals', () => {
       vatCents: 0,
     })
   })
+
+  it('excludes cancelled lines while keeping them available for the audit trail', () => {
+    const totals = computeAccountTotals(
+      [
+        line({ id: 'served', unitPriceCents: 1200 }),
+        line({ id: 'cancelled', status: 'cancelled', unitPriceCents: 800 }),
+      ],
+      [],
+    )
+
+    expect(totals.grossCents).toBe(1200)
+    expect(totals.balanceCents).toBe(1200)
+  })
 })
 
 describe('splitEvenly', () => {

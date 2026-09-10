@@ -11,11 +11,13 @@ export const accountSessionInput = z.object({
 export const addOrderItemInput = accountSessionInput.extend({
   menuItemId: z.string().uuid(),
   notes: z.string().trim().max(200).optional(),
+  operationId: z.string().uuid().optional(),
   quantity: z.number().int().min(1).max(99),
 })
 
 export const removeOrderItemInput = accountSessionInput.extend({
   orderItemId: z.string().uuid(),
+  reason: z.string().trim().min(2).max(200),
 })
 
 export const updateOrderItemStatusInput = accountSessionInput.extend({
@@ -28,8 +30,15 @@ export const recordPaymentInput = accountSessionInput.extend({
   method: z.enum(PAYMENT_METHODS),
   tipCents: z.number().int().min(0).max(1_000_000).optional(),
 })
-export const refundPaymentInput = accountSessionInput.extend({ paymentId: z.string().uuid(), amountCents: z.number().int().min(1).max(1_000_000), reason: z.string().trim().min(2).max(200) })
-export const applyDiscountInput = accountSessionInput.extend({ discountCents: z.number().int().min(1).max(1_000_000), reason: z.string().trim().min(2).max(200) })
+export const refundPaymentInput = accountSessionInput.extend({
+  paymentId: z.string().uuid(),
+  amountCents: z.number().int().min(1).max(1_000_000),
+  reason: z.string().trim().min(2).max(200),
+})
+export const applyDiscountInput = accountSessionInput.extend({
+  discountCents: z.number().int().min(1).max(1_000_000),
+  reason: z.string().trim().min(2).max(200),
+})
 
 /** Apuntar y cobrar es trabajo de sala: camarero, encargado o dueño. */
 export function requireAccountEditor(role: string): void {

@@ -12,7 +12,7 @@ import {
   QuantityInput,
   useFormFeedback,
 } from '@doscientos/ui'
-import { useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 
 import { buildMenuSections, type MenuCatalog } from '@/features/menu'
 import type { Locale } from '@/shared/lib/i18n/locale'
@@ -20,6 +20,12 @@ import { localizedText } from '@/shared/lib/i18n/localized-text'
 import { formatMoney } from '@/shared/lib/money/money'
 
 import { addOrderItem } from '../application/account'
+import {
+  createAccountOfflineStore,
+  createAddOrderItemOperation,
+  enqueueAccountOperation,
+  flushAccountOperations,
+} from '../application/account-offline-operations'
 
 /** Fast path of the waiter: pick a dish, a quantity, maybe a note, and add it. */
 export function AccountAddItem({
@@ -48,6 +54,31 @@ export function AccountAddItem({
   )
   const [quantity, setQuantity] = useState(1)
   const [notes, setNotes] = useState('')
+  const [operationId, setOperationId] = useState(() => crypto.randomUUID())
+  const [isOnline, setIsOnline] = useState(() =>
+    typeof navigator === 'undefined' ? true : navigator.onLine,
+  )
+  const offlineStore = useMemo(
+    () => createAccountOfflineStore(tenantId, venueId),
+    [tenantId, venueId],
+  )
+
+  useEffect(() => {
+    const flush = () => {
+      setIsOnline(true)
+      void flushAccountOperations(offlineStore).then((result) => {
+        if (result.completed > 0) onDone()
+      })
+    }
+    const offline = () => setIsOnline(false)
+    if (isOnline) flush()
+    window.addEventListener('online', flush)
+    window.addEventListener('offline', offline)
+    return () => {
+      window.removeEventListener('online', flush)
+      window.removeEventListener('offline', offline)
+    }
+  }, [isOnline, offlineStore, onDone])
 
   function add(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -56,11 +87,31 @@ export function AccountAddItem({
       return
     }
     if (feedback.pending) return
+    if (!isOnline) {
+      enqueueAccountOperation(
+        offlineStore,
+        createAddOrderItemOperation({
+          menuItemId,
+          ...(notes ? { notes } : {}),
+          operationId,
+          quantity,
+          sessionId,
+          tenantId,
+          venueId,
+        }),
+      )
+      setNotes('')
+      setQuantity(1)
+      setOperationId(crypto.randomUUID())
+      feedback.setSuccess('Comanda guardada. Se enviará al recuperar la conexión.')
+      return
+    }
     feedback.setPending()
     void addOrderItem({
       data: {
         menuItemId,
         ...(notes ? { notes } : {}),
+        operationId,
         quantity,
         sessionId,
         tenantId,
@@ -70,6 +121,7 @@ export function AccountAddItem({
       .then(() => {
         setNotes('')
         setQuantity(1)
+        setOperationId(crypto.randomUUID())
         onDone()
       })
       .catch(() => feedback.setError('No se ha podido apuntar el plato.'))

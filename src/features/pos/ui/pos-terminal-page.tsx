@@ -9,6 +9,7 @@ import {
   PageHeaderTitle,
 } from '@doscientos/ui'
 import { Link } from '@tanstack/react-router'
+import type { ReactNode } from 'react'
 
 import type { ServiceBoard } from '@/features/service'
 
@@ -27,11 +28,13 @@ function TerminalMetric({ label, value }: { label: string; value: number }) {
 export function PosTerminalPage({
   board,
   canAccessAccounts,
+  children,
   slug,
   venue,
 }: {
   board: ServiceBoard
   canAccessAccounts: boolean
+  children?: ReactNode
   slug: string
   venue: string
 }) {
@@ -92,46 +95,60 @@ export function PosTerminalPage({
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
         <Card>
           <CardHeader>
-            <CardTitle>Cuentas activas</CardTitle>
+            <CardTitle>{children ? 'Comanda seleccionada' : 'Cuentas activas'}</CardTitle>
             <CardDescription>
-              Selecciona una mesa para continuar su comanda o cobro.
+              {children
+                ? 'Apunta, anula y consulta las líneas sin salir del TPV.'
+                : 'Selecciona una mesa para continuar su comanda o cobro.'}
             </CardDescription>
+            {children && canAccessAccounts && (
+              <Link
+                className="text-primary text-sm font-medium"
+                params={params}
+                search={{}}
+                to="/t/$slug/l/$venue/tpv"
+              >
+                Cambiar mesa
+              </Link>
+            )}
           </CardHeader>
           <CardContent>
-            {board.sessions.length === 0 ? (
-              <p className="text-muted-foreground text-sm">
-                No hay cuentas abiertas en este momento.
-              </p>
-            ) : (
-              <ul className="grid gap-3 sm:grid-cols-2">
-                {board.sessions.map((session) => {
-                  const label = session.tableIds.map((id) => tableCodes.get(id) ?? id).join(' + ')
-                  const content = (
-                    <>
-                      <span className="font-medium">Mesa {label}</span>
-                      <span className="text-muted-foreground text-sm">
-                        {session.covers} comensales · abierta
-                      </span>
-                    </>
-                  )
-                  return (
-                    <li key={session.id}>
-                      {canAccessAccounts ? (
-                        <Link
-                          className="hover:bg-muted/60 flex flex-col rounded-lg border p-4"
-                          params={{ ...params, sessionId: session.id }}
-                          to="/t/$slug/l/$venue/cuenta/$sessionId"
-                        >
-                          {content}
-                        </Link>
-                      ) : (
-                        <div className="flex flex-col rounded-lg border p-4">{content}</div>
-                      )}
-                    </li>
-                  )
-                })}
-              </ul>
-            )}
+            {children ??
+              (board.sessions.length === 0 ? (
+                <p className="text-muted-foreground text-sm">
+                  No hay cuentas abiertas en este momento.
+                </p>
+              ) : (
+                <ul className="grid gap-3 sm:grid-cols-2">
+                  {board.sessions.map((session) => {
+                    const label = session.tableIds.map((id) => tableCodes.get(id) ?? id).join(' + ')
+                    const content = (
+                      <>
+                        <span className="font-medium">Mesa {label}</span>
+                        <span className="text-muted-foreground text-sm">
+                          {session.covers} comensales · abierta
+                        </span>
+                      </>
+                    )
+                    return (
+                      <li key={session.id}>
+                        {canAccessAccounts ? (
+                          <Link
+                            className="hover:bg-muted/60 flex flex-col rounded-lg border p-4"
+                            params={params}
+                            search={{ sessionId: session.id }}
+                            to="/t/$slug/l/$venue/tpv"
+                          >
+                            {content}
+                          </Link>
+                        ) : (
+                          <div className="flex flex-col rounded-lg border p-4">{content}</div>
+                        )}
+                      </li>
+                    )
+                  })}
+                </ul>
+              ))}
           </CardContent>
         </Card>
         <Card>

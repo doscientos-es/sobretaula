@@ -51,12 +51,14 @@ export function AccountLines({
 
   async function remove(orderItemId: string) {
     if (feedback.pending) return
+    const reason = window.prompt('Motivo de la anulación')?.trim()
+    if (!reason) return
     feedback.setPending()
     try {
-      await removeOrderItem({ data: { orderItemId, sessionId, tenantId, venueId } })
+      await removeOrderItem({ data: { orderItemId, reason, sessionId, tenantId, venueId } })
       onDone()
     } catch {
-      feedback.setError('No se ha podido quitar la línea. Si ya hay cobros, la cuenta queda fija.')
+      feedback.setError('No se ha podido anular. Si ya hay cobros, la cuenta queda fija.')
     }
   }
 
@@ -88,6 +90,9 @@ export function AccountLines({
                   <TableCell>{line.quantity}</TableCell>
                   <TableCell>
                     <span className="whitespace-normal">{line.name}</span>
+                    {line.status === 'cancelled' && (
+                      <span className="text-destructive ml-2 text-xs font-medium">Anulada</span>
+                    )}
                     <span className="text-muted-foreground ml-2 text-xs">
                       · {STATION_LABEL[line.kitchenStation ?? 'general']}
                     </span>
@@ -104,11 +109,13 @@ export function AccountLines({
                   </TableCell>
                   <TableCell>
                     <span className="block text-right tabular-nums">
-                      {formatMoney(lineGrossCents(line), locale)}
+                      {line.status === 'cancelled'
+                        ? '—'
+                        : formatMoney(lineGrossCents(line), locale)}
                     </span>
                   </TableCell>
                   <TableCell>
-                    {canRemove && (
+                    {canRemove && line.status !== 'cancelled' && (
                       <Button
                         disabled={feedback.pending}
                         onClick={() => void remove(line.id)}
@@ -116,7 +123,7 @@ export function AccountLines({
                         type="button"
                         variant="ghost"
                       >
-                        Quitar
+                        Anular
                       </Button>
                     )}
                   </TableCell>

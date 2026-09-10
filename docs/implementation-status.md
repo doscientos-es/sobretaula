@@ -29,9 +29,9 @@ reproducible (comando ejecutado y su resultado).
 | F2 · Diseñador de sala | Editor SVG, snap, historial, elementos, rotación real y layouts versionados | Implementado; entrega bloqueada                                                                                                                                                                                                                                              |
 | F3 · Motor de reservas | Turnos, pacing, disponibilidad, best-fit, EXCLUDE                           | Implementado; falta aplicar migraciones públicas y humo dedicado                                                                                                                                                                                                             |
 | F4 · Vista de servicio | Plano en vivo, sentar/mover/unir, walk-ins, espera, no-show                 | Implementado; entrega bloqueada                                                                                                                                                                                                                                              |
-| F5 · Cuenta de mesa    | Catálogo, líneas, dividir, cerrar, cobrar                                   | Implementado; entrega bloqueada                                                                                                                                                                                                                                              |
+| F5 · Cuenta de mesa    | Catálogo, líneas, dividir, cerrar, cobrar                                   | Implementado; las comandas son reintentables y las anulaciones quedan auditadas; entrega bloqueada                                                                                                                                                                           |
 | F6 · Facturación       | Ajustes fiscales, series, ledger/outbox, PDF, modo test                     | Implementado; entrega bloqueada                                                                                                                                                                                                                                              |
-| F7 · TPV ampliado      | Catálogo, comandas, cocina/barra, cobros, caja y arqueo                     | Parcial; cuenta, catálogo, estaciones, estados, cola, devoluciones, descuentos, caja, histórico, UI/informe y exportación CSV inicial implementados; faltan hardware e informe financiero completo                                                                           |
+| F7 · TPV ampliado      | Catálogo, comandas, cocina/barra, cobros, caja y arqueo                     | Parcial; el TPV ya integra selección de cuenta y toma de comandas, y existen catálogo, estaciones, estados, cola, devoluciones, descuentos, caja, histórico, UI/informe y exportación CSV inicial; faltan hardware e informe financiero completo                             |
 | F8 · Reservas públicas | Reserva sin cuenta, gestión, avisos, espera y ficha de cliente              | Parcial; motor interno existe, falta cierre del flujo público                                                                                                                                                                                                                |
 | F9 · Control horario   | PIN, pausas, jornadas, auditoría y exportación                              | Parcial; eventos, transiciones, cálculo, pantalla inicial, exportación CSV, PIN almacenado como hash y endpoint de terminal para verificar PIN y registrar el evento del empleado implementados; faltan UX de terminal compartido, limitación de intentos y reglas laborales |
 | F10 · Producto         | Inventario, escandallos, alérgenos, precios por canal y carta               | Parcial; ingredientes, recetas, escandallo, inventario, UI, canales y carta pública enriquecida implementados; faltan versionado y validación visual final                                                                                                                   |
@@ -230,6 +230,24 @@ conserva el acceso compatible a sala, reservas, caja y cuentas existentes. La
 integración embebida de comanda, cobro y cocina queda como siguientes entregas
 del módulo. El resumen operativo tiene prueba unitaria; `typecheck` y la
 compilación de Vite terminaron correctamente.
+
+### Cuenta y comandas dentro del TPV (D2)
+
+El TPV permite abrir una cuenta por mesa mediante `sessionId` en su propia URL,
+tomar comandas con notas y volver al selector sin abandonar el módulo. El alta
+de cada comanda usa una clave idempotente: sin conexión se guarda localmente y
+se reintenta al recuperar la red; anulaciones y cobros no se encolan porque
+requieren contrastar el estado actual de la cuenta.
+
+Las anulaciones ya no eliminan líneas. Se conserva la línea con estado
+`cancelled`, se excluye de los totales y se registra el motivo, usuario, local y
+fecha en `order_item_cancellations`; el inventario se revierte como movimiento
+separado. Camareros pueden anular líneas no servidas y responsables también las
+servidas, siempre antes de registrar cobros. Las migraciones
+`20260910000080_idempotent_order_cancellations.sql` y
+`20260910000081_order_item_cancellation_audit_immutable.sql` están aplicadas en
+el proyecto existente: la auditoría sólo permite lectura e inserción mediante
+RLS, por lo que sus eventos son inmutables.
 
 ### Últimos avances del editor de sala
 

@@ -57,9 +57,13 @@ export function computeAccountTotals(
   payments: readonly AccountPayment[],
   discountCents = 0,
 ): AccountTotals {
-  const grossCents = lines.reduce((sum, line) => sum + lineGrossCents(line), 0)
-  const netCents = lines.reduce((sum, line) => sum + lineNetCents(line), 0)
-  const paidCents = payments.reduce((sum, payment) => sum + payment.amountCents - (payment.refundedCents ?? 0), 0)
+  const chargeableLines = lines.filter((line) => line.status !== 'cancelled')
+  const grossCents = chargeableLines.reduce((sum, line) => sum + lineGrossCents(line), 0)
+  const netCents = chargeableLines.reduce((sum, line) => sum + lineNetCents(line), 0)
+  const paidCents = payments.reduce(
+    (sum, payment) => sum + payment.amountCents - (payment.refundedCents ?? 0),
+    0,
+  )
   const tipCents = payments.reduce((sum, payment) => sum + payment.tipCents, 0)
   return {
     balanceCents: grossCents - paidCents,
