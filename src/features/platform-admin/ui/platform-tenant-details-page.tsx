@@ -14,12 +14,12 @@ import {
   PageHeaderTitle,
   useFormFeedback,
 } from '@doscientos/ui'
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import { useState, type FormEvent } from 'react'
 
 import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
 
-import { updatePlatformTenantStatus } from '../application/platform-operators'
+import { deletePlatformTenant, updatePlatformTenantStatus } from '../application/platform-operators'
 import {
   updatePlatformTenantConfiguration,
   type PlatformTenantDetail,
@@ -73,8 +73,11 @@ export function PlatformTenantDetailsPage({
 }) {
   const configurationFeedback = useFormFeedback()
   const statusFeedback = useFormFeedback()
+  const deletionFeedback = useFormFeedback()
   const [isEditingConfiguration, setIsEditingConfiguration] = useState(false)
+  const [deletionConfirmation, setDeletionConfirmation] = useState('')
   const reload = useLoaderReload()
+  const navigate = useNavigate()
   const statusAction = tenantStatusAction(tenant.tenantStatus)
   const timezoneLabel =
     tenantTimezones.find((timezone) => timezone.value === tenant.tenantTimezone)?.label ??
