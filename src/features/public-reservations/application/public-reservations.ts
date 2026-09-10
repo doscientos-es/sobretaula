@@ -6,12 +6,14 @@ import { z } from 'zod'
 import { createAnonSupabaseClient } from '@/shared/lib/supabase/server/create-server-client'
 
 const slugInput = z.object({ slug: z.string().trim().min(2).max(50) })
-const reservationInput = z.object({
+export const publicReservationInput = z.object({
   areaId: z.string().uuid().optional(),
-  email: z.string().trim().email().max(200).optional(),
+  email: z.string().trim().email().max(200),
   guestName: z.string().trim().min(2).max(200),
   partySize: z.number().int().min(1).max(50),
+  notes: z.string().trim().max(1000).optional(),
   phone: z.string().trim().min(6).max(40).optional(),
+  privacyAccepted: z.literal(true),
   serviceId: z.string().uuid(),
   slug: z.string().trim().min(2).max(50),
   startsAt: z.string().datetime({ offset: true }),
@@ -133,33 +135,25 @@ export const getPublicReservationAreas = createServerFn({ method: 'GET' })
   })
 
 export const createPublicReservation = createServerFn({ method: 'POST' })
-  .validator(reservationInput)
+  .validator(publicReservationInput)
   .handler(async ({ data }) => {
     const token = randomBytes(32).toString('hex')
-    const rpcName = data.areaId ? 'create_public_reservation_in_area' : 'create_public_reservation'
-    const rpcArgs = data.areaId
-      ? {
-          p_area_id: data.areaId,
-          p_guest_email: data.email ?? null,
-          p_guest_name: data.guestName,
-          p_guest_phone: data.phone ?? null,
-          p_party_size: data.partySize,
-          p_public_token_hash: hashPublicToken(token),
-          p_service_id: data.serviceId,
-          p_slug: data.slug,
-          p_starts_at: data.startsAt,
-        }
-      : {
-          p_guest_email: data.email ?? null,
-          p_guest_name: data.guestName,
-          p_guest_phone: data.phone ?? null,
-          p_party_size: data.partySize,
-          p_service_id: data.serviceId,
-          p_slug: data.slug,
-          p_starts_at: data.startsAt,
-          p_public_token_hash: hashPublicToken(token),
-        }
-    const { data: result, error } = await createAnonSupabaseClient().rpc(rpcName, rpcArgs)
+    const { data: result, error } = await createAnonSupabaseClient().rpc(
+      'create_public_reservation_with_details',
+      {
+        p_area_id: data.areaId ?? null,
+        p_guest_email: data.email,
+        p_guest_name: data.guestName,
+        p_guest_phone: data.phone ?? null,
+        p_notes: data.notes ?? null,
+        p_party_size: data.partySize,
+        p_privacy_accepted: data.privacyAccepted,
+        p_public_token_hash: hashPublicToken(token),
+        p_service_id: data.serviceId,
+        p_slug: data.slug,
+        p_starts_at: data.startsAt,
+      },
+    )
     if (error) {
       if (error.code === '23P01' || error.message.includes('public_slot_unavailable')) {
         throw new Response('Slot unavailable', { status: 409 })

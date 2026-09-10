@@ -79,6 +79,8 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
   const [guestName, setGuestName] = useState('')
   const [phone, setPhone] = useState('')
   const [email, setEmail] = useState('')
+  const [notes, setNotes] = useState('')
+  const [privacyAccepted, setPrivacyAccepted] = useState(false)
   const [confirmed, setConfirmed] = useState(false)
   const [managementToken, setManagementToken] = useState('')
   const [availableSlots, setAvailableSlots] = useState<string[]>([])
@@ -147,11 +149,13 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
     try {
       const result = await createPublicReservation({
         data: {
-          ...(email ? { email } : {}),
+          email,
           ...(phone ? { phone } : {}),
           ...(areaId ? { areaId } : {}),
           guestName,
+          ...(notes ? { notes } : {}),
           partySize,
+          privacyAccepted,
           serviceId,
           slug: profile.slug,
           // The browser's local zone is the restaurant's zone in this MVP. The
@@ -205,8 +209,7 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
             Consultar o cancelar esta reserva
           </Link>
           <p className="mt-6 text-xs leading-5 text-[#737983]">
-            {profile.venueName}. Guarda esta pantalla; pronto podrás añadir confirmaciones y
-            recordatorios.
+            {profile.venueName}. Hemos enviado la confirmación y el enlace de gestión a tu email.
           </p>
         </section>
       </main>
@@ -396,21 +399,40 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                     id="public-phone"
                     inputMode="tel"
                     onChange={(event) => setPhone(event.target.value)}
-                    required
                     value={phone}
                   />
                 </Field>
               </div>
               <Field>
-                <FieldLabel htmlFor="public-email">Email (opcional)</FieldLabel>
+                <FieldLabel htmlFor="public-email">Email</FieldLabel>
                 <Input
                   autoComplete="email"
                   id="public-email"
                   onChange={(event) => setEmail(event.target.value)}
+                  required
                   type="email"
                   value={email}
                 />
               </Field>
+              <Field>
+                <FieldLabel htmlFor="public-notes">Comentario para el restaurante (opcional)</FieldLabel>
+                <textarea
+                  className="min-h-20 w-full rounded-md border bg-white px-3 py-2"
+                  id="public-notes"
+                  maxLength={1000}
+                  onChange={(event) => setNotes(event.target.value)}
+                  value={notes}
+                />
+              </Field>
+              <label className="flex items-start gap-2 text-xs leading-5 text-[#737983]">
+                <input
+                  checked={privacyAccepted}
+                  onChange={(event) => setPrivacyAccepted(event.target.checked)}
+                  required
+                  type="checkbox"
+                />
+                <span>He leído la política de privacidad y acepto el tratamiento de mis datos para gestionar esta reserva.</span>
+              </label>
               <FormFeedback pendingLabel="Comprobando disponibilidad…" state={feedback.state} />
               <Button
                 className="w-full"
