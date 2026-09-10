@@ -107,7 +107,6 @@ export const getBillingOverview = createServerFn({ method: 'GET' })
               legalName: billingProfile.data.legal_name,
               postalCode: billingProfile.data.postal_code,
               countryCode: 'ES',
-              environment: 'test',
             },
     }
   })

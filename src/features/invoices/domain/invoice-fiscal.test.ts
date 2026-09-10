@@ -64,7 +64,7 @@ describe('groupVatTotals', () => {
 })
 
 describe('canIssueInvoices', () => {
-  it('blocks without settings and in prod (MVP is test-only)', () => {
+  it('blocks without settings and production while the AEAT adapter is unavailable', () => {
     expect(canIssueInvoices(null)).toBe(false)
     expect(canIssueInvoices({ environment: 'prod' })).toBe(false)
     expect(canIssueInvoices({ environment: 'test' })).toBe(true)
@@ -76,7 +76,6 @@ describe('validateFiscalSettings', () => {
     addressLine: 'C/ Mayor 1',
     city: 'Valencia',
     countryCode: 'es',
-    environment: 'test' as const,
     issuerNif: ' b12345678 ',
     legalName: 'La Terrassa SL',
     postalCode: '46001',
@@ -86,6 +85,7 @@ describe('validateFiscalSettings', () => {
     const settings = validateFiscalSettings(base)
     expect(settings.issuerNif).toBe('B12345678')
     expect(settings.countryCode).toBe('ES')
+    expect(settings.environment).toBe('prod')
   })
 
   it('rejects wrong NIF, postal code or empty name', () => {

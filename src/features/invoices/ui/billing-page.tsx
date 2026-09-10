@@ -36,11 +36,17 @@ import {
   upsertFiscalSettings,
   type FiscalSettingsView,
 } from '../application/invoice'
-import type { VerifactuEnv } from '../domain/invoice'
 
 const CURRENT_YEAR = new Date().getFullYear()
 
 function fiscalErrorMessage(error: unknown): string {
+  if (error instanceof Response) {
+    if (error.status === 401)
+      return 'Tu sesión ha caducado. Inicia sesión de nuevo para guardar los datos fiscales.'
+    if (error.status === 403)
+      return 'Solo la persona propietaria del restaurante puede guardar los datos fiscales.'
+  }
+
   const code = error instanceof Error ? error.message : ''
   const messages: Record<string, string> = {
     fiscal_settings_invalid_address: 'Indica una dirección fiscal válida.',
@@ -49,6 +55,10 @@ function fiscalErrorMessage(error: unknown): string {
     fiscal_settings_invalid_nif: 'Revisa el NIF/CIF introducido.',
     fiscal_settings_invalid_postal_code: 'El código postal debe tener 5 cifras.',
     fiscal_settings_invalid_legal_name: 'Indica la razón social.',
+    'fiscal_settings_save_failed:42501':
+      'No tienes permisos de propietario para guardar los datos fiscales.',
+    'fiscal_settings_audit_failed:42501':
+      'Los datos fiscales se han guardado, pero ha fallado su registro de auditoría por permisos. Recarga la página; si continúa, contacta con soporte.',
   }
   return (
     messages[code] ??
@@ -159,7 +169,7 @@ function VerifactuCertificateCard({
         <CardDescription>
           {certificate
             ? `Configurado para ${certificate.subject}; caduca el ${new Date(certificate.expiresAt).toLocaleDateString('es-ES')}.`
-            : 'Sube el certificado .pfx o .p12 del emisor para poder operar con VERI*FACTU.'}
+            : 'Opcional: si tu negocio ya dispone de VERI*FACTU, sube el certificado .pfx o .p12 del emisor. Puedes configurarlo más adelante.'}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -273,7 +283,6 @@ function FiscalSettingsCard({
   const [city, setCity] = useState(source?.city ?? '')
   const [postalCode, setPostalCode] = useState(source?.postalCode ?? '')
   const [countryCode, setCountryCode] = useState(source?.countryCode ?? 'ES')
-  const [environment, setEnvironment] = useState<VerifactuEnv>(source?.environment ?? 'test')
 
   function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -284,7 +293,6 @@ function FiscalSettingsCard({
         addressLine,
         city,
         countryCode,
-        environment,
         issuerNif,
         legalName,
         postalCode,
@@ -300,7 +308,7 @@ function FiscalSettingsCard({
       <CardHeader>
         <CardTitle>Datos fiscales del emisor</CardTitle>
         <CardDescription>
-          Identidad fiscal con la que el restaurante emite sus facturas (modo {environment}).
+          Identidad fiscal con la que el restaurante emite sus facturas.
           {prefill && !settings
             ? ' Hemos recuperado los datos del alta; revísalos antes de guardar.'
             : ''}
@@ -349,7 +357,9 @@ function FiscalSettingsCard({
             <Input
               id="fiscal-postal"
               inputMode="numeric"
+              maxLength={5}
               onChange={(event) => setPostalCode(event.target.value)}
+              pattern="[0-9]{5}"
               required
               value={postalCode}
             />
@@ -360,20 +370,10 @@ function FiscalSettingsCard({
               id="fiscal-country"
               maxLength={2}
               onChange={(event) => setCountryCode(event.target.value)}
+              pattern="[A-Za-z]{2}"
               required
               value={countryCode}
             />
-          </Field>
-          <Field>
-            <FieldLabel htmlFor="fiscal-env">Entorno VERI*FACTU</FieldLabel>
-            <select
-              id="fiscal-env"
-              onChange={(event) => setEnvironment(event.target.value as VerifactuEnv)}
-              value={environment}
-            >
-              <option value="test">Pruebas (test)</option>
-              <option value="prod">Producción (prod)</option>
-            </select>
           </Field>
           <div className="md:col-span-2">
             <FormFeedback pendingLabel="Guardando datos fiscales…" state={feedback.state} />

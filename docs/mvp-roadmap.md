@@ -7,6 +7,13 @@ para cualquier agente que continúe SobreTaula: no añadir funcionalidades por
 atractivo aislado; completar primero el flujo que hace que un restaurante opere
 mejor que con agenda, papel, Excel y su TPV actual.
 
+La petición del cliente incluye además TPV, control horario, caja, cocina,
+hardware y facturación como parte del MVP. Esa diferencia con el alcance
+histórico de esta hoja de ruta está analizada en
+[`client-mvp-gap-analysis.md`](./client-mvp-gap-analysis.md). Si el objetivo es
+cumplir el MVP del cliente, esa matriz tiene prioridad sobre las exclusiones o
+fases posteriores de este documento.
+
 ## Norte de producto
 
 SobreTaula debe ayudar al restaurante a conseguir tres resultados diarios:

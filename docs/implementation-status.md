@@ -8,6 +8,11 @@ El plan maestro de producto y UX del diseñador/operación de sala vive en
 entrega activa es ampliar el plano existente con pisos, zonas y tipos de
 espacio sin romper las versiones ya publicadas.
 
+La comparación contra la petición original del cliente vive en
+[`client-mvp-gap-analysis.md`](./client-mvp-gap-analysis.md). Ese documento
+separa hecho, a medias, pendiente y bloqueado; no debe inferirse que una fase
+interna marcada como «implementada» cubre todo el MVP comercial.
+
 Registro honesto de lo que existe y está verificado. Un punto sin ejecutar es
 **pendiente**, no aprobado. No se marca nada como hecho sin evidencia
 reproducible (comando ejecutado y su resultado).

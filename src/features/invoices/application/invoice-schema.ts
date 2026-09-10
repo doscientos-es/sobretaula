@@ -1,13 +1,10 @@
 import { z } from 'zod'
 
-import { VERIFACTU_ENVS } from '../domain/invoice'
-
 /** Fiscal settings editable by the tenant owner (ADR-0005: no certificate here). */
 export const upsertFiscalSettingsInput = z.object({
   addressLine: z.string().trim().min(1).max(200),
   city: z.string().trim().min(1).max(80),
   countryCode: z.string().trim().length(2),
-  environment: z.enum(VERIFACTU_ENVS),
   issuerNif: z.string().trim().min(9).max(12),
   legalName: z.string().trim().min(1).max(120),
   postalCode: z
