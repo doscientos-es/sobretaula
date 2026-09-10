@@ -514,81 +514,84 @@ export function ServicePage({
                         !handoverDate || snapshot.createdAt.slice(0, 10) === handoverDate,
                     )
                     .map((snapshot) => {
-                    const attention = snapshot.summary.reduce(
-                      (total, section) => total + section.attentionSessions,
-                      0,
-                    )
-                    const open = snapshot.summary.reduce(
-                      (total, section) => total + section.activeSessions,
-                      0,
-                    )
-                    return (
-                      <li className="border-border rounded-lg border p-3" key={snapshot.id}>
-                        <button
-                          aria-expanded={expandedSnapshotId === snapshot.id}
-                          className="w-full text-left"
-                          onClick={() =>
-                            setExpandedSnapshotId((current) =>
-                              current === snapshot.id ? null : snapshot.id,
-                            )
-                          }
-                          type="button"
-                        >
-                          <p className="font-medium">
-                            {new Date(snapshot.createdAt).toLocaleString('es-ES', {
-                              dateStyle: 'short',
-                              timeStyle: 'short',
-                            })}
-                          </p>
-                          <p className="text-muted-foreground text-xs">
-                            {open} cuentas abiertas
-                            {attention > 0 ? ` · ${attention} en pacing` : ''}
-                          </p>
-                        </button>
-                        {expandedSnapshotId === snapshot.id && (
-                          <div className="border-border mt-3 space-y-1 border-t pt-3 text-xs">
-                            {snapshot.summary.map((section) => {
-                              const areaName = plan.areas.find(
-                                (area) => area.id === section.areaId,
-                              )?.name
-                              return (
-                                <p key={section.areaId}>
-                                  <span className="font-medium">{areaName ?? 'Sección'}:</span>{' '}
-                                  {section.activeSessions} abiertas · {section.attentionSessions}{' '}
-                                  pacing · {section.cleaningTables} por limpiar ·{' '}
-                                  {section.blockedTables} bloqueadas
-                                </p>
+                      const attention = snapshot.summary.reduce(
+                        (total, section) => total + section.attentionSessions,
+                        0,
+                      )
+                      const open = snapshot.summary.reduce(
+                        (total, section) => total + section.activeSessions,
+                        0,
+                      )
+                      return (
+                        <li className="border-border rounded-lg border p-3" key={snapshot.id}>
+                          <button
+                            aria-expanded={expandedSnapshotId === snapshot.id}
+                            className="w-full text-left"
+                            onClick={() =>
+                              setExpandedSnapshotId((current) =>
+                                current === snapshot.id ? null : snapshot.id,
                               )
-                            })}
-                            {compareServiceHandover(snapshot.summary, handover).map((delta) => {
-                              const changes = [
-                                delta.activeSessionsDelta !== 0
-                                  ? `${delta.activeSessionsDelta > 0 ? '+' : ''}${delta.activeSessionsDelta} cuentas`
-                                  : '',
-                                delta.attentionSessionsDelta !== 0
-                                  ? `${delta.attentionSessionsDelta > 0 ? '+' : ''}${delta.attentionSessionsDelta} pacing`
-                                  : '',
-                                delta.cleaningTablesDelta !== 0
-                                  ? `${delta.cleaningTablesDelta > 0 ? '+' : ''}${delta.cleaningTablesDelta} por limpiar`
-                                  : '',
-                                delta.blockedTablesDelta !== 0
-                                  ? `${delta.blockedTablesDelta > 0 ? '+' : ''}${delta.blockedTablesDelta} bloqueadas`
-                                  : '',
-                              ].filter(Boolean)
-                              if (changes.length === 0) return null
-                              const areaName = plan.areas.find(
-                                (area) => area.id === delta.areaId,
-                              )?.name
-                              return (
-                                <p className="text-primary" key={`${snapshot.id}-${delta.areaId}`}>
-                                  Cambio en {areaName ?? 'sección'}: {changes.join(' · ')}
-                                </p>
-                              )
-                            })}
-                          </div>
-                        )}
-                      </li>
-                    )
+                            }
+                            type="button"
+                          >
+                            <p className="font-medium">
+                              {new Date(snapshot.createdAt).toLocaleString('es-ES', {
+                                dateStyle: 'short',
+                                timeStyle: 'short',
+                              })}
+                            </p>
+                            <p className="text-muted-foreground text-xs">
+                              {open} cuentas abiertas
+                              {attention > 0 ? ` · ${attention} en pacing` : ''}
+                            </p>
+                          </button>
+                          {expandedSnapshotId === snapshot.id && (
+                            <div className="border-border mt-3 space-y-1 border-t pt-3 text-xs">
+                              {snapshot.summary.map((section) => {
+                                const areaName = plan.areas.find(
+                                  (area) => area.id === section.areaId,
+                                )?.name
+                                return (
+                                  <p key={section.areaId}>
+                                    <span className="font-medium">{areaName ?? 'Sección'}:</span>{' '}
+                                    {section.activeSessions} abiertas · {section.attentionSessions}{' '}
+                                    pacing · {section.cleaningTables} por limpiar ·{' '}
+                                    {section.blockedTables} bloqueadas
+                                  </p>
+                                )
+                              })}
+                              {compareServiceHandover(snapshot.summary, handover).map((delta) => {
+                                const changes = [
+                                  delta.activeSessionsDelta !== 0
+                                    ? `${delta.activeSessionsDelta > 0 ? '+' : ''}${delta.activeSessionsDelta} cuentas`
+                                    : '',
+                                  delta.attentionSessionsDelta !== 0
+                                    ? `${delta.attentionSessionsDelta > 0 ? '+' : ''}${delta.attentionSessionsDelta} pacing`
+                                    : '',
+                                  delta.cleaningTablesDelta !== 0
+                                    ? `${delta.cleaningTablesDelta > 0 ? '+' : ''}${delta.cleaningTablesDelta} por limpiar`
+                                    : '',
+                                  delta.blockedTablesDelta !== 0
+                                    ? `${delta.blockedTablesDelta > 0 ? '+' : ''}${delta.blockedTablesDelta} bloqueadas`
+                                    : '',
+                                ].filter(Boolean)
+                                if (changes.length === 0) return null
+                                const areaName = plan.areas.find(
+                                  (area) => area.id === delta.areaId,
+                                )?.name
+                                return (
+                                  <p
+                                    className="text-primary"
+                                    key={`${snapshot.id}-${delta.areaId}`}
+                                  >
+                                    Cambio en {areaName ?? 'sección'}: {changes.join(' · ')}
+                                  </p>
+                                )
+                              })}
+                            </div>
+                          )}
+                        </li>
+                      )
                     })}
                 </ul>
                 {board.handoverSnapshots?.every(
