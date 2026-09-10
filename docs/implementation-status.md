@@ -51,6 +51,10 @@ Al cerrar una cuenta, sus mesas pasan a `Pendiente de limpiar` y dejan de ser
 seleccionables hasta que el equipo las marca como limpias. La capacidad se
 persiste en `20260910000048_service_table_cleaning.sql`.
 
+El realtime de servicio escucha ahora `table_sessions` y `tables` además de
+reservas y asignaciones, por lo que bloqueos, limpieza y cierres actualizan el
+panel sin recarga manual.
+
 Las acciones de sentar una reserva, abrir un walk-in y sentar una espera soportan
 ahora modo offline: guardan una operación local, la reintentan al recuperar la
 conexión y envían un `operation_id` único. La restricción parcial
