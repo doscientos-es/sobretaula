@@ -45,7 +45,13 @@ export const getUserDestinations = createServerFn({ method: 'GET' })
         .eq('status', 'active')
       if (membershipsResult.error) throw new Error('user_destinations_load_failed')
 
-      return (membershipsResult.data ?? [])
+      // The Supabase client has no generated `Database` schema, so postgrest-js
+      // cannot infer that `memberships.tenant_id` is a to-one relation and
+      // widens the embedded `tenants` type to an array. At runtime Supabase
+      // still returns a single joined object per row, hence the cast below.
+      type MembershipTenantRow = { tenants: { name: string; slug: string } | null }
+
+      return ((membershipsResult.data ?? []) as unknown as MembershipTenantRow[])
         .map((membership) => membership.tenants)
         .filter((tenant): tenant is { name: string; slug: string } => tenant != null)
         .sort((first, second) => first.name.localeCompare(second.name))
