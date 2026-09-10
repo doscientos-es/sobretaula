@@ -23,6 +23,7 @@ import { createBrowserSupabaseClient } from '@/shared/lib/supabase/client'
 
 import { buildServiceHandover, type ServiceBoard } from '../domain/service-board'
 import { ServiceActions } from './service-actions'
+import { createHandoverSnapshot } from '../application/table-service'
 import { describeStatus } from './service-labels'
 import { ServicePlan } from './service-plan'
 import { ServiceQueue } from './service-queue'
@@ -48,6 +49,7 @@ export function ServicePage({
   const [isOnline, setIsOnline] = useState(() =>
     typeof navigator === 'undefined' ? true : navigator.onLine,
   )
+  const [handoverSaved, setHandoverSaved] = useState(false)
   const reload = useLoaderReload()
   useEffect(() => {
     const refresh = () => {
@@ -455,6 +457,30 @@ export function ServicePage({
                     </div>
                   )
                 })}
+                <Button
+                  disabled={!isOnline}
+                  onClick={() => {
+                    void createHandoverSnapshot({
+                      data: {
+                        summary: handover.map((section) => ({
+                          ...section,
+                          assignedStaffIds: [...section.assignedStaffIds],
+                        })),
+                        tenantId,
+                        venueId,
+                      },
+                    }).then(() => setHandoverSaved(true))
+                  }}
+                  type="button"
+                  variant="outline"
+                >
+                  Guardar entrega de turno
+                </Button>
+                {handoverSaved && (
+                  <p className="text-success text-xs" role="status">
+                    Entrega guardada con fecha y responsable.
+                  </p>
+                )}
               </CardContent>
             </Card>
           )}
