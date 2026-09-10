@@ -70,7 +70,7 @@ export const Route = createFileRoute('/t/$slug/l/$venue/tpv')({
 
 function PosTerminalRoute() {
   const { tenantMembership, venue } = Route.useRouteContext()
-  const { account, board, cashHistory, cashRegister, menu, report } = Route.useLoaderData()
+  const { account, board, cashHistory, cashRegister, report } = Route.useLoaderData()
   const canManage = ['owner', 'manager'].includes(tenantMembership.role)
   return (
     <PosTerminalPage

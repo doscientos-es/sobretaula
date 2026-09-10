@@ -153,8 +153,8 @@ teclado y lectores de pantalla.
 
 Cada entrega debe tener pruebas de dominio y de interacción, estados de carga,
 vacío, error y permiso, responsive para su dispositivo objetivo, teclado/foco,
-contraste WCAG 2.2 AA, auditoría de mutaciones y verificación contra Supabase
-de pruebas cuando exista el entorno dedicado.
+contraste WCAG 2.2 AA, auditoría de mutaciones y verificación del esquema activo
+sin ejecutar datos de prueba contra el proyecto con datos reales.
 
 ## Métricas
 

@@ -36,7 +36,7 @@ export function RedsysSubscriptionButton({ tenantId }: { tenantId: string }) {
 
   return (
     <div className="space-y-2">
-      <Button disabled={pending} onClick={start} size="lg">
+      <Button disabled={pending} onClick={() => void start()} size="lg">
         {pending ? 'Preparando pago…' : 'Autorizar pago seguro'}
       </Button>
       {error && <p className="text-destructive text-sm">{error}</p>}

@@ -110,16 +110,14 @@ export const addCashMovement = createServerFn({ method: 'POST' })
   .handler(async ({ context, data }) => {
     requireManager(context.tenantMembership.role)
     const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
-    const { error } = await supabase
-      .from('cash_movements')
-      .insert({
-        tenant_id: data.tenantId,
-        register_id: data.registerId,
-        kind: data.kind,
-        amount_cents: data.amountCents,
-        reason: data.reason,
-        created_by: context.tenantMembership.userId,
-      })
+    const { error } = await supabase.from('cash_movements').insert({
+      tenant_id: data.tenantId,
+      register_id: data.registerId,
+      kind: data.kind,
+      amount_cents: data.amountCents,
+      reason: data.reason,
+      created_by: context.tenantMembership.userId,
+    })
     if (error) throw new Error(`cash_movement_failed:${error.code}`)
     return { registerId: data.registerId }
   })

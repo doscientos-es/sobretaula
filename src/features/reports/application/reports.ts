@@ -138,7 +138,8 @@ export const exportSalesReportCsv = createServerFn({ method: 'GET' })
           .neq('status', 'cancelled')
       : { data: [], error: null }
     if (itemsError) throw new Error(`sales_export_items_failed:${itemsError.code}`)
-    const escape = (value: unknown) => `"${String(value ?? '').replaceAll('"', '""')}"`
+    const escape = (value: string | number | null) =>
+      `"${String(value ?? '').replaceAll('"', '""')}"`
     return [
       'producto,cantidad,total_cents,iva_bps',
       ...(items ?? []).map((item) =>

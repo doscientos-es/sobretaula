@@ -178,8 +178,8 @@ duplicados o pérdida silenciosa de trabajo.
 
 ### Trabajo
 
-1. Crear un proyecto Supabase de pruebas y ejecutarlo en CI desde migraciones
-   vacías.
+1. Mantener CI de controles estáticos, unitarios y revisión de migraciones sin
+   conectar pruebas ni datos sintéticos al único proyecto con datos reales.
 2. Añadir pruebas de integración para RLS: anónimo, miembro de otro tenant,
    rol insuficiente y acceso por local restringido.
 3. Probar concurrencia en reservas, sentar/mover mesas, crear cuentas y emitir

@@ -66,5 +66,7 @@ suelto en cada política, que convertiría cualquier fallo en fuga total.
 - Pruebas obligatorias desde F1: dos tenants no se ven entre sí, endpoint
   directo con tenant ajeno → 403, anónimo → 401, `tenant_id` falsificado en el
   cuerpo → rechazo, cambio de tenant purga la caché de Query.
-- Un repositorio mock no prueba políticas: las pruebas de RLS corren contra una
-  base Supabase de pruebas.
+- Un repositorio mock no prueba políticas. Mientras exista un único proyecto
+  Supabase con datos reales, las pruebas RLS que requieran usuarios o fixtures
+  permanecen omitidas y se revisan las políticas y grants por migración; nunca
+  se ejecutan contra producción.

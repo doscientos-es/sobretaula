@@ -31,5 +31,6 @@ función de activación debe ser idempotente y auditable.
 
 ## Verificación requerida
 
-Aplicar la migración en Supabase de pruebas, ejecutar advisors, comprobar RLS
-entre tenants y probar un cambio de layout que cruce medianoche y zona horaria.
+Aplicar únicamente la migración propia revisada en el proyecto autorizado,
+ejecutar advisors, comprobar el esquema/RLS activo y probar en dominio un cambio
+de layout que cruce medianoche y zona horaria, sin insertar datos de prueba.

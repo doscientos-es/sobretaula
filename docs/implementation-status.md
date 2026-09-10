@@ -136,7 +136,7 @@ El loader degrada a una lista vacía si la migración aún no está aplicada, pa
 que el plano existente no quede bloqueado durante el despliegue progresivo.
 
 «Implementado» indica que existe código y pruebas unitarias; no equivale a
-entregable aprobado mientras falten pruebas contra un entorno dedicado.
+entregable aprobado mientras falte evidencia operativa reproducible.
 
 El alcance ampliado solicitado para reservas —agenda, web pública, excepciones,
 autogestión, avisos, cliente, espera y grupos— está documentado, pero pendiente de
@@ -147,11 +147,11 @@ ejecución, en [`reservations-completion-plan.md`](./reservations-completion-pla
 | #   | Evidencia                                                            | Estado                                                                       |
 | --- | -------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
 | 1   | Instalación limpia, tipos, lint, tests y build del artefacto Node    | Correcto localmente; falta una instalación limpia reproducible en CI         |
-| 2   | Login/logout/expiración y refresh sin caché compartida               | Implementado; falta evidencia reproducible contra un entorno dedicado        |
-| 3   | Endpoint directo: tenant ajeno → 403, anónimo → 401                  | Implementado; falta humo dedicado contra base de pruebas                     |
-| 4   | Listado con URL, loader, pending/error, reintento, invalidación      | Implementado; falta humo dedicado contra base de pruebas                     |
-| 5   | Emisión concurrente idempotente sin números duplicados               | Implementado en SQL; falta prueba concurrente contra base de pruebas         |
-| 6   | PDF privado; descarga cruzada denegada; fiscalidad fuera del cliente | Implementado; falta prueba de descarga cruzada contra base de pruebas        |
+| 2   | Login/logout/expiración y refresh sin caché compartida               | Implementado; falta evidencia operativa reproducible                         |
+| 3   | Endpoint directo: tenant ajeno → 403, anónimo → 401                  | Implementado; falta evidencia operativa sin datos reales                     |
+| 4   | Listado con URL, loader, pending/error, reintento, invalidación      | Implementado; falta evidencia operativa sin datos reales                     |
+| 5   | Emisión concurrente idempotente sin números duplicados               | Implementado en SQL; no se ejecutan carreras contra datos reales             |
+| 6   | PDF privado; descarga cruzada denegada; fiscalidad fuera del cliente | Implementado; falta evidencia de acceso controlado                           |
 | 7   | Integración fiscal en `mock`/`test` y compatibilidad del runtime     | Pendiente: requiere runtime real y certificado; forma parte del MVP ampliado |
 
 ## Checklist previa a VERI\*FACTU `prod` (ADR-0005)
@@ -181,33 +181,30 @@ hasta que un asesor fiscal valide el reparto de responsabilidad.
 
 Tras añadir la validación geométrica de la huella rotada de mesas, la suite
 local queda en 64 archivos correctos y 272 pruebas correctas; 1 archivo y 3
-pruebas RLS siguen omitidos por falta de entorno Supabase dedicado.
+pruebas RLS siguen omitidos para no conectarlos al proyecto con datos reales.
 
 La verificación posterior de producción (`pnpm build`) también completa
 correctamente y genera el artefacto Nitro/Vercel. La suite global actual queda
 en 64 archivos y 272 pruebas correctas; 1 archivo y 3 pruebas RLS continúan
-omitidos por el conector no autorizado.
+omitidos de forma deliberada para no usar datos reales como prueba.
 
 | Comando                | Resultado                                                                                    |
 | ---------------------- | -------------------------------------------------------------------------------------------- |
 | `pnpm format:check`    | Pendiente por 5 archivos ajenos al alcance actual                                            |
 | `pnpm lint`            | Correcto                                                                                     |
 | `pnpm structure:check` | Correcto localmente; el asset de login vive en `public/` y los módulos usan nombres estándar |
-| `pnpm test`            | 64 archivos y 272 pruebas correctas; 1 archivo y 3 pruebas RLS omitidas                      |
+| `pnpm test`            | 64 archivos y 272 pruebas correctas; 1 archivo y 3 pruebas RLS omitidas deliberadamente      |
 | `pnpm typecheck`       | Correcto                                                                                     |
 | `pnpm quality`         | Correcto                                                                                     |
 | `pnpm build`           | Correcto; solo avisos de Vite/chunks                                                         |
 
-Las pruebas de integración de RLS (`tenant-rls.test.ts`) requieren un proyecto
-Supabase de pruebas dedicado (`SUPABASE_TEST_URL`,
-`SUPABASE_TEST_PUBLISHABLE_KEY`, `SUPABASE_TEST_SECRET_KEY`; contrato en
-`.env.test.example`). Hoy existe un único proyecto Supabase, que es producción:
-no hay base de pruebas, así que la suite queda saltada y **no se ejecuta ningún
-humo contra producción**. Además del aislamiento entre tenants, la suite cubre
-la lectura de auditoría: sólo un `platform_owner` puede consultar
-`platform_audit_log`. Cuando exista un proyecto de pruebas, se activan sin
-cambios de código y la puerta de adopción (#2, #3, #5, #6) se cierra con esa
-evidencia.
+Las pruebas de integración de RLS (`tenant-rls.test.ts`) permanecen omitidas:
+el producto usa un único proyecto Supabase con datos reales y no se permite
+conectarlas, crear fixtures ni ejecutar humo, cargas o carreras sobre él.
+Además del aislamiento entre tenants, la suite cubre la lectura de auditoría:
+sólo un `platform_owner` puede consultar `platform_audit_log`. La evidencia de
+este control se limita hasta nuevo acuerdo a revisión de esquema y pruebas
+unitarias, sin presentar esa limitación como validación de producción.
 
 ### Despliegue revisado en Supabase existente (2026-09-10)
 

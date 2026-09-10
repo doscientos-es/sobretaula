@@ -11,19 +11,24 @@ import {
   PageHeaderTitle,
 } from '@doscientos/ui'
 import { useState } from 'react'
+
+import type { getSalesReport } from '../application/reports'
+
+const initialDateRange = {
+  from: new Date(Date.now() - 86_400_000).toISOString().slice(0, 10),
+  to: new Date().toISOString().slice(0, 10),
+}
+
 export function SalesReportPage({
   report: initialReport,
   onRange: loadRange,
 }: {
-  report: Awaited<ReturnType<typeof import('../application/reports').getSalesReport>>
-  onRange: (
-    from: string,
-    to: string,
-  ) => Promise<Awaited<ReturnType<typeof import('../application/reports').getSalesReport>>>
+  report: Awaited<ReturnType<typeof getSalesReport>>
+  onRange: (from: string, to: string) => Promise<Awaited<ReturnType<typeof getSalesReport>>>
 }) {
   const [report, setReport] = useState(initialReport)
-  const [from, setFrom] = useState(new Date(Date.now() - 86400000).toISOString().slice(0, 10))
-  const [to, setTo] = useState(new Date().toISOString().slice(0, 10))
+  const [from, setFrom] = useState(initialDateRange.from)
+  const [to, setTo] = useState(initialDateRange.to)
   const onRange = (fromValue: string, toValue: string) =>
     void loadRange(fromValue, toValue).then(setReport)
   const euro = (cents: number) => `${(cents / 100).toFixed(2)} €`

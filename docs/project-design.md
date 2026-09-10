@@ -175,8 +175,7 @@ Contrato completo en cada cierre de tarea y en CI: `pnpm format:check`,
 controles, incluidos `typecheck`, `quality` y `build`; el detalle y las
 evidencias viven en `docs/implementation-status.md`.
 
-Desde F1 se añaden pruebas de integración de RLS y concurrencia contra una base
-Supabase de pruebas, nunca producción. Las migraciones de gobierno global ya
-están aplicadas y verificadas en el proyecto de producción. Aún no hay un
-proyecto de pruebas dedicado, por lo que las pruebas RLS quedan omitidas y no
-se ejecuta ningún humo contra producción.
+Desde F1 se mantienen pruebas unitarias y revisión de esquema/RLS por migración.
+El producto usa un único proyecto Supabase con datos reales: las pruebas de
+integración RLS y concurrencia quedan omitidas para no conectarlas a producción,
+y no se ejecuta humo, fixture ni carga contra ese proyecto.

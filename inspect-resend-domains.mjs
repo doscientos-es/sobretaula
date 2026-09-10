@@ -32,4 +32,4 @@ const update = await fetch('https://api.resend.com/domains/' + domain.id, {
   body: JSON.stringify({ click_tracking: false }),
 })
 if (!update.ok) throw new Error('resend_domain_update_' + update.status)
-console.log(JSON.stringify({ domain: domain.name, clickTrackingDisabled: true }))
+process.stdout.write(`${JSON.stringify({ domain: domain.name, clickTrackingDisabled: true })}\n`)

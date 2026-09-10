@@ -16,7 +16,13 @@ import {
 } from '@doscientos/ui'
 import { useState } from 'react'
 
-import { addCashMovement, closeCashRegister, openCashRegister } from '../application/cash-register'
+import {
+  addCashMovement,
+  closeCashRegister,
+  openCashRegister,
+  type getCashRegister,
+  type listClosedCashRegisters,
+} from '../application/cash-register'
 import { cashDifferenceCents, expectedCashCents } from '../domain/cash-register'
 import { CashMethodSummary } from './cash-method-summary'
 
@@ -31,10 +37,8 @@ export function CashRegisterPage({
   venueId,
   onDone,
 }: {
-  register: Awaited<ReturnType<typeof import('../application/cash-register').getCashRegister>>
-  history: Awaited<
-    ReturnType<typeof import('../application/cash-register').listClosedCashRegisters>
-  >
+  register: Awaited<ReturnType<typeof getCashRegister>>
+  history: Awaited<ReturnType<typeof listClosedCashRegisters>>
   tenantId: string
   venueId: string
   onDone: () => void

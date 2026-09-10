@@ -302,8 +302,9 @@ actual flujo dividido en varias lecturas y escrituras.
 - Dominio: tamaños, duración, capacidad, combinaciones, área, zona horaria/DST y
   transiciones.
 - Aplicación: validadores, roles, errores, agenda y política de cambios.
-- Base de pruebas: RLS entre tenants, acceso anónimo mínimo, RPC concurrente,
-  `EXCLUDE`, triggers y migración de datos existentes.
+- Esquema: revisar RLS entre tenants, acceso anónimo mínimo, RPC, `EXCLUDE` y
+  triggers por migración; no ejecutar fixtures, carreras ni pruebas de datos
+  contra el único proyecto con datos reales.
 - Integración: tokens válidos/caducados/revocados, rate limit, mensajes dedupe,
   webhook firmado, reintentos y reembolsos.
 - E2E accesible: teclado en agenda, reserva pública, enlace, oferta de espera y
@@ -311,10 +312,11 @@ actual flujo dividido en varias lecturas y escrituras.
 
 ### Paso previo a producción
 
-1. Crear el proyecto Supabase de pruebas y activar las pruebas RLS hoy omitidas;
-   nunca ejecutar fixtures, cargas o concurrencia contra producción.
-2. Probar migraciones con copia anonimizada, rollback lógico y métricas de RPC,
-   conflictos, conversión, no-shows, ofertas y entregas.
+1. Aplicar únicamente migraciones propias revisadas al proyecto Supabase
+   autorizado y verificar por metadatos el esquema, grants, RPC y RLS activos;
+   nunca ejecutar fixtures, cargas o concurrencia contra datos reales.
+2. Definir rollback lógico y métricas de RPC, conflictos, conversión, no-shows,
+   ofertas y entregas sin reutilizar datos de producción como prueba.
 3. Configurar secretos solo en servidor, firma de proveedores, límites de tasa,
    alertas de cron/webhooks y observabilidad sin PII.
 4. Ejecutar `pnpm quality` y `pnpm build`; registrar fecha, commit y resultado en

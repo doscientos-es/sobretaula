@@ -105,15 +105,13 @@ export const replaceRecipe = createServerFn({ method: 'POST' })
         .order('version', { ascending: false })
         .limit(1)
         .maybeSingle()
-      const { error: versionError } = await supabase
-        .from('recipe_versions')
-        .insert({
-          tenant_id: data.tenantId,
-          menu_item_id: data.menuItemId,
-          version: Number(latest?.version ?? 0) + 1,
-          lines: previousLines,
-          created_by: context.tenantMembership.userId,
-        })
+      const { error: versionError } = await supabase.from('recipe_versions').insert({
+        tenant_id: data.tenantId,
+        menu_item_id: data.menuItemId,
+        version: Number(latest?.version ?? 0) + 1,
+        lines: previousLines,
+        created_by: context.tenantMembership.userId,
+      })
       if (versionError) throw new Error(`recipe_version_create_failed:${versionError.code}`)
     }
     const { error: deleteError } = await supabase
@@ -123,17 +121,15 @@ export const replaceRecipe = createServerFn({ method: 'POST' })
       .eq('tenant_id', data.tenantId)
     if (deleteError) throw new Error(`recipe_replace_failed:${deleteError.code}`)
     if (data.lines.length) {
-      const { error } = await supabase
-        .from('recipe_ingredients')
-        .insert(
-          data.lines.map((line) => ({
-            tenant_id: data.tenantId,
-            menu_item_id: data.menuItemId,
-            ingredient_id: line.ingredientId,
-            quantity: line.quantity,
-            waste_percent: line.wastePercent,
-          })),
-        )
+      const { error } = await supabase.from('recipe_ingredients').insert(
+        data.lines.map((line) => ({
+          tenant_id: data.tenantId,
+          menu_item_id: data.menuItemId,
+          ingredient_id: line.ingredientId,
+          quantity: line.quantity,
+          waste_percent: line.wastePercent,
+        })),
+      )
       if (error) throw new Error(`recipe_lines_create_failed:${error.code}`)
     }
     return { menuItemId: data.menuItemId, lineCount: data.lines.length }
@@ -228,15 +224,13 @@ export const restoreRecipeVersion = createServerFn({ method: 'POST' })
         .order('version', { ascending: false })
         .limit(1)
         .maybeSingle()
-      const { error } = await supabase
-        .from('recipe_versions')
-        .insert({
-          tenant_id: data.tenantId,
-          menu_item_id: data.menuItemId,
-          version: Number(latest.data?.version ?? 0) + 1,
-          lines: current.data,
-          created_by: context.tenantMembership.userId,
-        })
+      const { error } = await supabase.from('recipe_versions').insert({
+        tenant_id: data.tenantId,
+        menu_item_id: data.menuItemId,
+        version: Number(latest.data?.version ?? 0) + 1,
+        lines: current.data,
+        created_by: context.tenantMembership.userId,
+      })
       if (error) throw new Error(`recipe_version_create_failed:${error.code}`)
     }
     await supabase
@@ -245,17 +239,15 @@ export const restoreRecipeVersion = createServerFn({ method: 'POST' })
       .eq('tenant_id', data.tenantId)
       .eq('menu_item_id', data.menuItemId)
     if (lines.length) {
-      const { error } = await supabase
-        .from('recipe_ingredients')
-        .insert(
-          lines.map((line) => ({
-            tenant_id: data.tenantId,
-            menu_item_id: data.menuItemId,
-            ingredient_id: line.ingredientId,
-            quantity: line.quantity,
-            waste_percent: line.wastePercent,
-          })),
-        )
+      const { error } = await supabase.from('recipe_ingredients').insert(
+        lines.map((line) => ({
+          tenant_id: data.tenantId,
+          menu_item_id: data.menuItemId,
+          ingredient_id: line.ingredientId,
+          quantity: line.quantity,
+          waste_percent: line.wastePercent,
+        })),
+      )
       if (error) throw new Error(`recipe_restore_failed:${error.code}`)
     }
     return { menuItemId: data.menuItemId, restoredVersion: data.version }

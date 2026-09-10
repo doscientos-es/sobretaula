@@ -11,7 +11,7 @@ import {
   FormFeedback,
 } from '@doscientos/ui'
 
-import { recordTimeEvent } from '../application/timekeeping'
+import { recordTimeEvent, type getMyTimekeeping } from '../application/timekeeping'
 import { allowedNextEvent, type TimeEventType } from '../domain/timekeeping'
 
 const labels: Record<TimeEventType, string> = {
@@ -26,7 +26,7 @@ export function TimekeepingPage({
   venueId,
   onDone,
 }: {
-  summary: Awaited<ReturnType<typeof import('../application/timekeeping').getMyTimekeeping>>
+  summary: Awaited<ReturnType<typeof getMyTimekeeping>>
   tenantId: string
   venueId: string
   onDone: () => void

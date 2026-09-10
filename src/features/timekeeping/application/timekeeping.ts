@@ -12,10 +12,12 @@ import { createRequestSupabaseClient } from '@/shared/lib/supabase/server/create
 import { allowedNextEvent, workedMinutes, type TimeEventType } from '../domain/timekeeping'
 import {
   recordTimeEventInput,
+  setPinInput,
+  terminalTimeEventInput,
   timekeepingInput,
   timekeepingReportInput,
+  verifyPinInput,
 } from './timekeeping-schema'
-import { setPinInput, terminalTimeEventInput, verifyPinInput } from './timekeeping-schema'
 const middleware = [
   authMiddleware,
   tenantMembershipMiddleware,

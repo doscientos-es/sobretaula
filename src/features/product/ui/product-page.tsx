@@ -18,7 +18,13 @@ import {
 } from '@doscientos/ui'
 import { useState } from 'react'
 
-import { addInventoryMovement, createIngredient, replaceRecipe } from '../application/product'
+import {
+  addInventoryMovement,
+  createIngredient,
+  replaceRecipe,
+  type getInventory,
+  type listIngredients,
+} from '../application/product'
 
 export function ProductPage({
   ingredients,
@@ -28,8 +34,8 @@ export function ProductPage({
   venueId,
   onDone,
 }: {
-  ingredients: Awaited<ReturnType<typeof import('../application/product').listIngredients>>
-  stock: Awaited<ReturnType<typeof import('../application/product').getInventory>>
+  ingredients: Awaited<ReturnType<typeof listIngredients>>
+  stock: Awaited<ReturnType<typeof getInventory>>
   menuItems: { id: string; name: string }[]
   tenantId: string
   venueId: string
@@ -82,7 +88,7 @@ export function ProductPage({
           <CardTitle>Ingredientes e inventario</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <form className="grid gap-3 md:grid-cols-5" onSubmit={submit}>
+          <form className="grid gap-3 md:grid-cols-5" onSubmit={(event) => void submit(event)}>
             <Field>
               <FieldLabel htmlFor="ingredient-name">Nombre</FieldLabel>
               <Input

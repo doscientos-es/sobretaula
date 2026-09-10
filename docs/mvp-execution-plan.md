@@ -42,20 +42,21 @@ Esta sección prevalece sobre las dependencias históricas de este backlog.
   cobro manual, caja e informe diario; siguen pendientes modificadores,
   reimpresión/hardware, PIN de terminal, informe financiero completo, control
   horario compartido e inventario/escandallos de punta a punta.
-- Brechas de fiabilidad: no existe Supabase dedicado de pruebas, por lo que las
-  tres pruebas RLS están omitidas; tampoco hay humo E2E ni concurrencia real.
+- Brechas de fiabilidad: las tres pruebas RLS están omitidas porque no se
+  conectan pruebas al único proyecto con datos reales; tampoco hay humo E2E ni
+  concurrencia real contra ese proyecto.
 - Riesgo previo: hay prefijos de migración repetidos (por ejemplo `...00026`,
   `...00031` y `...00035`). Antes de cualquier migración, reconciliar el
-  historial con el proyecto de pruebas y normalizar versiones futuras.
+  historial con el proyecto existente y normalizar versiones futuras.
 - Ámbito protegido: hay cambios locales no confirmados en `features/account`.
   No se modifican ni se incluyen en una entrega sin confirmación de su autor.
 
 ## Reglas de ejecución
 
 1. Una tarea es un PR pequeño, desplegable y verificable; no mezclar verticales.
-2. Toda migración nueva es incremental, lleva RLS, índices y pruebas. Se aplica
-   primero al Supabase de pruebas; solo se aplica a producción cuando sea una
-   migración propia revisada, con proyecto destino inequívoco.
+2. Toda migración nueva es incremental, lleva RLS, índices y pruebas. Solo se
+   aplica al proyecto autorizado cuando sea una migración propia revisada, con
+   destino inequívoco, seguida de verificación de esquema.
 3. Nunca usar producción para fixtures, concurrencia, humo o pruebas RLS.
 4. Cada UI aporta es/ca, estados carga/vacío/error/sin permiso/offline, teclado,
    foco, WCAG 2.2 AA y el diseño del dispositivo objetivo.
@@ -67,7 +68,7 @@ Esta sección prevalece sobre las dependencias históricas de este backlog.
 
 | ID  | Decisión o recurso                                             | Necesario para                   |
 | --- | -------------------------------------------------------------- | -------------------------------- |
-| G1  | Proyecto Supabase no productivo, CI y credenciales de prueba   | E0 y toda entrega de esquema     |
+| G1  | Evidencia automatizada sin usar datos reales como prueba       | E0 y validación de esquema       |
 | G2  | Variante TPV: nativo, integración o exportación temporal       | E3--E6 y hardware                |
 | G3  | Modelos/protocolos de impresora, cajón y datáfono              | E6                               |
 | G4  | Proveedor, coste y consentimientos para SMS/WhatsApp           | E8 (email puede avanzar)         |
@@ -82,9 +83,9 @@ Esta sección prevalece sobre las dependencias históricas de este backlog.
 - [x] **E0.1 · Inventario de esquema.** Confirmado el único proyecto autorizado,
       reconciliado `migration list` y aplicadas individualmente las migraciones
       pendientes revisadas. No se cambia historial previamente aplicado.
-- [ ] **E0.2 · Reset reproducible.** Aplicar desde vacío al proyecto de pruebas
-      y añadir CI que ejecute migraciones y las pruebas de integración sin secretos
-      expuestos en logs.
+- [ ] **E0.2 · Evidencia reproducible.** Añadir CI para controles estáticos,
+      pruebas unitarias y revisión de migraciones sin secretos expuestos ni
+      conexión de pruebas al proyecto con datos reales.
 - [ ] **E0.3 · Seguridad y carreras.** Ampliar RLS a anónimo, tenant/rol/local
       ajeno y Storage; probar carreras de reserva, seating/movimiento, pago, cierre
       e invoice; verificar recuperación tras reintento y doble clic.
@@ -92,8 +93,9 @@ Esta sección prevalece sobre las dependencias históricas de este backlog.
       reservas, mesas, anulaciones, descuentos, cobros, caja y fiscalidad; runbook
       de backup/restore y recuperación de sesiones abiertas.
 
-**Salida:** CI verde contra Supabase de pruebas, sin acceso cruzado, sin doble
-ocupación/cobro/número fiscal y con procedimientos de recuperación ensayados.
+**Salida:** CI verde para código y migraciones revisadas, sin acceso cruzado
+por diseño, sin doble ocupación/cobro/número fiscal en contratos cubiertos y
+con procedimientos de recuperación documentados.
 
 ### E1 — Configuración operativa y reservas internas (P0)
 
@@ -234,7 +236,8 @@ ventas sin intervención técnica.
 
 ## Definition of Done del MVP
 
-Solo se marca completo tras un piloto en Supabase no productivo y un servicio de
-prueba completo: reserva, sala, comanda, preparación, cobro/ticket, caja/cierre,
-fichaje y exportación. Deben quedar demostrados permisos/RLS, offline y
-recuperación, deduplicación, auditoría, accesibilidad y los controles de calidad.
+Solo se marca completo tras un piloto controlado y un servicio completo:
+reserva, sala, comanda, preparación, cobro/ticket, caja/cierre, fichaje y
+exportación. Deben quedar demostrados permisos/RLS, offline y recuperación,
+deduplicación, auditoría, accesibilidad y los controles de calidad, sin usar
+datos reales como fixtures de prueba.

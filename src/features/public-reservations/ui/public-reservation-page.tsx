@@ -145,6 +145,10 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
       feedback.setError('Elige el día y la hora que prefieras.')
       return
     }
+    if (!privacyAccepted) {
+      feedback.setError('Acepta la política de privacidad para continuar.')
+      return
+    }
     feedback.setPending()
     try {
       const result = await createPublicReservation({
@@ -155,7 +159,7 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
           guestName,
           ...(notes ? { notes } : {}),
           partySize,
-          privacyAccepted,
+          privacyAccepted: true,
           serviceId,
           slug: profile.slug,
           // The browser's local zone is the restaurant's zone in this MVP. The
