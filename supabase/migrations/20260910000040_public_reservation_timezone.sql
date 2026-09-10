@@ -1,5 +1,7 @@
 -- Expose the restaurant timezone with the public management lookup so clients
 -- always see the reservation in the venue's local time.
+drop function if exists public.public_reservation_by_token(text);
+
 create or replace function public.public_reservation_by_token(p_token_hash text)
 returns table (reservation_id uuid, tenant_name text, venue_name text, timezone text, party_size integer,
   starts_at timestamptz, ends_at timestamptz, status public.reservation_status)

@@ -375,11 +375,11 @@ function FiscalSettingsCard({
               value={countryCode}
             />
           </Field>
-          <div className="md:col-span-2">
-            <FormFeedback pendingLabel="Guardando datos fiscales…" state={feedback.state} />
+          <div className="flex min-h-16 flex-col items-start gap-2 md:col-span-2">
             <Button disabled={feedback.pending} type="submit">
               Guardar datos fiscales
             </Button>
+            <FormFeedback pendingLabel="Guardando datos fiscales…" state={feedback.state} />
           </div>
         </form>
       </CardContent>

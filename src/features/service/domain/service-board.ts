@@ -73,6 +73,18 @@ export interface WaitlistEntry {
   requestedFor: string
 }
 
+export interface KitchenTicket {
+  id: string
+  name: string
+  notes: string | null
+  quantity: number
+  preparationMinutes: number
+  station: string
+  status: 'pending' | 'preparing' | 'ready' | 'served' | 'cancelled'
+  sessionId: string
+  createdAt: string
+}
+
 export interface ServiceTableState extends ServiceTable {
   covers: number | null
   nextReservationStartsAt?: string
@@ -91,6 +103,7 @@ export interface ServiceBoard {
   kitchenAlertOrderCount?: number
   kitchenAlertMinutes?: number
   kitchenLoadByStation?: Readonly<Record<string, number>>
+  kitchenTickets?: readonly KitchenTicket[]
   staff?: readonly ServiceStaffMember[]
   handoverSnapshots?: readonly ServiceHandoverSnapshot[]
   tables: readonly ServiceTableState[]

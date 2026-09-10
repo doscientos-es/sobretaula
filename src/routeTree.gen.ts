@@ -52,9 +52,13 @@ import { Route as TSlugLNuevoRouteImport } from './routes/t.$slug.l.nuevo'
 import { Route as TSlugSuscripcionFacturasRouteImport } from './routes/t.$slug.suscripcion.facturas'
 import { Route as TSlugLVenueIndexRouteImport } from './routes/t.$slug.l.$venue.index'
 import { Route as TSlugLVenueBloquesRouteImport } from './routes/t.$slug.l.$venue.bloques'
+import { Route as TSlugLVenueCajaRouteImport } from './routes/t.$slug.l.$venue.caja'
 import { Route as TSlugLVenueClientesRouteImport } from './routes/t.$slug.l.$venue.clientes'
 import { Route as TSlugLVenueComunicacionesRouteImport } from './routes/t.$slug.l.$venue.comunicaciones'
+import { Route as TSlugLVenueFichajeRouteImport } from './routes/t.$slug.l.$venue.fichaje'
+import { Route as TSlugLVenueInformesRouteImport } from './routes/t.$slug.l.$venue.informes'
 import { Route as TSlugLVenuePlanoRouteImport } from './routes/t.$slug.l.$venue.plano'
+import { Route as TSlugLVenueProductosRouteImport } from './routes/t.$slug.l.$venue.productos'
 import { Route as TSlugLVenueReservasRouteImport } from './routes/t.$slug.l.$venue.reservas'
 import { Route as TSlugLVenueServicioRouteImport } from './routes/t.$slug.l.$venue.servicio'
 import { Route as TSlugLVenueCuentaSessionIdRouteImport } from './routes/t.$slug.l.$venue.cuenta.$sessionId'
@@ -277,6 +281,11 @@ const TSlugLVenueBloquesRoute = TSlugLVenueBloquesRouteImport.update({
   path: '/bloques',
   getParentRoute: () => TSlugLVenueRoute,
 } as any)
+const TSlugLVenueCajaRoute = TSlugLVenueCajaRouteImport.update({
+  id: '/caja',
+  path: '/caja',
+  getParentRoute: () => TSlugLVenueRoute,
+} as any)
 const TSlugLVenueClientesRoute = TSlugLVenueClientesRouteImport.update({
   id: '/clientes',
   path: '/clientes',
@@ -288,9 +297,24 @@ const TSlugLVenueComunicacionesRoute =
     path: '/comunicaciones',
     getParentRoute: () => TSlugLVenueRoute,
   } as any)
+const TSlugLVenueFichajeRoute = TSlugLVenueFichajeRouteImport.update({
+  id: '/fichaje',
+  path: '/fichaje',
+  getParentRoute: () => TSlugLVenueRoute,
+} as any)
+const TSlugLVenueInformesRoute = TSlugLVenueInformesRouteImport.update({
+  id: '/informes',
+  path: '/informes',
+  getParentRoute: () => TSlugLVenueRoute,
+} as any)
 const TSlugLVenuePlanoRoute = TSlugLVenuePlanoRouteImport.update({
   id: '/plano',
   path: '/plano',
+  getParentRoute: () => TSlugLVenueRoute,
+} as any)
+const TSlugLVenueProductosRoute = TSlugLVenueProductosRouteImport.update({
+  id: '/productos',
+  path: '/productos',
   getParentRoute: () => TSlugLVenueRoute,
 } as any)
 const TSlugLVenueReservasRoute = TSlugLVenueReservasRouteImport.update({
@@ -353,9 +377,13 @@ export interface FileRoutesByFullPath {
   '/t/$slug/l/nuevo': typeof TSlugLNuevoRoute
   '/t/$slug/suscripcion/facturas': typeof TSlugSuscripcionFacturasRoute
   '/t/$slug/l/$venue/bloques': typeof TSlugLVenueBloquesRoute
+  '/t/$slug/l/$venue/caja': typeof TSlugLVenueCajaRoute
   '/t/$slug/l/$venue/clientes': typeof TSlugLVenueClientesRoute
   '/t/$slug/l/$venue/comunicaciones': typeof TSlugLVenueComunicacionesRoute
+  '/t/$slug/l/$venue/fichaje': typeof TSlugLVenueFichajeRoute
+  '/t/$slug/l/$venue/informes': typeof TSlugLVenueInformesRoute
   '/t/$slug/l/$venue/plano': typeof TSlugLVenuePlanoRoute
+  '/t/$slug/l/$venue/productos': typeof TSlugLVenueProductosRoute
   '/t/$slug/l/$venue/reservas': typeof TSlugLVenueReservasRoute
   '/t/$slug/l/$venue/servicio': typeof TSlugLVenueServicioRoute
   '/t/$slug/l/$venue/': typeof TSlugLVenueIndexRoute
@@ -401,9 +429,13 @@ export interface FileRoutesByTo {
   '/t/$slug/l/nuevo': typeof TSlugLNuevoRoute
   '/t/$slug/suscripcion/facturas': typeof TSlugSuscripcionFacturasRoute
   '/t/$slug/l/$venue/bloques': typeof TSlugLVenueBloquesRoute
+  '/t/$slug/l/$venue/caja': typeof TSlugLVenueCajaRoute
   '/t/$slug/l/$venue/clientes': typeof TSlugLVenueClientesRoute
   '/t/$slug/l/$venue/comunicaciones': typeof TSlugLVenueComunicacionesRoute
+  '/t/$slug/l/$venue/fichaje': typeof TSlugLVenueFichajeRoute
+  '/t/$slug/l/$venue/informes': typeof TSlugLVenueInformesRoute
   '/t/$slug/l/$venue/plano': typeof TSlugLVenuePlanoRoute
+  '/t/$slug/l/$venue/productos': typeof TSlugLVenueProductosRoute
   '/t/$slug/l/$venue/reservas': typeof TSlugLVenueReservasRoute
   '/t/$slug/l/$venue/servicio': typeof TSlugLVenueServicioRoute
   '/t/$slug/l/$venue': typeof TSlugLVenueIndexRoute
@@ -453,9 +485,13 @@ export interface FileRoutesById {
   '/t/$slug/l/nuevo': typeof TSlugLNuevoRoute
   '/t/$slug/suscripcion/facturas': typeof TSlugSuscripcionFacturasRoute
   '/t/$slug/l/$venue/bloques': typeof TSlugLVenueBloquesRoute
+  '/t/$slug/l/$venue/caja': typeof TSlugLVenueCajaRoute
   '/t/$slug/l/$venue/clientes': typeof TSlugLVenueClientesRoute
   '/t/$slug/l/$venue/comunicaciones': typeof TSlugLVenueComunicacionesRoute
+  '/t/$slug/l/$venue/fichaje': typeof TSlugLVenueFichajeRoute
+  '/t/$slug/l/$venue/informes': typeof TSlugLVenueInformesRoute
   '/t/$slug/l/$venue/plano': typeof TSlugLVenuePlanoRoute
+  '/t/$slug/l/$venue/productos': typeof TSlugLVenueProductosRoute
   '/t/$slug/l/$venue/reservas': typeof TSlugLVenueReservasRoute
   '/t/$slug/l/$venue/servicio': typeof TSlugLVenueServicioRoute
   '/t/$slug/l/$venue/': typeof TSlugLVenueIndexRoute
@@ -506,9 +542,13 @@ export interface FileRouteTypes {
     | '/t/$slug/l/nuevo'
     | '/t/$slug/suscripcion/facturas'
     | '/t/$slug/l/$venue/bloques'
+    | '/t/$slug/l/$venue/caja'
     | '/t/$slug/l/$venue/clientes'
     | '/t/$slug/l/$venue/comunicaciones'
+    | '/t/$slug/l/$venue/fichaje'
+    | '/t/$slug/l/$venue/informes'
     | '/t/$slug/l/$venue/plano'
+    | '/t/$slug/l/$venue/productos'
     | '/t/$slug/l/$venue/reservas'
     | '/t/$slug/l/$venue/servicio'
     | '/t/$slug/l/$venue/'
@@ -554,9 +594,13 @@ export interface FileRouteTypes {
     | '/t/$slug/l/nuevo'
     | '/t/$slug/suscripcion/facturas'
     | '/t/$slug/l/$venue/bloques'
+    | '/t/$slug/l/$venue/caja'
     | '/t/$slug/l/$venue/clientes'
     | '/t/$slug/l/$venue/comunicaciones'
+    | '/t/$slug/l/$venue/fichaje'
+    | '/t/$slug/l/$venue/informes'
     | '/t/$slug/l/$venue/plano'
+    | '/t/$slug/l/$venue/productos'
     | '/t/$slug/l/$venue/reservas'
     | '/t/$slug/l/$venue/servicio'
     | '/t/$slug/l/$venue'
@@ -605,9 +649,13 @@ export interface FileRouteTypes {
     | '/t/$slug/l/nuevo'
     | '/t/$slug/suscripcion/facturas'
     | '/t/$slug/l/$venue/bloques'
+    | '/t/$slug/l/$venue/caja'
     | '/t/$slug/l/$venue/clientes'
     | '/t/$slug/l/$venue/comunicaciones'
+    | '/t/$slug/l/$venue/fichaje'
+    | '/t/$slug/l/$venue/informes'
     | '/t/$slug/l/$venue/plano'
+    | '/t/$slug/l/$venue/productos'
     | '/t/$slug/l/$venue/reservas'
     | '/t/$slug/l/$venue/servicio'
     | '/t/$slug/l/$venue/'
@@ -941,6 +989,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TSlugLVenueBloquesRouteImport
       parentRoute: typeof TSlugLVenueRoute
     }
+    '/t/$slug/l/$venue/caja': {
+      id: '/t/$slug/l/$venue/caja'
+      path: '/caja'
+      fullPath: '/t/$slug/l/$venue/caja'
+      preLoaderRoute: typeof TSlugLVenueCajaRouteImport
+      parentRoute: typeof TSlugLVenueRoute
+    }
     '/t/$slug/l/$venue/clientes': {
       id: '/t/$slug/l/$venue/clientes'
       path: '/clientes'
@@ -955,11 +1010,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TSlugLVenueComunicacionesRouteImport
       parentRoute: typeof TSlugLVenueRoute
     }
+    '/t/$slug/l/$venue/fichaje': {
+      id: '/t/$slug/l/$venue/fichaje'
+      path: '/fichaje'
+      fullPath: '/t/$slug/l/$venue/fichaje'
+      preLoaderRoute: typeof TSlugLVenueFichajeRouteImport
+      parentRoute: typeof TSlugLVenueRoute
+    }
+    '/t/$slug/l/$venue/informes': {
+      id: '/t/$slug/l/$venue/informes'
+      path: '/informes'
+      fullPath: '/t/$slug/l/$venue/informes'
+      preLoaderRoute: typeof TSlugLVenueInformesRouteImport
+      parentRoute: typeof TSlugLVenueRoute
+    }
     '/t/$slug/l/$venue/plano': {
       id: '/t/$slug/l/$venue/plano'
       path: '/plano'
       fullPath: '/t/$slug/l/$venue/plano'
       preLoaderRoute: typeof TSlugLVenuePlanoRouteImport
+      parentRoute: typeof TSlugLVenueRoute
+    }
+    '/t/$slug/l/$venue/productos': {
+      id: '/t/$slug/l/$venue/productos'
+      path: '/productos'
+      fullPath: '/t/$slug/l/$venue/productos'
+      preLoaderRoute: typeof TSlugLVenueProductosRouteImport
       parentRoute: typeof TSlugLVenueRoute
     }
     '/t/$slug/l/$venue/reservas': {
@@ -1028,9 +1104,13 @@ const ReservarSlugRouteWithChildren = ReservarSlugRoute._addFileChildren(
 
 interface TSlugLVenueRouteChildren {
   TSlugLVenueBloquesRoute: typeof TSlugLVenueBloquesRoute
+  TSlugLVenueCajaRoute: typeof TSlugLVenueCajaRoute
   TSlugLVenueClientesRoute: typeof TSlugLVenueClientesRoute
   TSlugLVenueComunicacionesRoute: typeof TSlugLVenueComunicacionesRoute
+  TSlugLVenueFichajeRoute: typeof TSlugLVenueFichajeRoute
+  TSlugLVenueInformesRoute: typeof TSlugLVenueInformesRoute
   TSlugLVenuePlanoRoute: typeof TSlugLVenuePlanoRoute
+  TSlugLVenueProductosRoute: typeof TSlugLVenueProductosRoute
   TSlugLVenueReservasRoute: typeof TSlugLVenueReservasRoute
   TSlugLVenueServicioRoute: typeof TSlugLVenueServicioRoute
   TSlugLVenueIndexRoute: typeof TSlugLVenueIndexRoute
@@ -1039,9 +1119,13 @@ interface TSlugLVenueRouteChildren {
 
 const TSlugLVenueRouteChildren: TSlugLVenueRouteChildren = {
   TSlugLVenueBloquesRoute: TSlugLVenueBloquesRoute,
+  TSlugLVenueCajaRoute: TSlugLVenueCajaRoute,
   TSlugLVenueClientesRoute: TSlugLVenueClientesRoute,
   TSlugLVenueComunicacionesRoute: TSlugLVenueComunicacionesRoute,
+  TSlugLVenueFichajeRoute: TSlugLVenueFichajeRoute,
+  TSlugLVenueInformesRoute: TSlugLVenueInformesRoute,
   TSlugLVenuePlanoRoute: TSlugLVenuePlanoRoute,
+  TSlugLVenueProductosRoute: TSlugLVenueProductosRoute,
   TSlugLVenueReservasRoute: TSlugLVenueReservasRoute,
   TSlugLVenueServicioRoute: TSlugLVenueServicioRoute,
   TSlugLVenueIndexRoute: TSlugLVenueIndexRoute,

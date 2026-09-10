@@ -27,4 +27,5 @@ export type {
   ServiceTableState,
   ServiceTableStatus,
   WaitlistEntry,
+  KitchenTicket,
 } from './domain/service-board'

@@ -10,7 +10,7 @@ export type OrderItemStatus = (typeof ORDER_ITEM_STATUSES)[number]
 /** A line already charged to the table: the menu price was frozen when added. */
 export interface AccountLine {
   id: string
-  status: OrderItemStatus
+  status?: OrderItemStatus
   kitchenStation?: KitchenStation
   name: string
   preparationMinutes?: number
@@ -26,6 +26,7 @@ export interface AccountPayment {
   method: PaymentMethod
   paidAt: string
   tipCents: MinorUnits
+  refundedCents?: MinorUnits
 }
 
 export interface AccountTotals {
@@ -54,18 +55,19 @@ export function lineNetCents(
 export function computeAccountTotals(
   lines: readonly AccountLine[],
   payments: readonly AccountPayment[],
+  discountCents = 0,
 ): AccountTotals {
   const grossCents = lines.reduce((sum, line) => sum + lineGrossCents(line), 0)
   const netCents = lines.reduce((sum, line) => sum + lineNetCents(line), 0)
-  const paidCents = payments.reduce((sum, payment) => sum + payment.amountCents, 0)
+  const paidCents = payments.reduce((sum, payment) => sum + payment.amountCents - (payment.refundedCents ?? 0), 0)
   const tipCents = payments.reduce((sum, payment) => sum + payment.tipCents, 0)
   return {
     balanceCents: grossCents - paidCents,
-    grossCents,
+    grossCents: Math.max(0, grossCents - discountCents),
     netCents,
     paidCents,
     tipCents,
-    vatCents: grossCents - netCents,
+    vatCents: Math.max(0, grossCents - discountCents - netCents),
   }
 }
 

@@ -1,5 +1,8 @@
 export { createMenuCategory, createMenuItem, getMenu, updateMenuItem } from './application/menu'
+export { getPublicMenu } from './application/public-menu'
+export { setMenuChannelPrice } from './application/channel-prices'
 export type { MenuCatalog } from './application/menu'
 export { buildMenuSections, formatVatRate, localizedText } from './domain/menu'
 export type { LocalizedText, MenuCategory, MenuItem, MenuSection } from './domain/menu'
 export { MenuPage } from './ui/menu-page'
+export { PublicMenuPage } from './ui/public-menu-page'

@@ -31,10 +31,10 @@ reproducible (comando ejecutado y su resultado).
 | F4 · Vista de servicio | Plano en vivo, sentar/mover/unir, walk-ins, espera, no-show                 | Implementado; entrega bloqueada                                  |
 | F5 · Cuenta de mesa    | Catálogo, líneas, dividir, cerrar, cobrar                                   | Implementado; entrega bloqueada                                  |
 | F6 · Facturación       | Ajustes fiscales, series, ledger/outbox, PDF, modo test                     | Implementado; entrega bloqueada                                  |
-| F7 · TPV ampliado      | Catálogo, comandas, cocina/barra, cobros, caja y arqueo                     | Pendiente; cuenta de mesa existente es base parcial              |
+| F7 · TPV ampliado      | Catálogo, comandas, cocina/barra, cobros, caja y arqueo                     | Parcial; cuenta, catálogo, estaciones, estados, cola, devoluciones, descuentos, caja, histórico, UI/informe y exportación CSV inicial implementados; faltan hardware e informe financiero completo |
 | F8 · Reservas públicas | Reserva sin cuenta, gestión, avisos, espera y ficha de cliente              | Parcial; motor interno existe, falta cierre del flujo público    |
-| F9 · Control horario   | PIN, pausas, jornadas, auditoría y exportación                             | Pendiente                                                        |
-| F10 · Producto         | Inventario, escandallos, alérgenos, precios por canal y carta                | Pendiente; requisitos documentados                               |
+| F9 · Control horario   | PIN, pausas, jornadas, auditoría y exportación                             | Parcial; eventos, transiciones, cálculo, pantalla inicial, exportación CSV, PIN almacenado como hash y endpoint de terminal para verificar PIN y registrar el evento del empleado implementados; faltan UX de terminal compartido, limitación de intentos y reglas laborales |
+| F10 · Producto         | Inventario, escandallos, alérgenos, precios por canal y carta                | Parcial; ingredientes, recetas, escandallo, inventario, UI, canales y carta pública enriquecida implementados; faltan versionado y validación visual final |
 | F11 · Entrega          | Documentación operativa, smoke, despliegue autorizado                       | Parcial                                                          |
 
 El dashboard operativo ya calcula reservas activas, reservas de la semana,

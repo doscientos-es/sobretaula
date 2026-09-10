@@ -20,6 +20,7 @@ export interface AccountSessionInfo {
   openedAt: string
   status: string
   tableCodes: string[]
+  discountCents: number
 }
 
 export interface AccountData {
@@ -39,7 +40,7 @@ export async function loadAccount(
 ): Promise<AccountData | null> {
   const { data: session, error: sessionError } = await supabase
     .from('table_sessions')
-    .select('covers, id, opened_at, status, table_ids')
+    .select('covers, discount_cents, id, opened_at, status, table_ids')
     .eq('id', sessionId)
     .eq('tenant_id', tenantId)
     .eq('venue_id', venueId)
@@ -69,6 +70,13 @@ export async function loadAccount(
   }
 
   const orderIds = (ordersResult.data ?? []).map((order) => order.id as string)
+  const paymentIds = (paymentsResult.data ?? []).map((payment) => payment.id as string)
+  const refundsResult = paymentIds.length
+    ? await supabase.from('payment_refunds').select('amount_cents, payment_id').eq('tenant_id', tenantId).in('payment_id', paymentIds)
+    : { data: [], error: null }
+  if (refundsResult.error && refundsResult.error.code !== '42P01') throw new Error('account_refunds_load_failed')
+  const refundedByPayment = new Map<string, number>()
+  for (const refund of refundsResult.data ?? []) refundedByPayment.set(refund.payment_id as string, (refundedByPayment.get(refund.payment_id as string) ?? 0) + (refund.amount_cents as number))
   let itemsResult = await (orderIds.length === 0
     ? Promise.resolve({ data: [], error: null })
     : supabase
@@ -120,9 +128,11 @@ export async function loadAccount(
       method: payment.method as PaymentMethod,
       paidAt: payment.paid_at as string,
       tipCents: payment.tip_cents as number,
+      refundedCents: refundedByPayment.get(payment.id as string) ?? 0,
     })),
     session: {
       covers: session.covers as number,
+      discountCents: (session.discount_cents as number | null) ?? 0,
       id: session.id as string,
       openedAt: session.opened_at as string,
       status: session.status as string,

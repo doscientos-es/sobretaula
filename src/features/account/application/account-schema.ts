@@ -28,6 +28,8 @@ export const recordPaymentInput = accountSessionInput.extend({
   method: z.enum(PAYMENT_METHODS),
   tipCents: z.number().int().min(0).max(1_000_000).optional(),
 })
+export const refundPaymentInput = accountSessionInput.extend({ paymentId: z.string().uuid(), amountCents: z.number().int().min(1).max(1_000_000), reason: z.string().trim().min(2).max(200) })
+export const applyDiscountInput = accountSessionInput.extend({ discountCents: z.number().int().min(1).max(1_000_000), reason: z.string().trim().min(2).max(200) })
 
 /** Apuntar y cobrar es trabajo de sala: camarero, encargado o dueño. */
 export function requireAccountEditor(role: string): void {

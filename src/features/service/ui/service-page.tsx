@@ -33,6 +33,7 @@ import { ServiceActions } from './service-actions'
 import { describeReservationWindow, describeStatus } from './service-labels'
 import { ServicePlan } from './service-plan'
 import { ServiceQueue } from './service-queue'
+import { KitchenQueue } from './kitchen-queue'
 
 export function ServicePage({
   board,
@@ -667,6 +668,7 @@ export function ServicePage({
             tenantId={tenantId}
             venueId={venueId}
           />
+          <KitchenQueue tickets={board.kitchenTickets ?? []} tenantId={tenantId} venueId={venueId} onDone={reload} />
         </aside>
       </div>
     </section>

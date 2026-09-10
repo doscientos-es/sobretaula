@@ -24,6 +24,9 @@ export interface MenuItem {
   preparationMinutes?: number
   sku: string | null
   vatRateBps: number
+  allergens?: readonly string[]
+  isVegan?: boolean
+  allergenReasons?: Readonly<Record<string, readonly string[]>>
 }
 
 export interface MenuSection {

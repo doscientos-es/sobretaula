@@ -9,6 +9,7 @@ import {
   type ServiceStaffMember,
   type ServiceHandoverSnapshot,
   type ServiceTable,
+  type KitchenTicket,
   type WaitlistEntry,
 } from '../../domain/service-board'
 
@@ -123,17 +124,38 @@ export async function loadServiceBoard(
     throw new Error(`service_kitchen_load_failed:${recentOrdersResult.error.code}`)
   const recentOrderCount = recentOrdersResult.data?.length ?? 0
   const recentOrderIds = (recentOrdersResult.data ?? []).map((order) => order.id as string)
+  const kitchenTicketsResult = recentOrderIds.length
+    ? await supabase
+        .from('order_items')
+        .select('id, name_snapshot, notes, quantity, preparation_minutes, kitchen_station, status, created_at, orders!inner(session_id)')
+        .eq('tenant_id', tenantId)
+        .in('order_id', recentOrderIds)
+        .order('created_at')
+    : { data: [], error: null }
+  if (kitchenTicketsResult.error && kitchenTicketsResult.error.code !== '42703')
+    throw new Error(`service_kitchen_tickets_load_failed:${kitchenTicketsResult.error.code}`)
+  const kitchenTickets: KitchenTicket[] = (kitchenTicketsResult.data ?? []).map((item) => ({
+    id: item.id as string,
+    name: item.name_snapshot as string,
+    notes: (item.notes as string | null) ?? null,
+    quantity: item.quantity as number,
+    preparationMinutes: (item.preparation_minutes as number | null) ?? 15,
+    station: (item.kitchen_station as string | null) ?? 'general',
+    status: ((item.status as KitchenTicket['status'] | null) ?? 'pending'),
+    sessionId: ((item.orders as { session_id: string }[])[0]?.session_id ?? ''),
+    createdAt: item.created_at as string,
+  }))
   let kitchenItemsResult = recentOrderIds.length
     ? await supabase
         .from('order_items')
-        .select('kitchen_station, preparation_minutes, quantity')
+        .select('kitchen_station, preparation_minutes, quantity, status')
         .eq('tenant_id', tenantId)
         .in('order_id', recentOrderIds)
     : { data: [], error: null }
   if (kitchenItemsResult.error?.code === '42703' && recentOrderIds.length > 0) {
     const legacy = await supabase
       .from('order_items')
-      .select('quantity')
+        .select('quantity')
       .eq('tenant_id', tenantId)
       .in('order_id', recentOrderIds)
     kitchenItemsResult = {
@@ -149,6 +171,7 @@ export async function loadServiceBoard(
     throw new Error(`service_kitchen_station_load_failed:${kitchenItemsResult.error.code}`)
   const kitchenLoadByStation: Record<string, number> = {}
   for (const item of kitchenItemsResult.data ?? []) {
+    if ('status' in item && item.status !== 'pending' && item.status !== 'preparing') continue
     const station = (item.kitchen_station as string | null) ?? 'general'
     kitchenLoadByStation[station] =
       (kitchenLoadByStation[station] ?? 0) +
@@ -347,6 +370,7 @@ export async function loadServiceBoard(
     kitchenAlertMinutes: pacingResult.data?.service_kitchen_alert_minutes ?? 60,
     kitchenLoad: recentOrderCount,
     kitchenLoadByStation,
+    kitchenTickets,
     tables: buildServiceTableStates({
       now,
       reservations,

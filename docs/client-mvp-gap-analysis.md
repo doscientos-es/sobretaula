@@ -25,12 +25,12 @@ reservas públicas como alcance ampliado del MVP.
 | --- | --- | --- | --- |
 | Catálogo: categorías, productos, precios, IVA | A medias | Hay productos/catálogo en la cuenta de mesa y ajustes fiscales/facturación | Completar CRUD de catálogo, precios por local, IVA por producto, modificadores, disponibilidad y destino cocina/barra |
 | Mesas y zonas | Hecho | Plano versionado, zonas, mesas, mover/unir/bloquear, limpieza y sesiones | Humo real en Supabase y validación con varios usuarios |
-| Comandas | A medias | Cuenta de mesa con líneas y cierre | Añadir notas de cocina, edición rápida, envío por estado y cuenta abierta conectada a servicio |
-| Cocina y barra | Pendiente | No hay flujo operativo de tickets/pantalla por destino | Diseñar ticket de preparación, cola por destino, estados recibido/en preparación/listo/entregado, reimpresión y adaptadores de impresora/pantalla |
-| Cobros y facturación del restaurante | A medias | Ledger, facturación, PDF y Redsys para pagos puntuales existentes | Efectivo, tarjeta, mixto, dividir cuenta, descuentos, devoluciones, reimpresiones y conexión completa desde cuenta |
-| Caja y arqueo | Pendiente | No hay módulo completo de apertura/cierre/arqueo | Modelo de turnos de caja, movimientos, conteo, diferencias, cierres por método y permisos |
-| Usuarios y permisos del TPV | A medias | Auth, tenancy, roles y auditoría de plataforma | PIN del TPV, sesión de terminal, roles camarero/encargado/admin, anulaciones y descuentos auditados |
-| Informes | A medias | Métricas de reservas, sesiones y cobros; vistas de plataforma | Ventas diarias, impuestos, métodos de pago, productos vendidos, ticket medio, descuentos y cierres |
+| Comandas | A medias | Cuenta de mesa con líneas, notas, estación, tiempo de preparación y estado persistido | Añadir edición rápida, envío/cola visual y conexión completa con servicio |
+| Cocina y barra | A medias | Estaciones, carga por estación, cola operativa en servicio y líneas con estados `pending/preparing/ready/served/cancelled` | Añadir reimpresión, trazabilidad avanzada y adaptadores de impresora/pantalla |
+| Cobros y facturación del restaurante | A medias | Ledger, facturación, PDF, pagos por método/división, devoluciones y descuentos auditados visibles en cuenta | Reimpresiones, integración física y conciliación completa |
+| Caja y arqueo | A medias | Modelo, API, ruta operativa, histórico visual, formularios, tarjeta por método y resumen por método persistido al cierre | Informe financiero completo y conciliación avanzada de devoluciones |
+| Usuarios y permisos del TPV | A medias | Auth, tenancy, roles y auditoría de plataforma; descuentos auditados; PIN de empleado almacenado solo como hash; verificación server-side y operación de fichaje por terminal con empleado + PIN | Interfaz de terminal compartido, sesión/identificación visual de terminal, roles operativos finos y anulaciones |
+| Informes | A medias | API agregada, ruta, filtros, exportación CSV, conciliación de descuentos/devoluciones, resumen agrupado y primera vista de productos vendidos | Cierres de caja e informe financiero completo |
 | Offline y duplicados | A medias | Cola offline e idempotencia para reservas/servicio | Extender a comandas, cuentas, pagos y caja; resolver conflictos y recuperación de mesas abiertas |
 | Copias y recuperación | A medias | Persistencia Supabase y operaciones idempotentes | Procedimiento de backup/restore probado y recuperación específica de sesiones/cuentas abiertas |
 | Hardware | Pendiente/Bloqueado | No hay adaptadores de impresora, cajón ni datáfono | Confirmar modelos/protocolos del cliente, diseñar bridge local y probar instalación por dispositivo |
@@ -43,7 +43,10 @@ reservas públicas como alcance ampliado del MVP.
 | Notificaciones | A medias | Email/outbox y jobs preparados | Plantillas y envío transaccional probado; SMS/WhatsApp requieren proveedor y consentimiento |
 | Lista de espera | A medias | Modelo/flujo de espera en servicio | Oferta con caducidad, aceptación pública y notificación al liberar mesa |
 | Configuración de responsables | A medias | Locales, áreas, horarios y miembros | Turnos, duración, intervalos, antelación, límites por franja, cierres/eventos y permisos de sala |
-| Control horario | Pendiente | No hay módulo de fichaje de empleados | PIN, eventos inmutables, pausas, jornadas partidas/nocturnas, centros, exportación y portal empleado |
+| Control horario | A medias | Eventos append-only, transición servidor, cálculo de minutos, ruta de fichaje, exportación CSV por local, PIN almacenado solo como hash y endpoint server-side que verifica PIN y registra eventos para el empleado seleccionado | Pantalla de terminal compartido, selección de empleado en UI, limitación de intentos, jornadas partidas/nocturnas, centros, portal empleado y reglas laborales |
+| Producto: ingredientes y escandallos | A medias | Modelo, CRUD server-side/UI, consulta de coste, versiones históricas y restauración conservadora; carta pública lee atributos | Edición de alérgenos avanzada y presentación pública enriquecida |
+| Carta pública | A medias | Ruta pública con RPC protegido y vista específica que muestra productos activos, IVA, precio por canal, veganismo y alérgeno con ingrediente causante | Validación visual con datos reales y mejoras de accesibilidad/traducción |
+| Inventario | A medias | Movimientos por local, stock derivado, descuento/reposición de recetas, consulta de referencias bajo mínimo y primera pantalla por local | Registrar entradas/salidas desde UI, edición de alérgenos/recetas y compras/proveedores |
 | Facturación SaaS Sobretaula | A medias | Planes, facturas, webhook, formulario inicial y REST preparado | Capturar/cifrar token, conectar renovación automática, probar MIT, reintentos y cancelación |
 
 ## Tareas priorizadas para completar el MVP
@@ -59,9 +62,9 @@ reservas públicas como alcance ampliado del MVP.
 ### P1 — mínimo operativo de TPV
 
 1. Catálogo y modificadores con IVA, disponibilidad y destino.
-2. Comandas con notas, envío a cocina/barra y estados de preparación.
+2. Comandas con notas, envío a cocina/barra y estados de preparación. La persistencia, transición y primera cola operativa ya están implementadas; faltan reimpresión e integración hardware.
 3. Cuenta dividida, descuentos auditados, pagos mixtos, devoluciones y reimpresión.
-4. Caja: apertura, movimientos, arqueo, diferencias y cierre.
+4. Caja: apertura, movimientos, arqueo, diferencias y cierre. El núcleo persistente ya está implementado; falta la UX, histórico e informes.
 5. PIN/roles de terminal y auditoría de acciones críticas.
 6. Informes mínimos de ventas, impuestos, productos y cierres.
 
@@ -76,7 +79,7 @@ reservas públicas como alcance ampliado del MVP.
 ### P3 — control horario y hardware
 
 1. Confirmar requisitos laborales y modelo de exportación con asesoría.
-2. Implementar fichaje por PIN y registro append-only.
+2. Integrar fichaje por PIN en una terminal compartida, con selección de empleado, bloqueo por intentos y registro append-only. La persistencia segura del PIN y el endpoint server-side de verificación y registro para el empleado seleccionado ya están implementados; falta la pantalla y las protecciones de intento en la UX.
 3. Implementar pausas, turnos partidos, nocturnidad, festivos y cambios de centro.
 4. Confirmar impresoras, cajones y datáfonos concretos; implementar adaptadores y bridge local.
 
