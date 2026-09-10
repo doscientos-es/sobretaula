@@ -12,6 +12,7 @@ import {
   ExternalLink,
   FileText,
   LayoutDashboard,
+  Mail,
   Map,
   Utensils,
   UtensilsCrossed,
@@ -142,6 +143,15 @@ export function TenantAdminFrame({
               {t('nav.invoices')}
             </Link>
             <Link
+              to="/t/$slug/comunicaciones"
+              params={{ slug }}
+              activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
+              className={navLinkClass}
+            >
+              <Mail className="size-3" />
+              Comunicaciones
+            </Link>
+            <Link
               to="/t/$slug/equipo"
               params={{ slug }}
               activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
@@ -221,6 +231,9 @@ export function TenantAdminFrame({
           </Link>
           <Link params={{ slug }} to="/t/$slug/facturas">
             Facturas
+          </Link>
+          <Link params={{ slug }} to="/t/$slug/comunicaciones">
+            Comunicaciones
           </Link>
           <Link params={{ slug }} to="/t/$slug/equipo">
             Equipo

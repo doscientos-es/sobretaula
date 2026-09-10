@@ -17,6 +17,7 @@ describe('layout source parser boundary', () => {
       bytes: new Uint8Array(),
       mimeType: 'application/pdf',
     })
-    expect(result).toMatchObject({ confidence: 0, needsReview: true, template: undefined })
+    expect(result).toMatchObject({ confidence: 0, needsReview: true })
+    expect(result.template).toBeUndefined()
   })
 })

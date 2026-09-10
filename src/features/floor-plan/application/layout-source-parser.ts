@@ -21,7 +21,10 @@ export interface LayoutSourceParser {
   parse(source: LayoutSource): Promise<LayoutParseResult>
 }
 
-export function detectLayoutSourceKind(mimeType: string, name: string): LayoutSourceKind | undefined {
+export function detectLayoutSourceKind(
+  mimeType: string,
+  name: string,
+): LayoutSourceKind | undefined {
   const normalized = mimeType.toLowerCase()
   if (normalized === 'application/json' || name.toLowerCase().endsWith('.json')) return 'json'
   if (normalized === 'application/pdf' || name.toLowerCase().endsWith('.pdf')) return 'pdf'

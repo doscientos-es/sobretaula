@@ -41,6 +41,7 @@ import { Route as ReservarSlugCondicionesRouteImport } from './routes/reservar.$
 import { Route as ReservarSlugPrivacidadRouteImport } from './routes/reservar.$slug.privacidad'
 import { Route as TSlugIndexRouteImport } from './routes/t.$slug.index'
 import { Route as TSlugCartaRouteImport } from './routes/t.$slug.carta'
+import { Route as TSlugComunicacionesRouteImport } from './routes/t.$slug.comunicaciones'
 import { Route as TSlugEquipoRouteImport } from './routes/t.$slug.equipo'
 import { Route as TSlugFacturacionRouteImport } from './routes/t.$slug.facturacion'
 import { Route as TSlugFacturasRouteImport } from './routes/t.$slug.facturas'
@@ -218,6 +219,11 @@ const TSlugCartaRoute = TSlugCartaRouteImport.update({
   path: '/carta',
   getParentRoute: () => TSlugRoute,
 } as any)
+const TSlugComunicacionesRoute = TSlugComunicacionesRouteImport.update({
+  id: '/comunicaciones',
+  path: '/comunicaciones',
+  getParentRoute: () => TSlugRoute,
+} as any)
 const TSlugEquipoRoute = TSlugEquipoRouteImport.update({
   id: '/equipo',
   path: '/equipo',
@@ -329,6 +335,7 @@ export interface FileRoutesByFullPath {
   '/reservar/$slug/condiciones': typeof ReservarSlugCondicionesRoute
   '/reservar/$slug/privacidad': typeof ReservarSlugPrivacidadRoute
   '/t/$slug/carta': typeof TSlugCartaRoute
+  '/t/$slug/comunicaciones': typeof TSlugComunicacionesRoute
   '/t/$slug/equipo': typeof TSlugEquipoRoute
   '/t/$slug/facturacion': typeof TSlugFacturacionRoute
   '/t/$slug/facturas': typeof TSlugFacturasRoute
@@ -376,6 +383,7 @@ export interface FileRoutesByTo {
   '/reservar/$slug/condiciones': typeof ReservarSlugCondicionesRoute
   '/reservar/$slug/privacidad': typeof ReservarSlugPrivacidadRoute
   '/t/$slug/carta': typeof TSlugCartaRoute
+  '/t/$slug/comunicaciones': typeof TSlugComunicacionesRoute
   '/t/$slug/equipo': typeof TSlugEquipoRoute
   '/t/$slug/facturacion': typeof TSlugFacturacionRoute
   '/t/$slug/facturas': typeof TSlugFacturasRoute
@@ -425,6 +433,7 @@ export interface FileRoutesById {
   '/reservar/$slug/condiciones': typeof ReservarSlugCondicionesRoute
   '/reservar/$slug/privacidad': typeof ReservarSlugPrivacidadRoute
   '/t/$slug/carta': typeof TSlugCartaRoute
+  '/t/$slug/comunicaciones': typeof TSlugComunicacionesRoute
   '/t/$slug/equipo': typeof TSlugEquipoRoute
   '/t/$slug/facturacion': typeof TSlugFacturacionRoute
   '/t/$slug/facturas': typeof TSlugFacturasRoute
@@ -476,6 +485,7 @@ export interface FileRouteTypes {
     | '/reservar/$slug/condiciones'
     | '/reservar/$slug/privacidad'
     | '/t/$slug/carta'
+    | '/t/$slug/comunicaciones'
     | '/t/$slug/equipo'
     | '/t/$slug/facturacion'
     | '/t/$slug/facturas'
@@ -523,6 +533,7 @@ export interface FileRouteTypes {
     | '/reservar/$slug/condiciones'
     | '/reservar/$slug/privacidad'
     | '/t/$slug/carta'
+    | '/t/$slug/comunicaciones'
     | '/t/$slug/equipo'
     | '/t/$slug/facturacion'
     | '/t/$slug/facturas'
@@ -571,6 +582,7 @@ export interface FileRouteTypes {
     | '/reservar/$slug/condiciones'
     | '/reservar/$slug/privacidad'
     | '/t/$slug/carta'
+    | '/t/$slug/comunicaciones'
     | '/t/$slug/equipo'
     | '/t/$slug/facturacion'
     | '/t/$slug/facturas'
@@ -839,6 +851,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TSlugCartaRouteImport
       parentRoute: typeof TSlugRoute
     }
+    '/t/$slug/comunicaciones': {
+      id: '/t/$slug/comunicaciones'
+      path: '/comunicaciones'
+      fullPath: '/t/$slug/comunicaciones'
+      preLoaderRoute: typeof TSlugComunicacionesRouteImport
+      parentRoute: typeof TSlugRoute
+    }
     '/t/$slug/equipo': {
       id: '/t/$slug/equipo'
       path: '/equipo'
@@ -1015,6 +1034,7 @@ const TSlugLVenueRouteWithChildren = TSlugLVenueRoute._addFileChildren(
 
 interface TSlugRouteChildren {
   TSlugCartaRoute: typeof TSlugCartaRoute
+  TSlugComunicacionesRoute: typeof TSlugComunicacionesRoute
   TSlugEquipoRoute: typeof TSlugEquipoRoute
   TSlugFacturacionRoute: typeof TSlugFacturacionRoute
   TSlugFacturasRoute: typeof TSlugFacturasRoute
@@ -1026,6 +1046,7 @@ interface TSlugRouteChildren {
 
 const TSlugRouteChildren: TSlugRouteChildren = {
   TSlugCartaRoute: TSlugCartaRoute,
+  TSlugComunicacionesRoute: TSlugComunicacionesRoute,
   TSlugEquipoRoute: TSlugEquipoRoute,
   TSlugFacturacionRoute: TSlugFacturacionRoute,
   TSlugFacturasRoute: TSlugFacturasRoute,
