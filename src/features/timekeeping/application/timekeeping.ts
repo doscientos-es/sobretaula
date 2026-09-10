@@ -7,38 +7,101 @@ import {
 } from '@/features/tenancy/application/require-tenant-membership'
 import { createRequestSupabaseClient } from '@/shared/lib/supabase/server/create-server-client'
 
-import { workedMinutes, type TimeEventType } from '../domain/timekeeping'
+import {
+  DEFAULT_TIMEKEEPING_LABOR_RULES,
+  summarizeLaborTime,
+  workedMinutes,
+  type EmploymentType,
+  type TimeEventType,
+  type TimekeepingLaborRules,
+} from '../domain/timekeeping'
 import {
   recordTimeEventInput,
   setPinInput,
   terminalTimeEventInput,
+  timekeepingHolidayInput,
   timekeepingInput,
   timekeepingReportInput,
+  timekeepingTermInput,
 } from './timekeeping-schema'
 const middleware = [
   authMiddleware,
   tenantMembershipMiddleware,
   operationalTenantMiddleware,
 ] as const
+
+function normalizeClock(value: string | null | undefined, fallback: `${number}:${number}`) {
+  const match = value?.match(/^(\d{2}):(\d{2})/)
+  return (match ? `${match[1]}:${match[2]}` : fallback) as `${number}:${number}`
+}
+
 export const getMyTimekeeping = createServerFn({ method: 'GET' })
   .middleware(middleware)
   .validator(timekeepingInput)
   .handler(async ({ context, data }) => {
     const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
-    const { data: rows, error } = await supabase
-      .from('timekeeping_events')
-      .select('event_type, occurred_at, id')
-      .eq('tenant_id', data.tenantId)
-      .eq('venue_id', data.venueId)
-      .eq('employee_id', context.tenantMembership.userId)
-      .order('occurred_at')
-    if (error) throw new Error(`timekeeping_load_failed:${error.code}`)
-    const events = (rows ?? []).map((row) => ({
+    const today = new Date().toISOString().slice(0, 10)
+    const [eventsResult, termResult, holidaysResult, tenantResult] = await Promise.all([
+      supabase
+        .from('timekeeping_events')
+        .select('event_type, occurred_at, id')
+        .eq('tenant_id', data.tenantId)
+        .eq('venue_id', data.venueId)
+        .eq('employee_id', context.tenantMembership.userId)
+        .order('occurred_at'),
+      supabase
+        .from('timekeeping_employee_terms')
+        .select(
+          'daily_target_minutes, employment_type, minimum_break_minutes, minimum_daily_rest_minutes, night_ends_at, night_starts_at',
+        )
+        .eq('tenant_id', data.tenantId)
+        .eq('employee_id', context.tenantMembership.userId)
+        .lte('effective_from', today)
+        .order('effective_from', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from('timekeeping_holidays')
+        .select('holiday_date')
+        .eq('tenant_id', data.tenantId)
+        .eq('venue_id', data.venueId),
+      supabase.from('tenants').select('timezone').eq('id', data.tenantId).single(),
+    ])
+    if (eventsResult.error) throw new Error(`timekeeping_load_failed:${eventsResult.error.code}`)
+    if (termResult.error) throw new Error(`timekeeping_terms_load_failed:${termResult.error.code}`)
+    if (holidaysResult.error)
+      throw new Error(`timekeeping_holidays_load_failed:${holidaysResult.error.code}`)
+    if (tenantResult.error)
+      throw new Error(`timekeeping_timezone_load_failed:${tenantResult.error.code}`)
+    const events = (eventsResult.data ?? []).map((row) => ({
       id: row.id as string,
       eventType: row.event_type as TimeEventType,
       occurredAt: row.occurred_at as string,
     }))
-    return { events, workedMinutes: workedMinutes(events) }
+    const term = termResult.data
+    const laborRules: TimekeepingLaborRules = term
+      ? {
+          dailyTargetMinutes: term.daily_target_minutes as number,
+          minimumBreakMinutes: term.minimum_break_minutes as number,
+          minimumDailyRestMinutes: term.minimum_daily_rest_minutes as number,
+          nightEndsAt: normalizeClock(term.night_ends_at as string, '06:00'),
+          nightStartsAt: normalizeClock(term.night_starts_at as string, '22:00'),
+        }
+      : DEFAULT_TIMEKEEPING_LABOR_RULES
+    const employmentType = (term?.employment_type as EmploymentType | undefined) ?? 'full_time'
+    const timeZone = (tenantResult.data?.timezone as string | null) ?? 'Europe/Madrid'
+    return {
+      events,
+      laborContext: { employmentType, rules: laborRules, timeZone },
+      laborSummary: summarizeLaborTime({
+        employmentType,
+        events,
+        holidayDates: (holidaysResult.data ?? []).map((holiday) => holiday.holiday_date as string),
+        rules: laborRules,
+        timeZone,
+      }),
+      workedMinutes: workedMinutes(events),
+    }
   })
 export const recordTimeEvent = createServerFn({ method: 'POST' })
   .middleware(middleware)
@@ -178,4 +241,105 @@ export const getTimekeepingTerminalStaff = createServerFn({ method: 'GET' })
         role: member.role as 'accountant' | 'host' | 'manager' | 'owner' | 'waiter',
         userId: member.user_id as string,
       }))
+  })
+
+function requireTimekeepingManager(role: string): void {
+  if (role !== 'owner' && role !== 'manager') throw new Response('Forbidden', { status: 403 })
+}
+
+export const getTimekeepingConfiguration = createServerFn({ method: 'GET' })
+  .middleware(middleware)
+  .validator(timekeepingInput)
+  .handler(async ({ context, data }) => {
+    requireTimekeepingManager(context.tenantMembership.role)
+    const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    const [membersResult, profilesResult, termsResult, holidaysResult] = await Promise.all([
+      supabase
+        .from('memberships')
+        .select('user_id, role')
+        .eq('tenant_id', data.tenantId)
+        .eq('status', 'active')
+        .order('created_at'),
+      supabase.from('profiles').select('user_id, display_name'),
+      supabase
+        .from('timekeeping_employee_terms')
+        .select(
+          'daily_target_minutes, effective_from, employee_id, employment_type, minimum_break_minutes, minimum_daily_rest_minutes, night_ends_at, night_starts_at',
+        )
+        .eq('tenant_id', data.tenantId)
+        .order('effective_from', { ascending: false }),
+      supabase
+        .from('timekeeping_holidays')
+        .select('holiday_date, label')
+        .eq('tenant_id', data.tenantId)
+        .eq('venue_id', data.venueId)
+        .order('holiday_date'),
+    ])
+    if (membersResult.error || profilesResult.error || termsResult.error || holidaysResult.error)
+      throw new Error('timekeeping_configuration_load_failed')
+    const names = new Map(
+      (profilesResult.data ?? []).map((profile) => [profile.user_id, profile.display_name]),
+    )
+    return {
+      employees: (membersResult.data ?? []).map((member) => ({
+        displayName: names.get(member.user_id) ?? 'Empleado',
+        role: member.role as string,
+        userId: member.user_id as string,
+      })),
+      holidays: (holidaysResult.data ?? []).map((holiday) => ({
+        date: holiday.holiday_date as string,
+        label: holiday.label as string,
+      })),
+      terms: (termsResult.data ?? []).map((term) => ({
+        dailyTargetMinutes: term.daily_target_minutes as number,
+        effectiveFrom: term.effective_from as string,
+        employeeId: term.employee_id as string,
+        employmentType: term.employment_type as 'full_time' | 'part_time',
+        minimumBreakMinutes: term.minimum_break_minutes as number,
+        minimumDailyRestMinutes: term.minimum_daily_rest_minutes as number,
+        nightEndsAt: normalizeClock(term.night_ends_at as string, '06:00'),
+        nightStartsAt: normalizeClock(term.night_starts_at as string, '22:00'),
+      })),
+    }
+  })
+
+export const saveTimekeepingTerm = createServerFn({ method: 'POST' })
+  .middleware(middleware)
+  .validator(timekeepingTermInput)
+  .handler(async ({ context, data }) => {
+    requireTimekeepingManager(context.tenantMembership.role)
+    const { error } = await createRequestSupabaseClient(context.tenantMembership.accessToken)
+      .from('timekeeping_employee_terms')
+      .upsert({
+        created_by: context.tenantMembership.userId,
+        daily_target_minutes: data.dailyTargetMinutes,
+        effective_from: data.effectiveFrom,
+        employee_id: data.employeeId,
+        employment_type: data.employmentType,
+        minimum_break_minutes: data.minimumBreakMinutes,
+        minimum_daily_rest_minutes: data.minimumDailyRestMinutes,
+        night_ends_at: data.nightEndsAt,
+        night_starts_at: data.nightStartsAt,
+        tenant_id: data.tenantId,
+      })
+    if (error) throw new Error(`timekeeping_term_save_failed:${error.code}`)
+    return { saved: true }
+  })
+
+export const saveTimekeepingHoliday = createServerFn({ method: 'POST' })
+  .middleware(middleware)
+  .validator(timekeepingHolidayInput)
+  .handler(async ({ context, data }) => {
+    requireTimekeepingManager(context.tenantMembership.role)
+    const { error } = await createRequestSupabaseClient(context.tenantMembership.accessToken)
+      .from('timekeeping_holidays')
+      .upsert({
+        created_by: context.tenantMembership.userId,
+        holiday_date: data.holidayDate,
+        label: data.label,
+        tenant_id: data.tenantId,
+        venue_id: data.venueId,
+      })
+    if (error) throw new Error(`timekeeping_holiday_save_failed:${error.code}`)
+    return { saved: true }
   })
