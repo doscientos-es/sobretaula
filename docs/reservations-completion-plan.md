@@ -53,8 +53,8 @@ registro append-only que captura altas, cambios de estado, hora, duración y
 comensales tanto en flujos internos como públicos. El trigger evita depender de
 que cada pantalla recuerde escribir auditoría y RLS limita la lectura al tenant.
 La agenda interna ya expone esta línea temporal al desplegar cada reserva, con
-actor, fecha, tipo de evento y cambios saneados. El siguiente paso de producto
-es enriquecer el detalle con motivo editable y filtros por tipo de evento.
+actor, fecha, tipo de evento, filtro por tipo y cambios saneados. El siguiente
+paso de producto es enriquecer el detalle con motivo editable.
 
 ## 3. Decisiones necesarias antes de R1
 

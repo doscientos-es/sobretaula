@@ -39,6 +39,7 @@ export const closeSessionInput = serviceVenueInput.extend({
 })
 
 export const noShowReservationInput = serviceVenueInput.extend({
+  reason: z.string().trim().max(500).optional(),
   reservationId: z.string().uuid(),
 })
 

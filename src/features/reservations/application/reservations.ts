@@ -68,6 +68,7 @@ export interface ReservationEvent {
   changes: string
   createdAt: string
   eventType: string
+  reason: string | null
 }
 
 function requireReservationEditor(role: string): void {
@@ -204,7 +205,7 @@ export const getReservationEvents = createServerFn({ method: 'GET' })
     const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
     const { data: events, error } = await supabase
       .from('reservation_events')
-      .select('actor_kind, changes, created_at, event_type')
+      .select('actor_kind, changes, created_at, event_type, reason')
       .eq('tenant_id', data.tenantId)
       .eq('venue_id', data.venueId)
       .eq('reservation_id', data.reservationId)
@@ -216,6 +217,7 @@ export const getReservationEvents = createServerFn({ method: 'GET' })
       changes: JSON.stringify(event.changes ?? {}),
       createdAt: event.created_at,
       eventType: event.event_type,
+      reason: event.reason as string | null,
     }))
   })
 

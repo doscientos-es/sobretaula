@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
 
-import { normalizeTableGroupPreset } from './table-group-presets'
+import {
+  inspectTableGroupPresetAvailability,
+  normalizeTableGroupPreset,
+} from './table-group-presets'
 
 describe('normalizeTableGroupPreset', () => {
   it('trims and deduplicates table ids', () => {
@@ -27,5 +30,35 @@ describe('normalizeTableGroupPreset', () => {
     expect(
       normalizeTableGroupPreset({ name: 'Grupo', tableIds: ['a', 'b'], maxSeats: 0 }),
     ).toBeUndefined()
+  })
+})
+
+describe('inspectTableGroupPresetAvailability', () => {
+  it('reports missing tables and capacity without mutating the preset', () => {
+    const preset = normalizeTableGroupPreset({
+      name: 'Familia',
+      tableIds: ['a', 'b'],
+      maxSeats: 8,
+    })!
+    expect(
+      inspectTableGroupPresetAvailability(
+        preset,
+        new Map([
+          ['a', 4],
+          ['b', 4],
+        ]),
+      ),
+    ).toEqual({
+      availableTableIds: ['a', 'b'],
+      missingTableIds: [],
+      totalSeats: 8,
+      fitsCapacity: true,
+    })
+    expect(preset.tableIds).toEqual(['a', 'b'])
+  })
+
+  it('rejects stale or over-capacity combinations', () => {
+    const preset = normalizeTableGroupPreset({ name: 'Terraza', tableIds: ['a', 'gone'], maxSeats: 6 })!
+    expect(inspectTableGroupPresetAvailability(preset, new Map([['a', 8]])).fitsCapacity).toBe(false)
   })
 })

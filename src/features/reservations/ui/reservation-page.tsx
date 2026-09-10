@@ -76,7 +76,7 @@ function describeEventChanges(changes: string): string | null {
     return entries
       .map(
         ([key, value]) =>
-          `${key}: ${typeof value === 'object' ? JSON.stringify(value) : String(value)}`,
+          `${key}: ${typeof value === 'string' ? value : (JSON.stringify(value) ?? '—')}`,
       )
       .join(' · ')
   } catch {
@@ -212,7 +212,8 @@ export function ReservationPage({
   async function cancelAgendaReservation(reservationId: string) {
     if (!window.confirm('¿Cancelar esta reserva?')) return
     try {
-      await cancelReservation({ data: { reservationId, tenantId, venueId } })
+      const reason = window.prompt('Motivo de cancelación (opcional)')?.trim() || undefined
+      await cancelReservation({ data: { reservationId, reason, tenantId, venueId } })
       setAgendaLoading(true)
       setAgendaRefresh((value) => value + 1)
     } catch {
@@ -240,7 +241,8 @@ export function ReservationPage({
   async function markAgendaNoShow(reservationId: string) {
     if (!window.confirm('¿Marcar esta reserva como no presentada?')) return
     try {
-      await markReservationNoShow({ data: { reservationId, tenantId, venueId } })
+      const reason = window.prompt('Motivo del no-show (opcional)')?.trim() || undefined
+      await markReservationNoShow({ data: { reservationId, reason, tenantId, venueId } })
       setAgendaLoading(true)
       setAgendaRefresh((value) => value + 1)
     } catch {
@@ -571,6 +573,11 @@ export function ReservationPage({
                                         {describeEventChanges(event.changes)}
                                       </span>
                                     ) : null}
+                                    {event.reason ? (
+                                      <span className="text-muted-foreground block">
+                                        Motivo: {event.reason}
+                                      </span>
+                                    ) : null}
                                   </li>
                                 ))}
                               {!eventsByReservation[item.id]?.filter(
@@ -578,7 +585,11 @@ export function ReservationPage({
                                   historyEventFilter === 'all' ||
                                   event.eventType === historyEventFilter,
                               ).length ? (
-                                <li>Cargando historial…</li>
+                                <li>
+                                  {eventsByReservation[item.id]
+                                    ? 'No hay eventos para este filtro.'
+                                    : 'Cargando historial…'}
+                                </li>
                               ) : null}
                             </ol>
                           </div>
