@@ -10,9 +10,11 @@ import {
   tenantMembershipMiddleware,
 } from './require-tenant-membership'
 
-const input = z.object({
+export const dashboardMetricsInput = z.object({
   tenantId: z.string().uuid(),
-  venueIds: z.array(z.string().uuid()),
+  // Older deployed route bundles did not send venueIds. Treat that request as
+  // an empty dashboard while the deployment converges instead of rejecting it.
+  venueIds: z.array(z.string().uuid()).default([]),
 })
 
 export interface DashboardMetrics {
@@ -30,7 +32,7 @@ export interface DashboardMetrics {
 
 export const getDashboardMetrics = createServerFn({ method: 'GET' })
   .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
-  .validator(input)
+  .validator(dashboardMetricsInput)
   .handler(async ({ context, data }): Promise<DashboardMetrics> => {
     if (data.venueIds.length === 0) {
       return {
