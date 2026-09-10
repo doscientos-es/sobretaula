@@ -39,7 +39,9 @@ export function ForgotPasswordPage() {
       feedback.setSuccess(CONFIRMATION_MESSAGE)
     } catch (error) {
       if (isAuthEmailRateLimited(error)) {
-        feedback.setError('Hemos enviado demasiados enlaces. Espera unos minutos e inténtalo de nuevo.')
+        feedback.setError(
+          'Hemos enviado demasiados enlaces. Espera unos minutos e inténtalo de nuevo.',
+        )
         return
       }
       // Delivery failures still show the generic message so the response never leaks account existence.
@@ -95,10 +97,7 @@ export function ForgotPasswordPage() {
                 Enviar enlace <ArrowRight className="size-4" />
               </Button>
               <p className="text-muted-foreground text-center text-sm leading-6">
-                <Link
-                  className="text-primary font-medium underline underline-offset-4"
-                  to="/login"
-                >
+                <Link className="text-primary font-medium underline underline-offset-4" to="/login">
                   Volver a iniciar sesión
                 </Link>
               </p>

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { displayNameForUser, loginInput } from './authentication'
+import { displayNameForUser, loginInput, requestPasswordResetInput } from './authentication'
 
 describe('login input', () => {
   it('normalizes a pasted email before authenticating', () => {
@@ -28,6 +28,17 @@ describe('login input', () => {
     expect(
       loginInput.safeParse({ email: 'equipo@restaurante.com', password: 'a'.repeat(257) }).success,
     ).toBe(false)
+  })
+})
+
+describe('requestPasswordResetInput', () => {
+  it('normalizes a pasted email before requesting the recovery link', () => {
+    const input = requestPasswordResetInput.parse({ email: '  MARIA@EXAMPLE.COM ' })
+    expect(input.email).toBe('maria@example.com')
+  })
+
+  it('rejects a value that is not an email', () => {
+    expect(requestPasswordResetInput.safeParse({ email: 'not-an-email' }).success).toBe(false)
   })
 })
 
