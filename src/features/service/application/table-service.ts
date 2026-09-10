@@ -21,6 +21,7 @@ import {
   seatWalkInInput,
   serviceVenueInput,
   updateSessionNoteInput,
+  updateTableBlockInput,
 } from './service-schema'
 
 const seatReservationInput = serviceVenueInput.extend({
@@ -78,6 +79,42 @@ export const updateSessionNote = createServerFn({ method: 'POST' })
     if (error) throw new Error(`table_session_note_failed:${error.code}`)
     if (!session) throw new Response('Not found', { status: 404 })
     return { internalNote: session.internal_note as string | null, sessionId: session.id as string }
+  })
+
+/** Blocks or reopens tables for service, preserving the reason for the team. */
+export const updateTableBlock = createServerFn({ method: 'POST' })
+  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .validator(updateTableBlockInput)
+  .handler(async ({ context, data }) => {
+    requireServiceEditor(context.tenantMembership.role)
+    if (data.isBlocked && !data.blockReason?.trim())
+      throw new Response('Block reason required', { status: 422 })
+    const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    if (data.isBlocked) {
+      const { count, error } = await supabase
+        .from('table_sessions')
+        .select('id', { count: 'exact', head: true })
+        .eq('tenant_id', data.tenantId)
+        .eq('venue_id', data.venueId)
+        .eq('status', 'open')
+        .overlaps('table_ids', data.tableIds)
+      if (error) throw new Error(`table_block_check_failed:${error.code}`)
+      if ((count ?? 0) > 0) throw new Response('Table occupied', { status: 409 })
+    }
+    const { data: updated, error } = await supabase
+      .from('tables')
+      .update({
+        is_service_blocked: data.isBlocked,
+        service_block_reason: data.isBlocked ? data.blockReason?.trim() : null,
+      })
+      .in('id', data.tableIds)
+      .eq('tenant_id', data.tenantId)
+      .eq('venue_id', data.venueId)
+      .select('id')
+    if (error) throw new Error(`table_block_update_failed:${error.code}`)
+    if ((updated?.length ?? 0) !== data.tableIds.length)
+      throw new Response('Table not found', { status: 404 })
+    return { tableIds: data.tableIds, isBlocked: data.isBlocked }
   })
 
 /** Opens the live table session and converts its pending reservation into seated. */

@@ -43,6 +43,12 @@ export const updateSessionNoteInput = serviceVenueInput.extend({
   sessionId: z.string().uuid(),
 })
 
+export const updateTableBlockInput = serviceVenueInput.extend({
+  blockReason: z.string().trim().max(300).nullable(),
+  isBlocked: z.boolean(),
+  tableIds: tableIds,
+})
+
 export const noShowReservationInput = serviceVenueInput.extend({
   reason: z.string().trim().max(500).optional(),
   reservationId: z.string().uuid(),

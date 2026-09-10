@@ -28,6 +28,7 @@ import {
   moveSession,
   seatWalkIn,
   updateSessionNote,
+  updateTableBlock,
 } from '../application/table-service'
 import {
   inspectServiceTableGroupPreset,
@@ -67,7 +68,10 @@ export function ServiceActions({
   const [mergeSourceId, setMergeSourceId] = useState(board.sessions[1]?.id ?? '')
   const selectedSession = board.sessions.find((session) => session.id === sessionId)
   const [internalNote, setInternalNote] = useState(selectedSession?.internalNote ?? '')
+  const [blockReason, setBlockReason] = useState('')
   const selectedTables = board.tables.filter((table) => selectedTableIds.includes(table.id))
+  const selectedBlocked =
+    selectedTables.length > 0 && selectedTables.every((table) => table.status === 'blocked')
   const selectedCapacity = selectedTables.reduce((total, table) => total + table.maxSeats, 0)
   const selectedMinimum = selectedTables.reduce((total, table) => total + table.minSeats, 0)
   const suggestedIds =
@@ -209,6 +213,48 @@ export function ServiceActions({
             </p>
           )}
         </form>
+        {selectedTableIds.length > 0 && (
+          <form
+            className="grid gap-2 border-t pt-6"
+            onSubmit={(event) => {
+              event.preventDefault()
+              void run(
+                () =>
+                  updateTableBlock({
+                    data: {
+                      blockReason: selectedBlocked ? null : blockReason.trim(),
+                      isBlocked: !selectedBlocked,
+                      tableIds: [...selectedTableIds],
+                      tenantId,
+                      venueId,
+                    },
+                  }),
+                'No se ha podido actualizar el bloqueo de las mesas.',
+              )
+            }}
+          >
+            {!selectedBlocked && (
+              <Field>
+                <FieldLabel htmlFor="table-block-reason">Motivo del bloqueo</FieldLabel>
+                <Input
+                  id="table-block-reason"
+                  maxLength={300}
+                  onChange={(event) => setBlockReason(event.target.value)}
+                  placeholder="Mantenimiento, avería o reserva interna"
+                  required
+                  value={blockReason}
+                />
+              </Field>
+            )}
+            <Button
+              disabled={feedback.pending || !isOnline || (!selectedBlocked && !blockReason.trim())}
+              type="submit"
+              variant="outline"
+            >
+              {selectedBlocked ? 'Reabrir mesas' : 'Bloquear mesas'}
+            </Button>
+          </form>
+        )}
         {board.sessions.length > 0 && (
           <div className="space-y-3 border-t pt-6">
             <Field>
