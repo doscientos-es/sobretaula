@@ -15,8 +15,8 @@ import { Building2, CircleCheck } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 
 import { tenantOnboardingErrorMessage } from '../application/onboarding-error'
-import { provisionTenantOnboarding } from '../application/provision-tenant-onboarding'
 import { tenantSlugCandidate } from '../application/onboarding-schema'
+import { provisionTenantOnboarding } from '../application/provision-tenant-onboarding'
 
 export function TenantOnboardingPage() {
   const feedback = useFormFeedback()

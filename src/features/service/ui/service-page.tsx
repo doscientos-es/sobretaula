@@ -55,6 +55,7 @@ export function ServicePage({
   )
   const [handoverSaved, setHandoverSaved] = useState(false)
   const [expandedSnapshotId, setExpandedSnapshotId] = useState<string | null>(null)
+  const [handoverDate, setHandoverDate] = useState('')
   const reload = useLoaderReload()
   useEffect(() => {
     const refresh = () => {
@@ -494,10 +495,25 @@ export function ServicePage({
               <CardHeader>
                 <CardTitle>Entregas anteriores</CardTitle>
                 <CardDescription>Últimas instantáneas guardadas de este local.</CardDescription>
+                <label className="text-muted-foreground grid gap-1 text-xs" htmlFor="handover-date">
+                  Filtrar por fecha
+                  <input
+                    className="border-border bg-background rounded-md border px-2 py-1 text-sm"
+                    id="handover-date"
+                    onChange={(event) => setHandoverDate(event.target.value)}
+                    type="date"
+                    value={handoverDate}
+                  />
+                </label>
               </CardHeader>
               <CardContent>
                 <ul className="space-y-2 text-sm">
-                  {board.handoverSnapshots?.map((snapshot) => {
+                  {board.handoverSnapshots
+                    ?.filter(
+                      (snapshot) =>
+                        !handoverDate || snapshot.createdAt.slice(0, 10) === handoverDate,
+                    )
+                    .map((snapshot) => {
                     const attention = snapshot.summary.reduce(
                       (total, section) => total + section.attentionSessions,
                       0,
@@ -573,8 +589,11 @@ export function ServicePage({
                         )}
                       </li>
                     )
-                  })}
+                    })}
                 </ul>
+                {board.handoverSnapshots?.every(
+                  (snapshot) => handoverDate && snapshot.createdAt.slice(0, 10) !== handoverDate,
+                ) && <p className="text-muted-foreground text-sm">No hay entregas en esa fecha.</p>}
               </CardContent>
             </Card>
           )}
