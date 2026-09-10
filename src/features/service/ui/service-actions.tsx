@@ -12,8 +12,7 @@ import {
   useFormFeedback,
 } from '@doscientos/ui'
 import { Link, useParams } from '@tanstack/react-router'
-import { useState, type FormEvent } from 'react'
-import { useMemo } from 'react'
+import { useMemo, useState, type FormEvent } from 'react'
 
 import {
   createSeatWalkInOperation,

@@ -59,9 +59,10 @@ del diseñador y su uso diario.
       y bloqueo de mutaciones sin conexión.
 - [~] Conectar la cola persistente local: `seatReservation` ya guarda
   operaciones offline, las reintenta al volver la conexión y usa
-  `operation_id` único en `table_sessions` para no duplicar sesiones.
-  Extender el adaptador a walk-ins, movimientos y lista de espera requiere
-  idempotencia específica por operación.
+  `operation_id` único en `table_sessions` para no duplicar sesiones. El
+  mismo adaptador cubre ya walk-ins y sentar una espera. Extenderlo a
+  movimientos, uniones y cancelaciones requiere idempotencia específica por
+  operación.
 
 ### P3 · Inteligencia y casos avanzados
 
