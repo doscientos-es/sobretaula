@@ -22,7 +22,7 @@ import {
   redirect,
   useRouterState,
 } from '@tanstack/react-router'
-import { Check, CreditCard, FileText, Store, Users } from 'lucide-react'
+import { ArrowLeft, Check, CreditCard, FileText, Store, Users } from 'lucide-react'
 import type { ReactNode } from 'react'
 
 import { TenantAdminFrame } from '@/app/app-frame'
@@ -151,7 +151,9 @@ function OnboardingStep({
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className={`text-sm font-medium ${status === 'upcoming' ? 'text-muted-foreground' : ''}`}>
+            <p
+              className={`text-sm font-medium ${status === 'upcoming' ? 'text-muted-foreground' : ''}`}
+            >
               {title}
             </p>
             <StepStatusBadge status={status} />
@@ -260,6 +262,33 @@ function TenantSetupPendingOnboarding({
   )
 }
 
+function TenantPendingRouteFrame({
+  children,
+  isSetupStep,
+  tenant,
+}: {
+  children: ReactNode
+  isSetupStep: boolean
+  tenant: { name: string; slug: string }
+}) {
+  return (
+    <main className="mx-auto max-w-5xl space-y-4 p-4 sm:p-8">
+      <Link
+        className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 text-sm"
+        params={{ slug: tenant.slug }}
+        to="/t/$slug"
+      >
+        <ArrowLeft className="size-3.5" />
+        {tenant.name}
+      </Link>
+      {isSetupStep && (
+        <Badge variant="neutral">Parte de la configuración pendiente del restaurante</Badge>
+      )}
+      {children}
+    </main>
+  )
+}
+
 function TenantSuspendedNotice({ tenant }: { tenant: { name: string; slug: string } }) {
   return (
     <main className="mx-auto max-w-2xl space-y-6 p-4 sm:p-8">
@@ -311,7 +340,13 @@ function TenantLayout() {
   const isBillingRoute = pathname === `/t/${tenant.slug}/facturacion`
 
   if (!isTenantOperational(tenant.status)) {
-    if (isBillingRoute || isSubscriptionInvoicesRoute || isTeamRoute) return <Outlet />
+    if (isBillingRoute || isSubscriptionInvoicesRoute || isTeamRoute) {
+      return (
+        <TenantPendingRouteFrame isSetupStep={tenant.status === 'setup_pending'} tenant={tenant}>
+          <Outlet />
+        </TenantPendingRouteFrame>
+      )
+    }
 
     return tenant.status === 'setup_pending' ? (
       <TenantSetupPendingOnboarding billingStatus={billingStatus} tenant={tenant} />
