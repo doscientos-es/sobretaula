@@ -146,10 +146,15 @@ export function TenantHomePage({
               <button
                 className="border-border rounded-md border px-3 py-2 text-sm font-medium"
                 onClick={() => {
-                  void navigator.clipboard.writeText(publicUrl).then(() => {
-                    setCopied(true);
-                    window.setTimeout(() => setCopied(false), 2000);
-                  });
+                  const clipboard = navigator.clipboard;
+                  if (!clipboard) return;
+                  void clipboard
+                    .writeText(publicUrl)
+                    .then(() => {
+                      setCopied(true);
+                      window.setTimeout(() => setCopied(false), 2000);
+                    })
+                    .catch(() => setCopied(false));
                 }}
                 type="button"
               >

@@ -1,10 +1,19 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-import { getPlatformFiscalSettings, PlatformSettingsPage } from '@/features/platform-admin'
+import { loadPlatformRoute } from '@/app/platform-route-loader'
+import {
+  getPlatformFiscalSettings,
+  PlatformRouteError,
+  PlatformRoutePending,
+  PlatformSettingsPage,
+} from '@/features/platform-admin'
 
 export const Route = createFileRoute('/admin/ajustes')({
-  loader: () => getPlatformFiscalSettings(),
+  loader: () => loadPlatformRoute('/admin/ajustes', () => getPlatformFiscalSettings()),
   component: PlatformSettingsRoute,
+  errorComponent: PlatformRouteError,
+  pendingComponent: PlatformRoutePending,
+  pendingMs: 200,
 })
 
 function PlatformSettingsRoute() {

@@ -41,6 +41,9 @@ export interface ReservationService {
   startsAtTime: string;
   venueId: string;
   weekday: number;
+  slotMinutes: number;
+  maxCoversPerSlot: number | null;
+  maxReservationsPerSlot: number | null;
 }
 
 export interface ReservationAgendaItem {
@@ -75,9 +78,8 @@ export const getReservationServices = createServerFn({ method: "GET" })
   .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
   .validator(venueInput)
   .handler(async ({ context, data }): Promise<ReservationService[]> => {
-    const { data: services, error } = await createRequestSupabaseClient(
-      context.tenantMembership.accessToken,
-    )
+    const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken);
+    const { data: services, error } = await supabase
       .from("services")
       .select("ends_at_time, id, name, starts_at_time, venue_id, weekday")
       .eq("tenant_id", data.tenantId)
@@ -85,13 +87,28 @@ export const getReservationServices = createServerFn({ method: "GET" })
       .eq("is_active", true)
       .order("name");
     if (error) throw new Error(`reservation_services_load_failed:${error.code}`);
-    return (services ?? []).map((service) => ({
+    const rows = services ?? [];
+    const { data: rules, error: rulesError } = rows.length
+      ? await supabase
+          .from("availability_rules")
+          .select("max_covers_per_slot, max_reservations_per_slot, service_id, slot_minutes")
+          .in(
+            "service_id",
+            rows.map((service) => service.id),
+          )
+      : { data: [], error: null };
+    if (rulesError) throw new Error(`reservation_rules_load_failed:${rulesError.code}`);
+    const rulesByService = new Map((rules ?? []).map((rule) => [rule.service_id, rule]));
+    return rows.map((service) => ({
       endsAtTime: service.ends_at_time,
       id: service.id,
       name: service.name,
       startsAtTime: service.starts_at_time,
       venueId: service.venue_id,
       weekday: service.weekday,
+      slotMinutes: rulesByService.get(service.id)?.slot_minutes ?? 15,
+      maxCoversPerSlot: rulesByService.get(service.id)?.max_covers_per_slot ?? null,
+      maxReservationsPerSlot: rulesByService.get(service.id)?.max_reservations_per_slot ?? null,
     }));
   });
 

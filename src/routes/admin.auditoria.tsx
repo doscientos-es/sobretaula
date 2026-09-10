@@ -1,19 +1,19 @@
-import { createFileRoute, redirect } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 
-import { getPlatformAuditLog, PlatformAuditPage } from '@/features/platform-admin'
+import { loadPlatformRoute } from '@/app/platform-route-loader'
+import {
+  getPlatformAuditLog,
+  PlatformAuditPage,
+  PlatformRouteError,
+  PlatformRoutePending,
+} from '@/features/platform-admin'
 
 export const Route = createFileRoute('/admin/auditoria')({
-  loader: async () => {
-    try {
-      return await getPlatformAuditLog({ data: {} })
-    } catch (error) {
-      if (error instanceof Response && error.status === 401) {
-        throw redirect({ to: '/login', search: { redirect: '/admin/auditoria' } })
-      }
-      throw error
-    }
-  },
+  loader: () => loadPlatformRoute('/admin/auditoria', () => getPlatformAuditLog({ data: {} })),
   component: PlatformAuditRoute,
+  errorComponent: PlatformRouteError,
+  pendingComponent: PlatformRoutePending,
+  pendingMs: 200,
 })
 
 function PlatformAuditRoute() {

@@ -1,19 +1,19 @@
-import { createFileRoute, redirect } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 
-import { getPlatformDashboard, PlatformConsolePage } from '@/features/platform-admin'
+import { loadPlatformRoute } from '@/app/platform-route-loader'
+import {
+  getPlatformDashboard,
+  PlatformConsolePage,
+  PlatformRouteError,
+  PlatformRoutePending,
+} from '@/features/platform-admin'
 
 export const Route = createFileRoute('/admin/')({
-  loader: async () => {
-    try {
-      return await getPlatformDashboard()
-    } catch (error) {
-      if (error instanceof Response && error.status === 401) {
-        throw redirect({ to: '/login', search: { redirect: '/admin' } })
-      }
-      throw error
-    }
-  },
+  loader: () => loadPlatformRoute('/admin', () => getPlatformDashboard()),
   component: PlatformConsole,
+  errorComponent: PlatformRouteError,
+  pendingComponent: PlatformRoutePending,
+  pendingMs: 200,
 })
 
 function PlatformConsole() {

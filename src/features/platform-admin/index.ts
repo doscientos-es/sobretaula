@@ -39,6 +39,7 @@ export type { PlatformFiscalSettings } from './application/platform-settings'
 export { PlatformOperatorsPage } from './ui/platform-operators-page'
 export { PlatformSettingsPage } from './ui/platform-settings-page'
 export { PlatformInvitationPage } from './ui/platform-invitation-page'
+export { PlatformRouteError, PlatformRoutePending } from './ui/platform-route-state'
 export type {
   PlatformOperator,
   PlatformOperatorDirectory,

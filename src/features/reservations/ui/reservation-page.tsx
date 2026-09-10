@@ -17,10 +17,7 @@ import {
 import { useEffect, useState, type FormEvent } from "react";
 
 import { useLoaderReload } from "@/shared/lib/router/use-loader-reload";
-import {
-  cancelReservation,
-  markReservationNoShow,
-} from "@/features/service/application/table-service";
+import { cancelReservation, markReservationNoShow } from "@/features/service";
 
 import {
   createReservation,
@@ -38,8 +35,9 @@ function canMarkNoShow(startsAt: string): boolean {
 
 function dateOffset(days: number): string {
   const date = new Date();
+  date.setHours(12, 0, 0, 0);
   date.setDate(date.getDate() + days);
-  return date.toISOString().slice(0, 10);
+  return new Intl.DateTimeFormat("en-CA").format(date);
 }
 
 const reservationStatusLabels: Record<string, string> = {
@@ -50,6 +48,16 @@ const reservationStatusLabels: Record<string, string> = {
   pending: "Pendiente",
   seated: "Sentada",
 };
+
+function describeServiceRules(service: ReservationService): string {
+  const covers = service.maxCoversPerSlot
+    ? `${service.maxCoversPerSlot} cubiertos`
+    : "aforo flexible";
+  const reservations = service.maxReservationsPerSlot
+    ? `${service.maxReservationsPerSlot} reservas`
+    : "reservas flexibles";
+  return `${service.slotMinutes} min · ${covers} · ${reservations} por hueco`;
+}
 
 export function ReservationPage({
   services,
@@ -127,6 +135,7 @@ export function ReservationPage({
   }
 
   const reload = useLoaderReload();
+  const selectedService = services.find((service) => service.id === serviceId);
 
   useEffect(() => {
     let cancelled = false;
@@ -261,6 +270,11 @@ export function ReservationPage({
                     type="datetime-local"
                     value={startsAt}
                   />
+                  {selectedService ? (
+                    <p className="text-muted-foreground mt-2 text-xs">
+                      {describeServiceRules(selectedService)}
+                    </p>
+                  ) : null}
                 </Field>
                 <Field>
                   <FieldLabel htmlFor="reservation-party">Comensales</FieldLabel>
@@ -332,7 +346,10 @@ export function ReservationPage({
                   }}
                 />
                 <div className="mt-2 flex gap-2">
-                  {[{ label: "Hoy", value: dateOffset(0) }, { label: "Mañana", value: dateOffset(1) }].map((option) => (
+                  {[
+                    { label: "Hoy", value: dateOffset(0) },
+                    { label: "Mañana", value: dateOffset(1) },
+                  ].map((option) => (
                     <Button
                       key={option.value}
                       onClick={() => {
