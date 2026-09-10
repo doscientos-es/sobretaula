@@ -29,6 +29,13 @@ export interface ServiceStaffMember {
   userId: string
 }
 
+export interface ServiceHandoverSnapshot {
+  createdAt: string
+  createdBy: string
+  id: string
+  summary: readonly ServiceHandoverSection[]
+}
+
 export interface ServicePresetPreflight {
   capacity: number
   missingTableIds: string[]
@@ -75,6 +82,7 @@ export interface ServiceBoard {
   reservations: readonly ServiceReservation[]
   sessions: readonly ServiceSession[]
   staff?: readonly ServiceStaffMember[]
+  handoverSnapshots?: readonly ServiceHandoverSnapshot[]
   tables: readonly ServiceTableState[]
   tableGroupPresets?: readonly ServiceTableGroupPreset[]
   waitlist: readonly WaitlistEntry[]

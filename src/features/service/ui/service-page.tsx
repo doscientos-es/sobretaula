@@ -484,6 +484,41 @@ export function ServicePage({
               </CardContent>
             </Card>
           )}
+          {(board.handoverSnapshots?.length ?? 0) > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Entregas anteriores</CardTitle>
+                <CardDescription>Últimas instantáneas guardadas de este local.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2 text-sm">
+                  {board.handoverSnapshots?.map((snapshot) => {
+                    const attention = snapshot.summary.reduce(
+                      (total, section) => total + section.attentionSessions,
+                      0,
+                    )
+                    const open = snapshot.summary.reduce(
+                      (total, section) => total + section.activeSessions,
+                      0,
+                    )
+                    return (
+                      <li className="border-border rounded-lg border p-3" key={snapshot.id}>
+                        <p className="font-medium">
+                          {new Date(snapshot.createdAt).toLocaleString('es-ES', {
+                            dateStyle: 'short',
+                            timeStyle: 'short',
+                          })}
+                        </p>
+                        <p className="text-muted-foreground text-xs">
+                          {open} cuentas abiertas{attention > 0 ? ` · ${attention} en pacing` : ''}
+                        </p>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </CardContent>
+            </Card>
+          )}
           <ServiceActions
             areaOpen={
               selectedAreaId === 'all' ||

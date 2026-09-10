@@ -7,6 +7,7 @@ import {
   type ServiceReservation,
   type ServiceSession,
   type ServiceStaffMember,
+  type ServiceHandoverSnapshot,
   type ServiceTable,
   type WaitlistEntry,
 } from '../../domain/service-board'
@@ -69,6 +70,16 @@ export async function loadServiceBoard(
     waitlistResult.error,
   ].find(Boolean)
   if (error) throw new Error(`service_board_load_failed:${error.code}`)
+
+  const snapshotsResult = await supabase
+    .from('service_handover_snapshots')
+    .select('created_at, created_by, id, summary')
+    .eq('tenant_id', tenantId)
+    .eq('venue_id', venueId)
+    .order('created_at', { ascending: false })
+    .limit(10)
+  if (snapshotsResult.error)
+    throw new Error(`service_handover_snapshots_load_failed:${snapshotsResult.error.code}`)
 
   const areaIds = [...new Set((tablesResult.data ?? []).map((table) => table.area_id))]
   const presetsResult = areaIds.length
@@ -200,6 +211,7 @@ export async function loadServiceBoard(
   return {
     areaStaffAssignments,
     reservations,
+    handoverSnapshots: (snapshotsResult.data ?? []) as unknown as ServiceHandoverSnapshot[],
     sessions,
     tables: buildServiceTableStates({
       now,
