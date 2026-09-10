@@ -14,7 +14,7 @@ import {
   PageHeaderTitle,
   useFormFeedback,
 } from '@doscientos/ui'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
 import { recordTerminalTimeEvent } from '../application/timekeeping'
 import type { TimeEventType } from '../domain/timekeeping'
@@ -28,6 +28,19 @@ const actions: { label: string; value: TimeEventType }[] = [
 
 function terminalStorageKey(tenantId: string, venueId: string): string {
   return `sobretaula:timekeeping-terminal:${tenantId}:${venueId}`
+}
+
+function getTerminalId(tenantId: string, venueId: string): string {
+  const key = terminalStorageKey(tenantId, venueId)
+  const fallback = `web-${crypto.randomUUID()}`
+  try {
+    const saved = window.localStorage.getItem(key)
+    if (saved) return saved
+    window.localStorage.setItem(key, fallback)
+  } catch {
+    // El límite adicional por empleado se mantiene aunque el navegador bloquee storage.
+  }
+  return fallback
 }
 
 function terminalError(error: unknown): string {
@@ -52,23 +65,15 @@ export function TimekeepingTerminalPage({
   const feedback = useFormFeedback()
   const [employeeId, setEmployeeId] = useState(staff[0]?.userId ?? '')
   const [pin, setPin] = useState('')
-  const [terminalId, setTerminalId] = useState('')
-
-  useEffect(() => {
-    const key = terminalStorageKey(tenantId, venueId)
-    const saved = window.localStorage.getItem(key)
-    const next = saved ?? `web-${crypto.randomUUID()}`
-    if (!saved) window.localStorage.setItem(key, next)
-    setTerminalId(next)
-  }, [tenantId, venueId])
 
   async function clock(eventType: TimeEventType) {
-    if (!employeeId || !pin || !terminalId) {
+    if (!employeeId || !pin) {
       feedback.setError('Selecciona tu nombre e introduce tu PIN para fichar.')
       return
     }
     feedback.setPending()
     try {
+      const terminalId = getTerminalId(tenantId, venueId)
       await recordTerminalTimeEvent({
         data: { employeeId, eventType, pin, tenantId, terminalId, venueId },
       })
@@ -129,7 +134,7 @@ export function TimekeepingTerminalPage({
           <div className="grid gap-2 sm:grid-cols-2">
             {actions.map((action) => (
               <Button
-                disabled={feedback.pending || !terminalId || staff.length === 0}
+                disabled={feedback.pending || staff.length === 0}
                 key={action.value}
                 onClick={() => void clock(action.value)}
                 type="button"

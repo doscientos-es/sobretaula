@@ -7,14 +7,13 @@ import {
 } from '@/features/tenancy/application/require-tenant-membership'
 import { createRequestSupabaseClient } from '@/shared/lib/supabase/server/create-server-client'
 
-import { allowedNextEvent, workedMinutes, type TimeEventType } from '../domain/timekeeping'
+import { workedMinutes, type TimeEventType } from '../domain/timekeeping'
 import {
   recordTimeEventInput,
   setPinInput,
   terminalTimeEventInput,
   timekeepingInput,
   timekeepingReportInput,
-  verifyPinInput,
 } from './timekeeping-schema'
 const middleware = [
   authMiddleware,
