@@ -24,8 +24,8 @@ Esta sección prevalece sobre las dependencias históricas de este backlog.
   Cambio o cancelación pública se permite hasta dos horas antes inicialmente.
 - Se entrega correo electrónico; SMS y WhatsApp no se activan sin proveedor y
   consentimiento configurados. Fichaje estará disponible desde terminal y móvil.
-- Hardware y datáfono se abstraen mediante adaptadores; la tarjeta se registra
-  manualmente ahora y la impresión/cajón/KDS se configura por restaurante.
+- Hardware de impresión, cajón y datáfono queda fuera del MVP actual. La tarjeta
+  se registra manualmente y la operativa se completa desde navegador/tablet.
 - El IVA de restauración se preselecciona al 10 % según la guía vigente de AEAT.
   Cada producto conserva un tipo explícito editable (0 %, 4 %, 10 % o 21 %).
 - VERI*FACTU es opcional: pruebas por defecto; producción solo tras identidad
@@ -40,8 +40,9 @@ Esta sección prevalece sobre las dependencias históricas de este backlog.
   facturación en modo test; outbox de correo y depósitos modelados.
 - Brechas de producto: el TPV unificado ya cubre cuenta, comandas, cola,
   cobro manual, caja e informe diario; siguen pendientes modificadores,
-  reimpresión/hardware, PIN de terminal, informe financiero completo, control
-  horario compartido e inventario/escandallos de punta a punta.
+  edición rápida, reimpresión, informe financiero completo, sincronización
+  offline del fichaje e inventario/escandallos de punta a punta. Hardware queda
+  explícitamente fuera de esta fase.
 - Brechas de fiabilidad: las tres pruebas RLS están omitidas porque no se
   conectan pruebas al único proyecto con datos reales; tampoco hay humo E2E ni
   concurrencia real contra ese proyecto.
@@ -69,8 +70,8 @@ Esta sección prevalece sobre las dependencias históricas de este backlog.
 | ID  | Decisión o recurso                                             | Necesario para                   |
 | --- | -------------------------------------------------------------- | -------------------------------- |
 | G1  | Evidencia automatizada sin usar datos reales como prueba       | E0 y validación de esquema       |
-| G2  | Variante TPV: nativo, integración o exportación temporal       | E3--E6 y hardware                |
-| G3  | Modelos/protocolos de impresora, cajón y datáfono              | E6                               |
+| G2  | Variante TPV: nativo, integración o exportación temporal       | E3--E6                           |
+| G3  | Hardware de impresión, cajón y datáfono                        | Fuera de alcance del MVP actual  |
 | G4  | Proveedor, coste y consentimientos para SMS/WhatsApp           | E8 (email puede avanzar)         |
 | G5  | Asesoría: fiscal/VERI*FACTU y registro horario                 | E6, E10 y activación fiscal prod |
 | G6  | Merchant distinto del restaurante para depósitos y reglas      | E9                               |
@@ -116,9 +117,9 @@ reserva ni formularios técnicos.
 
 - [ ] **E2.1 · Flujo público completo.** Disponibles calendario, personas,
       área, contacto por email, comentarios, aceptación de privacidad,
-      alternativas y confirmación automática. Pendientes necesidades/alergias,
-      condiciones/privacidad versionadas y antiabuso/rate limit; el último
-      refuerzo requiere completar validación local y de permisos.
+      alternativas, confirmación automática y recordatorio 24 h. Pendientes
+      necesidades/alergias, condiciones/privacidad versionadas y antiabuso/rate
+      limit; el último refuerzo requiere completar validación local y de permisos.
 - [ ] **E2.2 · Autogestión segura.** Token con `no-store`, caducidad/rotación y
       políticas para confirmar, modificar o cancelar; no revelar mesas ni PII.
 - [ ] **E2.3 · Cliente y privacidad.** Ficha con historial, etiquetas, notas,
@@ -145,7 +146,7 @@ cuenta abierta refleja exactamente las líneas enviadas.
 - [ ] **E4.1 · Ticket de preparación.** Modelo de batches por estación, cola en
       pantalla, prioridades/notas, cambios de estado y trazabilidad por línea.
 - [ ] **E4.2 · KDS accesible.** Pantallas separadas por destino, filtro de turno,
-      tiempos de preparación, estados de red y reimpresión segura.
+      tiempos de preparación, estados de red y reimpresión segura desde la web.
 
 **Salida:** cocina y barra reciben solo sus partidas y sala conoce cuándo están
 listas sin comunicación paralela.
@@ -168,14 +169,12 @@ pagos mixtos, sin sobrecobro ni pérdida de trazabilidad.
 
 - [x] **E6.1 · Caja.** Apertura, fondo, entradas/salidas, arqueo, diferencia,
       cierre por método, permisos y auditoría.
-- [ ] **E6.2 · Sesión de terminal/PIN.** Alta y rotación segura de PIN, límite de
-      intentos, terminal identificada y roles de camarero/encargado/admin.
-- [ ] **E6.3 · Hardware o alternativa.** Tras G2/G3, bridge local y adaptadores
-      para impresora/cajón/datáfono o integración/exportación acordada; instalación
-      ensayada por dispositivo.
+- [x] **E6.2 · Sesión de terminal/PIN.** Alta y rotación segura de PIN, límite de
+      intentos, terminal identificada y operación server-side por local.
 
-**Salida:** el cierre de caja concilia con los cobros y cada terminal puede
-operar según su rol sin exponer credenciales.
+**Salida:** el cierre de caja concilia con los cobros y la terminal web puede
+operar según su rol sin exponer credenciales. La integración con hardware queda
+fuera de esta fase.
 
 ### Entregas TPV completadas (D1–D3)
 
@@ -202,7 +201,8 @@ ventas sin intervención técnica.
 ### E8 — Comunicaciones y lista de espera (P2)
 
 - [ ] **E8.1 · Email transaccional.** Plantillas por restaurante/idioma,
-      confirmación y recordatorios programados, dedupe, rebotes, reintento y reenvío.
+      confirmación y recordatorio 24 h ya están activos con dedupe y reintento;
+      quedan rebotes, reenvío manual y validación operativa del proveedor.
 - [ ] **E8.2 · Espera futura.** FIFO compatible, hold/oferta temporal, aceptación
       pública, caducidad y aviso al liberar capacidad, sin sobreventa.
 - [ ] **E8.3 · SMS/WhatsApp.** Solo después de G4/G7, mediante outbox equivalente.
@@ -220,10 +220,12 @@ ventas sin intervención técnica.
 - [ ] **E10.1 · Modelo legal.** Cerrar G5 y migrar empleados, centros y eventos
       append-only con encadenado de integridad.
 - [ ] **E10.2 · Fichaje PIN.** Entrada, pausa, regreso y salida; límites contra
-      intentos, terminal y sincronización offline idempotente.
+      intentos y terminal ya están implementados. Queda sincronización offline
+      idempotente.
 - [ ] **E10.3 · Jornada/exportación.** Tramos partidos, cruce de medianoche,
-      nocturnidad, festivos, extras/complementarias, cambio de centro, portal y
-      exportación para inspección/nóminas.
+      nocturnidad, festivos, portal y exportación ya están implementados de forma
+      indicativa. Quedan informes avanzados, cambios de centro y validación para
+      inspección/nóminas.
 
 ### E11 — Certificación de entrega (P0 transversal)
 
