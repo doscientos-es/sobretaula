@@ -28,6 +28,7 @@ import type { ReactNode } from 'react'
 import { TenantAdminFrame } from '@/app/app-frame'
 import { WorkerFrame } from '@/app/worker-frame'
 import { getTenantBillingStatus, TenantBillingNotice } from '@/features/platform-billing'
+import { RedsysSubscriptionButton } from '@/features/platform-billing/ui/redsys-subscription-button'
 import {
   getTenantBySlug,
   getDashboardMetrics,
@@ -171,7 +172,7 @@ function TenantSetupPendingOnboarding({
   tenant,
   billingStatus,
 }: {
-  tenant: { name: string; slug: string }
+  tenant: { id: string; name: string; slug: string }
   billingStatus: { hasPaymentMethod: boolean }
 }) {
   const paymentDone = billingStatus.hasPaymentMethod
@@ -208,14 +209,7 @@ function TenantSetupPendingOnboarding({
             status={paymentStatus}
             title="Método de pago"
           >
-            <Link
-              className={buttonVariants({ size: 'lg' })}
-              params={{ slug: tenant.slug }}
-              to="/t/$slug/facturacion"
-            >
-              <CreditCard className="size-4" />
-              Autorizar pago seguro
-            </Link>
+            <RedsysSubscriptionButton tenantId={tenant.id} />
           </OnboardingStep>
           <OnboardingStep
             description={
