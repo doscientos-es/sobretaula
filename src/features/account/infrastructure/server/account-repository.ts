@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 import type {
   AccountLine,
+  AccountModifier,
   AccountPayment,
   KitchenStation,
   OrderItemStatus,
@@ -115,6 +116,27 @@ export async function loadAccount(
   }
   if (itemsResult.error) throw new Error('account_load_failed')
 
+  const loadedItemIds = (itemsResult.data ?? []).map((item) => item.id as string)
+  const modifiersResult = loadedItemIds.length
+    ? await supabase
+        .from('order_item_modifiers')
+        .select('id, name_snapshot, order_item_id, price_delta_cents')
+        .eq('tenant_id', tenantId)
+        .in('order_item_id', loadedItemIds)
+        .order('created_at')
+    : { data: [], error: null }
+  if (modifiersResult.error) throw new Error('account_modifiers_load_failed')
+  const modifiersByItem = new Map<string, AccountModifier[]>()
+  for (const modifier of modifiersResult.data ?? []) {
+    const current = modifiersByItem.get(modifier.order_item_id as string) ?? []
+    current.push({
+      id: modifier.id as string,
+      name: modifier.name_snapshot as string,
+      priceDeltaCents: modifier.price_delta_cents as number,
+    })
+    modifiersByItem.set(modifier.order_item_id as string, current)
+  }
+
   const tableCodes = new Map<string, string>(
     (tablesResult.data ?? []).map((table) => [table.id as string, table.code as string]),
   )
@@ -122,6 +144,7 @@ export async function loadAccount(
   return {
     lines: (itemsResult.data ?? []).map((item) => ({
       id: item.id as string,
+      modifiers: modifiersByItem.get(item.id as string) ?? [],
       status: (item.status as OrderItemStatus | null) ?? 'pending',
       kitchenStation: item.kitchen_station as KitchenStation,
       name: item.name_snapshot as string,

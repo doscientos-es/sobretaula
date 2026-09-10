@@ -46,7 +46,7 @@ export function AccountAddItem({
   const feedback = useFormFeedback()
   const sections = buildMenuSections({
     categories: menu.categories,
-    items: menu.items.filter((item) => item.isActive),
+    items: menu.items.filter((item) => item.isActive && item.isAvailable !== false),
     locale,
   })
   const [menuItemId, setMenuItemId] = useState(
@@ -54,6 +54,7 @@ export function AccountAddItem({
   )
   const [quantity, setQuantity] = useState(1)
   const [notes, setNotes] = useState('')
+  const [modifierOptionIds, setModifierOptionIds] = useState<string[]>([])
   const [operationId, setOperationId] = useState(() => crypto.randomUUID())
   const [isOnline, setIsOnline] = useState(() =>
     typeof navigator === 'undefined' ? true : navigator.onLine,
@@ -62,6 +63,11 @@ export function AccountAddItem({
     () => createAccountOfflineStore(tenantId, venueId),
     [tenantId, venueId],
   )
+  const selectedItem = sections.flatMap((section) => section.items).find((item) => item.id === menuItemId)
+
+  useEffect(() => {
+    setModifierOptionIds([])
+  }, [menuItemId])
 
   useEffect(() => {
     const flush = () => {
@@ -92,6 +98,7 @@ export function AccountAddItem({
         offlineStore,
         createAddOrderItemOperation({
           menuItemId,
+          modifierOptionIds,
           ...(notes ? { notes } : {}),
           operationId,
           quantity,
@@ -110,6 +117,7 @@ export function AccountAddItem({
     void addOrderItem({
       data: {
         menuItemId,
+        modifierOptionIds,
         ...(notes ? { notes } : {}),
         operationId,
         quantity,
@@ -156,6 +164,42 @@ export function AccountAddItem({
               ))}
             </select>
           </Field>
+          {selectedItem?.modifierGroups?.map((group) => (
+            <fieldset className="grid gap-2" key={group.id}>
+              <legend className="text-sm font-medium">
+                {`${localizedText(group.nameI18n, locale)}${group.selectionMin > 0 ? ' (obligatorio)' : ''}`}
+              </legend>
+              {group.options.map((option) => {
+                const checked = modifierOptionIds.includes(option.id)
+                const disabled = !checked && group.selectionMax === 1 && modifierOptionIds.some((id) =>
+                  group.options.some((entry) => entry.id === id),
+                )
+                return (
+                  <label className="flex items-center gap-2 text-sm" key={option.id}>
+                    <input
+                      checked={checked}
+                      disabled={disabled}
+                      onChange={() =>
+                        setModifierOptionIds((current) =>
+                          checked
+                            ? current.filter((id) => id !== option.id)
+                            : [...current, option.id],
+                        )
+                      }
+                      type="checkbox"
+                    />
+                    <span>{localizedText(option.nameI18n, locale)}</span>
+                    {option.priceDeltaCents !== 0 && (
+                      <span className="text-muted-foreground">
+                        {option.priceDeltaCents > 0 ? '+' : ''}
+                        {formatMoney(option.priceDeltaCents, locale)}
+                      </span>
+                    )}
+                  </label>
+                )
+              })}
+            </fieldset>
+          ))}
           <Field>
             <FieldLabel htmlFor="account-quantity">Cantidad</FieldLabel>
             <QuantityInput

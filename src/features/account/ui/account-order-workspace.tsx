@@ -27,6 +27,7 @@ export function AccountOrderWorkspace({
   return (
     <div className="space-y-6">
       <AccountLines
+        canEdit={open && account.payments.length === 0}
         canRemove={open && account.payments.length === 0}
         lines={account.lines}
         locale={locale}

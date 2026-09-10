@@ -13,11 +13,18 @@ export interface AccountLine {
   status?: OrderItemStatus
   kitchenStation?: KitchenStation
   name: string
+  modifiers?: readonly AccountModifier[]
   preparationMinutes?: number
   notes: string | null
   quantity: number
   unitPriceCents: MinorUnits
   vatRateBps: number
+}
+
+export interface AccountModifier {
+  id: string
+  name: string
+  priceDeltaCents: MinorUnits
 }
 
 export interface AccountPayment {
@@ -40,8 +47,14 @@ export interface AccountTotals {
 }
 
 /** Cart prices are VAT-included, so the line gross is just quantity × price. */
-export function lineGrossCents(line: Pick<AccountLine, 'quantity' | 'unitPriceCents'>): MinorUnits {
-  return assertMinorUnits(line.quantity * line.unitPriceCents)
+export function lineGrossCents(
+  line: Pick<AccountLine, 'modifiers' | 'quantity' | 'unitPriceCents'>,
+): MinorUnits {
+  const modifierTotal = (line.modifiers ?? []).reduce(
+    (sum, modifier) => sum + modifier.priceDeltaCents,
+    0,
+  )
+  return assertMinorUnits(line.quantity * (line.unitPriceCents + modifierTotal))
 }
 
 /** Net inside a VAT-included gross: gross ÷ (1 + rate), rounded to the cent. */

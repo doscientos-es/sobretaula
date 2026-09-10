@@ -5,6 +5,26 @@ export { localizedText, type LocalizedText }
 
 export const KITCHEN_STATIONS = ['general', 'hot', 'cold', 'bar', 'dessert'] as const
 export type KitchenStation = (typeof KITCHEN_STATIONS)[number]
+export const MENU_CHANNELS = ['room', 'web', 'delivery', 'takeaway'] as const
+export type MenuChannel = (typeof MENU_CHANNELS)[number]
+
+export interface MenuModifierOption {
+  id: string
+  isActive: boolean
+  nameI18n: LocalizedText
+  priceDeltaCents: number
+  position: number
+}
+
+export interface MenuModifierGroup {
+  id: string
+  isActive: boolean
+  nameI18n: LocalizedText
+  options: MenuModifierOption[]
+  selectionMax: number
+  selectionMin: number
+  position: number
+}
 
 export interface MenuCategory {
   id: string
@@ -25,8 +45,10 @@ export interface MenuItem {
   sku: string | null
   vatRateBps: number
   allergens?: readonly string[]
+  isAvailable?: boolean
   isVegan?: boolean
   allergenReasons?: Readonly<Record<string, readonly string[]>>
+  modifierGroups?: MenuModifierGroup[]
 }
 
 export interface MenuSection {

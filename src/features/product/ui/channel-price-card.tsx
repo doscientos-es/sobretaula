@@ -15,17 +15,20 @@ import { setMenuChannelPrice } from '@/features/menu'
 
 export function ChannelPriceCard({
   menuItems,
+  venueId,
   tenantId,
   onDone,
 }: {
   menuItems: { id: string; name: string }[]
   tenantId: string
+  venueId: string
   onDone: () => void
 }) {
   const feedback = useFormFeedback()
   const [itemId, setItemId] = useState('')
   const [channel, setChannel] = useState<'room' | 'web' | 'delivery' | 'takeaway'>('web')
   const [price, setPrice] = useState('')
+  const [isAvailable, setIsAvailable] = useState(true)
   return (
     <Card>
       <CardHeader>
@@ -41,14 +44,17 @@ export function ChannelPriceCard({
             void setMenuChannelPrice({
               data: {
                 tenantId,
+                venueId,
                 menuItemId: itemId,
                 channel,
+                isAvailable,
                 priceCents: Math.round(Number(price) * 100),
               },
             })
               .then(() => {
                 feedback.setSuccess('Precio guardado.')
                 setPrice('')
+                setIsAvailable(true)
                 onDone()
               })
               .catch(() => feedback.setError('No se ha podido guardar el precio.'))
@@ -97,6 +103,14 @@ export function ChannelPriceCard({
               value={price}
             />
           </Field>
+          <label className="flex h-10 items-center gap-2 text-sm">
+            <input
+              checked={isAvailable}
+              onChange={(event) => setIsAvailable(event.target.checked)}
+              type="checkbox"
+            />
+            Disponible en este local
+          </label>
           <Button type="submit">Guardar precio</Button>
         </form>
       </CardContent>

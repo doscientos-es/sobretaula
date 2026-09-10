@@ -22,6 +22,7 @@ import {
   refundPaymentInput,
   applyDiscountInput,
   removeOrderItemInput,
+  updateOrderItemInput,
   requireAccountEditor,
   updateOrderItemStatusInput,
 } from './account-schema'
@@ -95,6 +96,51 @@ export const addOrderItem = createServerFn({ method: 'POST' })
     const { data: menuItem, error: menuError } = menuResult
     if (menuError || !menuItem) throw new Response('Not found', { status: 404 })
 
+    const { data: localPrice, error: localPriceError } = await supabase
+      .from('menu_item_venue_prices')
+      .select('is_available, price_cents')
+      .eq('tenant_id', data.tenantId)
+      .eq('venue_id', data.venueId)
+      .eq('menu_item_id', data.menuItemId)
+      .eq('channel', 'room')
+      .maybeSingle()
+    if (localPriceError) throw new Error(`menu_local_price_load_failed:${localPriceError.code}`)
+    if (localPrice && !localPrice.is_available)
+      throw new Response('Menu item unavailable', { status: 409 })
+
+    const { data: groups, error: groupsError } = await supabase
+      .from('menu_modifier_groups')
+      .select('id, selection_min, selection_max')
+      .eq('tenant_id', data.tenantId)
+      .eq('menu_item_id', data.menuItemId)
+      .eq('is_active', true)
+    if (groupsError) throw new Error(`modifier_groups_load_failed:${groupsError.code}`)
+    const modifierOptionIds = data.modifierOptionIds ?? []
+    const { data: options, error: optionsError } = modifierOptionIds.length
+      ? await supabase
+          .from('menu_modifier_options')
+          .select('group_id, id, is_active, name_i18n, price_delta_cents')
+          .eq('tenant_id', data.tenantId)
+          .in('id', modifierOptionIds)
+      : { data: [], error: null }
+    if (optionsError) throw new Error(`modifier_options_load_failed:${optionsError.code}`)
+    if ((options ?? []).length !== new Set(modifierOptionIds).size)
+      throw new Response('Invalid modifiers', { status: 422 })
+    const selectedByGroup = new Map<string, number>()
+    for (const option of options ?? []) {
+      if (!option.is_active) throw new Response('Invalid modifiers', { status: 422 })
+      selectedByGroup.set(option.group_id as string, (selectedByGroup.get(option.group_id as string) ?? 0) + 1)
+    }
+    for (const group of groups ?? []) {
+      const selected = selectedByGroup.get(group.id as string) ?? 0
+      if (selected < Number(group.selection_min) || selected > Number(group.selection_max))
+        throw new Response('Invalid modifier selection', { status: 422 })
+    }
+    const modifierPriceCents = (options ?? []).reduce(
+      (sum, option) => sum + Number(option.price_delta_cents),
+      0,
+    )
+
     if (data.operationId) {
       const { data: existingOrder, error: operationLookupError } = await supabase
         .from('orders')
@@ -134,7 +180,7 @@ export const addOrderItem = createServerFn({ method: 'POST' })
         status: 'pending',
         quantity: data.quantity,
         tenant_id: data.tenantId,
-        unit_price_cents: menuItem.price_cents,
+        unit_price_cents: Number(localPrice?.price_cents ?? menuItem.price_cents) + modifierPriceCents,
         vat_rate_bps: menuItem.vat_rate_bps,
       })
       .select('id')
@@ -142,6 +188,22 @@ export const addOrderItem = createServerFn({ method: 'POST' })
     if (itemError || !item) {
       await supabase.from('orders').delete().eq('id', order.id)
       throw new Error(`account_item_add_failed:${itemError?.code ?? 'unknown'}`)
+    }
+    if (options?.length) {
+      const { error: modifierInsertError } = await supabase.from('order_item_modifiers').insert(
+        options.map((option) => ({
+          modifier_option_id: option.id,
+          name_snapshot: localizedText(option.name_i18n as Record<string, string>, 'es'),
+          order_item_id: item.id,
+          price_delta_cents: Number(option.price_delta_cents),
+          tenant_id: data.tenantId,
+        })),
+      )
+      if (modifierInsertError) {
+        await supabase.from('order_items').delete().eq('id', item.id as string)
+        await supabase.from('orders').delete().eq('id', order.id)
+        throw new Error(`account_modifiers_create_failed:${modifierInsertError.code}`)
+      }
     }
     // Descuenta ingredientes de forma auditable cuando el producto tiene receta.
     const recipeResult = await supabase
@@ -181,6 +243,63 @@ export const addOrderItem = createServerFn({ method: 'POST' })
       }
     }
     return { orderItemId: item.id as string }
+  })
+
+export const updateOrderItem = createServerFn({ method: 'POST' })
+  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .validator(updateOrderItemInput)
+  .handler(async ({ context, data }) => {
+    requireAccountEditor(context.tenantMembership.role)
+    const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    const sessionId = await requireOpenSession(supabase, data)
+    const { count: paymentCount, error: paymentError } = await supabase
+      .from('payments')
+      .select('id', { count: 'exact', head: true })
+      .eq('tenant_id', data.tenantId)
+      .eq('session_id', sessionId)
+    if (paymentError) throw new Error(`account_payments_check_failed:${paymentError.code}`)
+    if ((paymentCount ?? 0) > 0) throw new Response('Payments recorded', { status: 409 })
+    const { data: item, error: itemError } = await supabase
+      .from('order_items')
+      .select('id, menu_item_id, order_id, quantity, status, orders!inner(session_id)')
+      .eq('id', data.orderItemId)
+      .eq('tenant_id', data.tenantId)
+      .eq('orders.session_id', sessionId)
+      .single()
+    if (itemError || !item) throw new Response('Not found', { status: 404 })
+    if (item.status === 'served' || item.status === 'cancelled')
+      throw new Response('Line cannot be edited', { status: 409 })
+    const delta = data.quantity - Number(item.quantity)
+    if (delta !== 0 && item.menu_item_id) {
+      const { data: recipeLines, error: recipeError } = await supabase
+        .from('recipe_ingredients')
+        .select('ingredient_id, quantity, waste_percent')
+        .eq('tenant_id', data.tenantId)
+        .eq('menu_item_id', item.menu_item_id as string)
+      if (recipeError && recipeError.code !== '42P01')
+        throw new Error(`recipe_load_failed:${recipeError.code}`)
+      if (recipeLines?.length) {
+        const { error: inventoryError } = await supabase.from('inventory_movements').insert(
+          recipeLines.map((line) => ({
+            created_by: context.tenantMembership.userId,
+            ingredient_id: line.ingredient_id,
+            kind: 'adjustment',
+            quantity: -Number(line.quantity) * delta * (1 + Number(line.waste_percent ?? 0) / 100),
+            reason: `Ajuste de cantidad de comanda ${item.order_id}`,
+            tenant_id: data.tenantId,
+            venue_id: data.venueId,
+          })),
+        )
+        if (inventoryError) throw new Error(`inventory_adjustment_failed:${inventoryError.code}`)
+      }
+    }
+    const { error } = await supabase
+      .from('order_items')
+      .update({ notes: data.notes, quantity: data.quantity })
+      .eq('id', data.orderItemId)
+      .eq('tenant_id', data.tenantId)
+    if (error) throw new Error(`account_item_update_failed:${error.code}`)
+    return { orderItemId: data.orderItemId, quantity: data.quantity }
   })
 
 /** Cocina/sala actualizan el ciclo de vida de una línea, sin alterar su precio. */

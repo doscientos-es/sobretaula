@@ -6,6 +6,8 @@ import {
   CardHeader,
   CardTitle,
   FormFeedback,
+  Input,
+  QuantityInput,
   Table,
   TableBody,
   TableCell,
@@ -14,11 +16,12 @@ import {
   TableRow,
   useFormFeedback,
 } from '@doscientos/ui'
+import { useState } from 'react'
 
 import type { Locale } from '@/shared/lib/i18n/locale'
 import { formatMoney } from '@/shared/lib/money/money'
 
-import { removeOrderItem } from '../application/account'
+import { removeOrderItem, updateOrderItem } from '../application/account'
 import { lineGrossCents, type AccountLine, type KitchenStation } from '../domain/account'
 
 const STATION_LABEL: Record<KitchenStation, string> = {
@@ -31,6 +34,7 @@ const STATION_LABEL: Record<KitchenStation, string> = {
 
 /** Lines already charged to the table, with removal while nothing is paid. */
 export function AccountLines({
+  canEdit,
   canRemove,
   lines,
   locale,
@@ -39,6 +43,7 @@ export function AccountLines({
   tenantId,
   venueId,
 }: {
+  canEdit: boolean
   canRemove: boolean
   lines: readonly AccountLine[]
   locale: Locale
@@ -48,6 +53,36 @@ export function AccountLines({
   venueId: string
 }) {
   const feedback = useFormFeedback()
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editQuantity, setEditQuantity] = useState(1)
+  const [editNotes, setEditNotes] = useState('')
+
+  function beginEdit(line: AccountLine) {
+    setEditingId(line.id)
+    setEditQuantity(line.quantity)
+    setEditNotes(line.notes ?? '')
+  }
+
+  async function saveEdit(orderItemId: string) {
+    if (feedback.pending) return
+    feedback.setPending()
+    try {
+      await updateOrderItem({
+        data: {
+          notes: editNotes.trim() || null,
+          orderItemId,
+          quantity: editQuantity,
+          sessionId,
+          tenantId,
+          venueId,
+        },
+      })
+      setEditingId(null)
+      onDone()
+    } catch {
+      feedback.setError('No se ha podido editar la línea.')
+    }
+  }
 
   async function remove(orderItemId: string) {
     if (feedback.pending) return
@@ -101,6 +136,11 @@ export function AccountLines({
                         {line.notes}
                       </span>
                     )}
+                    {line.modifiers?.map((modifier) => (
+                      <span className="text-muted-foreground block text-xs" key={modifier.id}>
+                        {`+ ${modifier.name}`}
+                      </span>
+                    ))}
                   </TableCell>
                   <TableCell>
                     <span className="block text-right tabular-nums">
@@ -115,17 +155,52 @@ export function AccountLines({
                     </span>
                   </TableCell>
                   <TableCell>
-                    {canRemove && line.status !== 'cancelled' && (
-                      <Button
-                        disabled={feedback.pending}
-                        onClick={() => void remove(line.id)}
-                        size="sm"
-                        type="button"
-                        variant="ghost"
-                      >
-                        Anular
-                      </Button>
-                    )}
+                    <span className="flex justify-end gap-2">
+                      {canEdit && line.status !== 'cancelled' && line.status !== 'served' && (
+                        editingId === line.id ? (
+                          <span className="flex items-center gap-2">
+                            <QuantityInput
+                              aria-label="Cantidad editada"
+                              minValue={1}
+                              onChange={setEditQuantity}
+                              value={editQuantity}
+                            />
+                            <Input
+                              aria-label="Nota editada"
+                              className="h-8 w-32"
+                              onChange={(event) => setEditNotes(event.target.value)}
+                              value={editNotes}
+                            />
+                            <Button
+                              disabled={feedback.pending}
+                              onClick={() => void saveEdit(line.id)}
+                              size="sm"
+                              type="button"
+                            >
+                              Guardar
+                            </Button>
+                            <Button onClick={() => setEditingId(null)} size="sm" type="button" variant="ghost">
+                              Cancelar
+                            </Button>
+                          </span>
+                        ) : (
+                          <Button onClick={() => beginEdit(line)} size="sm" type="button" variant="ghost">
+                            Editar
+                          </Button>
+                        )
+                      )}
+                      {canRemove && line.status !== 'cancelled' && (
+                        <Button
+                          disabled={feedback.pending}
+                          onClick={() => void remove(line.id)}
+                          size="sm"
+                          type="button"
+                          variant="ghost"
+                        >
+                          Anular
+                        </Button>
+                      )}
+                    </span>
                   </TableCell>
                 </TableRow>
               ))}

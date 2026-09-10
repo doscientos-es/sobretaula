@@ -7,6 +7,7 @@ import { addOrderItem } from './account'
 export interface AddOrderItemOperation {
   kind: 'add-order-item'
   menuItemId: string
+  modifierOptionIds?: string[]
   notes?: string
   operationId: string
   quantity: number

@@ -11,7 +11,7 @@ export const Route = createFileRoute('/t/$slug/l/$venue/productos')({
     const [ingredients, stock, menu] = await Promise.all([
       listIngredients({ data: { tenantId: data.tenantId } }),
       getInventory({ data }),
-      getMenu({ data: { tenantId: data.tenantId } }),
+      getMenu({ data: { tenantId: data.tenantId, venueId: data.venueId } }),
     ])
     return {
       ingredients,
@@ -29,6 +29,7 @@ function ProductRoute() {
       <ChannelPriceCard
         menuItems={menuItems}
         tenantId={tenant.id}
+        venueId={venue.id}
         onDone={() => window.location.reload()}
       />
       <ProductPage

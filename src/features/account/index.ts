@@ -5,6 +5,7 @@ export {
   recordPayment,
   refundPayment,
   removeOrderItem,
+  updateOrderItem,
 } from './application/account'
 export {
   createAccountOfflineStore,

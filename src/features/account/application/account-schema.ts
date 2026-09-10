@@ -10,8 +10,15 @@ export const accountSessionInput = z.object({
 
 export const addOrderItemInput = accountSessionInput.extend({
   menuItemId: z.string().uuid(),
+  modifierOptionIds: z.array(z.string().uuid()).max(50).default([]),
   notes: z.string().trim().max(200).optional(),
   operationId: z.string().uuid().optional(),
+  quantity: z.number().int().min(1).max(99),
+})
+
+export const updateOrderItemInput = accountSessionInput.extend({
+  notes: z.string().trim().max(200).nullable(),
+  orderItemId: z.string().uuid(),
   quantity: z.number().int().min(1).max(99),
 })
 
