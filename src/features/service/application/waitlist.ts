@@ -93,6 +93,16 @@ export const seatWaitlistEntry = createServerFn({ method: 'POST' })
   .handler(async ({ context, data }) => {
     requireWaitlistEditor(context.tenantMembership.role)
     const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    if (data.operationId) {
+      const { data: existingSession } = await supabase
+        .from('table_sessions')
+        .select('id')
+        .eq('operation_id', data.operationId)
+        .eq('tenant_id', data.tenantId)
+        .eq('venue_id', data.venueId)
+        .maybeSingle()
+      if (existingSession) return { sessionId: existingSession.id as string }
+    }
     const { data: entry, error: entryError } = await supabase
       .from('waitlist')
       .select('id, party_size')
@@ -114,14 +124,18 @@ export const seatWaitlistEntry = createServerFn({ method: 'POST' })
 
     const { data: session, error } = await supabase
       .from('table_sessions')
-      .insert({
-        covers: entry.party_size,
-        opened_by: context.tenantMembership.userId,
-        status: 'open',
-        table_ids: data.tableIds,
-        tenant_id: data.tenantId,
-        venue_id: data.venueId,
-      })
+      .upsert(
+        {
+          covers: entry.party_size,
+          opened_by: context.tenantMembership.userId,
+          operation_id: data.operationId ?? null,
+          status: 'open',
+          table_ids: data.tableIds,
+          tenant_id: data.tenantId,
+          venue_id: data.venueId,
+        },
+        { onConflict: 'operation_id' },
+      )
       .select('id')
       .single()
     if (error || !session)

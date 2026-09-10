@@ -163,6 +163,16 @@ export const seatWalkIn = createServerFn({ method: 'POST' })
   .handler(async ({ context, data }) => {
     requireServiceEditor(context.tenantMembership.role)
     const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    if (data.operationId) {
+      const { data: existingSession } = await supabase
+        .from('table_sessions')
+        .select('id')
+        .eq('operation_id', data.operationId)
+        .eq('tenant_id', data.tenantId)
+        .eq('venue_id', data.venueId)
+        .maybeSingle()
+      if (existingSession) return { sessionId: existingSession.id as string }
+    }
     const board = await loadServiceBoard(supabase, {
       now: new Date(),
       tenantId: data.tenantId,
@@ -175,14 +185,18 @@ export const seatWalkIn = createServerFn({ method: 'POST' })
 
     const { data: session, error } = await supabase
       .from('table_sessions')
-      .insert({
-        covers: data.covers,
-        opened_by: context.tenantMembership.userId,
-        status: 'open',
-        table_ids: data.tableIds,
-        tenant_id: data.tenantId,
-        venue_id: data.venueId,
-      })
+      .upsert(
+        {
+          covers: data.covers,
+          opened_by: context.tenantMembership.userId,
+          operation_id: data.operationId ?? null,
+          status: 'open',
+          table_ids: data.tableIds,
+          tenant_id: data.tenantId,
+          venue_id: data.venueId,
+        },
+        { onConflict: 'operation_id' },
+      )
       .select('id')
       .single()
     if (error || !session)

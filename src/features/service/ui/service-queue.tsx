@@ -15,6 +15,7 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react'
 
 import {
   createSeatReservationOperation,
+  createSeatWaitlistOperation,
   createServiceOfflineStore,
   enqueueServiceOperation,
   flushServiceOperations,
@@ -141,6 +142,19 @@ export function ServiceQueue({
     enqueueServiceOperation(offlineStore, operation)
     feedback.setPending()
     feedback.setSuccess('Reserva guardada. Se sentará automáticamente al recuperar la conexión.')
+  }
+
+  function seatWaitlistOffline(waitlistEntryId: string) {
+    enqueueServiceOperation(
+      offlineStore,
+      createSeatWaitlistOperation({
+        tableIds: [...selectedTableIds],
+        tenantId,
+        venueId,
+        waitlistEntryId,
+      }),
+    )
+    feedback.setSuccess('Espera guardada. Se sentará automáticamente al recuperar la conexión.')
   }
 
   return (
@@ -298,18 +312,20 @@ export function ServiceQueue({
                     <Button
                       disabled={feedback.pending || selectedTableIds.length === 0}
                       onClick={() =>
-                        void run(
-                          () =>
-                            seatWaitlistEntry({
-                              data: {
-                                tableIds: [...selectedTableIds],
-                                tenantId,
-                                venueId,
-                                waitlistEntryId: entry.id,
-                              },
-                            }),
-                          'Esas mesas no sirven para este grupo.',
-                        )
+                        isOnline
+                          ? void run(
+                              () =>
+                                seatWaitlistEntry({
+                                  data: {
+                                    tableIds: [...selectedTableIds],
+                                    tenantId,
+                                    venueId,
+                                    waitlistEntryId: entry.id,
+                                  },
+                                }),
+                              'Esas mesas no sirven para este grupo.',
+                            )
+                          : seatWaitlistOffline(entry.id)
                       }
                       type="button"
                     >

@@ -12,6 +12,7 @@ export const operationId = z.string().uuid().optional()
 export const seatWalkInInput = serviceVenueInput.extend({
   covers: z.number().int().min(1).max(50),
   guestName: z.string().trim().min(1).max(200).optional(),
+  operationId,
   tableIds,
 })
 
@@ -50,6 +51,7 @@ export const waitlistEntryReference = serviceVenueInput.extend({
 })
 
 export const seatWaitlistEntryInput = waitlistEntryReference.extend({
+  operationId,
   tableIds,
 })
 

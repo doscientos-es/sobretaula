@@ -13,7 +13,13 @@ import {
 } from '@doscientos/ui'
 import { Link, useParams } from '@tanstack/react-router'
 import { useState, type FormEvent } from 'react'
+import { useMemo } from 'react'
 
+import {
+  createSeatWalkInOperation,
+  createServiceOfflineStore,
+  enqueueServiceOperation,
+} from '../application/service-offline-operations'
 import { closeSession, mergeSessions, moveSession, seatWalkIn } from '../application/table-service'
 import { suggestTableCombination, type ServiceBoard } from '../domain/service-board'
 import { describeSession } from './service-labels'
@@ -39,6 +45,10 @@ export function ServiceActions({
   venueId: string
 }) {
   const feedback = useFormFeedback()
+  const offlineStore = useMemo(
+    () => createServiceOfflineStore(tenantId, venueId),
+    [tenantId, venueId],
+  )
   const params = useParams({ strict: false })
   const [covers, setCovers] = useState(2)
   const [sessionId, setSessionId] = useState(board.sessions[0]?.id ?? '')
@@ -73,11 +83,21 @@ export function ServiceActions({
       feedback.setError('Selecciona al menos una mesa en la lista.')
       return
     }
-    void run(
-      () =>
-        seatWalkIn({
-          data: { covers, tableIds: [...selectedTableIds], tenantId, venueId },
+    if (!isOnline) {
+      enqueueServiceOperation(
+        offlineStore,
+        createSeatWalkInOperation({
+          covers,
+          tableIds: [...selectedTableIds],
+          tenantId,
+          venueId,
         }),
+      )
+      feedback.setSuccess('Walk-in guardado. Se sentará automáticamente al recuperar la conexión.')
+      return
+    }
+    void run(
+      () => seatWalkIn({ data: { covers, tableIds: [...selectedTableIds], tenantId, venueId } }),
       'Esas mesas están ocupadas o no dan para tantos comensales.',
     )
   }
