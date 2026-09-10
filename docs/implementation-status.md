@@ -124,6 +124,8 @@ la persistencia Supabase/RLS y el schema de aplicación ya están preparados;
 el CRUD server completo de listado, creación, edición y borrado ya está
 preparado y el editor permite crear, editar y borrar plantillas desde el layout
 actual.
+El loader degrada a una lista vacía si la migración aún no está aplicada, para
+que el plano existente no quede bloqueado durante el despliegue progresivo.
 
 «Implementado» indica que existe código y pruebas unitarias; no equivale a
 entregable aprobado mientras falten pruebas contra un entorno dedicado.
@@ -170,12 +172,12 @@ hasta que un asesor fiscal valide el reparto de responsabilidad.
 ### Última ejecución local (2026-09-10)
 
 Tras añadir la validación geométrica de la huella rotada de mesas, la suite
-local queda en 62 archivos correctos y 264 pruebas correctas; 1 archivo y 3
+local queda en 63 archivos correctos y 268 pruebas correctas; 1 archivo y 3
 pruebas RLS siguen omitidos por falta de entorno Supabase dedicado.
 
 La verificación posterior de producción (`pnpm build`) también completa
 correctamente y genera el artefacto Nitro/Vercel. La suite global actual queda
-en 62 archivos y 264 pruebas correctas; 1 archivo y 3 pruebas RLS continúan
+en 63 archivos y 268 pruebas correctas; 1 archivo y 3 pruebas RLS continúan
 omitidos por el conector no autorizado.
 
 | Comando                | Resultado                                                                                    |
@@ -183,7 +185,7 @@ omitidos por el conector no autorizado.
 | `pnpm format:check`    | Pendiente por 5 archivos ajenos al alcance actual                                            |
 | `pnpm lint`            | Correcto                                                                                     |
 | `pnpm structure:check` | Correcto localmente; el asset de login vive en `public/` y los módulos usan nombres estándar |
-| `pnpm test`            | 62 archivos y 264 pruebas correctas; 1 archivo y 3 pruebas RLS omitidas                      |
+| `pnpm test`            | 63 archivos y 268 pruebas correctas; 1 archivo y 3 pruebas RLS omitidas                      |
 | `pnpm typecheck`       | Correcto                                                                                     |
 | `pnpm quality`         | Correcto                                                                                     |
 | `pnpm build`           | Correcto; solo avisos de Vite/chunks                                                         |

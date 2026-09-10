@@ -52,4 +52,13 @@ describe('layout templates', () => {
       ),
     ).toThrow('no compatible')
   })
+
+  it('rejects geometry outside the template bounds', () => {
+    const template = createLayoutTemplate(input)
+    expect(() =>
+      parseLayoutTemplate(
+        JSON.stringify({ ...template, tables: [{ ...template.tables[0], xCm: 950 }] }),
+      ),
+    ).toThrow('geometría')
+  })
 })

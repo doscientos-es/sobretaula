@@ -72,5 +72,26 @@ export function parseLayoutTemplate(value: string): LayoutTemplate {
     !Array.isArray(candidate.elements)
   )
     throw new Error('La plantilla está incompleta.')
+  const widthCm = candidate.widthCm as number
+  const heightCm = candidate.heightCm as number
+  const placements = [...candidate.tables, ...candidate.elements]
+  if (
+    widthCm <= 0 ||
+    heightCm <= 0 ||
+    placements.some(
+      (placement) =>
+        !Number.isFinite(placement.xCm) ||
+        !Number.isFinite(placement.yCm) ||
+        !Number.isFinite(placement.widthCm) ||
+        !Number.isFinite(placement.heightCm) ||
+        placement.widthCm <= 0 ||
+        placement.heightCm <= 0 ||
+        placement.xCm < 0 ||
+        placement.yCm < 0 ||
+        placement.xCm + placement.widthCm > widthCm ||
+        placement.yCm + placement.heightCm > heightCm,
+    )
+  )
+    throw new Error('La geometría de la plantilla no es válida.')
   return candidate as LayoutTemplate
 }
