@@ -66,11 +66,11 @@ Los estados deben probarse en escritorio, tablet y móvil, con foco visible,
 
 - [x] Plano en vivo y vista lista intercambiables.
 - [x] Estados de mesa con color + icono + texto, nunca solo color.
-- [~] Acciones rápidas: sentar/liberar/cerrar cuenta y walk-in disponibles; las
-      nota interna de sesión ya se puede guardar desde el panel. Limpiar,
-      bloquear y asignar trabajador quedan para la siguiente iteración. El
-      modelo ya distingue mesas bloqueadas y conserva su motivo para impedir
-      que entren en sugerencias o seating.
+- [~] Acciones rápidas: sentar/liberar/cerrar cuenta y walk-in disponibles; la
+  nota interna de sesión ya se puede guardar desde el panel. Limpiar,
+  bloquear y asignar trabajador quedan para la siguiente iteración. El
+  modelo ya distingue mesas bloqueadas y conserva su motivo para impedir
+  que entren en sugerencias o seating.
 
 Contrato de acciones rápidas: `sentar` sólo desde libre/reservada, `liberar`
 sólo desde ocupada, `limpiar` desde ocupada o pendiente de limpieza,
