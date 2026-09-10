@@ -37,6 +37,18 @@ describe('line totals', () => {
     expect(lineGrossCents(line({ quantity: 3, unitPriceCents: 450 }))).toBe(1350)
   })
 
+  it('includes frozen modifier supplements once per unit', () => {
+    expect(
+      lineGrossCents(
+        line({
+          modifiers: [{ id: 'modifier-1', name: 'Extra queso', priceDeltaCents: 150 }],
+          quantity: 2,
+          unitPriceCents: 1000,
+        }),
+      ),
+    ).toBe(2300)
+  })
+
   it('extracts the net from a VAT-included price', () => {
     expect(lineNetCents(line({ unitPriceCents: 1000, vatRateBps: 1000 }))).toBe(909)
     expect(lineNetCents(line({ unitPriceCents: 1000, vatRateBps: 2100 }))).toBe(826)

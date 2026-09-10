@@ -156,8 +156,10 @@ export function AccountLines({
                   </TableCell>
                   <TableCell>
                     <span className="flex justify-end gap-2">
-                      {canEdit && line.status !== 'cancelled' && line.status !== 'served' && (
-                        editingId === line.id ? (
+                      {canEdit &&
+                        line.status !== 'cancelled' &&
+                        line.status !== 'served' &&
+                        (editingId === line.id ? (
                           <span className="flex items-center gap-2">
                             <QuantityInput
                               aria-label="Cantidad editada"
@@ -179,16 +181,25 @@ export function AccountLines({
                             >
                               Guardar
                             </Button>
-                            <Button onClick={() => setEditingId(null)} size="sm" type="button" variant="ghost">
+                            <Button
+                              onClick={() => setEditingId(null)}
+                              size="sm"
+                              type="button"
+                              variant="ghost"
+                            >
                               Cancelar
                             </Button>
                           </span>
                         ) : (
-                          <Button onClick={() => beginEdit(line)} size="sm" type="button" variant="ghost">
+                          <Button
+                            onClick={() => beginEdit(line)}
+                            size="sm"
+                            type="button"
+                            variant="ghost"
+                          >
                             Editar
                           </Button>
-                        )
-                      )}
+                        ))}
                       {canRemove && line.status !== 'cancelled' && (
                         <Button
                           disabled={feedback.pending}

@@ -19,4 +19,5 @@ export type {
   MenuSection,
 } from './domain/menu'
 export { MenuPage } from './ui/menu-page'
+export { ModifierCard } from './ui/modifier-card'
 export { PublicMenuPage } from './ui/public-menu-page'

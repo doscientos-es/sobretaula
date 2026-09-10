@@ -1,12 +1,13 @@
 import { createServerFn } from '@tanstack/react-start'
 
 import { authMiddleware } from '@/features/auth/infrastructure/server/auth-middleware'
-import { menuChannelPriceInput } from './menu-schema'
 import {
   operationalTenantMiddleware,
   tenantMembershipMiddleware,
 } from '@/features/tenancy/application/require-tenant-membership'
 import { createRequestSupabaseClient } from '@/shared/lib/supabase/server/create-server-client'
+
+import { menuChannelPriceInput } from './menu-schema'
 
 export const setMenuChannelPrice = createServerFn({ method: 'POST' })
   .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])

@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-import { getMenu } from '@/features/menu'
+import { getMenu, ModifierCard } from '@/features/menu'
 import { getInventory, listIngredients } from '@/features/product'
 import { ChannelPriceCard } from '@/features/product/ui/channel-price-card'
 import { ProductPage } from '@/features/product/ui/product-page'
@@ -16,6 +16,7 @@ export const Route = createFileRoute('/t/$slug/l/$venue/productos')({
     return {
       ingredients,
       stock,
+      menu,
       menuItems: menu.items.map((item) => ({ id: item.id, name: item.nameI18n.es ?? item.id })),
     }
   },
@@ -23,9 +24,10 @@ export const Route = createFileRoute('/t/$slug/l/$venue/productos')({
 })
 function ProductRoute() {
   const { tenant, venue } = Route.useRouteContext()
-  const { ingredients, stock, menuItems } = Route.useLoaderData()
+  const { ingredients, menu, stock, menuItems } = Route.useLoaderData()
   return (
     <>
+      <ModifierCard menu={menu} onDone={() => window.location.reload()} tenantId={tenant.id} />
       <ChannelPriceCard
         menuItems={menuItems}
         tenantId={tenant.id}

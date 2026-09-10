@@ -59,7 +59,7 @@ export function lineGrossCents(
 
 /** Net inside a VAT-included gross: gross ÷ (1 + rate), rounded to the cent. */
 export function lineNetCents(
-  line: Pick<AccountLine, 'quantity' | 'unitPriceCents' | 'vatRateBps'>,
+  line: Pick<AccountLine, 'modifiers' | 'quantity' | 'unitPriceCents' | 'vatRateBps'>,
 ): MinorUnits {
   const gross = lineGrossCents(line)
   return assertMinorUnits(Math.round((gross * 10_000) / (10_000 + line.vatRateBps)))

@@ -63,11 +63,9 @@ export function AccountAddItem({
     () => createAccountOfflineStore(tenantId, venueId),
     [tenantId, venueId],
   )
-  const selectedItem = sections.flatMap((section) => section.items).find((item) => item.id === menuItemId)
-
-  useEffect(() => {
-    setModifierOptionIds([])
-  }, [menuItemId])
+  const selectedItem = sections
+    .flatMap((section) => section.items)
+    .find((item) => item.id === menuItemId)
 
   useEffect(() => {
     const flush = () => {
@@ -147,7 +145,10 @@ export function AccountAddItem({
             <FieldLabel htmlFor="account-item">Plato</FieldLabel>
             <select
               id="account-item"
-              onChange={(event) => setMenuItemId(event.target.value)}
+              onChange={(event) => {
+                setMenuItemId(event.target.value)
+                setModifierOptionIds([])
+              }}
               value={menuItemId}
             >
               {sections.map((section) => (
@@ -171,9 +172,10 @@ export function AccountAddItem({
               </legend>
               {group.options.map((option) => {
                 const checked = modifierOptionIds.includes(option.id)
-                const disabled = !checked && group.selectionMax === 1 && modifierOptionIds.some((id) =>
-                  group.options.some((entry) => entry.id === id),
-                )
+                const disabled =
+                  !checked &&
+                  group.selectionMax === 1 &&
+                  modifierOptionIds.some((id) => group.options.some((entry) => entry.id === id))
                 return (
                   <label className="flex items-center gap-2 text-sm" key={option.id}>
                     <input

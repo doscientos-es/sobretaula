@@ -129,18 +129,16 @@ export const addOrderItem = createServerFn({ method: 'POST' })
     const selectedByGroup = new Map<string, number>()
     for (const option of options ?? []) {
       if (!option.is_active) throw new Response('Invalid modifiers', { status: 422 })
-      selectedByGroup.set(option.group_id as string, (selectedByGroup.get(option.group_id as string) ?? 0) + 1)
+      selectedByGroup.set(
+        option.group_id as string,
+        (selectedByGroup.get(option.group_id as string) ?? 0) + 1,
+      )
     }
     for (const group of groups ?? []) {
       const selected = selectedByGroup.get(group.id as string) ?? 0
       if (selected < Number(group.selection_min) || selected > Number(group.selection_max))
         throw new Response('Invalid modifier selection', { status: 422 })
     }
-    const modifierPriceCents = (options ?? []).reduce(
-      (sum, option) => sum + Number(option.price_delta_cents),
-      0,
-    )
-
     if (data.operationId) {
       const { data: existingOrder, error: operationLookupError } = await supabase
         .from('orders')
@@ -180,7 +178,7 @@ export const addOrderItem = createServerFn({ method: 'POST' })
         status: 'pending',
         quantity: data.quantity,
         tenant_id: data.tenantId,
-        unit_price_cents: Number(localPrice?.price_cents ?? menuItem.price_cents) + modifierPriceCents,
+        unit_price_cents: Number(localPrice?.price_cents ?? menuItem.price_cents),
         vat_rate_bps: menuItem.vat_rate_bps,
       })
       .select('id')
@@ -200,7 +198,10 @@ export const addOrderItem = createServerFn({ method: 'POST' })
         })),
       )
       if (modifierInsertError) {
-        await supabase.from('order_items').delete().eq('id', item.id as string)
+        await supabase
+          .from('order_items')
+          .delete()
+          .eq('id', item.id as string)
         await supabase.from('orders').delete().eq('id', order.id)
         throw new Error(`account_modifiers_create_failed:${modifierInsertError.code}`)
       }

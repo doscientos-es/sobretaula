@@ -7,12 +7,7 @@ import {
 } from '@/features/tenancy/application/require-tenant-membership'
 import { createRequestSupabaseClient } from '@/shared/lib/supabase/server/create-server-client'
 
-import type {
-  LocalizedText,
-  MenuCategory,
-  MenuItem,
-  MenuModifierOption,
-} from '../domain/menu'
+import type { LocalizedText, MenuCategory, MenuItem, MenuModifierOption } from '../domain/menu'
 import {
   createModifierGroupInput,
   createModifierOptionInput,
@@ -45,8 +40,13 @@ export const getMenu = createServerFn({ method: 'GET' })
   .validator(menuTenantInput)
   .handler(async ({ context, data }): Promise<MenuCatalog> => {
     const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
-    const [categoriesResult, itemsResult, modifierGroupsResult, modifierOptionsResult, venuePricesResult] =
-      await Promise.all([
+    const [
+      categoriesResult,
+      itemsResult,
+      modifierGroupsResult,
+      modifierOptionsResult,
+      venuePricesResult,
+    ] = await Promise.all([
       supabase
         .from('menu_categories')
         .select('id, is_active, name_i18n, position')
@@ -58,27 +58,27 @@ export const getMenu = createServerFn({ method: 'GET' })
           'category_id, description_i18n, id, is_active, kitchen_station, name_i18n, preparation_minutes, price_cents, sku, vat_rate_bps',
         )
         .eq('tenant_id', data.tenantId),
-        supabase
-          .from('menu_modifier_groups')
-          .select('id, is_active, menu_item_id, name_i18n, position, selection_max, selection_min')
-          .eq('tenant_id', data.tenantId)
-          .eq('is_active', true)
-          .order('position'),
-        supabase
-          .from('menu_modifier_options')
-          .select('group_id, id, is_active, name_i18n, position, price_delta_cents')
-          .eq('tenant_id', data.tenantId)
-          .eq('is_active', true)
-          .order('position'),
-        data.venueId
-          ? supabase
-              .from('menu_item_venue_prices')
-              .select('is_available, menu_item_id, price_cents')
-              .eq('tenant_id', data.tenantId)
-              .eq('venue_id', data.venueId)
-              .eq('channel', 'room')
-          : Promise.resolve({ data: [], error: null }),
-      ])
+      supabase
+        .from('menu_modifier_groups')
+        .select('id, is_active, menu_item_id, name_i18n, position, selection_max, selection_min')
+        .eq('tenant_id', data.tenantId)
+        .eq('is_active', true)
+        .order('position'),
+      supabase
+        .from('menu_modifier_options')
+        .select('group_id, id, is_active, name_i18n, position, price_delta_cents')
+        .eq('tenant_id', data.tenantId)
+        .eq('is_active', true)
+        .order('position'),
+      data.venueId
+        ? supabase
+            .from('menu_item_venue_prices')
+            .select('is_available, menu_item_id, price_cents')
+            .eq('tenant_id', data.tenantId)
+            .eq('venue_id', data.venueId)
+            .eq('channel', 'room')
+        : Promise.resolve({ data: [], error: null }),
+    ])
     let finalItemsResult = itemsResult
     if (itemsResult.error?.code === '42703') {
       const legacy = await supabase
@@ -148,7 +148,9 @@ export const getMenu = createServerFn({ method: 'GET' })
         isActive: Boolean(item.is_active),
         isAvailable: venuePriceByItem.get(item.id as string)?.is_available ?? true,
         nameI18n: (item.name_i18n ?? {}) as LocalizedText,
-        priceCents: Number(venuePriceByItem.get(item.id as string)?.price_cents ?? item.price_cents),
+        priceCents: Number(
+          venuePriceByItem.get(item.id as string)?.price_cents ?? item.price_cents,
+        ),
         preparationMinutes: item.preparation_minutes as number,
         kitchenStation: (item.kitchen_station as MenuItem['kitchenStation']) ?? 'general',
         sku: (item.sku as string | null) ?? null,
@@ -163,10 +165,17 @@ export const createModifierGroup = createServerFn({ method: 'POST' })
   .validator(createModifierGroupInput)
   .handler(async ({ context, data }) => {
     requireMenuEditor(context.tenantMembership.role)
-    if (data.selectionMin > data.selectionMax) throw new Response('Invalid selection', { status: 422 })
-    const { data: group, error } = await createRequestSupabaseClient(
-      context.tenantMembership.accessToken,
-    )
+    if (data.selectionMin > data.selectionMax)
+      throw new Response('Invalid selection', { status: 422 })
+    const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    const { data: item, error: itemError } = await supabase
+      .from('menu_items')
+      .select('id')
+      .eq('id', data.menuItemId)
+      .eq('tenant_id', data.tenantId)
+      .single()
+    if (itemError || !item) throw new Response('Not found', { status: 404 })
+    const { data: group, error } = await supabase
       .from('menu_modifier_groups')
       .insert({
         menu_item_id: data.menuItemId,
@@ -187,9 +196,15 @@ export const createModifierOption = createServerFn({ method: 'POST' })
   .validator(createModifierOptionInput)
   .handler(async ({ context, data }) => {
     requireMenuEditor(context.tenantMembership.role)
-    const { data: option, error } = await createRequestSupabaseClient(
-      context.tenantMembership.accessToken,
-    )
+    const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    const { data: group, error: groupError } = await supabase
+      .from('menu_modifier_groups')
+      .select('id')
+      .eq('id', data.groupId)
+      .eq('tenant_id', data.tenantId)
+      .single()
+    if (groupError || !group) throw new Response('Not found', { status: 404 })
+    const { data: option, error } = await supabase
       .from('menu_modifier_options')
       .insert({
         group_id: data.groupId,
@@ -200,7 +215,8 @@ export const createModifierOption = createServerFn({ method: 'POST' })
       })
       .select('id')
       .single()
-    if (error || !option) throw new Error(`modifier_option_create_failed:${error?.code ?? 'unknown'}`)
+    if (error || !option)
+      throw new Error(`modifier_option_create_failed:${error?.code ?? 'unknown'}`)
     return { optionId: option.id as string }
   })
 
