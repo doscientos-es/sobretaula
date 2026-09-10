@@ -50,6 +50,7 @@ export function ServicePage({
     typeof navigator === 'undefined' ? true : navigator.onLine,
   )
   const [handoverSaved, setHandoverSaved] = useState(false)
+  const [expandedSnapshotId, setExpandedSnapshotId] = useState<string | null>(null)
   const reload = useLoaderReload()
   useEffect(() => {
     const refresh = () => {
@@ -503,15 +504,44 @@ export function ServicePage({
                     )
                     return (
                       <li className="border-border rounded-lg border p-3" key={snapshot.id}>
-                        <p className="font-medium">
-                          {new Date(snapshot.createdAt).toLocaleString('es-ES', {
-                            dateStyle: 'short',
-                            timeStyle: 'short',
-                          })}
-                        </p>
-                        <p className="text-muted-foreground text-xs">
-                          {open} cuentas abiertas{attention > 0 ? ` · ${attention} en pacing` : ''}
-                        </p>
+                        <button
+                          aria-expanded={expandedSnapshotId === snapshot.id}
+                          className="w-full text-left"
+                          onClick={() =>
+                            setExpandedSnapshotId((current) =>
+                              current === snapshot.id ? null : snapshot.id,
+                            )
+                          }
+                          type="button"
+                        >
+                          <p className="font-medium">
+                            {new Date(snapshot.createdAt).toLocaleString('es-ES', {
+                              dateStyle: 'short',
+                              timeStyle: 'short',
+                            })}
+                          </p>
+                          <p className="text-muted-foreground text-xs">
+                            {open} cuentas abiertas
+                            {attention > 0 ? ` · ${attention} en pacing` : ''}
+                          </p>
+                        </button>
+                        {expandedSnapshotId === snapshot.id && (
+                          <div className="border-border mt-3 space-y-1 border-t pt-3 text-xs">
+                            {snapshot.summary.map((section) => {
+                              const areaName = plan.areas.find(
+                                (area) => area.id === section.areaId,
+                              )?.name
+                              return (
+                                <p key={section.areaId}>
+                                  <span className="font-medium">{areaName ?? 'Sección'}:</span>{' '}
+                                  {section.activeSessions} abiertas · {section.attentionSessions}{' '}
+                                  pacing · {section.cleaningTables} por limpiar ·{' '}
+                                  {section.blockedTables} bloqueadas
+                                </p>
+                              )
+                            })}
+                          </div>
+                        )}
                       </li>
                     )
                   })}

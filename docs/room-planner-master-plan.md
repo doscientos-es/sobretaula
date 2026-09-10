@@ -108,7 +108,7 @@ seguras y se bloquean las que puedan perder una reserva o cuenta.
   handover estructurado quedan pendientes. El panel ya muestra el tiempo
   de sesión, avisa cuando supera 90 minutos y presenta un resumen vivo por
   sección; la entrega se puede guardar con responsable y fecha y consultar
-  sus diez últimas instantáneas.
+  sus diez últimas instantáneas y abrir el detalle de cada sección.
 - [ ] Importación desde imagen/PDF y plantillas reutilizables.
 
 ## Edge cases obligatorios
