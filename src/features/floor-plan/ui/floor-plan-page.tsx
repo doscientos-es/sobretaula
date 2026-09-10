@@ -1104,17 +1104,25 @@ export function FloorPlanPage({
                     Eliminar
                   </Button>
                   <Button
-                    onClick={() =>
-                      setLockedIds((current) =>
-                        current.includes(selectedId)
-                          ? current.filter((id) => id !== selectedId)
-                          : [...current, selectedId],
-                      )
-                    }
+                    onClick={() => {
+                      const ids = selectedIds.length > 0 ? selectedIds : [selectedId]
+                      setLockedIds((current) => {
+                        const allLocked = ids.every((id) => current.includes(id))
+                        return allLocked
+                          ? current.filter((id) => !ids.includes(id))
+                          : [...new Set([...current, ...ids])]
+                      })
+                    }}
                     type="button"
                     variant="outline"
                   >
-                    {lockedIds.includes(selectedId) ? 'Desbloquear' : 'Bloquear'}
+                    {selectedIds.length > 1 && selectedIds.every((id) => lockedIds.includes(id))
+                      ? 'Desbloquear selección'
+                      : lockedIds.includes(selectedId)
+                        ? 'Desbloquear'
+                        : selectedIds.length > 1
+                          ? 'Bloquear selección'
+                          : 'Bloquear'}
                   </Button>
                 </div>
               )}
