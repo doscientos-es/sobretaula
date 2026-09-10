@@ -31,7 +31,7 @@ del diseñador y su uso diario.
 
 - [x] Biblioteca de elementos: mesa, pared, puerta, barra, pilar, escalera,
       baño, cocina, salida, ventana, obstáculo y etiqueta.
-- [ ] Selección múltiple, duplicado, alineación por los cuatro bordes y distribución
+- [x] Selección múltiple, duplicado, alineación por los cuatro bordes y distribución
       horizontal/vertical ya disponibles; agrupar y bloquear siguen pendientes.
 - [x] Zoom/pan y guías de alineación: zoom accesible, pan con Alt+flechas,
       cuadrícula configurable de 25 cm/50 cm/1 m, snap sincronizado y ejes del
@@ -54,7 +54,8 @@ del diseñador y su uso diario.
 - [x] Preflight de capacidad para grupos grandes.
 - [x] Sugerencia automática de combinación libre más ajustada por capacidad.
 - [x] Acción para seleccionar la combinación sugerida desde el panel operativo.
-- [ ] Realtime, reintento idempotente y modo degradado sin conexión.
+- [x] Realtime para reservas, asignaciones y sesiones y aviso de modo degradado
+      sin conexión; la cola de reintentos idempotentes queda pendiente.
 
 ### P3 · Inteligencia y casos avanzados
 

@@ -19,6 +19,7 @@ import {
   type FloorPlanData,
 } from '@/features/floor-plan'
 import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
+import { createBrowserSupabaseClient } from '@/shared/lib/supabase/client'
 
 import type { ServiceBoard } from '../domain/service-board'
 import { ServiceActions } from './service-actions'
@@ -42,10 +43,16 @@ export function ServicePage({
     plan.areas.length === 1 ? (plan.areas[0]?.id ?? 'all') : 'all',
   )
   const [lastRefreshAt, setLastRefreshAt] = useState(() => new Date())
+  const [clock, setClock] = useState(() => new Date())
+  const [isOnline, setIsOnline] = useState(() =>
+    typeof navigator === 'undefined' ? true : navigator.onLine,
+  )
   const reload = useLoaderReload()
   useEffect(() => {
     const refresh = () => {
-      setLastRefreshAt(new Date())
+      const refreshedAt = new Date()
+      setLastRefreshAt(refreshedAt)
+      setClock(refreshedAt)
       reload()
     }
     const interval = window.setInterval(refresh, 30_000)
@@ -54,6 +61,60 @@ export function ServicePage({
     return () => {
       window.clearInterval(interval)
       window.removeEventListener('focus', refreshOnFocus)
+    }
+  }, [reload])
+  useEffect(() => {
+    const interval = window.setInterval(() => setClock(new Date()), 15_000)
+    return () => window.clearInterval(interval)
+  }, [])
+  useEffect(() => {
+    const client = createBrowserSupabaseClient()
+    const refreshFromRealtime = () => {
+      setLastRefreshAt(new Date())
+      reload()
+    }
+    const channel = client
+      .channel(`service-board-${venueId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'reservations' },
+        refreshFromRealtime,
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'reservation_tables' },
+        refreshFromRealtime,
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'service_sessions' },
+        refreshFromRealtime,
+      )
+      .subscribe((status) => {
+        const realtimeStatus = String(status)
+        if (realtimeStatus === 'SUBSCRIBED') {
+          setIsOnline(true)
+          refreshFromRealtime()
+        } else if (realtimeStatus === 'CHANNEL_ERROR' || realtimeStatus === 'TIMED_OUT') {
+          setIsOnline(false)
+        }
+      })
+    return () => {
+      void client.removeChannel(channel)
+    }
+  }, [reload, venueId])
+  useEffect(() => {
+    const online = () => {
+      setIsOnline(true)
+      setLastRefreshAt(new Date())
+      reload()
+    }
+    const offline = () => setIsOnline(false)
+    window.addEventListener('online', online)
+    window.addEventListener('offline', offline)
+    return () => {
+      window.removeEventListener('online', online)
+      window.removeEventListener('offline', offline)
     }
   }, [reload])
   const activeVersion =
@@ -99,7 +160,7 @@ export function ServicePage({
     return `${area.name} · ${floor}`
   }
   const areaGroups = groupAreasByFloor(plan.areas)
-  const dataMayBeStale = Date.now() - lastRefreshAt.getTime() > 60_000
+  const dataMayBeStale = clock.getTime() - lastRefreshAt.getTime() > 60_000
 
   function selectArea(areaId: string) {
     setSelectedAreaId(areaId)
@@ -156,6 +217,14 @@ export function ServicePage({
           role="alert"
         >
           Los datos pueden estar desactualizados. Actualiza la sala antes de asignar una mesa.
+        </div>
+      )}
+      {!isOnline && (
+        <div
+          className="border-destructive/40 bg-destructive/10 text-destructive rounded-lg border p-3 text-sm"
+          role="alert"
+        >
+          Sin conexión. No ejecutes cambios en la sala hasta recuperar la red.
         </div>
       )}
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">

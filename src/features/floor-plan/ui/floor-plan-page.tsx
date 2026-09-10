@@ -81,6 +81,7 @@ export function FloorPlanPage({
   const [draggingTableId, setDraggingTableId] = useState<string>()
   const [selectedId, setSelectedId] = useState<string>()
   const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [lockedIds, setLockedIds] = useState<string[]>([])
   const [zoom, setZoom] = useState(1)
   const [gridSize, setGridSize] = useState(DEFAULT_GRID_SIZE_CM)
   const [pan, setPan] = useState({ x: 0, y: 0 })
@@ -201,6 +202,7 @@ export function FloorPlanPage({
   }
 
   function changePlacement(id: string, xCm: number, yCm: number) {
+    if (lockedIds.includes(id)) return
     if (!activeVersion) return
     const moving = placements.find((placement) => placement.id === id)
     if (!moving) return
@@ -265,6 +267,7 @@ export function FloorPlanPage({
   }
 
   function moveWithKeyboard(event: KeyboardEvent<HTMLButtonElement>, id: string) {
+    if (lockedIds.includes(id)) return
     const distance = event.shiftKey ? 5 : gridSize
     const current = placements.find((placement) => placement.id === id)
     if (!current) return
@@ -379,10 +382,16 @@ export function FloorPlanPage({
 
   function removeSelected() {
     if (!selectedId) return
+    const ids = selectedIds.length > 0 ? selectedIds : [selectedId]
+    const locked = ids.filter((id) => lockedIds.includes(id))
+    if (locked.length > 0) {
+      feedback.setError('Desbloquea los elementos seleccionados antes de eliminarlos.')
+      return
+    }
     setHistory((current) =>
       commitEditorHistory(current, {
-        elements: elements.filter((item) => item.id !== selectedId),
-        placements: placements.filter((item) => item.id !== selectedId),
+        elements: elements.filter((item) => !ids.includes(item.id)),
+        placements: placements.filter((item) => !ids.includes(item.id)),
       }),
     )
     setSelectedId(undefined)
@@ -462,6 +471,10 @@ export function FloorPlanPage({
     },
   ) {
     if (!selectedId || !activeVersion) return
+    if (lockedIds.includes(selectedId)) {
+      feedback.setError('Desbloquea el elemento para editar sus propiedades.')
+      return
+    }
     const selectedTable = placements.find((item) => item.id === selectedId)
     const selectedElement = elements.find((item) => item.id === selectedId)
     const selected = selectedTable ?? selectedElement
@@ -774,11 +787,32 @@ export function FloorPlanPage({
               <svg
                 aria-label={`Plano ${activeVersion.name}`}
                 className="border-border bg-muted/30 h-auto w-full rounded-xl border shadow-inner"
+                onClick={(event) => {
+                  if (event.target === event.currentTarget) {
+                    setSelectedId(undefined)
+                    setSelectedIds([])
+                  }
+                }}
                 onKeyDown={(event) => {
                   if (event.key === 'Escape') {
                     event.preventDefault()
                     setSelectedId(undefined)
                     setSelectedIds([])
+                  } else if (event.key === 'Delete' || event.key === 'Backspace') {
+                    if (selectedId) {
+                      event.preventDefault()
+                      removeSelected()
+                    }
+                  } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a') {
+                    event.preventDefault()
+                    const ids = [...elements, ...placements].map((item) => item.id)
+                    setSelectedIds(ids)
+                    setSelectedId(ids[0])
+                  } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'd') {
+                    if (selectedId) {
+                      event.preventDefault()
+                      duplicateSelected()
+                    }
                   } else if (event.key === '+' || event.key === '=') {
                     event.preventDefault()
                     setZoom((current) => Math.min(3, current + 0.25))
@@ -947,7 +981,7 @@ export function FloorPlanPage({
                         element.kind === 'wall' ? 'var(--foreground)' : 'var(--muted-foreground)'
                       }
                       height={element.heightCm}
-                      opacity="0.65"
+                      opacity={lockedIds.includes(element.id) ? 0.48 : 0.65}
                       rx="8"
                       stroke={selectedIds.includes(element.id) ? 'var(--ring)' : 'transparent'}
                       strokeWidth={selectedIds.includes(element.id) ? 8 : 0}
@@ -985,8 +1019,10 @@ export function FloorPlanPage({
                           : 'var(--primary)'
                       }
                       height={placement.heightCm}
-                      onPointerDown={() => setDraggingTableId(placement.id)}
-                      opacity="0.85"
+                      onPointerDown={() => {
+                        if (!lockedIds.includes(placement.id)) setDraggingTableId(placement.id)
+                      }}
+                      opacity={lockedIds.includes(placement.id) ? 0.62 : 0.85}
                       rx="12"
                       stroke={selectedIds.includes(placement.id) ? 'var(--ring)' : 'transparent'}
                       strokeWidth={selectedIds.includes(placement.id) ? 8 : 0}
@@ -1049,6 +1085,19 @@ export function FloorPlanPage({
                   </Button>
                   <Button onClick={removeSelected} type="button">
                     Eliminar
+                  </Button>
+                  <Button
+                    onClick={() =>
+                      setLockedIds((current) =>
+                        current.includes(selectedId)
+                          ? current.filter((id) => id !== selectedId)
+                          : [...current, selectedId],
+                      )
+                    }
+                    type="button"
+                    variant="outline"
+                  >
+                    {lockedIds.includes(selectedId) ? 'Desbloquear' : 'Bloquear'}
                   </Button>
                 </div>
               )}
