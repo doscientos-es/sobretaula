@@ -33,8 +33,7 @@ export const addToWaitlist = createServerFn({ method: "POST" })
             .eq("phone", data.guestPhone)
             .maybeSingle()
         : { data: null, error: null };
-      if (existing.error)
-        throw new Error(`waitlist_guest_lookup_failed:${existing.error.code}`);
+      if (existing.error) throw new Error(`waitlist_guest_lookup_failed:${existing.error.code}`);
       const { data: guest, error: guestError } = existing.data
         ? { data: existing.data, error: null }
         : await supabase
