@@ -466,9 +466,9 @@ export function PlatformTenantDetailsPage({
             <CardHeader>
               <CardTitle className="text-destructive">Borrado permanente</CardTitle>
               <CardDescription>
-                Elimina el tenant y todos sus datos operativos de forma irreversible. Solo
-                disponible con el tenant suspendido y sin facturas que deban conservarse por
-                obligación legal.
+                Archiva el tenant de forma irreversible: deja de verse en la consola de
+                plataforma. Por obligación legal (Veri*factu / facturación SaaS) el registro y su
+                historial fiscal se conservan en la base de datos.
               </CardDescription>
             </CardHeader>
             <CardContent>
