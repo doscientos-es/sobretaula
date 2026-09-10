@@ -2,6 +2,10 @@ import {
   Badge,
   type BadgeProps,
   buttonVariants,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
   DataViewState,
   DataViewStateDescription,
   DataViewStateTitle,
@@ -15,7 +19,7 @@ import {
   redirect,
   useRouterState,
 } from '@tanstack/react-router'
-import { Check } from 'lucide-react'
+import { Check, CreditCard, FileText, Store, Users } from 'lucide-react'
 import type { ReactNode } from 'react'
 
 import { TenantAdminFrame } from '@/app/app-frame'
@@ -97,6 +101,205 @@ export const Route = createFileRoute('/t/$slug')({
   notFoundComponent: TenantNotFound,
 })
 
+type StepStatus = 'done' | 'active' | 'upcoming'
+
+function StepStatusBadge({ status }: { status: StepStatus }) {
+  const label: Record<StepStatus, string> = {
+    active: 'Ahora',
+    done: 'Listo',
+    upcoming: 'Pendiente',
+  }
+  const variant: Record<StepStatus, BadgeProps['variant']> = {
+    active: 'default',
+    done: 'success',
+    upcoming: 'neutral',
+  }
+  return <Badge variant={variant[status]}>{label[status]}</Badge>
+}
+
+function OnboardingStep({
+  status,
+  title,
+  description,
+  index,
+  isLast,
+  children,
+}: {
+  status: StepStatus
+  title: string
+  description: string
+  index: number
+  isLast: boolean
+  children?: ReactNode
+}) {
+  return (
+    <div>
+      <div className="flex items-start gap-4 py-4">
+        <span
+          className={`mt-0.5 inline-flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${
+            status === 'done'
+              ? 'bg-success/15 text-success'
+              : status === 'active'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-muted text-muted-foreground'
+          }`}
+        >
+          {status === 'done' ? <Check className="size-4" /> : index}
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className={`text-sm font-medium ${status === 'upcoming' ? 'text-muted-foreground' : ''}`}>
+              {title}
+            </p>
+            <StepStatusBadge status={status} />
+          </div>
+          <p className="text-muted-foreground mt-1 text-sm leading-6">{description}</p>
+          {status === 'active' && children && <div className="mt-3">{children}</div>}
+        </div>
+      </div>
+      {!isLast && <Separator />}
+    </div>
+  )
+}
+
+function TenantSetupPendingOnboarding({
+  tenant,
+  billingStatus,
+}: {
+  tenant: { name: string; slug: string }
+  billingStatus: { hasPaymentMethod: boolean }
+}) {
+  const paymentDone = billingStatus.hasPaymentMethod
+  const activationStatus: StepStatus = paymentDone ? 'active' : 'upcoming'
+  const paymentStatus: StepStatus = paymentDone ? 'done' : 'active'
+
+  return (
+    <main className="bg-muted/30 min-h-screen p-4 sm:p-8">
+      <div className="mx-auto max-w-2xl space-y-6">
+        <div className="border-primary/20 from-primary/10 rounded-2xl border bg-linear-to-br to-transparent p-6 sm:p-8">
+          <p className="text-primary text-sm font-semibold tracking-wide uppercase">Sobretaula</p>
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight">{tenant.name}</h1>
+          <p className="text-muted-foreground mt-2 max-w-xl text-sm leading-6">
+            Ya casi está. Solo te queda un paso para empezar a trabajar.
+          </p>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Pasos para activar tu restaurante</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <OnboardingStep
+              description="Ya hemos guardado el nombre, la dirección y los datos fiscales de tu restaurante."
+              index={1}
+              isLast={false}
+              status="done"
+              title="Datos del restaurante"
+            />
+            <OnboardingStep
+              description="Autoriza el pago seguro de la suscripción de SobreTaula (149 €/mes, sin IVA) para poder activar el restaurante."
+              index={2}
+              isLast={false}
+              status={paymentStatus}
+              title="Método de pago"
+            >
+              <Link
+                className={buttonVariants({ size: 'lg' })}
+                params={{ slug: tenant.slug }}
+                to="/t/$slug/facturacion"
+              >
+                <CreditCard className="size-4" />
+                Autorizar pago seguro
+              </Link>
+            </OnboardingStep>
+            <OnboardingStep
+              description={
+                paymentDone
+                  ? 'Estamos confirmando tu alta. En cuanto se procese el pago, el restaurante se activará automáticamente.'
+                  : 'En cuanto autorices el pago, tu restaurante se activará automáticamente y podrás empezar a trabajar.'
+              }
+              index={3}
+              isLast={true}
+              status={activationStatus}
+              title="Abrir operaciones"
+            />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Mientras tanto</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-2 pt-0 sm:grid-cols-3">
+            <Link
+              className={buttonVariants({ variant: 'outline' })}
+              params={{ slug: tenant.slug }}
+              to="/t/$slug/equipo"
+            >
+              <Users className="size-4" />
+              Preparar equipo
+            </Link>
+            <Link
+              className={buttonVariants({ variant: 'outline' })}
+              params={{ slug: tenant.slug }}
+              to="/t/$slug/suscripcion/facturas"
+            >
+              <FileText className="size-4" />
+              Ver facturas
+            </Link>
+            <Link className={buttonVariants({ variant: 'outline' })} to="/onboarding">
+              <Store className="size-4" />
+              Revisar datos de alta
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    </main>
+  )
+}
+
+function TenantSuspendedNotice({ tenant }: { tenant: { name: string; slug: string } }) {
+  return (
+    <main className="bg-muted/30 min-h-screen p-4 sm:p-8">
+      <div className="mx-auto max-w-2xl space-y-6">
+        <div className="border-primary/20 from-primary/10 rounded-2xl border bg-linear-to-br to-transparent p-6 sm:p-8">
+          <p className="text-primary text-sm font-semibold tracking-wide uppercase">Sobretaula</p>
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight">{tenant.name}</h1>
+          <p className="text-muted-foreground mt-2 max-w-xl text-sm leading-6">
+            El restaurante está temporalmente en pausa por un cobro pendiente. Tu información se
+            conserva.
+          </p>
+        </div>
+        <Card>
+          <CardContent className="space-y-4 pt-6">
+            <p className="text-sm leading-6">
+              Regulariza el método de pago para reactivar el restaurante.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <Link
+                className={buttonVariants({ size: 'lg' })}
+                params={{ slug: tenant.slug }}
+                to="/t/$slug/facturacion"
+              >
+                <CreditCard className="size-4" />
+                Regularizar pago
+              </Link>
+              <Link
+                className={buttonVariants({ variant: 'outline' })}
+                params={{ slug: tenant.slug }}
+                to="/t/$slug/suscripcion/facturas"
+              >
+                <FileText className="size-4" />
+                Ver facturas de SobreTaula
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </main>
+  )
+}
+
 function TenantLayout() {
   const { billingStatus, membership, tenant, venues } = Route.useLoaderData()
   const pathname = useRouterState({
@@ -109,75 +312,10 @@ function TenantLayout() {
   if (!isTenantOperational(tenant.status)) {
     if (isBillingRoute || isSubscriptionInvoicesRoute || isTeamRoute) return <Outlet />
 
-    const setupPending = tenant.status === 'setup_pending'
-    return (
-      <main className="bg-muted/30 min-h-screen p-4 sm:p-8">
-        <div className="mx-auto max-w-3xl space-y-6">
-          <div className="border-primary/20 from-primary/10 rounded-2xl border bg-gradient-to-br to-transparent p-6 sm:p-8">
-            <p className="text-primary text-sm font-semibold tracking-wide uppercase">Sobretaula</p>
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight">{tenant.name}</h1>
-            <p className="text-muted-foreground mt-2 max-w-xl text-sm leading-6">
-              {setupPending
-                ? 'Tu restaurante está casi listo. Completa estos últimos pasos para empezar a trabajar.'
-                : 'El restaurante está temporalmente en pausa por un cobro pendiente. Tu información se conserva.'}
-            </p>
-          </div>
-          {setupPending && (
-            <div className="grid gap-4 sm:grid-cols-3">
-              {[
-                ['✓', 'Datos del restaurante', 'Completados'],
-                ['2', 'Método de pago', 'Requiere autorización'],
-                ['3', 'Abrir operaciones', 'Se activa al confirmar'],
-              ].map(([step, title, detail]) => (
-                <div className="bg-background rounded-xl border p-4" key={title}>
-                  <span className="bg-primary/10 text-primary inline-flex size-8 items-center justify-center rounded-full text-sm font-semibold">
-                    {step}
-                  </span>
-                  <p className="mt-3 text-sm font-medium">{title}</p>
-                  <p className="text-muted-foreground mt-1 text-xs">{detail}</p>
-                </div>
-              ))}
-            </div>
-          )}
-          <div className="bg-background rounded-2xl border p-6 shadow-sm">
-            <p className="text-sm leading-6">
-              {setupPending
-                ? 'Tus datos de facturación se han guardado. Falta autorizar el método de pago seguro para activar el restaurante.'
-                : 'Este restaurante está temporalmente en pausa por un cobro pendiente.'}
-            </p>
-            {setupPending && (
-              <div className="mt-5 flex flex-wrap gap-4 text-sm">
-                <Link className="text-primary underline" to="/onboarding">
-                  Revisar configuración de alta
-                </Link>
-                <Link
-                  className="text-primary underline"
-                  params={{ slug: tenant.slug }}
-                  to="/t/$slug/suscripcion/facturas"
-                >
-                  Ver facturas de SobreTaula
-                </Link>
-                <Link
-                  className="text-primary underline"
-                  params={{ slug: tenant.slug }}
-                  to="/t/$slug/equipo"
-                >
-                  Preparar equipo
-                </Link>
-              </div>
-            )}
-            {!setupPending && (
-              <Link
-                className="text-primary mt-5 inline-block text-sm underline"
-                params={{ slug: tenant.slug }}
-                to="/t/$slug/suscripcion/facturas"
-              >
-                Ver facturas de SobreTaula
-              </Link>
-            )}
-          </div>
-        </div>
-      </main>
+    return tenant.status === 'setup_pending' ? (
+      <TenantSetupPendingOnboarding billingStatus={billingStatus} tenant={tenant} />
+    ) : (
+      <TenantSuspendedNotice tenant={tenant} />
     )
   }
 
