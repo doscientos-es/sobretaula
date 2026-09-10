@@ -44,7 +44,7 @@ reserva → sesión → pagos permite obtener visitas y gasto sin duplicar impor
 7. **No copiar el cobro SaaS.** Los depósitos pertenecen al restaurante, usan un
    proveedor/merchant separado y no almacenan tarjeta, PAN ni CVV.
 
-## Siguiente PR: historial operativo de reservas
+## Historial operativo de reservas
 
 La agenda por fecha, cancelación, no-show y reprogramación ya están operativos.
 La siguiente entrega añade una fuente única de verdad para explicar qué ocurrió
@@ -52,8 +52,9 @@ con cada reserva: la migración `20260910000028` crea `reservation_events`, un
 registro append-only que captura altas, cambios de estado, hora, duración y
 comensales tanto en flujos internos como públicos. El trigger evita depender de
 que cada pantalla recuerde escribir auditoría y RLS limita la lectura al tenant.
-El siguiente paso de producto es exponer esta línea temporal en el detalle de
-reserva, con actor, fecha, cambio resumido y motivo cuando exista.
+La agenda interna ya expone esta línea temporal al desplegar cada reserva, con
+actor, fecha, tipo de evento y cambios saneados. El siguiente paso de producto
+es enriquecer el detalle con motivo editable y filtros por tipo de evento.
 
 ## 3. Decisiones necesarias antes de R1
 
