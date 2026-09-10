@@ -3,10 +3,12 @@ export const UPCOMING_RESERVATION_WINDOW_MINUTES = 120
 /** Operational queue projection: one full shift. */
 export const SERVICE_SHIFT_WINDOW_MINUTES = 720
 
-export type ServiceTableStatus = 'free' | 'occupied' | 'reserved'
+export type ServiceTableStatus = 'free' | 'occupied' | 'reserved' | 'blocked'
 
 export interface ServiceTable {
   areaId?: string
+  blockReason?: string | null
+  isBlocked?: boolean
   code: string
   id: string
   maxSeats: number
@@ -30,6 +32,7 @@ export interface ServicePresetPreflight {
 export interface ServiceSession {
   covers: number
   id: string
+  internalNote?: string | null
   openedAt: string
   reservationId: string | null
   tableIds: readonly string[]
@@ -103,6 +106,9 @@ export function buildServiceTableStates({
   }
 
   return tables.map((table) => {
+    if (table.isBlocked) {
+      return { ...table, covers: null, reservationId: null, sessionId: null, status: 'blocked' }
+    }
     const session = occupied.get(table.id)
     if (session) {
       return {

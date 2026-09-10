@@ -3,6 +3,7 @@ import type { FloorPlanTablePlacement, FloorPlanVersion } from '@/features/floor
 import type { ServiceTableState, ServiceTableStatus } from '../domain/service-board'
 
 const STATUS_FILL: Record<ServiceTableStatus, string> = {
+  blocked: 'fill-muted-foreground/40',
   free: 'var(--muted-foreground)',
   occupied: 'var(--destructive)',
   reserved: 'var(--primary)',

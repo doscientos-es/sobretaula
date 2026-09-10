@@ -1,6 +1,7 @@
 import type { ServiceSession, ServiceTableState, ServiceTableStatus } from '../domain/service-board'
 
 const STATUS_LABEL: Record<ServiceTableStatus, string> = {
+  blocked: 'Bloqueada',
   free: 'Libre',
   occupied: 'Ocupada',
   reserved: 'Reservada',

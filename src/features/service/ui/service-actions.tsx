@@ -22,7 +22,13 @@ import {
   createServiceOfflineStore,
   enqueueServiceOperation,
 } from '../application/service-offline-operations'
-import { closeSession, mergeSessions, moveSession, seatWalkIn } from '../application/table-service'
+import {
+  closeSession,
+  mergeSessions,
+  moveSession,
+  seatWalkIn,
+  updateSessionNote,
+} from '../application/table-service'
 import {
   inspectServiceTableGroupPreset,
   suggestTableCombination,
@@ -59,6 +65,8 @@ export function ServiceActions({
   const [covers, setCovers] = useState(2)
   const [sessionId, setSessionId] = useState(board.sessions[0]?.id ?? '')
   const [mergeSourceId, setMergeSourceId] = useState(board.sessions[1]?.id ?? '')
+  const selectedSession = board.sessions.find((session) => session.id === sessionId)
+  const [internalNote, setInternalNote] = useState(selectedSession?.internalNote ?? '')
   const selectedTables = board.tables.filter((table) => selectedTableIds.includes(table.id))
   const selectedCapacity = selectedTables.reduce((total, table) => total + table.maxSeats, 0)
   const selectedMinimum = selectedTables.reduce((total, table) => total + table.minSeats, 0)
@@ -229,6 +237,40 @@ export function ServiceActions({
               >
                 Ver cuenta de la sesión seleccionada
               </Link>
+            )}
+            {sessionId && (
+              <form
+                className="grid gap-2"
+                onSubmit={(event) => {
+                  event.preventDefault()
+                  void run(
+                    () =>
+                      updateSessionNote({
+                        data: {
+                          internalNote: internalNote.trim() || null,
+                          sessionId,
+                          tenantId,
+                          venueId,
+                        },
+                      }),
+                    'No se ha podido guardar la nota de la mesa.',
+                  )
+                }}
+              >
+                <Field>
+                  <FieldLabel htmlFor="session-note">Nota interna de sala</FieldLabel>
+                  <Input
+                    id="session-note"
+                    maxLength={500}
+                    onChange={(event) => setInternalNote(event.target.value)}
+                    placeholder="Alergia, handover o detalle para el equipo"
+                    value={internalNote}
+                  />
+                </Field>
+                <Button disabled={feedback.pending || !isOnline} type="submit" variant="outline">
+                  Guardar nota
+                </Button>
+              </form>
             )}
             <div className="flex flex-wrap gap-2">
               <Button

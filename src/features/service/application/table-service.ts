@@ -20,6 +20,7 @@ import {
   requireServiceEditor,
   seatWalkInInput,
   serviceVenueInput,
+  updateSessionNoteInput,
 } from './service-schema'
 
 const seatReservationInput = serviceVenueInput.extend({
@@ -30,6 +31,7 @@ const seatReservationInput = serviceVenueInput.extend({
 interface OpenSession {
   covers: number
   id: string
+  internalNote: string | null
   reservationId: string | null
   tableIds: string[]
 }
@@ -40,7 +42,7 @@ async function requireOpenSession(
 ): Promise<OpenSession> {
   const { data, error } = await supabase
     .from('table_sessions')
-    .select('covers, id, reservation_id, table_ids')
+    .select('covers, id, internal_note, reservation_id, table_ids')
     .eq('id', sessionId)
     .eq('tenant_id', tenantId)
     .eq('venue_id', venueId)
@@ -51,10 +53,32 @@ async function requireOpenSession(
   return {
     covers: data.covers as number,
     id: data.id as string,
+    internalNote: data.internal_note as string | null,
     reservationId: data.reservation_id as string | null,
     tableIds: data.table_ids as string[],
   }
 }
+
+/** Updates the visible handover note without changing seating state. */
+export const updateSessionNote = createServerFn({ method: 'POST' })
+  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .validator(updateSessionNoteInput)
+  .handler(async ({ context, data }) => {
+    requireServiceEditor(context.tenantMembership.role)
+    const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    const { data: session, error } = await supabase
+      .from('table_sessions')
+      .update({ internal_note: data.internalNote })
+      .eq('id', data.sessionId)
+      .eq('tenant_id', data.tenantId)
+      .eq('venue_id', data.venueId)
+      .eq('status', 'open')
+      .select('id, internal_note')
+      .maybeSingle()
+    if (error) throw new Error(`table_session_note_failed:${error.code}`)
+    if (!session) throw new Response('Not found', { status: 404 })
+    return { internalNote: session.internal_note as string | null, sessionId: session.id as string }
+  })
 
 /** Opens the live table session and converts its pending reservation into seated. */
 export const seatReservation = createServerFn({ method: 'POST' })

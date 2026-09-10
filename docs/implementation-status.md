@@ -37,6 +37,16 @@ La operación de sala permite marcar una reserva como `no_show` desde la puerta,
 libera su mesa mediante el trigger de sincronización y aplica también en servidor
 la espera mínima de 15 minutos para evitar ausencias prematuras.
 
+La vista de servicio permite guardar una nota interna de hasta 500 caracteres en
+cada sesión abierta para handover y contexto operativo. La migración
+`20260910000046_service_session_notes.sql` debe aplicarse en Supabase antes de
+usar esta capacidad en el entorno conectado.
+
+El modelo operativo también soporta mesas bloqueadas con motivo y las excluye
+del cálculo de mesas libres y sugerencias. La mutación de bloqueo/desbloqueo y
+su interfaz quedan pendientes de la siguiente iteración; requiere aplicar
+`20260910000047_service_table_blocks.sql`.
+
 Las acciones de sentar una reserva, abrir un walk-in y sentar una espera soportan
 ahora modo offline: guardan una operación local, la reintentan al recuperar la
 conexión y envían un `operation_id` único. La restricción parcial
