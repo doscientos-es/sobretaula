@@ -244,7 +244,7 @@ transforma silenciosamente en `test` ni puede emitir por accidente.
 ### Última ejecución local (2026-09-10)
 
 La última ejecución de `pnpm quality` completa correctamente con 75 archivos y
-293 pruebas correctas. Un archivo y tres pruebas RLS siguen omitidos de forma
+299 pruebas correctas. Un archivo y tres pruebas RLS siguen omitidos de forma
 deliberada para no conectarlos al proyecto con datos reales.
 
 | Comando                | Resultado                                                                                    |
@@ -252,7 +252,7 @@ deliberada para no conectarlos al proyecto con datos reales.
 | `pnpm format:check`    | Correcto                                                                                     |
 | `pnpm lint`            | Correcto                                                                                     |
 | `pnpm structure:check` | Correcto localmente; el asset de login vive en `public/` y los módulos usan nombres estándar |
-| `pnpm test`            | 75 archivos y 293 pruebas correctas; 1 archivo y 3 pruebas RLS omitidas deliberadamente      |
+| `pnpm test`            | 75 archivos y 299 pruebas correctas; 1 archivo y 3 pruebas RLS omitidas deliberadamente      |
 | `pnpm typecheck`       | Correcto                                                                                     |
 | `pnpm quality`         | Correcto                                                                                     |
 | `pnpm build`           | Correcto; solo avisos de Vite/chunks                                                         |
