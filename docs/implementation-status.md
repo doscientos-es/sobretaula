@@ -28,8 +28,8 @@ reproducible (comando ejecutado y su resultado).
 | F6 · Facturación       | Ajustes fiscales, series, ledger/outbox, PDF, modo test                    | Implementado; entrega bloqueada                                  |
 | F7 · Entrega           | Documentación operativa, smoke, despliegue autorizado                      | Parcial                                                          |
 
-El dashboard operativo ya calcula reservas activas, sesiones abiertas y cobros
-del día desde Supabase; la actividad detallada sigue consultándose en las vistas
+El dashboard operativo ya calcula reservas activas, reservas de la semana,
+sesiones abiertas y cobros del día desde Supabase; la actividad detallada sigue consultándose en las vistas
 de Servicio, Reservas y Cuenta. Falta añadir pruebas de integración contra un
 proyecto Supabase dedicado.
 

@@ -6,6 +6,7 @@ import {
   movePlacement,
   placementsOverlap,
   snapCoordinate,
+  validateLayout,
   type PlanPlacement,
 } from './geometry'
 
@@ -45,5 +46,22 @@ describe('floor plan geometry', () => {
     expect(isPlacementWithinBounds({ ...table, xCm: 1 }, { heightCm: 100, widthCm: 100 })).toBe(
       false,
     )
+  })
+
+  it('reports invalid size, bounds and each overlap once', () => {
+    const issues = validateLayout(
+      [
+        table,
+        { ...table, id: 'table-2', xCm: 50 },
+        { ...table, id: 'table-3', xCm: 500 },
+        { ...table, id: 'table-4', widthCm: 0 },
+      ],
+      { heightCm: 500, widthCm: 500 },
+    )
+    expect(issues).toEqual([
+      { code: 'overlap', placementId: 'table-1', relatedPlacementId: 'table-2' },
+      { code: 'outside_bounds', placementId: 'table-3' },
+      { code: 'invalid_size', placementId: 'table-4' },
+    ])
   })
 })

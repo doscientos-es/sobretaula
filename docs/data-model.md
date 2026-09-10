@@ -19,7 +19,7 @@ Convenciones: claves `uuid` con `gen_random_uuid()`; `created_at`/`updated_at`
 | `tenant_slug_history`                | Slugs anteriores para redirección                                                                         |
 | `platform_members`                   | Operadores Doscientos y su rol global                                                                     |
 | `platform_invitations`               | Invitaciones de operador con hash de token, correo, rol, caducidad y aceptación de un solo uso            |
-| `platform_audit_log`                 | Bitácora append-only de invitaciones, roles y cambios manuales de estado de tenant                        |
+| `platform_audit_log`                 | Bitácora append-only de altas, invitaciones, roles y cambios manuales de tenants                          |
 | `support_access_log`                 | Acceso de soporte a un tenant: quién, cuándo, motivo, caducidad                                           |
 | `plans` / `plan_entitlements`        | Planes y módulos habilitados por plan                                                                     |
 | `subscriptions`                      | Plan del tenant, estado, periodo, vencimiento y gracia                                                    |

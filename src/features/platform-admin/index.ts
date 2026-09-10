@@ -4,6 +4,10 @@ export {
   getPlatformTenantDetail,
   updatePlatformTenantConfiguration,
 } from './application/platform-tenant-details'
+export {
+  provisionPlatformTenant,
+  platformTenantProvisioningInput,
+} from './application/platform-tenant-provisioning'
 export type {
   PlatformDashboard,
   PlatformDashboardSubscription,
@@ -46,3 +50,4 @@ export type {
   PlatformOperatorInvitation,
 } from './application/platform-operators'
 export type { PlatformTenantDetail } from './application/platform-tenant-details'
+export type { PlatformTenantProvisioningInput } from './application/platform-tenant-provisioning'

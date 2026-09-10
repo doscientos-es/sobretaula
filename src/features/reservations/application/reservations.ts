@@ -33,6 +33,10 @@ const reservationInput = venueInput.extend({
   startsAt: z.string().datetime({ offset: true }),
 })
 const reservationsDateInput = venueInput.extend({ date: z.string().date() })
+const rescheduleReservationInput = venueInput.extend({
+  reservationId: z.string().uuid(),
+  startsAt: z.string().datetime({ offset: true }),
+})
 
 export interface ReservationService {
   endsAtTime: string
@@ -361,4 +365,54 @@ export const createReservation = createServerFn({ method: 'POST' })
       throw new Error(`reservation_assignment_create_failed:${assignmentError.code}`)
     }
     return { reservationId: reservation.id, tableId: availability.tableId }
+  })
+
+export const rescheduleReservation = createServerFn({ method: 'POST' })
+  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .validator(rescheduleReservationInput)
+  .handler(async ({ context, data }) => {
+    requireReservationEditor(context.tenantMembership.role)
+    const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    const { data: reservation, error } = await supabase
+      .from('reservations')
+      .select('ends_at, id, starts_at')
+      .eq('id', data.reservationId)
+      .eq('tenant_id', data.tenantId)
+      .eq('venue_id', data.venueId)
+      .in('status', ['pending', 'confirmed'])
+      .single()
+    if (error || !reservation) throw new Response('Not found', { status: 404 })
+    const previousStart = new Date(reservation.starts_at as string)
+    const previousEnd = new Date(reservation.ends_at as string)
+    const duration = previousEnd.getTime() - previousStart.getTime()
+    const startsAt = new Date(data.startsAt)
+    if (startsAt <= new Date() || duration <= 0) throw new Response('Invalid time', { status: 422 })
+    const endsAt = new Date(startsAt.getTime() + duration)
+    const { error: updateError } = await supabase
+      .from('reservations')
+      .update({ ends_at: endsAt.toISOString(), starts_at: startsAt.toISOString() })
+      .eq('id', reservation.id)
+      .eq('tenant_id', data.tenantId)
+      .eq('venue_id', data.venueId)
+      .in('status', ['pending', 'confirmed'])
+    if (updateError) throw new Error(`reservation_reschedule_failed:${updateError.code}`)
+    const { error: assignmentError } = await supabase
+      .from('reservation_tables')
+      .update({ period: `[${startsAt.toISOString()},${endsAt.toISOString()})` })
+      .eq('reservation_id', reservation.id)
+      .eq('tenant_id', data.tenantId)
+    if (assignmentError) {
+      await supabase
+        .from('reservations')
+        .update({ ends_at: previousEnd.toISOString(), starts_at: previousStart.toISOString() })
+        .eq('id', reservation.id)
+        .eq('tenant_id', data.tenantId)
+      if (assignmentError.code === '23P01') throw new Response('Table unavailable', { status: 409 })
+      throw new Error(`reservation_reschedule_failed:${assignmentError.code}`)
+    }
+    return {
+      endsAt: endsAt.toISOString(),
+      reservationId: reservation.id,
+      startsAt: startsAt.toISOString(),
+    }
   })

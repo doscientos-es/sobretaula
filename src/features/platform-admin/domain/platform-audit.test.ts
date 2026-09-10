@@ -18,5 +18,8 @@ describe('platform audit presentation', () => {
     expect(platformAuditActionLabel('tenant_settings_updated')).toBe(
       'Configuración de tenant modificada',
     )
+    expect(platformAuditSummary('tenant_created', { owner_email: 'ana@example.com' })).toBe(
+      'Propietario: ana@example.com',
+    )
   })
 })

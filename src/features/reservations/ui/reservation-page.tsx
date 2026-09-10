@@ -23,6 +23,7 @@ import {
   createReservation,
   createReservationService,
   getReservationsForDate,
+  rescheduleReservation,
   type ReservationAgendaItem,
   type ReservationService,
 } from '../application/reservations'
@@ -41,6 +42,11 @@ function dateOffset(days: number): string {
   return new Intl.DateTimeFormat('en-CA').format(date)
 }
 
+function localDateTimeValue(value: string): string {
+  const date = new Date(value)
+  return new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 16)
+}
+
 function describeServiceRules(service: ReservationService): string {
   const covers = service.maxCoversPerSlot
     ? `${service.maxCoversPerSlot} cubiertos`
@@ -49,6 +55,13 @@ function describeServiceRules(service: ReservationService): string {
     ? `${service.maxReservationsPerSlot} reservas`
     : 'reservas flexibles'
   return `${service.slotMinutes} min · ${covers} · ${reservations} por hueco`
+}
+
+function statusBadgeClass(status: string): string {
+  if (status === 'confirmed') return 'bg-success/15 text-success'
+  if (status === 'seated') return 'bg-info/15 text-info'
+  if (status === 'cancelled' || status === 'no_show') return 'bg-destructive/15 text-destructive'
+  return 'bg-muted text-muted-foreground'
 }
 
 export function ReservationPage({
@@ -72,6 +85,8 @@ export function ReservationPage({
   const [agenda, setAgenda] = useState<ReservationAgendaItem[]>([])
   const [agendaLoading, setAgendaLoading] = useState(false)
   const [agendaRefresh, setAgendaRefresh] = useState(0)
+  const [editingReservationId, setEditingReservationId] = useState<string | null>(null)
+  const [editingStartsAt, setEditingStartsAt] = useState('')
 
   async function configureService(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -173,6 +188,29 @@ export function ReservationPage({
       setAgendaRefresh((value) => value + 1)
     } catch {
       feedback.setError('No se ha podido marcar como no presentada.')
+    }
+  }
+
+  async function saveReschedule(reservationId: string) {
+    const startsAt = new Date(editingStartsAt)
+    if (Number.isNaN(startsAt.getTime())) {
+      feedback.setError('Indica una fecha y hora válidas.')
+      return
+    }
+    try {
+      await rescheduleReservation({
+        data: { reservationId, startsAt: startsAt.toISOString(), tenantId, venueId },
+      })
+      setEditingReservationId(null)
+      setAgendaDate(editingStartsAt.slice(0, 10))
+      setAgendaLoading(true)
+      setAgendaRefresh((value) => value + 1)
+    } catch (error) {
+      feedback.setError(
+        error instanceof Response && error.status === 409
+          ? 'La mesa ya está ocupada en esa hora.'
+          : 'No se ha podido cambiar la hora.',
+      )
     }
   }
 
@@ -377,8 +415,13 @@ export function ReservationPage({
                           })}{' '}
                           · {item.guestName ?? 'Sin nombre'}
                         </p>
-                        <p className="text-muted-foreground text-sm">
-                          {item.partySize} comensales · {reservationStatusLabel(item.status)}
+                        <p className="text-muted-foreground flex flex-wrap items-center gap-2 text-sm">
+                          <span>{item.partySize} comensales</span>
+                          <span
+                            className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusBadgeClass(item.status)}`}
+                          >
+                            {reservationStatusLabel(item.status)}
+                          </span>
                         </p>
                       </div>
                       <div className="text-muted-foreground text-right text-sm">
@@ -410,6 +453,47 @@ export function ReservationPage({
                               Cancelar
                             </Button>
                           </span>
+                        ) : null}
+                        {editingReservationId === item.id ? (
+                          <div className="mt-2 grid gap-2">
+                            <Input
+                              aria-label="Nueva fecha y hora"
+                              onChange={(event) => setEditingStartsAt(event.target.value)}
+                              type="datetime-local"
+                              value={editingStartsAt}
+                            />
+                            <span className="flex flex-wrap justify-end gap-2">
+                              <Button
+                                disabled={feedback.pending}
+                                onClick={() => void saveReschedule(item.id)}
+                                size="sm"
+                                type="button"
+                              >
+                                Guardar hora
+                              </Button>
+                              <Button
+                                onClick={() => setEditingReservationId(null)}
+                                size="sm"
+                                type="button"
+                                variant="outline"
+                              >
+                                Cancelar edición
+                              </Button>
+                            </span>
+                          </div>
+                        ) : ['pending', 'confirmed'].includes(item.status) ? (
+                          <Button
+                            className="mt-2"
+                            onClick={() => {
+                              setEditingReservationId(item.id)
+                              setEditingStartsAt(localDateTimeValue(item.startsAt))
+                            }}
+                            size="sm"
+                            type="button"
+                            variant="outline"
+                          >
+                            Cambiar hora
+                          </Button>
                         ) : null}
                       </div>
                     </li>

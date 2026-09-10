@@ -18,6 +18,8 @@ export interface DashboardMetrics {
   nextReservationCovers: number | null
   nextReservationStartsAt: string | null
   reservationsToday: number
+  reservationsThisWeek: number
+  noShowsThisWeek: number
   occupiedTables: number
   paidTodayCents: number
 }
@@ -33,38 +35,68 @@ export const getDashboardMetrics = createServerFn({ method: 'GET' })
         occupiedTables: 0,
         paidTodayCents: 0,
         reservationsToday: 0,
+        reservationsThisWeek: 0,
+        noShowsThisWeek: 0,
       }
     }
     const start = new Date()
     start.setHours(0, 0, 0, 0)
     const end = new Date(start)
     end.setDate(end.getDate() + 1)
+    const weekStart = new Date(start)
+    const daysSinceMonday = (weekStart.getDay() + 6) % 7
+    weekStart.setDate(weekStart.getDate() - daysSinceMonday)
+    const weekEnd = new Date(weekStart)
+    weekEnd.setDate(weekEnd.getDate() + 7)
     const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
-    const [reservations, sessions, nextReservation] = await Promise.all([
-      supabase
-        .from('reservations')
-        .select('id', { count: 'exact', head: true })
-        .eq('tenant_id', data.tenantId)
-        .in('venue_id', data.venueIds)
-        .gte('starts_at', start.toISOString())
-        .lt('starts_at', end.toISOString())
-        .in('status', ['pending', 'confirmed', 'seated']),
-      supabase
-        .from('table_sessions')
-        .select('id, status, table_ids')
-        .eq('tenant_id', data.tenantId)
-        .in('venue_id', data.venueIds),
-      supabase
-        .from('reservations')
-        .select('party_size, starts_at')
-        .eq('tenant_id', data.tenantId)
-        .in('venue_id', data.venueIds)
-        .in('status', ['pending', 'confirmed'])
-        .gte('starts_at', new Date().toISOString())
-        .order('starts_at')
-        .limit(1),
-    ])
-    if (reservations.error || sessions.error || nextReservation.error)
+    const [reservations, noShowsWeek, reservationsWeek, sessions, nextReservation] =
+      await Promise.all([
+        supabase
+          .from('reservations')
+          .select('id', { count: 'exact', head: true })
+          .eq('tenant_id', data.tenantId)
+          .in('venue_id', data.venueIds)
+          .gte('starts_at', start.toISOString())
+          .lt('starts_at', end.toISOString())
+          .in('status', ['pending', 'confirmed', 'seated']),
+        supabase
+          .from('reservations')
+          .select('id', { count: 'exact', head: true })
+          .eq('tenant_id', data.tenantId)
+          .in('venue_id', data.venueIds)
+          .gte('starts_at', weekStart.toISOString())
+          .lt('starts_at', weekEnd.toISOString())
+          .eq('status', 'no_show'),
+        supabase
+          .from('reservations')
+          .select('id', { count: 'exact', head: true })
+          .eq('tenant_id', data.tenantId)
+          .in('venue_id', data.venueIds)
+          .gte('starts_at', weekStart.toISOString())
+          .lt('starts_at', weekEnd.toISOString())
+          .in('status', ['pending', 'confirmed', 'seated']),
+        supabase
+          .from('table_sessions')
+          .select('id, status, table_ids')
+          .eq('tenant_id', data.tenantId)
+          .in('venue_id', data.venueIds),
+        supabase
+          .from('reservations')
+          .select('party_size, starts_at')
+          .eq('tenant_id', data.tenantId)
+          .in('venue_id', data.venueIds)
+          .in('status', ['pending', 'confirmed'])
+          .gte('starts_at', new Date().toISOString())
+          .order('starts_at')
+          .limit(1),
+      ])
+    if (
+      reservations.error ||
+      reservationsWeek.error ||
+      noShowsWeek.error ||
+      sessions.error ||
+      nextReservation.error
+    )
       throw new Error('dashboard_metrics_load_failed')
     const sessionIds = (sessions.data ?? []).map((session) => session.id as string)
     const payments =
@@ -91,6 +123,8 @@ export const getDashboardMetrics = createServerFn({ method: 'GET' })
       occupiedTables,
       paidTodayCents,
       reservationsToday: reservations.count ?? 0,
+      reservationsThisWeek: reservationsWeek.count ?? 0,
+      noShowsThisWeek: noShowsWeek.count ?? 0,
       nextReservationCovers: nextReservation.data?.[0]?.party_size ?? null,
       nextReservationStartsAt: nextReservation.data?.[0]?.starts_at ?? null,
     }

@@ -50,7 +50,7 @@ export function TenantHomePage({
             [
               'Reservas de hoy',
               String(metrics.reservationsToday),
-              'Confirmadas o pendientes',
+              `${metrics.reservationsThisWeek} esta semana`,
               CalendarCheck2,
               '#5aa6ff',
             ],
@@ -103,6 +103,9 @@ export function TenantHomePage({
         </CardHeader>
         <CardContent className="space-y-3">
           <p className="text-muted-foreground text-sm">
+            {metrics.noShowsThisWeek > 0
+              ? `${metrics.noShowsThisWeek} no presentada${metrics.noShowsThisWeek === 1 ? '' : 's'} esta semana. `
+              : ''}
             La actividad detallada se consulta en tiempo real desde Servicio, Reservas y Cuenta.
           </p>
           {venues[0] ? (

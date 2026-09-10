@@ -19,6 +19,37 @@ export interface Position {
   yCm: number
 }
 
+export type LayoutIssueCode = 'invalid_size' | 'outside_bounds' | 'overlap'
+
+export interface LayoutIssue {
+  code: LayoutIssueCode
+  placementId: string
+  relatedPlacementId?: string
+}
+
+/** Returns deterministic, user-actionable issues for a draft layout. */
+export function validateLayout(
+  placements: readonly PlanPlacement[],
+  bounds: PlanBounds,
+): LayoutIssue[] {
+  const issues: LayoutIssue[] = []
+  for (const placement of placements) {
+    if (placement.widthCm <= 0 || placement.heightCm <= 0) {
+      issues.push({ code: 'invalid_size', placementId: placement.id })
+      continue
+    }
+    if (!isPlacementWithinBounds(placement, bounds)) {
+      issues.push({ code: 'outside_bounds', placementId: placement.id })
+    }
+    for (const other of placements) {
+      if (placement.id < other.id && placementsOverlap(placement, other)) {
+        issues.push({ code: 'overlap', placementId: placement.id, relatedPlacementId: other.id })
+      }
+    }
+  }
+  return issues
+}
+
 /** Snaps a coordinate to the nearest grid intersection using exact centimetres. */
 export function snapCoordinate(valueCm: number, gridSizeCm = DEFAULT_GRID_SIZE_CM): number {
   if (!Number.isInteger(gridSizeCm) || gridSizeCm <= 0) {

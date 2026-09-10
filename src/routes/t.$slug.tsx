@@ -69,6 +69,8 @@ export const Route = createFileRoute('/t/$slug')({
           occupiedTables: 0,
           paidTodayCents: 0,
           reservationsToday: 0,
+          reservationsThisWeek: 0,
+          noShowsThisWeek: 0,
         }
     return {
       billingStatus,

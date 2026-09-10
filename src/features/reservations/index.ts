@@ -9,6 +9,7 @@ export {
   createReservationService,
   getReservationsForDate,
   getReservationServices,
+  rescheduleReservation,
   type ReservationAgendaItem,
 } from './application/reservations'
 export { ReservationPage } from './ui/reservation-page'

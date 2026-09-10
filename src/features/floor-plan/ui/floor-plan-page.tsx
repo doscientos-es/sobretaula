@@ -205,6 +205,30 @@ export function FloorPlanPage({
     setSelectedId(undefined)
   }
 
+  function updateSelected(values: Partial<FloorPlanElement> & { xCm?: number; yCm?: number; widthCm?: number; heightCm?: number; rotationDeg?: number }) {
+    if (!selectedId || !activeVersion) return
+    const selectedTable = placements.find((item) => item.id === selectedId)
+    const selectedElement = elements.find((item) => item.id === selectedId)
+    const selected = selectedTable ?? selectedElement
+    if (!selected) return
+    const candidate = { ...selected, ...values }
+    if (candidate.widthCm <= 0 || candidate.heightCm <= 0 || candidate.rotationDeg < 0 || candidate.rotationDeg > 359) {
+      feedback.setError('El tamaño debe ser positivo y la rotación estar entre 0° y 359°.')
+      return
+    }
+    if (!isPlacementWithinBounds(candidate, activeVersion)) {
+      feedback.setError('El elemento debe quedar completamente dentro del plano.')
+      return
+    }
+    if (selectedTable && findPlacementCollisions(candidate, placements.filter((item) => item.id !== selectedId)).length > 0) {
+      feedback.setError('La mesa se solapa con otra mesa.')
+      return
+    }
+    const nextElements = elements.map((item) => item.id === selectedId ? { ...item, ...values } : item)
+    const nextPlacements = placements.map((item) => item.id === selectedId ? { ...item, ...values } : item)
+    setHistory((current) => commitEditorHistory(current, { elements: nextElements, placements: nextPlacements }))
+  }
+
   async function saveVersion() {
     if (!activeVersion) return
     const activationDate = new Date(versionActivation)
@@ -418,6 +442,33 @@ export function FloorPlanPage({
                   <Button onClick={removeSelected} type="button">Eliminar</Button>
                 </div>
               )}
+              {selectedId && (() => {
+                const selected = placements.find((item) => item.id === selectedId) ?? elements.find((item) => item.id === selectedId)
+                if (!selected) return null
+                return (
+                  <div className="border-border mt-4 space-y-3 rounded-lg border p-3">
+                    <p className="text-sm font-medium">Propiedades</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {(['xCm', 'yCm', 'widthCm', 'heightCm'] as const).map((key) => (
+                        <Field key={key}>
+                          <FieldLabel htmlFor={`selected-${key}`}>{key.replace('Cm', ' (cm)')}</FieldLabel>
+                          <Input id={`selected-${key}`} min={0} onChange={(event) => updateSelected({ [key]: Number(event.target.value) })} type="number" value={selected[key]} />
+                        </Field>
+                      ))}
+                    </div>
+                    <Field>
+                      <FieldLabel htmlFor="selected-rotation">Rotación (°)</FieldLabel>
+                      <Input id="selected-rotation" max={359} min={0} onChange={(event) => updateSelected({ rotationDeg: Number(event.target.value) })} type="number" value={selected.rotationDeg} />
+                    </Field>
+                    {'label' in selected && (
+                      <Field>
+                        <FieldLabel htmlFor="selected-label">Etiqueta</FieldLabel>
+                        <Input id="selected-label" onChange={(event) => updateSelected({ label: event.target.value })} value={selected.label ?? ''} />
+                      </Field>
+                    )}
+                  </div>
+                )
+              })()}
               <div className="mt-6 space-y-2">
                 <p className="text-muted-foreground text-sm">Elementos estructurales</p>
                 <div className="flex flex-wrap gap-2">

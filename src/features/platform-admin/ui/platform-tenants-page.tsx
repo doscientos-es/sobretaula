@@ -19,6 +19,7 @@ import {
   type TenantDirectoryStatus,
   type TenantDirectorySubscription,
 } from '../domain/platform-tenant-directory'
+import { PlatformTenantProvisioningForm } from './platform-tenant-provisioning-form'
 
 const date = new Intl.DateTimeFormat('es-ES', { dateStyle: 'medium' })
 
@@ -61,6 +62,8 @@ export function PlatformTenantsPage({ tenants }: { tenants: PlatformDashboardTen
           </PageHeaderDescription>
         </div>
       </PageHeader>
+
+      <PlatformTenantProvisioningForm />
 
       <Card>
         <CardHeader>

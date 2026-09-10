@@ -4,6 +4,7 @@ export const PLATFORM_AUDIT_ACTIONS = [
   'platform_member_granted',
   'platform_member_role_changed',
   'platform_member_revoked',
+  'tenant_created',
   'tenant_settings_updated',
   'tenant_status_changed',
 ] as const
@@ -31,6 +32,7 @@ export function platformAuditActionLabel(action: PlatformAuditAction): string {
     platform_member_granted: 'Acceso de operador concedido',
     platform_member_revoked: 'Acceso de operador revocado',
     platform_member_role_changed: 'Rol de operador modificado',
+    tenant_created: 'Tenant creado',
     tenant_settings_updated: 'Configuración de tenant modificada',
     tenant_status_changed: 'Estado de tenant modificado',
   }[action]
@@ -58,6 +60,9 @@ export function platformAuditSummary(
   }
   if (action === 'platform_member_revoked') {
     return `Rol anterior: ${text(metadata, 'role') ?? 'no disponible'}`
+  }
+  if (action === 'tenant_created') {
+    return `Propietario: ${text(metadata, 'owner_email') ?? 'no disponible'}`
   }
   return 'Se actualizaron los datos generales del restaurante.'
 }
