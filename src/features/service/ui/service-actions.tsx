@@ -24,6 +24,7 @@ import {
 } from '../application/service-offline-operations'
 import {
   closeSession,
+  cleanTables,
   mergeSessions,
   moveSession,
   seatWalkIn,
@@ -72,6 +73,8 @@ export function ServiceActions({
   const selectedTables = board.tables.filter((table) => selectedTableIds.includes(table.id))
   const selectedBlocked =
     selectedTables.length > 0 && selectedTables.every((table) => table.status === 'blocked')
+  const selectedCleaning =
+    selectedTables.length > 0 && selectedTables.every((table) => table.status === 'cleaning')
   const selectedCapacity = selectedTables.reduce((total, table) => total + table.maxSeats, 0)
   const selectedMinimum = selectedTables.reduce((total, table) => total + table.minSeats, 0)
   const suggestedIds =
@@ -133,6 +136,20 @@ export function ServiceActions({
           <p className="text-muted-foreground text-xs">
             Capacidad combinada: {selectedMinimum}–{selectedCapacity} comensales
           </p>
+        )}
+        {selectedCleaning && (
+          <Button
+            disabled={feedback.pending || !isOnline}
+            onClick={() =>
+              void run(
+                () => cleanTables({ data: { tableIds: [...selectedTableIds], tenantId, venueId } }),
+                'No se han podido marcar las mesas como limpias.',
+              )
+            }
+            type="button"
+          >
+            Marcar como limpias
+          </Button>
         )}
         {suggestedCodes && suggestedCodes.length > 0 && (
           <div className="space-y-2">
