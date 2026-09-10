@@ -107,7 +107,7 @@ seguras y se bloquean las que puedan perder una reserva o cuenta.
   asignados y se puede editar desde Servicio; pacing, cronómetros y
   handover estructurado quedan pendientes. El panel ya muestra el tiempo
   de sesión, avisa cuando supera 90 minutos y presenta un resumen vivo por
-  sección.
+  sección; la entrega se puede guardar con responsable y fecha.
 - [ ] Importación desde imagen/PDF y plantillas reutilizables.
 
 ## Edge cases obligatorios

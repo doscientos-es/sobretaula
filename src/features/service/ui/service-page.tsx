@@ -21,9 +21,9 @@ import {
 import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
 import { createBrowserSupabaseClient } from '@/shared/lib/supabase/client'
 
+import { createHandoverSnapshot } from '../application/table-service'
 import { buildServiceHandover, type ServiceBoard } from '../domain/service-board'
 import { ServiceActions } from './service-actions'
-import { createHandoverSnapshot } from '../application/table-service'
 import { describeStatus } from './service-labels'
 import { ServicePlan } from './service-plan'
 import { ServiceQueue } from './service-queue'
@@ -477,9 +477,9 @@ export function ServicePage({
                   Guardar entrega de turno
                 </Button>
                 {handoverSaved && (
-                  <p className="text-success text-xs" role="status">
+                  <output className="text-success text-xs">
                     Entrega guardada con fecha y responsable.
-                  </p>
+                  </output>
                 )}
               </CardContent>
             </Card>
