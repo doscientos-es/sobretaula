@@ -29,6 +29,7 @@ export function ActivateAccountPage({
   const feedback = useFormFeedback()
   const [password, setPassword] = useState('')
   const [sessionReady, setSessionReady] = useState(false)
+  const [requiresLogin, setRequiresLogin] = useState(false)
 
   useEffect(() => {
     void createBrowserSupabaseClient()
@@ -37,21 +38,44 @@ export function ActivateAccountPage({
       .catch(() => setSessionReady(false))
   }, [])
 
+  function requestLoginToContinue() {
+    setRequiresLogin(true)
+    feedback.setError('La contraseña se ha guardado. Inicia sesión para terminar de aceptar la invitación.')
+  }
+
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     feedback.setPending()
+    let passwordSaved = false
     try {
       const client = createBrowserSupabaseClient()
       const { error: passwordError } = await client.auth.updateUser({ password })
       if (passwordError) throw passwordError
-      const { data } = await client.auth.getSession()
-      if (!data.session) throw new Error('activation_session_missing')
-      const result = await completeExternalAuthSession({
-        data: { accessToken: data.session.access_token, refreshToken: data.session.refresh_token },
+      passwordSaved = true
+
+      const { data: userData, error: userError } = await client.auth.getUser()
+      if (userError || !userData.user.email) throw new Error('activation_user_missing')
+      const { data: signInData, error: signInError } = await client.auth.signInWithPassword({
+        email: userData.user.email,
+        password,
       })
-      if (!result.ok) throw new Error('activation_session_rejected')
+      if (signInError || !signInData.session) throw new Error('activation_reauthentication_failed')
+      const result = await completeExternalAuthSession({
+        data: {
+          accessToken: signInData.session.access_token,
+          refreshToken: signInData.session.refresh_token,
+        },
+      })
+      if (!result.ok) {
+        requestLoginToContinue()
+        return
+      }
       window.location.assign(`${invitationPath}?token=${encodeURIComponent(invitationToken)}`)
     } catch {
+      if (passwordSaved) {
+        requestLoginToContinue()
+        return
+      }
       feedback.setError('No se ha podido activar la cuenta. Abre de nuevo el enlace del correo.')
     }
   }
@@ -92,6 +116,19 @@ export function ActivateAccountPage({
               <Button className="w-full" disabled={feedback.pending} size="lg" type="submit">
                 Activar y unirme al equipo
               </Button>
+              {requiresLogin && (
+                <Button
+                  className="w-full"
+                  onClick={() => {
+                    const destination = `${invitationPath}?token=${encodeURIComponent(invitationToken)}`
+                    window.location.assign(`/login?redirect=${encodeURIComponent(destination)}`)
+                  }}
+                  type="button"
+                  variant="outline"
+                >
+                  Iniciar sesión para continuar
+                </Button>
+              )}
             </form>
           )}
         </CardContent>

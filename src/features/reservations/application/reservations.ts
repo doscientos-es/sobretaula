@@ -34,6 +34,7 @@ const reservationInput = venueInput.extend({
 })
 const reservationsDateInput = venueInput.extend({ date: z.string().date() })
 const rescheduleReservationInput = venueInput.extend({
+  partySize: z.number().int().min(1).max(50).optional(),
   reservationId: z.string().uuid(),
   startsAt: z.string().datetime({ offset: true }),
 })
@@ -375,13 +376,35 @@ export const rescheduleReservation = createServerFn({ method: 'POST' })
     const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
     const { data: reservation, error } = await supabase
       .from('reservations')
-      .select('ends_at, id, starts_at')
+      .select('ends_at, id, party_size, starts_at')
       .eq('id', data.reservationId)
       .eq('tenant_id', data.tenantId)
       .eq('venue_id', data.venueId)
       .in('status', ['pending', 'confirmed'])
       .single()
     if (error || !reservation) throw new Response('Not found', { status: 404 })
+    const partySize = data.partySize ?? (reservation.party_size as number)
+    if (data.partySize && data.partySize !== reservation.party_size) {
+      const { data: assignments, error: assignmentsError } = await supabase
+        .from('reservation_tables')
+        .select('table_id')
+        .eq('reservation_id', reservation.id)
+        .eq('tenant_id', data.tenantId)
+      const tableIds = (assignments ?? []).map((assignment) => assignment.table_id)
+      const { data: tables, error: tablesError } = tableIds.length
+        ? await supabase
+            .from('tables')
+            .select('max_seats')
+            .in('id', tableIds)
+            .eq('tenant_id', data.tenantId)
+        : { data: [], error: null }
+      const capacity = (tables ?? []).reduce(
+        (total, table) => total + (table.max_seats as number),
+        0,
+      )
+      if (assignmentsError || tablesError || !tables?.length || capacity < partySize)
+        throw new Response('Not enough seats', { status: 422 })
+    }
     const previousStart = new Date(reservation.starts_at as string)
     const previousEnd = new Date(reservation.ends_at as string)
     const duration = previousEnd.getTime() - previousStart.getTime()
@@ -423,7 +446,11 @@ export const rescheduleReservation = createServerFn({ method: 'POST' })
     const endsAt = new Date(startsAt.getTime() + duration)
     const { error: updateError } = await supabase
       .from('reservations')
-      .update({ ends_at: endsAt.toISOString(), starts_at: startsAt.toISOString() })
+      .update({
+        ends_at: endsAt.toISOString(),
+        party_size: partySize,
+        starts_at: startsAt.toISOString(),
+      })
       .eq('id', reservation.id)
       .eq('tenant_id', data.tenantId)
       .eq('venue_id', data.venueId)

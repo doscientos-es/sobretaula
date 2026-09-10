@@ -12,5 +12,12 @@ function ReservationsRoute() {
   const { tenant, venue } = Route.useRouteContext()
   const services = Route.useLoaderData()
 
-  return <ReservationPage services={services} tenantId={tenant.id} venueId={venue.id} />
+  return (
+    <ReservationPage
+      locale={tenant.defaultLocale}
+      services={services}
+      tenantId={tenant.id}
+      venueId={venue.id}
+    />
+  )
 }

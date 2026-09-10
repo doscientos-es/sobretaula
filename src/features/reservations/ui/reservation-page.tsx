@@ -17,6 +17,7 @@ import {
 import { useEffect, useState, type FormEvent } from 'react'
 
 import { cancelReservation, markReservationNoShow } from '@/features/service'
+import type { Locale } from '@/shared/lib/i18n/locale'
 import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
 
 import {
@@ -68,10 +69,12 @@ export function ReservationPage({
   services,
   tenantId,
   venueId,
+  locale,
 }: {
   services: readonly ReservationService[]
   tenantId: string
   venueId: string
+  locale: Locale
 }) {
   const feedback = useFormFeedback()
   const [serviceName, setServiceName] = useState('Comida')
@@ -87,6 +90,7 @@ export function ReservationPage({
   const [agendaRefresh, setAgendaRefresh] = useState(0)
   const [editingReservationId, setEditingReservationId] = useState<string | null>(null)
   const [editingStartsAt, setEditingStartsAt] = useState('')
+  const [editingPartySize, setEditingPartySize] = useState(1)
 
   async function configureService(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -199,7 +203,13 @@ export function ReservationPage({
     }
     try {
       await rescheduleReservation({
-        data: { reservationId, startsAt: startsAt.toISOString(), tenantId, venueId },
+        data: {
+          partySize: editingPartySize,
+          reservationId,
+          startsAt: startsAt.toISOString(),
+          tenantId,
+          venueId,
+        },
       })
       setEditingReservationId(null)
       setAgendaDate(editingStartsAt.slice(0, 10))
@@ -209,7 +219,9 @@ export function ReservationPage({
       feedback.setError(
         error instanceof Response && error.status === 409
           ? 'La mesa ya está ocupada en esa hora.'
-          : 'No se ha podido cambiar la hora.',
+          : error instanceof Response && error.status === 422
+            ? 'La mesa no admite tantos comensales o el turno no es válido.'
+            : 'No se ha podido cambiar la reserva.',
       )
     }
   }
@@ -409,7 +421,7 @@ export function ReservationPage({
                     >
                       <div>
                         <p className="font-medium">
-                          {new Date(item.startsAt).toLocaleTimeString('es-ES', {
+                          {new Date(item.startsAt).toLocaleTimeString(locale, {
                             hour: '2-digit',
                             minute: '2-digit',
                           })}{' '}
@@ -462,6 +474,14 @@ export function ReservationPage({
                               type="datetime-local"
                               value={editingStartsAt}
                             />
+                            <Input
+                              aria-label="Número de comensales"
+                              max={50}
+                              min={1}
+                              onChange={(event) => setEditingPartySize(Number(event.target.value))}
+                              type="number"
+                              value={editingPartySize}
+                            />
                             <span className="flex flex-wrap justify-end gap-2">
                               <Button
                                 disabled={feedback.pending}
@@ -487,6 +507,7 @@ export function ReservationPage({
                             onClick={() => {
                               setEditingReservationId(item.id)
                               setEditingStartsAt(localDateTimeValue(item.startsAt))
+                              setEditingPartySize(item.partySize)
                             }}
                             size="sm"
                             type="button"

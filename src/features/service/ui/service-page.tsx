@@ -33,15 +33,41 @@ export function ServicePage({
   venueId: string
 }) {
   const [selectedTableIds, setSelectedTableIds] = useState<readonly string[]>([])
+  const [selectedAreaId, setSelectedAreaId] = useState<string>('all')
   const reload = useLoaderReload()
   useEffect(() => {
-    const interval = window.setInterval(() => reload(), 60_000)
-    return () => window.clearInterval(interval)
+    const interval = window.setInterval(() => reload(), 30_000)
+    const refreshOnFocus = () => reload()
+    window.addEventListener('focus', refreshOnFocus)
+    return () => {
+      window.clearInterval(interval)
+      window.removeEventListener('focus', refreshOnFocus)
+    }
   }, [reload])
   const activeVersion = plan.versions[0]
   const placements = activeVersion
     ? plan.placements.filter((placement) => placement.floorPlanVersionId === activeVersion.id)
     : []
+  const visiblePlacements =
+    selectedAreaId === 'all'
+      ? placements
+      : placements.filter(
+          () => plan.areas.find((area) => area.id === selectedAreaId)?.id === activeVersion?.areaId,
+        )
+  const visibleTableCodes = new Set(visiblePlacements.map((placement) => placement.code))
+  const visibleTables =
+    selectedAreaId === 'all'
+      ? board.tables
+      : board.tables.filter((table) => visibleTableCodes.has(table.code))
+
+  useEffect(() => {
+    if (selectedAreaId === 'all') return
+    const allowed = new Set(visibleTables.map((table) => table.id))
+    setSelectedTableIds((current) => {
+      const next = current.filter((id) => allowed.has(id))
+      return next.length === current.length ? current : next
+    })
+  }, [selectedAreaId, visibleTables])
 
   function toggleTable(tableId: string) {
     setSelectedTableIds((current) =>
@@ -58,7 +84,7 @@ export function ServicePage({
             Consulta el estado de cada mesa, recibe a los comensales y lleva sus cuentas al día.
           </PageHeaderDescription>
           <p className="text-muted-foreground mt-1 text-xs">
-            Sincronización automática cada minuto · también puedes actualizar ahora.
+            Sincronización automática cada 30 segundos · también puedes actualizar ahora.
           </p>
         </div>
         <Button className="shrink-0" onClick={() => reload()} type="button" variant="outline">
@@ -73,17 +99,51 @@ export function ServicePage({
               <CardHeader>
                 <CardTitle>{activeVersion.name}</CardTitle>
                 <CardDescription>
-                  Rojo ocupada, verde reservada, gris libre. Selecciona mesas en la lista.
+                  Selecciona una o varias mesas para ejecutar una acción. El estado se muestra con
+                  color, icono y texto para que la sala se entienda de un vistazo.
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <ServicePlan
-                  onToggleTable={toggleTable}
-                  placements={placements}
-                  selectedTableIds={selectedTableIds}
-                  states={board.tables}
-                  version={activeVersion}
-                />
+                {plan.areas.length > 1 && (
+                  <div className="mb-4 flex flex-wrap gap-2" aria-label="Filtrar por zona">
+                    <Button
+                      onClick={() => setSelectedAreaId('all')}
+                      type="button"
+                      variant={selectedAreaId === 'all' ? 'default' : 'outline'}
+                    >
+                      Todas
+                    </Button>
+                    {plan.areas.map((area) => (
+                      <Button
+                        key={area.id}
+                        onClick={() => setSelectedAreaId(area.id)}
+                        type="button"
+                        variant={selectedAreaId === area.id ? 'default' : 'outline'}
+                      >
+                        {area.name}
+                      </Button>
+                    ))}
+                  </div>
+                )}
+                <ul aria-label="Leyenda de estados" className="mb-4 flex flex-wrap gap-2 text-xs">
+                  <li className="bg-muted rounded-full px-2 py-1">● Libre</li>
+                  <li className="bg-destructive/15 rounded-full px-2 py-1">● Ocupada</li>
+                  <li className="bg-primary/15 rounded-full px-2 py-1">● Reservada</li>
+                  <li className="bg-warning/15 rounded-full px-2 py-1">● Limpieza</li>
+                </ul>
+                {visiblePlacements.length === 0 ? (
+                  <p className="text-muted-foreground rounded-lg border border-dashed p-6 text-center text-sm">
+                    Esta zona todavía no tiene mesas configuradas en el plano activo.
+                  </p>
+                ) : (
+                  <ServicePlan
+                    onToggleTable={toggleTable}
+                    placements={visiblePlacements}
+                    selectedTableIds={selectedTableIds}
+                    states={visibleTables}
+                    version={activeVersion}
+                  />
+                )}
               </CardContent>
             </Card>
           )}
@@ -99,7 +159,7 @@ export function ServicePage({
                 </p>
               ) : (
                 <ul className="grid gap-2 sm:grid-cols-2">
-                  {board.tables.map((table) => (
+                  {visibleTables.map((table) => (
                     <li key={table.id}>
                       <Button
                         aria-pressed={selectedTableIds.includes(table.id)}

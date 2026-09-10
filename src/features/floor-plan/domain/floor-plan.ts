@@ -5,6 +5,30 @@ export interface FloorPlanArea {
   isOnlineBookable: boolean
   name: string
   venueId: string
+  /** Optional until the floor/zone migration is rolled out. */
+  floorNumber?: number | null
+  spaceType?: 'indoor' | 'covered_terrace' | 'outdoor_terrace' | 'other'
+}
+
+export interface FloorAreaGroup {
+  floorNumber: number | null
+  label: string
+  areas: readonly FloorPlanArea[]
+}
+
+export function groupAreasByFloor(areas: readonly FloorPlanArea[]): FloorAreaGroup[] {
+  const groups = new Map<number | null, FloorPlanArea[]>()
+  for (const area of areas) {
+    const key = area.floorNumber ?? null
+    groups.set(key, [...(groups.get(key) ?? []), area])
+  }
+  return [...groups.entries()]
+    .sort(([a], [b]) => (a === null ? -1 : b === null ? 1 : a - b))
+    .map(([floorNumber, grouped]) => ({
+      areas: grouped,
+      floorNumber,
+      label: floorNumber === null ? 'Sin planta asignada' : floorNumber === 0 ? 'Planta baja' : `Planta ${floorNumber}`,
+    }))
 }
 
 export interface FloorPlanVersion {

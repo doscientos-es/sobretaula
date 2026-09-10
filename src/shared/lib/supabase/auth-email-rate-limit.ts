@@ -1,6 +1,6 @@
 function recordFrom(value: unknown): Record<string, unknown> | undefined {
   return typeof value === 'object' && value !== null
-    ? (value as Record<string, unknown>)
+    ? (value as unknown as Record<string, unknown>)
     : undefined
 }
 
