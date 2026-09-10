@@ -554,6 +554,30 @@ export function FloorPlanPage({
     )
   }
 
+  async function saveTableGroupPreset() {
+    if (!activeArea || selectedIds.length < 2) {
+      feedback.setError('Selecciona al menos dos mesas para guardar una combinación.')
+      return
+    }
+    feedback.setPending()
+    try {
+      await createTableGroupPreset({
+        data: {
+          areaId: activeArea.id,
+          maxSeats: presetMaxSeats,
+          name: presetName,
+          tableIds: selectedIds,
+          tenantId,
+          venueId,
+        },
+      })
+      feedback.setSuccess('Combinación guardada.')
+      reload()
+    } catch {
+      feedback.setError('No se ha podido guardar la combinación.')
+    }
+  }
+
   async function saveVersion() {
     if (!activeVersion) return
     if (layoutIssues.length > 0) {
@@ -601,6 +625,30 @@ export function FloorPlanPage({
       reload()
     } catch {
       feedback.setError('No se ha podido guardar la versión del plano.')
+    }
+  }
+
+  async function savePreset() {
+    if (!activeArea || selectedIds.length < 2) {
+      feedback.setError('Selecciona al menos dos mesas para guardar una combinación.')
+      return
+    }
+    feedback.setPending()
+    try {
+      await createTableGroupPreset({
+        data: {
+          areaId: activeArea.id,
+          maxSeats: presetMaxSeats,
+          name: presetName,
+          tableIds: selectedIds.filter((id) => placements.some((table) => table.id === id)),
+          tenantId,
+          venueId,
+        },
+      })
+      feedback.setSuccess('Combinación guardada.')
+      await reload()
+    } catch (error) {
+      feedback.setError(error instanceof Error ? error.message : 'No se pudo guardar la combinación.')
     }
   }
 
@@ -1397,6 +1445,18 @@ export function FloorPlanPage({
                     value={versionDeactivation}
                   />
                 </Field>
+                <div className="mt-4 rounded-lg border p-3">
+                  <p className="font-medium">Guardar combinación seleccionada</p>
+                  <p className="text-muted-foreground text-xs">{selectedIds.length} mesas seleccionadas</p>
+                  <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                    <Input aria-label="Nombre de combinación" onChange={(event) => setPresetName(event.target.value)} value={presetName} />
+                    <Input aria-label="Capacidad máxima" min={1} onChange={(event) => setPresetMaxSeats(Number(event.target.value))} type="number" value={presetMaxSeats} />
+                  </div>
+                  <Button className="mt-2" disabled={feedback.pending || selectedIds.length < 2} onClick={() => void savePreset()} type="button">
+                    Guardar combinación
+                  </Button>
+                  {activePresets.length > 0 && <p className="text-muted-foreground mt-2 text-xs">{activePresets.length} combinaciones guardadas en esta zona.</p>}
+                </div>
                 <div className="mt-3 flex gap-2">
                   <Button
                     disabled={history.past.length === 0}
