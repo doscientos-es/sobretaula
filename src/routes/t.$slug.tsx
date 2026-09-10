@@ -177,70 +177,114 @@ function TenantSetupPendingOnboarding({
   const paymentStatus: StepStatus = paymentDone ? 'done' : 'active'
 
   return (
-    <main className="bg-muted/30 min-h-screen p-4 sm:p-8">
-      <div className="mx-auto max-w-2xl space-y-6">
-        <div className="border-primary/20 from-primary/10 rounded-2xl border bg-linear-to-br to-transparent p-6 sm:p-8">
-          <p className="text-primary text-sm font-semibold tracking-wide uppercase">Sobretaula</p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight">{tenant.name}</h1>
-          <p className="text-muted-foreground mt-2 max-w-xl text-sm leading-6">
+    <main className="mx-auto max-w-2xl space-y-6 p-4 sm:p-8">
+      <PageHeader className="border-border/70 border-b pb-6">
+        <div>
+          <PageHeaderTitle>{tenant.name}</PageHeaderTitle>
+          <PageHeaderDescription>
             Ya casi está. Solo te queda un paso para empezar a trabajar.
-          </p>
+          </PageHeaderDescription>
         </div>
+      </PageHeader>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Pasos para activar tu restaurante</CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <OnboardingStep
-              description="Ya hemos guardado el nombre, la dirección y los datos fiscales de tu restaurante."
-              index={1}
-              isLast={false}
-              status="done"
-              title="Datos del restaurante"
-            />
-            <OnboardingStep
-              description="Autoriza el pago seguro de la suscripción de SobreTaula (149 €/mes, sin IVA) para poder activar el restaurante."
-              index={2}
-              isLast={false}
-              status={paymentStatus}
-              title="Método de pago"
-            >
-              <Link
-                className={buttonVariants({ size: 'lg' })}
-                params={{ slug: tenant.slug }}
-                to="/t/$slug/facturacion"
-              >
-                <CreditCard className="size-4" />
-                Autorizar pago seguro
-              </Link>
-            </OnboardingStep>
-            <OnboardingStep
-              description={
-                paymentDone
-                  ? 'Estamos confirmando tu alta. En cuanto se procese el pago, el restaurante se activará automáticamente.'
-                  : 'En cuanto autorices el pago, tu restaurante se activará automáticamente y podrás empezar a trabajar.'
-              }
-              index={3}
-              isLast={true}
-              status={activationStatus}
-              title="Abrir operaciones"
-            />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Mientras tanto</CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-2 pt-0 sm:grid-cols-3">
+      <Card>
+        <CardHeader>
+          <CardTitle>Pasos para activar tu restaurante</CardTitle>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <OnboardingStep
+            description="Ya hemos guardado el nombre, la dirección y los datos fiscales de tu restaurante."
+            index={1}
+            isLast={false}
+            status="done"
+            title="Datos del restaurante"
+          />
+          <OnboardingStep
+            description="Autoriza el pago seguro de la suscripción de SobreTaula (149 €/mes, sin IVA) para poder activar el restaurante."
+            index={2}
+            isLast={false}
+            status={paymentStatus}
+            title="Método de pago"
+          >
             <Link
-              className={buttonVariants({ variant: 'outline' })}
+              className={buttonVariants({ size: 'lg' })}
               params={{ slug: tenant.slug }}
-              to="/t/$slug/equipo"
+              to="/t/$slug/facturacion"
             >
-              <Users className="size-4" />
-              Preparar equipo
+              <CreditCard className="size-4" />
+              Autorizar pago seguro
+            </Link>
+          </OnboardingStep>
+          <OnboardingStep
+            description={
+              paymentDone
+                ? 'Estamos confirmando tu alta. En cuanto se procese el pago, el restaurante se activará automáticamente.'
+                : 'En cuanto autorices el pago, tu restaurante se activará automáticamente y podrás empezar a trabajar.'
+            }
+            index={3}
+            isLast={true}
+            status={activationStatus}
+            title="Abrir operaciones"
+          />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Mientras tanto</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-2 pt-0 sm:grid-cols-3">
+          <Link
+            className={buttonVariants({ variant: 'outline' })}
+            params={{ slug: tenant.slug }}
+            to="/t/$slug/equipo"
+          >
+            <Users className="size-4" />
+            Preparar equipo
+          </Link>
+          <Link
+            className={buttonVariants({ variant: 'outline' })}
+            params={{ slug: tenant.slug }}
+            to="/t/$slug/suscripcion/facturas"
+          >
+            <FileText className="size-4" />
+            Ver facturas
+          </Link>
+          <Link className={buttonVariants({ variant: 'outline' })} to="/onboarding">
+            <Store className="size-4" />
+            Revisar datos de alta
+          </Link>
+        </CardContent>
+      </Card>
+    </main>
+  )
+}
+
+function TenantSuspendedNotice({ tenant }: { tenant: { name: string; slug: string } }) {
+  return (
+    <main className="mx-auto max-w-2xl space-y-6 p-4 sm:p-8">
+      <PageHeader className="border-border/70 border-b pb-6">
+        <div>
+          <PageHeaderTitle>{tenant.name}</PageHeaderTitle>
+          <PageHeaderDescription>
+            El restaurante está temporalmente en pausa por un cobro pendiente. Tu información se
+            conserva.
+          </PageHeaderDescription>
+        </div>
+      </PageHeader>
+      <Card>
+        <CardContent className="space-y-4 pt-6">
+          <p className="text-sm leading-6">
+            Regulariza el método de pago para reactivar el restaurante.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <Link
+              className={buttonVariants({ size: 'lg' })}
+              params={{ slug: tenant.slug }}
+              to="/t/$slug/facturacion"
+            >
+              <CreditCard className="size-4" />
+              Regularizar pago
             </Link>
             <Link
               className={buttonVariants({ variant: 'outline' })}
@@ -248,57 +292,11 @@ function TenantSetupPendingOnboarding({
               to="/t/$slug/suscripcion/facturas"
             >
               <FileText className="size-4" />
-              Ver facturas
+              Ver facturas de SobreTaula
             </Link>
-            <Link className={buttonVariants({ variant: 'outline' })} to="/onboarding">
-              <Store className="size-4" />
-              Revisar datos de alta
-            </Link>
-          </CardContent>
-        </Card>
-      </div>
-    </main>
-  )
-}
-
-function TenantSuspendedNotice({ tenant }: { tenant: { name: string; slug: string } }) {
-  return (
-    <main className="bg-muted/30 min-h-screen p-4 sm:p-8">
-      <div className="mx-auto max-w-2xl space-y-6">
-        <div className="border-primary/20 from-primary/10 rounded-2xl border bg-linear-to-br to-transparent p-6 sm:p-8">
-          <p className="text-primary text-sm font-semibold tracking-wide uppercase">Sobretaula</p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight">{tenant.name}</h1>
-          <p className="text-muted-foreground mt-2 max-w-xl text-sm leading-6">
-            El restaurante está temporalmente en pausa por un cobro pendiente. Tu información se
-            conserva.
-          </p>
-        </div>
-        <Card>
-          <CardContent className="space-y-4 pt-6">
-            <p className="text-sm leading-6">
-              Regulariza el método de pago para reactivar el restaurante.
-            </p>
-            <div className="flex flex-wrap gap-3">
-              <Link
-                className={buttonVariants({ size: 'lg' })}
-                params={{ slug: tenant.slug }}
-                to="/t/$slug/facturacion"
-              >
-                <CreditCard className="size-4" />
-                Regularizar pago
-              </Link>
-              <Link
-                className={buttonVariants({ variant: 'outline' })}
-                params={{ slug: tenant.slug }}
-                to="/t/$slug/suscripcion/facturas"
-              >
-                <FileText className="size-4" />
-                Ver facturas de SobreTaula
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </CardContent>
+      </Card>
     </main>
   )
 }
