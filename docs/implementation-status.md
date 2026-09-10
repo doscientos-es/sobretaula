@@ -115,3 +115,11 @@ la lectura de auditoría: sólo un `platform_owner` puede consultar
 `platform_audit_log`. Cuando exista un proyecto de pruebas, se activan sin
 cambios de código y la puerta de adopción (#2, #3, #5, #6) se cierra con esa
 evidencia.
+
+### Últimos avances del editor de sala
+
+- Navegación del lienzo con zoom, pan y restablecimiento completo de vista.
+- Cuadrícula configurable, snap por bordes/centros y guías de alineación.
+- Selección múltiple con Ctrl/Cmd y limpieza con Escape.
+- Validación visual de mesas que bloquean puertas o salidas, cubierta con
+  pruebas de dominio.

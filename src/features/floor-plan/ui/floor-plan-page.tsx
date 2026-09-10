@@ -47,6 +47,7 @@ import {
 import {
   DEFAULT_GRID_SIZE_CM,
   findPlacementCollisions,
+  findBlockedAccesses,
   isPlacementWithinBounds,
   movePlacement,
   validateLayout,
@@ -79,6 +80,7 @@ export function FloorPlanPage({
   const [versionActivation, setVersionActivation] = useState('')
   const [draggingTableId, setDraggingTableId] = useState<string>()
   const [selectedId, setSelectedId] = useState<string>()
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [zoom, setZoom] = useState(1)
   const [gridSize, setGridSize] = useState(DEFAULT_GRID_SIZE_CM)
   const [pan, setPan] = useState({ x: 0, y: 0 })
@@ -103,7 +105,18 @@ export function FloorPlanPage({
     createEditorHistory({ elements: savedElements, placements: savedPlacements }),
   )
   const { elements, placements } = history.present
+  function selectItem(id: string, additive = false) {
+    setSelectedId(id)
+    setSelectedIds((current) =>
+      additive
+        ? current.includes(id)
+          ? current.filter((item) => item !== id)
+          : [...current, id]
+        : [id],
+    )
+  }
   const layoutIssues = activeVersion ? validateLayout(placements, activeVersion) : []
+  const blockedAccesses = findBlockedAccesses(placements, elements)
   const selectedPlacement = placements.find((item) => item.id === selectedId)
   const alignmentGuides = selectedPlacement
     ? placements
@@ -189,9 +202,36 @@ export function FloorPlanPage({
 
   function changePlacement(id: string, xCm: number, yCm: number) {
     if (!activeVersion) return
+    const moving = placements.find((placement) => placement.id === id)
+    if (!moving) return
+    const others = placements.filter((placement) => placement.id !== id)
+    const snap = (value: number, candidates: number[]) =>
+      candidates.reduce(
+        (best, candidate) =>
+          Math.abs(value - candidate) <= gridSize / 2 &&
+          Math.abs(value - candidate) < Math.abs(value - best)
+            ? candidate
+            : best,
+        value,
+      )
+    const xCandidates = others.flatMap((item) => [
+      item.xCm,
+      item.xCm + item.widthCm / 2 - moving.widthCm / 2,
+      item.xCm + item.widthCm - moving.widthCm,
+    ])
+    const yCandidates = others.flatMap((item) => [
+      item.yCm,
+      item.yCm + item.heightCm / 2 - moving.heightCm / 2,
+      item.yCm + item.heightCm - moving.heightCm,
+    ])
+    const snappedX = snap(xCm, xCandidates)
+    const snappedY = snap(yCm, yCandidates)
     const updated = placements.map((placement) => {
       if (placement.id !== id) return placement
-      return { ...placement, ...movePlacement(placement, { xCm, yCm }, gridSize) }
+      return {
+        ...placement,
+        ...movePlacement(placement, { xCm: snappedX, yCm: snappedY }, gridSize),
+      }
     })
     const candidate = updated.find((placement) => placement.id === id)
     if (
@@ -213,6 +253,7 @@ export function FloorPlanPage({
       data.versions.find((candidate) => candidate.areaId === areaId)
     setSelectedAreaId(areaId)
     setSelectedId(undefined)
+    setSelectedIds([])
     setHistory(
       createEditorHistory({
         elements: data.elements.filter((element) => element.floorPlanVersionId === version?.id),
@@ -261,7 +302,30 @@ export function FloorPlanPage({
       heightCm: kind === 'wall' ? 25 : 100,
       id: crypto.randomUUID(),
       kind,
-      label: kind === 'wall' ? 'Pared' : kind === 'door' ? 'Puerta' : 'Barra',
+      label:
+        kind === 'wall'
+          ? 'Pared'
+          : kind === 'door'
+            ? 'Puerta'
+            : kind === 'bar'
+              ? 'Barra'
+              : kind === 'stairs'
+                ? 'Escalera'
+                : kind === 'plant'
+                  ? 'Planta'
+                  : kind === 'window'
+                    ? 'Ventana'
+                    : kind === 'other'
+                      ? 'Obstáculo'
+                      : kind === 'pillar'
+                        ? 'Pilar'
+                        : kind === 'bathroom'
+                          ? 'Baño'
+                          : kind === 'kitchen'
+                            ? 'Cocina'
+                            : kind === 'exit'
+                              ? 'Salida'
+                              : 'Etiqueta',
       rotationDeg: 0,
       widthCm: kind === 'wall' ? 250 : 100,
       xCm: 0,
@@ -295,7 +359,7 @@ export function FloorPlanPage({
       setHistory((current) =>
         commitEditorHistory(current, { ...current.present, placements: [...placements, copy] }),
       )
-      setSelectedId(copy.id)
+      selectItem(copy.id)
       return
     }
     const element = elements.find((item) => item.id === selectedId)
@@ -309,7 +373,7 @@ export function FloorPlanPage({
       setHistory((current) =>
         commitEditorHistory(current, { ...current.present, elements: [...elements, copy] }),
       )
-      setSelectedId(copy.id)
+      selectItem(copy.id)
     }
   }
 
@@ -322,6 +386,70 @@ export function FloorPlanPage({
       }),
     )
     setSelectedId(undefined)
+    setSelectedIds([])
+  }
+
+  function alignSelected(axis: 'x' | 'y' | 'right' | 'bottom') {
+    if (!activeVersion || selectedIds.length < 2) return
+    const selected = placements.filter((item) => selectedIds.includes(item.id))
+    const target =
+      axis === 'right' || axis === 'bottom'
+        ? Math.max(
+            ...selected.map((item) =>
+              axis === 'right' ? item.xCm + item.widthCm : item.yCm + item.heightCm,
+            ),
+          )
+        : Math.min(...selected.map((item) => (axis === 'x' ? item.xCm : item.yCm)))
+    const next = placements.map((item) =>
+      selectedIds.includes(item.id)
+        ? {
+            ...item,
+            [axis === 'x' || axis === 'right' ? 'xCm' : 'yCm']:
+              axis === 'right'
+                ? target - item.widthCm
+                : axis === 'bottom'
+                  ? target - item.heightCm
+                  : target,
+          }
+        : item,
+    )
+    if (
+      next.some((item) => !isPlacementWithinBounds(item, activeVersion)) ||
+      next.some((item) => findPlacementCollisions(item, next).length > 0)
+    ) {
+      feedback.setError('La alineación provocaría un solape o saldría del plano.')
+      return
+    }
+    setHistory((current) => commitEditorHistory(current, { ...current.present, placements: next }))
+  }
+
+  function distributeSelected(axis: 'x' | 'y') {
+    if (!activeVersion || selectedIds.length < 3) return
+    const selected = placements
+      .filter((item) => selectedIds.includes(item.id))
+      .sort((a, b) => (axis === 'x' ? a.xCm - b.xCm : a.yCm - b.yCm))
+    const first = selected[0]
+    const last = selected[selected.length - 1]
+    if (!first || !last) return
+    const span =
+      (axis === 'x' ? last.xCm - first.xCm : last.yCm - first.yCm) / (selected.length - 1)
+    const next = placements.map((item) => {
+      const index = selected.findIndex((candidate) => candidate.id === item.id)
+      if (index <= 0 || index === selected.length - 1) return item
+      return {
+        ...item,
+        [axis === 'x' ? 'xCm' : 'yCm']:
+          Math.round((first[axis === 'x' ? 'xCm' : 'yCm'] + span * index) / gridSize) * gridSize,
+      }
+    })
+    if (
+      next.some((item) => !isPlacementWithinBounds(item, activeVersion)) ||
+      next.some((item) => findPlacementCollisions(item, next).length > 0)
+    ) {
+      feedback.setError('La distribución provocaría un solape o saldría del plano.')
+      return
+    }
+    setHistory((current) => commitEditorHistory(current, { ...current.present, placements: next }))
   }
 
   function updateSelected(
@@ -544,7 +672,14 @@ export function FloorPlanPage({
                 >
                   +
                 </Button>
-                <Button onClick={() => setZoom(1)} type="button" variant="ghost">
+                <Button
+                  onClick={() => {
+                    setZoom(1)
+                    setPan({ x: 0, y: 0 })
+                  }}
+                  type="button"
+                  variant="ghost"
+                >
                   Restablecer
                 </Button>
                 <label className="text-muted-foreground ml-2 flex items-center gap-2 text-sm">
@@ -561,6 +696,19 @@ export function FloorPlanPage({
                   </select>
                 </label>
               </div>
+              {alignmentGuides.length > 0 && (
+                <p aria-live="polite" className="text-muted-foreground pt-2 text-xs">
+                  Ajuste automático activo:{' '}
+                  {alignmentGuides.some((guide) => guide.axis === 'x') ? 'alineación vertical' : ''}
+                  {alignmentGuides.some((guide) => guide.axis === 'x') &&
+                  alignmentGuides.some((guide) => guide.axis === 'y')
+                    ? ' y '
+                    : ''}
+                  {alignmentGuides.some((guide) => guide.axis === 'y')
+                    ? 'alineación horizontal'
+                    : ''}
+                </p>
+              )}
               {data.areas.length > 1 && (
                 <Field className="pt-2">
                   <FieldLabel htmlFor="floor-plan-area">Zona a editar</FieldLabel>
@@ -608,11 +756,30 @@ export function FloorPlanPage({
                   </ul>
                 </div>
               )}
+              {blockedAccesses.length > 0 && (
+                <div
+                  className="border-warning/40 bg-warning/10 text-warning-foreground mb-4 rounded-lg border p-3 text-sm"
+                  role="alert"
+                >
+                  <p className="font-medium">Hay accesos bloqueados</p>
+                  <ul className="mt-1 list-inside list-disc">
+                    {blockedAccesses.map((issue) => (
+                      <li key={`${issue.accessId}-${issue.placementId}`}>
+                        Una mesa bloquea una puerta o salida.
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
               <svg
                 aria-label={`Plano ${activeVersion.name}`}
                 className="border-border bg-muted/30 h-auto w-full rounded-xl border shadow-inner"
                 onKeyDown={(event) => {
-                  if (event.key === '+' || event.key === '=') {
+                  if (event.key === 'Escape') {
+                    event.preventDefault()
+                    setSelectedId(undefined)
+                    setSelectedIds([])
+                  } else if (event.key === '+' || event.key === '=') {
                     event.preventDefault()
                     setZoom((current) => Math.min(3, current + 0.25))
                   } else if (event.key === '-') {
@@ -765,11 +932,11 @@ export function FloorPlanPage({
                     key={element.id}
                     aria-label={element.label ?? `Elemento ${element.kind}`}
                     className="cursor-pointer"
-                    onClick={() => setSelectedId(element.id)}
+                    onClick={(event) => selectItem(element.id, event.ctrlKey || event.metaKey)}
                     onKeyDown={(event) => {
                       if (event.key === 'Enter' || event.key === ' ') {
                         event.preventDefault()
-                        setSelectedId(element.id)
+                        selectItem(element.id, event.ctrlKey || event.metaKey)
                       }
                     }}
                     role="button"
@@ -782,8 +949,8 @@ export function FloorPlanPage({
                       height={element.heightCm}
                       opacity="0.65"
                       rx="8"
-                      stroke={selectedId === element.id ? 'var(--ring)' : 'transparent'}
-                      strokeWidth={selectedId === element.id ? 8 : 0}
+                      stroke={selectedIds.includes(element.id) ? 'var(--ring)' : 'transparent'}
+                      strokeWidth={selectedIds.includes(element.id) ? 8 : 0}
                       transform={`rotate(${element.rotationDeg} ${element.xCm + element.widthCm / 2} ${element.yCm + element.heightCm / 2})`}
                       width={element.widthCm}
                       x={element.xCm}
@@ -801,11 +968,11 @@ export function FloorPlanPage({
                     key={placement.id}
                     aria-label={`Mesa ${placement.code}`}
                     className="cursor-pointer"
-                    onClick={() => setSelectedId(placement.id)}
+                    onClick={(event) => selectItem(placement.id, event.ctrlKey || event.metaKey)}
                     onKeyDown={(event) => {
                       if (event.key === 'Enter' || event.key === ' ') {
                         event.preventDefault()
-                        setSelectedId(placement.id)
+                        selectItem(placement.id, event.ctrlKey || event.metaKey)
                       }
                     }}
                     role="button"
@@ -821,8 +988,8 @@ export function FloorPlanPage({
                       onPointerDown={() => setDraggingTableId(placement.id)}
                       opacity="0.85"
                       rx="12"
-                      stroke={selectedId === placement.id ? 'var(--ring)' : 'transparent'}
-                      strokeWidth={selectedId === placement.id ? 8 : 0}
+                      stroke={selectedIds.includes(placement.id) ? 'var(--ring)' : 'transparent'}
+                      strokeWidth={selectedIds.includes(placement.id) ? 8 : 0}
                       transform={`rotate(${placement.rotationDeg} ${placement.xCm + placement.widthCm / 2} ${placement.yCm + placement.heightCm / 2})`}
                       width={placement.widthCm}
                       x={placement.xCm}
@@ -857,7 +1024,7 @@ export function FloorPlanPage({
                       <Button
                         aria-label={`Mesa ${placement.code}. X ${placement.xCm}, Y ${placement.yCm}. Usa las flechas para moverla.`}
                         onKeyDown={(event) => moveWithKeyboard(event, placement.id)}
-                        onFocus={() => setSelectedId(placement.id)}
+                        onFocus={() => selectItem(placement.id)}
                         type="button"
                       >
                         {`Mesa ${placement.code} · ${placement.xCm}, ${placement.yCm}`}
@@ -868,9 +1035,11 @@ export function FloorPlanPage({
               )}
               {selectedId && (
                 <output className="bg-muted mt-3 block rounded-lg px-3 py-2 text-xs">
-                  Seleccionado:{' '}
+                  {selectedIds.length > 1
+                    ? `${selectedIds.length} elementos seleccionados · `
+                    : 'Seleccionado: '}
                   {placements.find((item) => item.id === selectedId)?.code ?? 'elemento'} · usa las
-                  flechas para ajustar mesas.
+                  flechas para ajustar mesas. Mantén Ctrl/Cmd para seleccionar varios.
                 </output>
               )}
               {selectedId && (
@@ -880,6 +1049,28 @@ export function FloorPlanPage({
                   </Button>
                   <Button onClick={removeSelected} type="button">
                     Eliminar
+                  </Button>
+                </div>
+              )}
+              {selectedIds.length > 1 && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Button onClick={() => alignSelected('x')} type="button" variant="outline">
+                    Alinear izquierda
+                  </Button>
+                  <Button onClick={() => alignSelected('y')} type="button" variant="outline">
+                    Alinear arriba
+                  </Button>
+                  <Button onClick={() => alignSelected('right')} type="button" variant="outline">
+                    Alinear derecha
+                  </Button>
+                  <Button onClick={() => alignSelected('bottom')} type="button" variant="outline">
+                    Alinear abajo
+                  </Button>
+                  <Button onClick={() => distributeSelected('x')} type="button" variant="outline">
+                    Distribuir horizontal
+                  </Button>
+                  <Button onClick={() => distributeSelected('y')} type="button" variant="outline">
+                    Distribuir vertical
                   </Button>
                 </div>
               )}
@@ -947,6 +1138,33 @@ export function FloorPlanPage({
                   </Button>
                   <Button onClick={() => addElement('bar')} type="button">
                     Barra
+                  </Button>
+                  <Button onClick={() => addElement('stairs')} type="button">
+                    Escalera
+                  </Button>
+                  <Button onClick={() => addElement('plant')} type="button">
+                    Planta
+                  </Button>
+                  <Button onClick={() => addElement('label')} type="button">
+                    Etiqueta
+                  </Button>
+                  <Button onClick={() => addElement('window')} type="button">
+                    Ventana
+                  </Button>
+                  <Button onClick={() => addElement('other')} type="button">
+                    Obstáculo
+                  </Button>
+                  <Button onClick={() => addElement('pillar')} type="button">
+                    Pilar
+                  </Button>
+                  <Button onClick={() => addElement('bathroom')} type="button">
+                    Baño
+                  </Button>
+                  <Button onClick={() => addElement('kitchen')} type="button">
+                    Cocina
+                  </Button>
+                  <Button onClick={() => addElement('exit')} type="button">
+                    Salida
                   </Button>
                 </div>
               </div>

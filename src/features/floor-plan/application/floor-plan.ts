@@ -49,7 +49,21 @@ const placementInput = z.object({
 })
 const planElementInput = z.object({
   heightCm: z.number().int().min(1).max(10_000),
-  kind: z.enum(['wall', 'door', 'window', 'bar', 'stairs', 'plant', 'label', 'other']),
+  kind: z.enum([
+    'wall',
+    'door',
+    'window',
+    'bar',
+    'stairs',
+    'plant',
+    'label',
+    'other',
+    'pillar',
+    'bathroom',
+    'kitchen',
+    'exit',
+    'obstacle',
+  ]),
   label: z.string().trim().max(100).nullable(),
   rotationDeg: z.number().int().min(0).max(359),
   widthCm: z.number().int().min(1).max(10_000),

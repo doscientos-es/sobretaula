@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   findPlacementCollisions,
+  findBlockedAccesses,
   isPlacementWithinBounds,
   movePlacement,
   placementBoundingBox,
@@ -21,6 +22,17 @@ const table: PlanPlacement = {
 }
 
 describe('floor plan geometry', () => {
+  it('detects tables blocking doors and exits, but ignores other elements', () => {
+    expect(
+      findBlockedAccesses(
+        [table],
+        [
+          { ...table, id: 'door-1', kind: 'door' },
+          { ...table, id: 'wall-1', kind: 'wall', xCm: 500 },
+        ],
+      ),
+    ).toEqual([{ accessId: 'door-1', placementId: 'table-1' }])
+  })
   it('snaps a moved table to the nearest grid intersection', () => {
     expect(movePlacement(table, { xCm: 37, yCm: 63 })).toMatchObject({ xCm: 25, yCm: 75 })
     expect(snapCoordinate(49, 50)).toBe(50)

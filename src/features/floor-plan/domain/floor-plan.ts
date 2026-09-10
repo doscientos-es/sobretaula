@@ -124,10 +124,15 @@ export interface FloorPlanTablePlacement extends PlanPlacement {
 }
 
 export type PlanElementKind =
+  | 'bathroom'
   | 'bar'
+  | 'exit'
+  | 'kitchen'
   | 'door'
   | 'label'
   | 'other'
+  | 'obstacle'
+  | 'pillar'
   | 'plant'
   | 'stairs'
   | 'wall'

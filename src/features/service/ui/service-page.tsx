@@ -41,10 +41,15 @@ export function ServicePage({
   const [selectedAreaId, setSelectedAreaId] = useState<string>(
     plan.areas.length === 1 ? (plan.areas[0]?.id ?? 'all') : 'all',
   )
+  const [lastRefreshAt, setLastRefreshAt] = useState(() => new Date())
   const reload = useLoaderReload()
   useEffect(() => {
-    const interval = window.setInterval(() => reload(), 30_000)
-    const refreshOnFocus = () => reload()
+    const refresh = () => {
+      setLastRefreshAt(new Date())
+      reload()
+    }
+    const interval = window.setInterval(refresh, 30_000)
+    const refreshOnFocus = refresh
     window.addEventListener('focus', refreshOnFocus)
     return () => {
       window.clearInterval(interval)
@@ -94,6 +99,7 @@ export function ServicePage({
     return `${area.name} · ${floor}`
   }
   const areaGroups = groupAreasByFloor(plan.areas)
+  const dataMayBeStale = Date.now() - lastRefreshAt.getTime() > 60_000
 
   function selectArea(areaId: string) {
     setSelectedAreaId(areaId)
@@ -125,14 +131,33 @@ export function ServicePage({
             Consulta el estado de cada mesa, recibe a los comensales y lleva sus cuentas al día.
           </PageHeaderDescription>
           <p className="text-muted-foreground mt-1 text-xs">
-            Sincronización automática cada 30 segundos · también puedes actualizar ahora.
+            Sincronización automática cada 30 segundos · última actualización{' '}
+            <time dateTime={lastRefreshAt.toISOString()}>
+              {lastRefreshAt.toLocaleTimeString('es-ES')}
+            </time>
           </p>
         </div>
-        <Button className="shrink-0" onClick={() => reload()} type="button" variant="outline">
+        <Button
+          className="shrink-0"
+          onClick={() => {
+            setLastRefreshAt(new Date())
+            reload()
+          }}
+          type="button"
+          variant="outline"
+        >
           <RefreshCw aria-hidden="true" className="mr-2 size-4" />
           Actualizar sala
         </Button>
       </PageHeader>
+      {dataMayBeStale && (
+        <div
+          className="border-warning/40 bg-warning/10 text-warning-foreground rounded-lg border p-3 text-sm"
+          role="alert"
+        >
+          Los datos pueden estar desactualizados. Actualiza la sala antes de asignar una mesa.
+        </div>
+      )}
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="space-y-6">
           {plan.areas.length > 1 && (

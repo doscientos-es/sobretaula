@@ -29,14 +29,16 @@ del diseñador y su uso diario.
 
 ### P1 · Diseñador visual v1
 
-- [ ] Biblioteca de elementos: mesa, pared, puerta, barra, pilar, escalera,
-      baño, cocina, salida, obstáculo y zona.
-- [ ] Selección múltiple, duplicar, agrupar, bloquear, alinear y distribuir.
+- [x] Biblioteca de elementos: mesa, pared, puerta, barra, pilar, escalera,
+      baño, cocina, salida, ventana, obstáculo y etiqueta.
+- [ ] Selección múltiple, duplicado, alineación por los cuatro bordes y distribución
+      horizontal/vertical ya disponibles; agrupar y bloquear siguen pendientes.
 - [x] Zoom/pan y guías de alineación: zoom accesible, pan con Alt+flechas,
       cuadrícula configurable de 25 cm/50 cm/1 m, snap sincronizado y ejes del
       elemento seleccionado.
-- [ ] Propiedades de elemento en panel lateral y numeración automática segura.
-- [ ] Validación visual de solapes, límites, pasillos y salidas bloqueadas.
+- [x] Propiedades de elemento en panel lateral y numeración automática segura.
+- [x] Validación visual de solapes, límites y salidas bloqueadas; los pasillos
+      quedan para P2.
 - [ ] Previsualización tablet/móvil y publicación programada.
 - [x] Selección, duplicado, eliminación y edición de propiedades.
 
@@ -85,9 +87,9 @@ el servicio y latencia de sincronización.
 
 ## Siguiente trabajo ejecutable
 
-1. Auditar el dominio y la migración actual de `floor-plan`.
-2. Implementar pisos/zonas/tipo de espacio sin romper versiones existentes.
-3. Extraer el lienzo en componentes accesibles y añadir selección múltiple.
+1. Extraer el lienzo en componentes accesibles y añadir selección múltiple.
+2. Completar validación visual de pasillos y salidas bloqueadas.
+3. Añadir sincronización realtime, reintentos idempotentes y modo degradado.
 4. Cubrir validaciones de layout con pruebas unitarias y de UI.
 5. Ejecutar `pnpm lint`, `pnpm typecheck`, `pnpm test` y `pnpm build`.
    La decisión de persistencia de pisos y terrazas está documentada en

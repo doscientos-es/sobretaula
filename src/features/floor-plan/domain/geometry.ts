@@ -27,6 +27,23 @@ export interface LayoutIssue {
   relatedPlacementId?: string
 }
 
+export interface PlanObstacle extends PlanPlacement {
+  kind?: string
+}
+
+export function findBlockedAccesses(
+  placements: readonly PlanPlacement[],
+  accesses: readonly PlanObstacle[],
+): Array<{ accessId: string; placementId: string }> {
+  return accesses
+    .filter((access) => access.kind === 'door' || access.kind === 'exit')
+    .flatMap((access) =>
+      placements
+        .filter((placement) => placementsOverlap(access, placement))
+        .map((placement) => ({ accessId: access.id, placementId: placement.id })),
+    )
+}
+
 /** Axis-aligned footprint after rotating around the placement centre. */
 export function placementBoundingBox(placement: PlanPlacement): PlanPlacement {
   const radians = ((placement.rotationDeg % 360) * Math.PI) / 180

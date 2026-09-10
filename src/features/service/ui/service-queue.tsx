@@ -61,11 +61,17 @@ export function ServiceQueue({
   const [guestPhone, setGuestPhone] = useState('')
   const [partySize, setPartySize] = useState(2)
   const [estimatedWait, setEstimatedWait] = useState('')
-  const reservations = [...board.reservations].sort(
-    (left, right) =>
-      Number(canMarkNoShow(right.startsAt)) - Number(canMarkNoShow(left.startsAt)) ||
-      new Date(left.startsAt).getTime() - new Date(right.startsAt).getTime(),
-  )
+  const [queueFilter, setQueueFilter] = useState<'all' | 'delayed' | 'upcoming'>('all')
+  const reservations = [...board.reservations]
+    .filter((reservation) => {
+      const minutes = (new Date(reservation.startsAt).getTime() - Date.now()) / 60_000
+      return queueFilter === 'all' || (queueFilter === 'delayed' ? minutes < -15 : minutes >= -15)
+    })
+    .sort(
+      (left, right) =>
+        Number(canMarkNoShow(right.startsAt)) - Number(canMarkNoShow(left.startsAt)) ||
+        new Date(left.startsAt).getTime() - new Date(right.startsAt).getTime(),
+    )
 
   async function run(action: () => Promise<unknown>, message: string, onSuccess?: () => void) {
     if (feedback.pending) return
@@ -111,7 +117,22 @@ export function ServiceQueue({
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="space-y-2">
-          <h3 className="text-sm font-medium">Reservas del turno</h3>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h3 className="text-sm font-medium">Reservas del turno</h3>
+            <label className="text-muted-foreground text-xs" htmlFor="queue-filter">
+              Mostrar{' '}
+              <select
+                className="border-border text-foreground rounded-md border px-2 py-1"
+                id="queue-filter"
+                onChange={(event) => setQueueFilter(event.target.value as typeof queueFilter)}
+                value={queueFilter}
+              >
+                <option value="all">Todas</option>
+                <option value="delayed">Retrasadas</option>
+                <option value="upcoming">Próximas</option>
+              </select>
+            </label>
+          </div>
           {reservations.length === 0 ? (
             <p className="text-muted-foreground text-sm">No hay reservas en las próximas horas.</p>
           ) : (
