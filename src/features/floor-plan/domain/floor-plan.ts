@@ -54,6 +54,15 @@ export interface FloorPlanVersion {
   activeTo?: string | null
 }
 
+/** Returns false for malformed timestamps or an empty/reversed interval. */
+export function isFloorPlanVersionScheduleValid(version: FloorPlanVersion): boolean {
+  const from = version.activeFrom
+    ? new Date(version.activeFrom).getTime()
+    : Number.NEGATIVE_INFINITY
+  const to = version.activeTo ? new Date(version.activeTo).getTime() : Number.POSITIVE_INFINITY
+  return !Number.isNaN(from) && !Number.isNaN(to) && from < to
+}
+
 export function selectFloorPlanVersion(
   versions: readonly FloorPlanVersion[],
   areaId: string,

@@ -3,11 +3,30 @@ import { describe, expect, it } from 'vitest'
 import {
   describeSpaceType,
   findVersionScheduleConflicts,
+  isFloorPlanVersionScheduleValid,
   selectActiveFloorPlanVersion,
   selectFloorPlanVersion,
 } from './floor-plan'
 
 describe('floor plan versions', () => {
+  it('rejects malformed, zero-length, and reversed schedules', () => {
+    const base = { areaId: 'a', heightCm: 100, id: 'v', name: 'x', widthCm: 100 }
+    expect(
+      isFloorPlanVersionScheduleValid({
+        ...base,
+        activeFrom: '2026-09-11T00:00:00Z',
+        activeTo: '2026-09-10T23:59:00Z',
+      }),
+    ).toBe(false)
+    expect(isFloorPlanVersionScheduleValid({ ...base, activeFrom: 'not-a-date' })).toBe(false)
+    expect(
+      isFloorPlanVersionScheduleValid({
+        ...base,
+        activeFrom: '2026-09-10T00:00:00Z',
+        activeTo: '2026-09-10T00:00:00Z',
+      }),
+    ).toBe(false)
+  })
   it('selects the scheduled version active at a given time', () => {
     const versions = [
       {

@@ -38,6 +38,7 @@ export {
 export {
   describeSpaceType,
   findVersionScheduleConflicts,
+  isFloorPlanVersionScheduleValid,
   groupAreasByFloor,
   selectActiveFloorPlanVersion,
   selectFloorPlanVersion,
