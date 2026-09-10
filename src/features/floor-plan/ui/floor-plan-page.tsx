@@ -35,6 +35,7 @@ import {
   findPlacementCollisions,
   isPlacementWithinBounds,
   movePlacement,
+  validateLayout,
 } from '../domain/geometry'
 
 export function FloorPlanPage({
@@ -73,6 +74,7 @@ export function FloorPlanPage({
     createEditorHistory({ elements: savedElements, placements: savedPlacements }),
   )
   const { elements, placements } = history.present
+  const layoutIssues = activeVersion ? validateLayout(placements, activeVersion) : []
 
   async function createPlan(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -231,6 +233,10 @@ export function FloorPlanPage({
 
   async function saveVersion() {
     if (!activeVersion) return
+    if (layoutIssues.length > 0) {
+      feedback.setError('Corrige los problemas del plano antes de publicarlo.')
+      return
+    }
     const activationDate = new Date(versionActivation)
     if (!versionActivation || Number.isNaN(activationDate.getTime())) {
       feedback.setError('Indica una fecha y hora de activación válida.')
@@ -331,6 +337,18 @@ export function FloorPlanPage({
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {layoutIssues.length > 0 && (
+                <div className="border-destructive/40 bg-destructive/10 text-destructive mb-4 rounded-lg border p-3 text-sm" role="alert">
+                  <p className="font-medium">Hay problemas que impiden publicar este plano</p>
+                  <ul className="mt-1 list-inside list-disc">
+                    {layoutIssues.map((issue) => (
+                      <li key={`${issue.code}-${issue.placementId}-${issue.relatedPlacementId ?? ''}`}>
+                        {issue.code === 'overlap' ? `Solape entre ${issue.placementId} y ${issue.relatedPlacementId}` : issue.code === 'outside_bounds' ? `${issue.placementId} queda fuera del plano` : `${issue.placementId} tiene un tamaño inválido`}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
               <svg
                 aria-label={`Plano ${activeVersion.name}`}
                 className="border-border bg-muted/30 h-auto w-full rounded-xl border shadow-inner"

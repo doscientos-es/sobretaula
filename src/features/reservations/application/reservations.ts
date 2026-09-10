@@ -387,6 +387,39 @@ export const rescheduleReservation = createServerFn({ method: 'POST' })
     const duration = previousEnd.getTime() - previousStart.getTime()
     const startsAt = new Date(data.startsAt)
     if (startsAt <= new Date() || duration <= 0) throw new Response('Invalid time', { status: 422 })
+    const [tenantResult, servicesResult] = await Promise.all([
+      supabase.from('tenants').select('timezone').eq('id', data.tenantId).single(),
+      supabase
+        .from('services')
+        .select('ends_at_time, starts_at_time, weekday')
+        .eq('tenant_id', data.tenantId)
+        .eq('venue_id', data.venueId)
+        .eq('is_active', true),
+    ])
+    if (tenantResult.error || servicesResult.error) throw new Error('reservation_reschedule_failed')
+    const timezone = tenantResult.data?.timezone ?? 'UTC'
+    const parts = new Intl.DateTimeFormat('en-US', {
+      hour: '2-digit',
+      hour12: false,
+      minute: '2-digit',
+      timeZone: timezone,
+      weekday: 'short',
+    }).formatToParts(startsAt)
+    const values = new Map(parts.map((part) => [part.type, part.value]))
+    const weekday = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(
+      values.get('weekday') ?? '',
+    )
+    const minuteOfDay = Number(values.get('hour')) * 60 + Number(values.get('minute'))
+    const inService = (servicesResult.data ?? []).some((service) => {
+      const [startHour, startMinute] = service.starts_at_time.slice(0, 5).split(':').map(Number)
+      const [endHour, endMinute] = service.ends_at_time.slice(0, 5).split(':').map(Number)
+      return (
+        service.weekday === weekday &&
+        minuteOfDay >= startHour * 60 + startMinute &&
+        minuteOfDay < endHour * 60 + endMinute
+      )
+    })
+    if (!inService) throw new Response('Outside service', { status: 422 })
     const endsAt = new Date(startsAt.getTime() + duration)
     const { error: updateError } = await supabase
       .from('reservations')

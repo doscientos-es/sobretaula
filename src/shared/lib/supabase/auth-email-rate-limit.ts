@@ -1,5 +1,7 @@
 function recordFrom(value: unknown): Record<string, unknown> | undefined {
-  return typeof value === 'object' && value !== null ? value : undefined
+  return typeof value === 'object' && value !== null
+    ? (value as Record<string, unknown>)
+    : undefined
 }
 
 /** Identifies Supabase Auth email quotas without depending on its error class. */
