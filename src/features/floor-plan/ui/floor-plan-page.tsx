@@ -282,9 +282,7 @@ export function FloorPlanPage({
     setSelectedAreaId(areaId)
     setSelectedId(undefined)
     setSelectedIds([])
-    setLockedIds(
-      readLockedIds(version ? `sobretaula:floor-plan-locks:${version.id}` : undefined),
-    )
+    setLockedIds(readLockedIds(version ? `sobretaula:floor-plan-locks:${version.id}` : undefined))
     setHistory(
       createEditorHistory({
         elements: data.elements.filter((element) => element.floorPlanVersionId === version?.id),
@@ -1027,7 +1025,12 @@ export function FloorPlanPage({
                         y={element.yCm}
                       />
                       {element.label && (
-                        <text pointerEvents="none" fontSize="20" x={element.xCm + 8} y={element.yCm + 28}>
+                        <text
+                          pointerEvents="none"
+                          fontSize="20"
+                          x={element.xCm + 8}
+                          y={element.yCm + 28}
+                        >
                           {element.label}
                         </text>
                       )}
