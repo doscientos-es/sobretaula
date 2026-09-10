@@ -38,7 +38,7 @@ Nunca se edita una migración ya aplicada: se añade una nueva. Para aplicarlas:
 | `SESSION_PASSWORD`                                                                                 | Servidor      | Cifrado de la sesión del servidor (32+ caracteres)   |
 | `VERIFACTU_DEFAULT_ENV`                                                                            | Servidor      | Entorno fiscal inicial de nuevos tenants (`test`)    |
 | `TENANT_CERTIFICATE_MASTER_KEY`                                                                    | Servidor      | Cifrado en reposo de certificados por tenant         |
-| `REDSYS_*`, `APP_URL`, `PLATFORM_BILLING_CRON_SECRET`, `PLATFORM_PAYMENT_REFERENCE_ENCRYPTION_KEY` | Servidor      | Cobros SaaS, invitaciones y callbacks firmados       |
+| `REDSYS_ENVIRONMENT`, `REDSYS_MERCHANT_CODE`, `REDSYS_TERMINAL=999`, `REDSYS_CURRENCY=978`, `REDSYS_SECRET_KEY`, `APP_URL`, `PLATFORM_BILLING_CRON_SECRET`, `PLATFORM_PAYMENT_REFERENCE_ENCRYPTION_KEY` | Servidor | Cobros SaaS, tokenización, invitaciones y callbacks firmados |
 | `NOTIFICATION_CRON_SECRET`, `NOTIFICATION_WORKER_TOKEN`                                            | Servidor      | Worker autenticado de notificaciones                 |
 | `RESEND_API_KEY`, `RESEND_FROM_EMAIL`                                                              | Edge Function | Confirmaciones por correo con remitente verificado   |
 | `SUPABASE_TEST_URL`, `SUPABASE_TEST_PUBLISHABLE_KEY`, `SUPABASE_TEST_SECRET_KEY`                   | CI            | Solo con proyecto de pruebas dedicado; hoy no aplica |

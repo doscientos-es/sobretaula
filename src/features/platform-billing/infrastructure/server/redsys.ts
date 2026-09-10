@@ -13,6 +13,18 @@ export interface RedsysNotification {
   responseCode: string
 }
 
+export interface RedsysPaymentForm {
+  url: string
+  signatureVersion: 'HMAC_SHA256_V1'
+  merchantParameters: string
+  signature: string
+}
+
+export interface RedsysRestResponse {
+  Ds_Response?: string | number
+  [key: string]: unknown
+}
+
 function base64Url(value: Buffer | string): string {
   return (Buffer.isBuffer(value) ? value : Buffer.from(value))
     .toString('base64')
@@ -53,6 +65,99 @@ export function readRedsysConfig(): RedsysConfig {
     secretKey: readRequired('REDSYS_SECRET_KEY'),
     terminal: readRequired('REDSYS_TERMINAL'),
   }
+}
+
+function encodeParameters(parameters: Record<string, string>): string {
+  return base64Url(JSON.stringify(parameters))
+}
+
+/** Builds the hosted Redsys form used for the first subscription authorization. */
+export function createRedsysPaymentForm({
+  amountCents,
+  merchantOrder,
+  merchantUrl,
+  successUrl,
+  cancelUrl,
+  config = readRedsysConfig(),
+}: {
+  amountCents: number
+  merchantOrder: string
+  merchantUrl: string
+  successUrl: string
+  cancelUrl: string
+  config?: RedsysConfig
+}): RedsysPaymentForm {
+  if (!Number.isInteger(amountCents) || amountCents <= 0) throw new Error('invalid_redsys_amount')
+  if (!/^[A-Za-z0-9]{4,12}$/.test(merchantOrder)) throw new Error('invalid_redsys_order')
+  const merchantParameters = encodeParameters({
+    Ds_Merchant_Amount: String(amountCents),
+    Ds_Merchant_Currency: config.currency,
+    Ds_Merchant_MerchantCode: config.merchantCode,
+    Ds_Merchant_MerchantURL: merchantUrl,
+    Ds_Merchant_Order: merchantOrder,
+    Ds_Merchant_Terminal: config.terminal,
+    Ds_Merchant_UrlOK: successUrl,
+    Ds_Merchant_UrlKO: cancelUrl,
+    Ds_Merchant_TransactionType: '0',
+    Ds_Merchant_Identifier: 'REQUIRED',
+    Ds_Merchant_COF_INI: 'S',
+    Ds_Merchant_COF_TYPE: 'R',
+  })
+  const signature = base64Url(
+    createHmac('sha256', deriveOrderKey(merchantOrder, config.secretKey))
+      .update(merchantParameters)
+      .digest(),
+  )
+  return {
+    url:
+      config.environment === 'prod'
+        ? 'https://sis.redsys.es/sis/realizarPago'
+        : 'https://sis-t.redsys.es:25443/sis/realizarPago',
+    signatureVersion: 'HMAC_SHA256_V1',
+    merchantParameters,
+    signature,
+  }
+}
+
+/** Executes a subsequent MIT/COF charge using a Redsys-managed reference. */
+export async function chargeRedsysReference({
+  amountCents,
+  merchantOrder,
+  identifier,
+  config = readRedsysConfig(),
+}: {
+  amountCents: number
+  merchantOrder: string
+  identifier: string
+  config?: RedsysConfig
+}): Promise<RedsysRestResponse> {
+  if (!Number.isInteger(amountCents) || amountCents <= 0) throw new Error('invalid_redsys_amount')
+  const parameters = encodeParameters({
+    DS_MERCHANT_ORDER: merchantOrder,
+    DS_MERCHANT_MERCHANTCODE: config.merchantCode,
+    DS_MERCHANT_TERMINAL: config.terminal,
+    DS_MERCHANT_CURRENCY: config.currency,
+    DS_MERCHANT_TRANSACTIONTYPE: '0',
+    DS_MERCHANT_AMOUNT: String(amountCents),
+    DS_MERCHANT_IDENTIFIER: identifier,
+    DS_MERCHANT_COF_TYPE: 'R',
+  })
+  const signature = base64Url(
+    createHmac('sha512', deriveOrderKey(merchantOrder, config.secretKey)).update(parameters).digest(),
+  )
+  const endpoint = config.environment === 'prod'
+    ? 'https://sis.redsys.es/sis/rest/trataPeticionREST'
+    : 'https://sis-t.redsys.es:25443/sis/rest/trataPeticionREST'
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ Ds_SignatureVersion: 'HMAC_SHA512_V1', Ds_MerchantParameters: parameters, Ds_Signature: signature }),
+    signal: AbortSignal.timeout(50_000),
+  })
+  if (!response.ok) throw new Error(`redsys_rest_http_${response.status}`)
+  const body = (await response.json()) as { Ds_MerchantParameters?: string }
+  if (!body.Ds_MerchantParameters) throw new Error('redsys_rest_response_missing_parameters')
+  return JSON.parse(Buffer.from(body.Ds_MerchantParameters, 'base64').toString('utf8')) as RedsysRestResponse
 }
 
 /** Validates HMAC_SHA256_V1 without exposing the shared terminal secret. */

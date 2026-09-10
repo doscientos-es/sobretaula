@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   isRedsysSuccess,
+  createRedsysPaymentForm,
   parseRedsysNotification,
   redsysPayloadSha256,
   verifyRedsysSignature,
@@ -31,6 +32,30 @@ function signatureFor(order: string, merchantParameters: string): string {
 }
 
 describe('Redsys notification helpers', () => {
+  it('builds a hosted form with a verifiable signature', () => {
+    const form = createRedsysPaymentForm({
+      amountCents: 14900,
+      merchantOrder: 'BILL202601',
+      merchantUrl: 'https://example.test/api/webhooks/redsys',
+      successUrl: 'https://example.test/ok',
+      cancelUrl: 'https://example.test/ko',
+      config: {
+        currency: '978',
+        environment: 'test',
+        merchantCode: 'merchant',
+        secretKey,
+        terminal: '1',
+      },
+    })
+    expect(form.url).toContain('sis-t.redsys.es')
+    expect(
+      verifyRedsysSignature({
+        merchantParameters: form.merchantParameters,
+        secretKey,
+        signature: form.signature,
+      }),
+    ).toBe(true)
+  })
   it('accepts an authentic HMAC_SHA256_V1 notification', () => {
     expect(
       verifyRedsysSignature({
