@@ -206,7 +206,11 @@ export const updatePlatformTenantStatus = createServerFn({ method: 'POST' })
     if (error) throw new Response('Forbidden', { status: 403 })
   })
 
-/** Permanently deletes a suspended tenant and every dependent record it owns. */
+/**
+ * Archives a suspended tenant so it never reaches the platform console again.
+ * The row and every dependent record (invoices included) are preserved for
+ * legal retention (Veri*factu / SaaS billing); only a `deleted_at` flag is set.
+ */
 export const deletePlatformTenant = createServerFn({ method: 'POST' })
   .middleware([authMiddleware])
   .validator(tenantDeletionInput)

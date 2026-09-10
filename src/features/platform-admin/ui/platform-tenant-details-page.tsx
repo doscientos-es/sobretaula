@@ -14,7 +14,7 @@ import {
   PageHeaderTitle,
   useFormFeedback,
 } from '@doscientos/ui'
-import { Link, useNavigate } from '@tanstack/react-router'
+import { Link, useNavigate, useRouter } from '@tanstack/react-router'
 import { useState, type FormEvent } from 'react'
 
 import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
@@ -78,6 +78,7 @@ export function PlatformTenantDetailsPage({
   const [deletionConfirmation, setDeletionConfirmation] = useState('')
   const reload = useLoaderReload()
   const navigate = useNavigate()
+  const router = useRouter()
   const statusAction = tenantStatusAction(tenant.tenantStatus)
   const timezoneLabel =
     tenantTimezones.find((timezone) => timezone.value === tenant.tenantTimezone)?.label ??
@@ -117,7 +118,8 @@ export function PlatformTenantDetailsPage({
   function saveStatus(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (statusFeedback.pending) return
-    const values = new FormData(event.currentTarget)
+    const form = event.currentTarget
+    const values = new FormData(form)
     if (
       !window.confirm(
         `Vas a ${statusAction.status === 'suspended' ? 'suspender' : 'reactivar'} ${tenant.tenantName}. ${statusAction.description}`,
@@ -135,7 +137,7 @@ export function PlatformTenantDetailsPage({
     })
       .then(() => {
         statusFeedback.setSuccess('Estado actualizado y registrado en la auditoría.')
-        event.currentTarget.reset()
+        form.reset()
         reload()
       })
       .catch(() => statusFeedback.setError('No se ha podido actualizar el estado del tenant.'))
@@ -160,17 +162,19 @@ export function PlatformTenantDetailsPage({
         tenantId: tenant.tenantId,
       },
     })
-      .then(() => {
-        void navigate({ to: '/admin/tenants' })
+      .then(async () => {
+        // Invalida las rutas cacheadas (p. ej. por precarga al pasar el ratón
+        // sobre "Volver a tenants") para que la lista no siga mostrando un
+        // tenant ya archivado.
+        await router.invalidate()
+        await navigate({ to: '/admin/tenants' })
       })
       .catch((error: unknown) => {
         const message = error instanceof Error ? error.message : ''
         if (message === 'tenant_not_suspended') {
           deletionFeedback.setError('El tenant debe estar suspendido para poder borrarlo.')
-        } else if (message === 'tenant_has_retained_records') {
-          deletionFeedback.setError(
-            'No se puede borrar: existen facturas que deben conservarse por obligación legal.',
-          )
+        } else if (message === 'tenant_already_deleted') {
+          deletionFeedback.setError('Este tenant ya ha sido archivado.')
         } else {
           deletionFeedback.setError('No se ha podido borrar el tenant.')
         }
