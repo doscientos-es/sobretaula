@@ -164,6 +164,25 @@ export function TenantHomePage({
           </CardContent>
         </Card>
       ) : null}
+      {venues.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-wrap items-center justify-between gap-4 pt-6">
+            <div>
+              <p className="font-medium">Aún no tienes ningún local</p>
+              <p className="text-muted-foreground text-sm">
+                Crea el primero para configurar la sala, reservas y cobros.
+              </p>
+            </div>
+            <Link
+              className="bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm font-medium"
+              params={{ slug: tenant.slug }}
+              to="/t/$slug/l/nuevo"
+            >
+              Crear primer local
+            </Link>
+          </CardContent>
+        </Card>
+      ) : null}
       <p className="text-muted-foreground text-xs">
         {t('app.tagline')} · {tenant.timezone} · Estado: {tenant.status}
       </p>

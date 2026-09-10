@@ -58,6 +58,7 @@ export function FloorPlanPage({
   const [versionName, setVersionName] = useState('Nueva versión')
   const [versionActivation, setVersionActivation] = useState('')
   const [draggingTableId, setDraggingTableId] = useState<string>()
+  const [selectedId, setSelectedId] = useState<string>()
   const activeVersion = data.versions[0]
   const activeArea = activeVersion
     ? data.areas.find((area) => area.id === activeVersion.areaId)
@@ -178,6 +179,32 @@ export function FloorPlanPage({
     )
   }
 
+  function duplicateSelected() {
+    if (!selectedId || !activeVersion) return
+    const table = placements.find((item) => item.id === selectedId)
+    if (table) {
+      const copy = { ...table, id: crypto.randomUUID(), code: `${table.code}-copia`, xCm: table.xCm + 25, yCm: table.yCm + 25 }
+      setHistory((current) => commitEditorHistory(current, { ...current.present, placements: [...placements, copy] }))
+      setSelectedId(copy.id)
+      return
+    }
+    const element = elements.find((item) => item.id === selectedId)
+    if (element) {
+      const copy = { ...element, id: crypto.randomUUID(), xCm: element.xCm + 25, yCm: element.yCm + 25 }
+      setHistory((current) => commitEditorHistory(current, { ...current.present, elements: [...elements, copy] }))
+      setSelectedId(copy.id)
+    }
+  }
+
+  function removeSelected() {
+    if (!selectedId) return
+    setHistory((current) => commitEditorHistory(current, {
+      elements: elements.filter((item) => item.id !== selectedId),
+      placements: placements.filter((item) => item.id !== selectedId),
+    }))
+    setSelectedId(undefined)
+  }
+
   async function saveVersion() {
     if (!activeVersion) return
     const activationDate = new Date(versionActivation)
@@ -293,7 +320,13 @@ export function FloorPlanPage({
                   width={activeVersion.widthCm}
                 />
                 {elements.map((element) => (
-                  <g key={element.id} aria-hidden="true">
+                  <g
+                    key={element.id}
+                    aria-label={element.label ?? `Elemento ${element.kind}`}
+                    className="cursor-pointer"
+                    onClick={() => setSelectedId(element.id)}
+                    role="button"
+                  >
                     <rect
                       fill={
                         element.kind === 'wall' ? 'var(--foreground)' : 'var(--muted-foreground)'
@@ -301,6 +334,8 @@ export function FloorPlanPage({
                       height={element.heightCm}
                       opacity="0.65"
                       rx="8"
+                      stroke={selectedId === element.id ? 'var(--ring)' : 'transparent'}
+                      strokeWidth={selectedId === element.id ? 8 : 0}
                       width={element.widthCm}
                       x={element.xCm}
                       y={element.yCm}
@@ -313,13 +348,21 @@ export function FloorPlanPage({
                   </g>
                 ))}
                 {placements.map((placement) => (
-                  <g key={placement.id} aria-label={`Mesa ${placement.code}`}>
+                  <g
+                    key={placement.id}
+                    aria-label={`Mesa ${placement.code}`}
+                    className="cursor-pointer"
+                    onClick={() => setSelectedId(placement.id)}
+                    role="button"
+                  >
                     <rect
                       fill="var(--primary)"
                       height={placement.heightCm}
                       onPointerDown={() => setDraggingTableId(placement.id)}
                       opacity="0.85"
                       rx="12"
+                      stroke={selectedId === placement.id ? 'var(--ring)' : 'transparent'}
+                      strokeWidth={selectedId === placement.id ? 8 : 0}
                       transform={`rotate(${placement.rotationDeg} ${placement.xCm} ${placement.yCm})`}
                       width={placement.widthCm}
                       x={placement.xCm}
@@ -354,6 +397,7 @@ export function FloorPlanPage({
                       <Button
                         aria-label={`Mesa ${placement.code}. X ${placement.xCm}, Y ${placement.yCm}. Usa las flechas para moverla.`}
                         onKeyDown={(event) => moveWithKeyboard(event, placement.id)}
+                        onFocus={() => setSelectedId(placement.id)}
                         type="button"
                       >
                         {`Mesa ${placement.code} · ${placement.xCm}, ${placement.yCm}`}
@@ -361,6 +405,18 @@ export function FloorPlanPage({
                     </li>
                   ))}
                 </ul>
+              )}
+              {selectedId && (
+                <p className="bg-muted mt-3 rounded-lg px-3 py-2 text-xs" role="status">
+                  Seleccionado: {placements.find((item) => item.id === selectedId)?.code ?? 'elemento'} ·
+                  usa las flechas para ajustar mesas.
+                </p>
+              )}
+              {selectedId && (
+                <div className="mt-3 flex gap-2">
+                  <Button onClick={duplicateSelected} type="button">Duplicar</Button>
+                  <Button onClick={removeSelected} type="button">Eliminar</Button>
+                </div>
               )}
               <div className="mt-6 space-y-2">
                 <p className="text-muted-foreground text-sm">Elementos estructurales</p>
