@@ -81,11 +81,30 @@ describe('validateFiscalSettings', () => {
     postalCode: '46001',
   }
 
+  it('defaults new settings to test mode', () => {
+    expect(validateFiscalSettings(base).environment).toBe('test')
+  })
+
+  it('preserves a persisted environment while normalizing the editable fields', () => {
+    expect(validateFiscalSettings({ ...base, environment: 'prod' }).environment).toBe('prod')
+  })
+})
+
+describe('validateFiscalSettings fields', () => {
+  const base = {
+    addressLine: 'C/ Mayor 1',
+    city: 'Valencia',
+    countryCode: 'es',
+    issuerNif: ' b12345678 ',
+    legalName: 'La Terrassa SL',
+    postalCode: '46001',
+  }
+
   it('normalizes the fields it accepts', () => {
     const settings = validateFiscalSettings(base)
     expect(settings.issuerNif).toBe('B12345678')
     expect(settings.countryCode).toBe('ES')
-    expect(settings.environment).toBe('prod')
+    expect(settings.environment).toBe('test')
   })
 
   it('rejects wrong NIF, postal code or empty name', () => {

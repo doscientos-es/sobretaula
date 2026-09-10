@@ -1,7 +1,7 @@
 import { isValidNifFormat, normalizeNif, type VerifactuEnv } from './invoice'
 
-/** Restaurant fiscal settings are always configured for the production environment. */
-export const DEFAULT_VERIFACTU_ENV: VerifactuEnv = 'prod'
+/** New restaurant fiscal settings start in test mode until production is enabled explicitly. */
+export const DEFAULT_VERIFACTU_ENV: VerifactuEnv = 'test'
 
 /** Fiscal identity of the restaurant as emitter (one row per tenant). */
 export interface FiscalSettings {
@@ -40,6 +40,8 @@ export interface FiscalSettingsInput {
   issuerNif: string
   legalName: string
   postalCode: string
+  /** Present when validating settings loaded from the database. */
+  environment?: VerifactuEnv
 }
 
 /**
@@ -67,7 +69,7 @@ export function validateFiscalSettings(input: FiscalSettingsInput): FiscalSettin
     addressLine,
     city,
     countryCode,
-    environment: DEFAULT_VERIFACTU_ENV,
+    environment: input.environment ?? DEFAULT_VERIFACTU_ENV,
     issuerNif,
     legalName,
     postalCode,
