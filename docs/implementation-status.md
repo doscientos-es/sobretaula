@@ -27,12 +27,12 @@ reproducible (comando ejecutado y su resultado).
 | F1a · Gobierno global  | Dashboard, tenants, auditoría, operadores y controles de acceso             | Implementado; falta evidencia RLS dedicada                                                                                                                                                                                                                                   |
 | F1b · Billing SaaS     | Precios, Founders, cobro Redsys, gracia, facturas SaaS y suspensión segura  | Parcial                                                                                                                                                                                                                                                                      |
 | F2 · Diseñador de sala | Editor SVG, snap, historial, elementos, rotación real y layouts versionados | Implementado; entrega bloqueada                                                                                                                                                                                                                                              |
-| F3 · Motor de reservas | Turnos, pacing, disponibilidad, best-fit, EXCLUDE                           | Implementado; falta aplicar migraciones públicas y humo dedicado                                                                                                                                                                                                             |
+| F3 · Motor de reservas | Turnos, pacing, disponibilidad, best-fit, EXCLUDE                           | Implementado; las RPC públicas están activas; falta humo dedicado                                                                                                                                                                                                            |
 | F4 · Vista de servicio | Plano en vivo, sentar/mover/unir, walk-ins, espera, no-show                 | Implementado; entrega bloqueada                                                                                                                                                                                                                                              |
 | F5 · Cuenta de mesa    | Catálogo, líneas, dividir, cerrar, cobrar                                   | Implementado; las comandas son reintentables y las anulaciones quedan auditadas; entrega bloqueada                                                                                                                                                                           |
 | F6 · Facturación       | Ajustes fiscales, series, ledger/outbox, PDF, modo test                     | Implementado; entrega bloqueada                                                                                                                                                                                                                                              |
 | F7 · TPV ampliado      | Catálogo, comandas, cocina/barra, cobros, caja y arqueo                     | Parcial; el TPV integra cuenta, comandas, cocina/barra, cobro manual, caja e informe diario con permisos; faltan hardware e informe financiero completo                                                                                                                      |
-| F8 · Reservas públicas | Reserva sin cuenta, gestión, avisos, espera y ficha de cliente              | Parcial; motor interno existe, falta cierre del flujo público                                                                                                                                                                                                                |
+| F8 · Reservas públicas | Reserva sin cuenta, gestión, avisos, espera y ficha de cliente              | Parcial; reserva, disponibilidad, gestión por token y confirmación por email activas; faltan recordatorios, espera futura y privacidad avanzada                                                                                                                              |
 | F9 · Control horario   | PIN, pausas, jornadas, auditoría y exportación                              | Parcial; eventos, transiciones, cálculo, pantalla inicial, exportación CSV, PIN almacenado como hash y endpoint de terminal para verificar PIN y registrar el evento del empleado implementados; faltan UX de terminal compartido, limitación de intentos y reglas laborales |
 | F10 · Producto         | Inventario, escandallos, alérgenos, precios por canal y carta               | Parcial; ingredientes, recetas, escandallo, inventario, UI, canales y carta pública enriquecida implementados; faltan versionado y validación visual final                                                                                                                   |
 | F11 · Entrega          | Documentación operativa, smoke, despliegue autorizado                       | Parcial                                                                                                                                                                                                                                                                      |
@@ -105,10 +105,9 @@ red (la operación es idempotente por diseño). Añadir nuevas entradas offline
 también queda cubierto con una operación idempotente y la migración propia de
 `waitlist.operation_id`; al reconectar se recrea el invitado si hace falta.
 
-Las migraciones de reservas públicas (`20260910000024`, `20260910000025` y
-`20260910000026`) están preparadas y revisadas localmente, pero deben aplicarse
-de forma explícita en el proyecto Supabase conectado antes de validar el flujo
-completo con datos reales.
+Las migraciones de reservas públicas están activas en el proyecto existente. El
+flujo usa RPC anónimas mínimas, no políticas RLS generales sobre reservas o
+clientes, y no se han ejecutado fixtures, cargas ni humo sobre datos reales.
 
 La política de terraza ya está aislada en dominio (`weather-policy.ts`): permite
 decidir de forma determinista si mantener el exterior, trasladar al interior o
@@ -218,8 +217,11 @@ aplicaron las piezas pendientes de compatibilidad de membresía, estados de
 línea, caja, ingredientes/recetas, inventario, precios por canal, carta pública,
 fichaje/PIN, devoluciones, descuentos, resumen de caja, alérgenos y versiones de
 receta. La función de carta pública se desplegó después de la tabla de precios
-por canal, su dependencia real. No se usaron fixtures ni se ejecutaron pruebas
-de carga, concurrencia o humo contra datos de producción.
+por canal, su dependencia real. Posteriormente se desplegaron las migraciones
+de cuenta idempotente y auditoría inmutable de anulaciones (`80` y `81`), y la
+de reserva pública con comentario, constancia de privacidad y correo exclusivo
+(`82`). No se usaron fixtures ni se ejecutaron pruebas de carga, concurrencia o
+humo contra datos de producción.
 
 ### Primer módulo TPV unificado (D1)
 
@@ -265,6 +267,23 @@ caja, informes y servicio; no hay una segunda fuente de verdad. Se han validado
 el ensamblaje con TypeScript y 21 pruebas unitarias de cuenta, TPV, caja e
 informes. La integración física de datáfonos y el informe financiero/contable
 completo siguen fuera del alcance actual.
+
+### Refuerzo de reserva pública por email (en validación)
+
+La reserva web exige ahora email y aceptación de la política de privacidad; el
+teléfono queda opcional y se puede incluir un comentario de hasta 1.000
+caracteres para el restaurante. La nueva RPC
+`create_public_reservation_with_details` conserva las RPC públicas anteriores,
+registra la aceptación en la reserva y aplica el comentario dentro de la misma
+transacción. El trigger de confirmación encola solo correo para las nuevas
+reservas, conforme a la decisión de no activar SMS ni WhatsApp.
+
+La migración `20260910000082_public_reservation_consent_and_notes.sql` está
+aplicada en el único proyecto autorizado. Se comprobó por metadatos antes del
+cambio que no existían esos campos y que permanecen disponibles las firmas
+anteriores, pero la validación local de TypeScript, pruebas y permisos de la
+nueva función fue interrumpida antes de completarse; por ello esta entrega aún
+no se marca como cerrada.
 
 ### Últimos avances del editor de sala
 

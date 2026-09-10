@@ -151,7 +151,9 @@ sesiones sin reserva. Estas reglas están cubiertas por
    `finish_reservation_notification_job`, con backoff exponencial y máximo de
    cinco intentos. La Edge Function `process-notification-jobs` ejecuta ese
    ciclo: las confirmaciones por correo se envían mediante Resend y adoptan la
-   identidad configurada para cada restaurante.**
+   identidad configurada para cada restaurante. Desde
+   `20260910000082`, las altas web exigen email y las nuevas confirmaciones se
+   encolan exclusivamente por ese canal; SMS y WhatsApp no se activan.**
    GitHub Actions ejecuta `/api/cron/notifications` cada cinco minutos; el
    endpoint exige `NOTIFICATION_CRON_SECRET` y reenvía con el token de worker.
    El repositorio debe definir los secretos `APP_URL` y
@@ -194,9 +196,10 @@ devuelve errores de negocio estables (`closed`, `no_capacity`, `conflict`,
 1. Crear ruta pública fuera de `/t`, por ejemplo
    `/reservar/$tenantSlug/$venueSlug`. Debe resolver una vista pública mínima de
    tenant, local y configuración publicada; nunca reutilizar loaders internos.
-2. Solicitar solo nombre, tamaño, fecha/hora, área opcional, contacto y
-   consentimiento. Aplicar esquema Zod, límite de tamaño, rate limit y defensa
-   antiabuso aprobada.
+2. Solicitar solo nombre, tamaño, fecha/hora, área opcional, email, teléfono
+   opcional, comentario y aceptación de privacidad. El esquema Zod limita el
+   comentario a 1.000 caracteres y la aceptación queda registrada por reserva
+   desde `20260910000082`; siguen pendientes rate limit y defensa antiabuso.
 3. Crear con el mismo motor transaccional, `source=web`, evento, token de gestión
    y trabajo de confirmación. La respuesta no revela agenda, mesas ni PII.
 4. El enlace permite leer solo esa reserva y confirmar, cancelar o proponer un

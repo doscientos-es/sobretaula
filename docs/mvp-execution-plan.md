@@ -38,9 +38,10 @@ Esta sección prevalece sobre las dependencias históricas de este backlog.
 - Base disponible: tenancy, Auth y roles; plano y servicio; reservas internas y
   públicas parciales; agenda diaria; clientes básicos; cuenta, pagos simples y
   facturación en modo test; outbox de correo y depósitos modelados.
-- Brechas de producto: TPV operativo, modificadores, cocina/barra, división y
-  devolución de cobros, caja, PIN de terminal, informes, control horario,
-  hardware e inventario/escandallos siguen sin vertical completo.
+- Brechas de producto: el TPV unificado ya cubre cuenta, comandas, cola,
+  cobro manual, caja e informe diario; siguen pendientes modificadores,
+  reimpresión/hardware, PIN de terminal, informe financiero completo, control
+  horario compartido e inventario/escandallos de punta a punta.
 - Brechas de fiabilidad: no existe Supabase dedicado de pruebas, por lo que las
   tres pruebas RLS están omitidas; tampoco hay humo E2E ni concurrencia real.
 - Riesgo previo: hay prefijos de migración repetidos (por ejemplo `...00026`,
@@ -111,9 +112,11 @@ reserva ni formularios técnicos.
 
 ### E2 — Reserva pública vendible y clientes (P0)
 
-- [ ] **E2.1 · Flujo público completo.** Calendario real, personas, área,
-      contacto, necesidades/alergias, comentarios, condiciones y consentimientos
-      separados; antiabuso/rate limit y alternativas por hora/zona/día.
+- [ ] **E2.1 · Flujo público completo.** Disponibles calendario, personas,
+      área, contacto por email, comentarios, aceptación de privacidad,
+      alternativas y confirmación automática. Pendientes necesidades/alergias,
+      condiciones/privacidad versionadas y antiabuso/rate limit; el último
+      refuerzo requiere completar validación local y de permisos.
 - [ ] **E2.2 · Autogestión segura.** Token con `no-store`, caducidad/rotación y
       políticas para confirmar, modificar o cancelar; no revelar mesas ni PII.
 - [ ] **E2.3 · Cliente y privacidad.** Ficha con historial, etiquetas, notas,
@@ -171,6 +174,16 @@ pagos mixtos, sin sobrecobro ni pérdida de trazabilidad.
 
 **Salida:** el cierre de caja concilia con los cobros y cada terminal puede
 operar según su rol sin exponer credenciales.
+
+### Entregas TPV completadas (D1–D3)
+
+- [x] **D1 · Entrada única.** `/t/:slug/l/:venue/tpv` centraliza el resumen de
+      sala, selección de cuentas y navegación operativa, sin duplicar el tablero.
+- [x] **D2 · Cuenta y comandas.** Cuenta embebida, notas, anulaciones auditadas
+      e inmutables y altas idempotentes con cola offline de tipo B.
+- [x] **D3 · Cocina, cobro, caja e informes.** Cola de preparación, cobro
+      manual de tarjeta, permisos de ajustes, caja/arqueo e informe diario dentro
+      del TPV. Hardware y conciliación financiera permanecen fuera de esta entrega.
 
 ### E7 — Informes y activación del propietario (P1)
 
