@@ -2,7 +2,13 @@ import { createOfflineOperation, type OfflineOperation } from '@/shared/lib/offl
 import { flushOfflineOperations } from '@/shared/lib/offline-operation-runner'
 import { createLocalStorageOperationStore } from '@/shared/lib/offline-operation-store'
 
-import { seatReservation, seatWalkIn } from './table-service'
+import {
+  closeSession,
+  mergeSessions,
+  moveSession,
+  seatReservation,
+  seatWalkIn,
+} from './table-service'
 import { seatWaitlistEntry } from './waitlist'
 
 export interface SeatReservationOperation {
@@ -31,10 +37,39 @@ export interface SeatWaitlistOperation {
   waitlistEntryId: string
 }
 
+export interface MoveSessionOperation {
+  kind: 'move-session'
+  operationId: string
+  sessionId: string
+  tableIds: string[]
+  tenantId: string
+  venueId: string
+}
+
+export interface MergeSessionsOperation {
+  kind: 'merge-sessions'
+  operationId: string
+  sourceSessionId: string
+  targetSessionId: string
+  tenantId: string
+  venueId: string
+}
+
+export interface CloseSessionOperation {
+  kind: 'close-session'
+  operationId: string
+  sessionId: string
+  tenantId: string
+  venueId: string
+}
+
 type ServiceOfflineOperation =
   | SeatReservationOperation
   | SeatWalkInOperation
   | SeatWaitlistOperation
+  | MoveSessionOperation
+  | MergeSessionsOperation
+  | CloseSessionOperation
 
 function createId(): string {
   return crypto.randomUUID()
@@ -73,6 +108,30 @@ export function createSeatWaitlistOperation(
   })
 }
 
+function createOperation<T extends ServiceOfflineOperation>(
+  kind: T['kind'],
+  input: Omit<T, 'kind' | 'operationId'>,
+) {
+  const operationId = createId()
+  return createOfflineOperation<ServiceOfflineOperation>(`${kind}:${operationId}`, {
+    kind,
+    operationId,
+    ...input,
+  } as T)
+}
+
+export const createMoveSessionOperation = (
+  input: Omit<MoveSessionOperation, 'kind' | 'operationId'>,
+) => createOperation<MoveSessionOperation>('move-session', input)
+
+export const createMergeSessionsOperation = (
+  input: Omit<MergeSessionsOperation, 'kind' | 'operationId'>,
+) => createOperation<MergeSessionsOperation>('merge-sessions', input)
+
+export const createCloseSessionOperation = (
+  input: Omit<CloseSessionOperation, 'kind' | 'operationId'>,
+) => createOperation<CloseSessionOperation>('close-session', input)
+
 export function createServiceOfflineStore(tenantId: string, venueId: string) {
   return createLocalStorageOperationStore<ServiceOfflineOperation>(
     `sobretaula:service-offline:${tenantId}:${venueId}`,
@@ -96,7 +155,13 @@ export async function flushServiceOperations(
         await seatReservation({ data: operation.payload })
       else if (operation.payload.kind === 'seat-walk-in')
         await seatWalkIn({ data: operation.payload })
-      else await seatWaitlistEntry({ data: operation.payload })
+      else if (operation.payload.kind === 'seat-waitlist')
+        await seatWaitlistEntry({ data: operation.payload })
+      else if (operation.payload.kind === 'move-session')
+        await moveSession({ data: operation.payload })
+      else if (operation.payload.kind === 'merge-sessions')
+        await mergeSessions({ data: operation.payload })
+      else await closeSession({ data: operation.payload })
       return true
     } catch {
       return false

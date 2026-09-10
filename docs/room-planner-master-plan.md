@@ -61,8 +61,8 @@ del diseñador y su uso diario.
   operaciones offline, las reintenta al volver la conexión y usa
   `operation_id` único en `table_sessions` para no duplicar sesiones. El
   mismo adaptador cubre ya walk-ins y sentar una espera. Extenderlo a
-  movimientos, uniones y cancelaciones requiere idempotencia específica por
-  operación.
+  movimientos, uniones y cancelaciones ya tienen marca de última operación
+  en servidor y pasan por el mismo encolado de navegador.
 
 ### P3 · Inteligencia y casos avanzados
 

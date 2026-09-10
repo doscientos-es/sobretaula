@@ -99,7 +99,7 @@ export function FloorPlanPage({
   const lockStorageKey = activeVersion
     ? `sobretaula:floor-plan-locks:${activeVersion.id}`
     : undefined
-  const lockHydrated = useRef<string>()
+  const lockHydrated = useRef<string | undefined>(undefined)
   useEffect(() => {
     if (!lockStorageKey || typeof window === 'undefined') return
     try {
@@ -116,7 +116,11 @@ export function FloorPlanPage({
   useEffect(() => {
     if (!lockStorageKey || lockHydrated.current !== lockStorageKey || typeof window === 'undefined')
       return
-    window.localStorage.setItem(lockStorageKey, JSON.stringify(lockedIds))
+    try {
+      window.localStorage.setItem(lockStorageKey, JSON.stringify(lockedIds))
+    } catch {
+      // Private browsing and full storage must not prevent editing the plan.
+    }
   }, [lockStorageKey, lockedIds])
   const savedPlacements = activeVersion
     ? data.placements.filter((placement) => placement.floorPlanVersionId === activeVersion.id)

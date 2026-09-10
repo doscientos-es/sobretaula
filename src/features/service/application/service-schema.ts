@@ -17,12 +17,14 @@ export const seatWalkInInput = serviceVenueInput.extend({
 })
 
 export const moveSessionInput = serviceVenueInput.extend({
+  operationId,
   sessionId: z.string().uuid(),
   tableIds,
 })
 
 export const mergeSessionsInput = serviceVenueInput
   .extend({
+    operationId,
     sourceSessionId: z.string().uuid(),
     targetSessionId: z.string().uuid(),
   })
@@ -32,6 +34,7 @@ export const mergeSessionsInput = serviceVenueInput
   })
 
 export const closeSessionInput = serviceVenueInput.extend({
+  operationId,
   sessionId: z.string().uuid(),
 })
 

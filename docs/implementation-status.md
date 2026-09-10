@@ -42,8 +42,9 @@ ahora modo offline: guardan una operación local, la reintentan al recuperar la
 conexión y envían un `operation_id` único. La restricción parcial
 `table_sessions_operation_id_idx` y las comprobaciones previas hacen que los
 reintentos sean idempotentes y no abran una segunda sesión. Movimientos, uniones,
-cancelaciones y altas/bajas de espera siguen bloqueados sin red hasta añadir su
-propia clave de idempotencia.
+cancelaciones y altas/bajas de espera siguen bloqueados sin red. Mover, unir y
+cerrar aceptan `operation_id`, guardan la última operación aplicada y ya están
+conectados al mismo encolado del navegador.
 
 Las migraciones de reservas públicas (`20260910000024`, `20260910000025` y
 `20260910000026`) están preparadas y revisadas localmente, pero deben aplicarse

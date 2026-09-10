@@ -15,6 +15,9 @@ import { Link, useParams } from '@tanstack/react-router'
 import { useMemo, useState, type FormEvent } from 'react'
 
 import {
+  createCloseSessionOperation,
+  createMergeSessionsOperation,
+  createMoveSessionOperation,
   createSeatWalkInOperation,
   createServiceOfflineStore,
   enqueueServiceOperation,
@@ -193,18 +196,29 @@ export function ServiceActions({
               <Button
                 disabled={feedback.pending || !sessionId || selectedTableIds.length === 0}
                 onClick={() =>
-                  void run(
-                    () =>
-                      moveSession({
-                        data: {
+                  !isOnline
+                    ? (enqueueServiceOperation(
+                        offlineStore,
+                        createMoveSessionOperation({
                           sessionId,
                           tableIds: [...selectedTableIds],
                           tenantId,
                           venueId,
-                        },
-                      }),
-                    'No se puede mover la cuenta a esas mesas.',
-                  )
+                        }),
+                      ),
+                      feedback.setSuccess('Movimiento guardado para cuando vuelva la conexión.'))
+                    : void run(
+                        () =>
+                          moveSession({
+                            data: {
+                              sessionId,
+                              tableIds: [...selectedTableIds],
+                              tenantId,
+                              venueId,
+                            },
+                          }),
+                        'No se puede mover la cuenta a esas mesas.',
+                      )
                 }
                 type="button"
               >
@@ -214,13 +228,16 @@ export function ServiceActions({
                 disabled={feedback.pending || !sessionId}
                 onClick={() =>
                   window.confirm('¿Cerrar esta cuenta y liberar sus mesas?')
-                    ? void run(
-                        () =>
-                          closeSession({
-                            data: { sessionId, tenantId, venueId },
-                          }),
-                        'No se ha podido cerrar. Si queda saldo pendiente, cobra la cuenta primero.',
-                      )
+                    ? !isOnline
+                      ? (enqueueServiceOperation(
+                          offlineStore,
+                          createCloseSessionOperation({ sessionId, tenantId, venueId }),
+                        ),
+                        feedback.setSuccess('Cierre guardado para cuando vuelva la conexión.'))
+                      : void run(
+                          () => closeSession({ data: { sessionId, tenantId, venueId } }),
+                          'No se ha podido cerrar. Si queda saldo pendiente, cobra la cuenta primero.',
+                        )
                     : undefined
                 }
                 type="button"
@@ -249,18 +266,29 @@ export function ServiceActions({
                 <Button
                   disabled={feedback.pending || !sessionId || mergeSourceId === sessionId}
                   onClick={() =>
-                    void run(
-                      () =>
-                        mergeSessions({
-                          data: {
+                    !isOnline
+                      ? (enqueueServiceOperation(
+                          offlineStore,
+                          createMergeSessionsOperation({
                             sourceSessionId: mergeSourceId,
                             targetSessionId: sessionId,
                             tenantId,
                             venueId,
-                          },
-                        }),
-                      'No se han podido unir las cuentas.',
-                    )
+                          }),
+                        ),
+                        feedback.setSuccess('Unión guardada para cuando vuelva la conexión.'))
+                      : void run(
+                          () =>
+                            mergeSessions({
+                              data: {
+                                sourceSessionId: mergeSourceId,
+                                targetSessionId: sessionId,
+                                tenantId,
+                                venueId,
+                              },
+                            }),
+                          'No se han podido unir las cuentas.',
+                        )
                   }
                   type="button"
                 >

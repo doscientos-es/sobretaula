@@ -217,6 +217,16 @@ export const moveSession = createServerFn({ method: 'POST' })
       tenantId: data.tenantId,
       venueId: data.venueId,
     })
+    if (data.operationId) {
+      const { data: applied } = await supabase
+        .from('table_sessions')
+        .select('id, table_ids')
+        .eq('id', session.id)
+        .eq('last_operation_id', data.operationId)
+        .maybeSingle()
+      if (applied)
+        return { sessionId: applied.id as string, tableIds: applied.table_ids as string[] }
+    }
     const board = await loadServiceBoard(supabase, {
       now: new Date(),
       tenantId: data.tenantId,
@@ -229,7 +239,7 @@ export const moveSession = createServerFn({ method: 'POST' })
 
     const { error } = await supabase
       .from('table_sessions')
-      .update({ table_ids: data.tableIds })
+      .update({ last_operation_id: data.operationId ?? null, table_ids: data.tableIds })
       .eq('id', session.id)
     if (error) throw new Error(`table_session_move_failed:${error.code}`)
 
@@ -255,6 +265,15 @@ export const mergeSessions = createServerFn({ method: 'POST' })
         venueId: data.venueId,
       }),
     ])
+    if (data.operationId) {
+      const { data: applied } = await supabase
+        .from('table_sessions')
+        .select('id')
+        .eq('id', target.id)
+        .eq('last_operation_id', data.operationId)
+        .maybeSingle()
+      if (applied) return { sessionId: applied.id as string }
+    }
     const { count, error: invoiceError } = await supabase
       .from('invoices')
       .select('id', { count: 'exact', head: true })
@@ -267,6 +286,7 @@ export const mergeSessions = createServerFn({ method: 'POST' })
       .from('table_sessions')
       .update({
         covers: source.covers + target.covers,
+        last_operation_id: data.operationId ?? null,
         table_ids: mergeTableIds(target.tableIds, source.tableIds),
       })
       .eq('id', target.id)
@@ -314,6 +334,15 @@ export const closeSession = createServerFn({ method: 'POST' })
       tenantId: data.tenantId,
       venueId: data.venueId,
     })
+    if (data.operationId) {
+      const { data: applied } = await supabase
+        .from('table_sessions')
+        .select('id')
+        .eq('id', session.id)
+        .eq('last_operation_id', data.operationId)
+        .maybeSingle()
+      if (applied) return { sessionId: applied.id as string }
+    }
 
     // Nadie cierra una cuenta con saldo pendiente: primero se cobra en la cuenta.
     const { data: orders, error: ordersError } = await supabase
@@ -352,7 +381,11 @@ export const closeSession = createServerFn({ method: 'POST' })
 
     const { error } = await supabase
       .from('table_sessions')
-      .update({ closed_at: new Date().toISOString(), status: 'closed' })
+      .update({
+        closed_at: new Date().toISOString(),
+        last_operation_id: data.operationId ?? null,
+        status: 'closed',
+      })
       .eq('id', session.id)
     if (error) throw new Error(`table_session_close_failed:${error.code}`)
 
