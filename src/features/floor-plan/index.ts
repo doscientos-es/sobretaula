@@ -28,6 +28,6 @@ export type {
   FloorPlanVersion,
   PlanElementKind,
 } from './domain/floor-plan'
-export { findVersionScheduleConflicts, groupAreasByFloor, selectFloorPlanVersion } from './domain/floor-plan'
+export { describeSpaceType, findVersionScheduleConflicts, groupAreasByFloor, selectActiveFloorPlanVersion, selectFloorPlanVersion } from './domain/floor-plan'
 export type { EditorHistory } from './domain/editor-history'
 export type { PlanBounds, PlanPlacement, Position } from './domain/geometry'

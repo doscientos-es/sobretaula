@@ -13,7 +13,7 @@ reservas solicitadas. No declara ninguna de ellas como terminada.
 | Disponibilidad  | Cierres, best-fit y `EXCLUDE` de mesas                                                                   | Transacción única para crear, editar y cancelar       |
 | Reserva interna | Alta con asignación automática, teléfono, deduplicación, agenda por fecha y reprogramación               | Detalle e historial                                   |
 | Operación       | Sentar lleva a `seated`; cerrar sesión a `completed`; cancelación, no-show y reprogramación desde agenda | Historial y eventos                                   |
-| Clientes        | Nombre, contacto, idioma, notas y alergias                                                               | Etiquetas, notas auditadas, deduplicación e historial |
+| Clientes        | Nombre, contacto, idioma, notas y alergias                                                               | Etiquetas y notas históricas creadas en `20260910000029`; falta ficha UI, búsqueda y fusión |
 | Espera          | Cola presencial en Servicio con nombre, teléfono, deduplicación, espera estimada y asignación manual     | Espera de fecha futura, oferta, aviso y caducidad     |
 | Cobro           | Sesión enlazada a reserva y pagos                                                                        | Condiciones, depósitos, webhook y reembolsos          |
 
@@ -101,28 +101,55 @@ probada contra un proyecto de Supabase dedicado.
 ### R3 · Comensales
 
 1. Crear `guest_tags` y `guest_tag_assignments`, incluidos slugs de etiquetas de
-   sistema no borrables cuando corresponda.
+   sistema no borrables cuando corresponda. **Base creada en `20260910000029`.**
 2. Crear `guest_notes` con categoría, visibilidad, autor y fecha, para no perder
    incidencias al sobrescribir la nota actual. Migrar `notes`/`allergies` de forma
-   explícita o mantener un resumen temporal compatible.
+   explícita o mantener un resumen temporal compatible. **Tabla histórica creada en
+   `20260910000029`; falta exponerla desde la ficha.**
 3. Canonizar teléfono y email y buscar por ambos dentro del tenant antes de crear
    un perfil. Si faltan ambos, avisar de posible duplicado deliberado.
 4. Registrar canal de contacto y consentimiento; aplicar la política aprobada de
    acceso, exportación, retención y anonimización.
 
+La ficha considera **visita** únicamente una fila de `table_sessions` con estado
+`closed` y reserva vinculada. El gasto es la suma de `payments.amount_cents` de
+esas sesiones; no incluye sesiones abiertas, reservas canceladas ni pagos de
+sesiones sin reserva. Estas reglas están cubiertas por
+`src/features/guests/domain/guest-metrics.test.ts`.
+
 ### R5–R7 · Comunicaciones, espera y grupos
 
 1. Crear `reservation_manage_tokens`: hash, alcance (`confirm`, `manage`,
    `waitlist_offer`, `deposit`), relación, caducidad, revocación y uso. El secreto
-   en claro solo aparece en la URL remitida al comensal.
+   en claro solo aparece en la URL remitida al comensal. **Las ofertas de
+   espera usan `waitlist_offer_tokens` y `respond_waitlist_offer` desde
+   `20260910000032`, con expiración y uso único.**
 2. Extender `waitlist` con estado, servicio/franja/área preferida, expiración,
    oferta, motivo de salida y reserva resultante. Migrar la cola presencial como
-   tipo inmediato.
+   tipo inmediato. **Columnas y RPC de oferta/caducidad añadidas en
+   `20260910000031`.**
 3. Crear `reservation_notification_jobs`: tipo, canal, idioma, programación,
    dedupe key, reintentos, resultado saneado y relación con reserva/espera.
+   **Outbox creada en `20260910000030`; las altas con contacto generan una
+   confirmación idempotente pendiente de worker. La reclamación y finalización
+   atómicas están disponibles mediante `claim_reservation_notification_jobs` y
+   `finish_reservation_notification_job`, con backoff exponencial y máximo de
+   cinco intentos. La Edge Function `process-notification-jobs` ejecuta ese
+   ciclo y delega el envío en endpoints configurables por canal.**
+   En despliegues Vercel, `vercel.json` ejecuta `/api/cron/notifications` cada
+   cinco minutos; el endpoint exige `NOTIFICATION_CRON_SECRET` y reenvía con el
+   token de worker. En Supabase Cron puede invocarse directamente la Edge
+   Function con el mismo `NOTIFICATION_WORKER_TOKEN`.
 4. Crear `reservation_group_terms` y `reservation_deposits`: condiciones
    congeladas, importe en céntimos, moneda, vencimiento, estado, proveedor,
-   referencia e idempotencia. No almacenar medios de pago.
+   referencia e idempotencia. No almacenar medios de pago. **Modelo base creado
+   en `20260910000033`, pendiente integrar checkout y webhooks del proveedor.**
+   La feature `deposits` ya valida importes enteros en céntimos y crea la
+   intención idempotente; el proveedor de pago se inyectará mediante
+   `DepositProvider` cuando se configure el merchant del restaurante.
+   El endpoint `/api/webhooks/deposits` valida un secreto del proveedor y delega
+   en `process_reservation_deposit_event`, que es idempotente y solo admite
+   estados de pago conocidos.
 
 ## 5. Casos de uso y permisos
 

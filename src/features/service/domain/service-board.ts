@@ -138,3 +138,20 @@ export function findSeatingConflicts(
 export function mergeTableIds(first: readonly string[], second: readonly string[]): string[] {
   return [...new Set([...first, ...second])]
 }
+
+/** Suggests the smallest free-table combination that fits a party. */
+export function suggestTableCombination(states: readonly ServiceTableState[], covers: number): string[] | undefined {
+  if (!Number.isInteger(covers) || covers <= 0) return undefined
+  const available = states.filter((state) => state.status === 'free')
+  let best: ServiceTableState[] | undefined
+  const visit = (start: number, chosen: ServiceTableState[], capacity: number) => {
+    if (capacity >= covers && (!best || capacity - covers < best.reduce((sum, table) => sum + table.maxSeats, 0) - covers || (capacity === best.reduce((sum, table) => sum + table.maxSeats, 0) && chosen.length < best.length))) best = chosen
+    if (chosen.length >= 6 || capacity >= covers) return
+    for (let index = start; index < available.length; index += 1) {
+      const candidate = available[index]
+      if (candidate) visit(index + 1, [...chosen, candidate], capacity + candidate.maxSeats)
+    }
+  }
+  visit(0, [], 0)
+  return best?.map((table) => table.id)
+}

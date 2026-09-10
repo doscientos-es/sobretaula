@@ -29,7 +29,12 @@ import {
   redoEditorHistory,
   undoEditorHistory,
 } from '../domain/editor-history'
-import type { FloorPlanData, FloorPlanElement, PlanElementKind } from '../domain/floor-plan'
+import {
+  findVersionScheduleConflicts,
+  type FloorPlanData,
+  type FloorPlanElement,
+  type PlanElementKind,
+} from '../domain/floor-plan'
 import {
   DEFAULT_GRID_SIZE_CM,
   findPlacementCollisions,
@@ -185,36 +190,66 @@ export function FloorPlanPage({
     if (!selectedId || !activeVersion) return
     const table = placements.find((item) => item.id === selectedId)
     if (table) {
-      const copy = { ...table, id: crypto.randomUUID(), code: `${table.code}-copia`, xCm: table.xCm + 25, yCm: table.yCm + 25 }
-      setHistory((current) => commitEditorHistory(current, { ...current.present, placements: [...placements, copy] }))
+      const copy = {
+        ...table,
+        id: crypto.randomUUID(),
+        code: `${table.code}-copia`,
+        xCm: table.xCm + 25,
+        yCm: table.yCm + 25,
+      }
+      setHistory((current) =>
+        commitEditorHistory(current, { ...current.present, placements: [...placements, copy] }),
+      )
       setSelectedId(copy.id)
       return
     }
     const element = elements.find((item) => item.id === selectedId)
     if (element) {
-      const copy = { ...element, id: crypto.randomUUID(), xCm: element.xCm + 25, yCm: element.yCm + 25 }
-      setHistory((current) => commitEditorHistory(current, { ...current.present, elements: [...elements, copy] }))
+      const copy = {
+        ...element,
+        id: crypto.randomUUID(),
+        xCm: element.xCm + 25,
+        yCm: element.yCm + 25,
+      }
+      setHistory((current) =>
+        commitEditorHistory(current, { ...current.present, elements: [...elements, copy] }),
+      )
       setSelectedId(copy.id)
     }
   }
 
   function removeSelected() {
     if (!selectedId) return
-    setHistory((current) => commitEditorHistory(current, {
-      elements: elements.filter((item) => item.id !== selectedId),
-      placements: placements.filter((item) => item.id !== selectedId),
-    }))
+    setHistory((current) =>
+      commitEditorHistory(current, {
+        elements: elements.filter((item) => item.id !== selectedId),
+        placements: placements.filter((item) => item.id !== selectedId),
+      }),
+    )
     setSelectedId(undefined)
   }
 
-  function updateSelected(values: Partial<FloorPlanElement> & { xCm?: number; yCm?: number; widthCm?: number; heightCm?: number; rotationDeg?: number }) {
+  function updateSelected(
+    values: Partial<FloorPlanElement> & {
+      xCm?: number
+      yCm?: number
+      widthCm?: number
+      heightCm?: number
+      rotationDeg?: number
+    },
+  ) {
     if (!selectedId || !activeVersion) return
     const selectedTable = placements.find((item) => item.id === selectedId)
     const selectedElement = elements.find((item) => item.id === selectedId)
     const selected = selectedTable ?? selectedElement
     if (!selected) return
     const candidate = { ...selected, ...values }
-    if (candidate.widthCm <= 0 || candidate.heightCm <= 0 || candidate.rotationDeg < 0 || candidate.rotationDeg > 359) {
+    if (
+      candidate.widthCm <= 0 ||
+      candidate.heightCm <= 0 ||
+      candidate.rotationDeg < 0 ||
+      candidate.rotationDeg > 359
+    ) {
       feedback.setError('El tamaño debe ser positivo y la rotación estar entre 0° y 359°.')
       return
     }
@@ -222,13 +257,25 @@ export function FloorPlanPage({
       feedback.setError('El elemento debe quedar completamente dentro del plano.')
       return
     }
-    if (selectedTable && findPlacementCollisions(candidate, placements.filter((item) => item.id !== selectedId)).length > 0) {
+    if (
+      selectedTable &&
+      findPlacementCollisions(
+        candidate,
+        placements.filter((item) => item.id !== selectedId),
+      ).length > 0
+    ) {
       feedback.setError('La mesa se solapa con otra mesa.')
       return
     }
-    const nextElements = elements.map((item) => item.id === selectedId ? { ...item, ...values } : item)
-    const nextPlacements = placements.map((item) => item.id === selectedId ? { ...item, ...values } : item)
-    setHistory((current) => commitEditorHistory(current, { elements: nextElements, placements: nextPlacements }))
+    const nextElements = elements.map((item) =>
+      item.id === selectedId ? { ...item, ...values } : item,
+    )
+    const nextPlacements = placements.map((item) =>
+      item.id === selectedId ? { ...item, ...values } : item,
+    )
+    setHistory((current) =>
+      commitEditorHistory(current, { elements: nextElements, placements: nextPlacements }),
+    )
   }
 
   async function saveVersion() {
@@ -243,6 +290,16 @@ export function FloorPlanPage({
       return
     }
     const activeFrom = activationDate.toISOString()
+    const scheduleConflicts = findVersionScheduleConflicts([
+      ...data.versions,
+      { ...activeVersion, id: 'draft-version', activeFrom },
+    ])
+    if (scheduleConflicts.length > 0) {
+      feedback.setError(
+        'La fecha se solapa con otra versión de esta zona. Elige otra fecha de activación.',
+      )
+      return
+    }
     feedback.setPending()
     try {
       await saveFloorPlanVersion({
@@ -338,12 +395,21 @@ export function FloorPlanPage({
             </CardHeader>
             <CardContent>
               {layoutIssues.length > 0 && (
-                <div className="border-destructive/40 bg-destructive/10 text-destructive mb-4 rounded-lg border p-3 text-sm" role="alert">
+                <div
+                  className="border-destructive/40 bg-destructive/10 text-destructive mb-4 rounded-lg border p-3 text-sm"
+                  role="alert"
+                >
                   <p className="font-medium">Hay problemas que impiden publicar este plano</p>
                   <ul className="mt-1 list-inside list-disc">
                     {layoutIssues.map((issue) => (
-                      <li key={`${issue.code}-${issue.placementId}-${issue.relatedPlacementId ?? ''}`}>
-                        {issue.code === 'overlap' ? `Solape entre ${issue.placementId} y ${issue.relatedPlacementId}` : issue.code === 'outside_bounds' ? `${issue.placementId} queda fuera del plano` : `${issue.placementId} tiene un tamaño inválido`}
+                      <li
+                        key={`${issue.code}-${issue.placementId}-${issue.relatedPlacementId ?? ''}`}
+                      >
+                        {issue.code === 'overlap'
+                          ? `Solape entre ${issue.placementId} y ${issue.relatedPlacementId}`
+                          : issue.code === 'outside_bounds'
+                            ? `${issue.placementId} queda fuera del plano`
+                            : `${issue.placementId} tiene un tamaño inválido`}
                       </li>
                     ))}
                   </ul>
@@ -367,7 +433,7 @@ export function FloorPlanPage({
                     aria-label={element.label ?? `Elemento ${element.kind}`}
                     className="cursor-pointer"
                     onClick={() => setSelectedId(element.id)}
-                    role="button"
+                    tabIndex={0}
                   >
                     <rect
                       fill={
@@ -395,7 +461,7 @@ export function FloorPlanPage({
                     aria-label={`Mesa ${placement.code}`}
                     className="cursor-pointer"
                     onClick={() => setSelectedId(placement.id)}
-                    role="button"
+                    tabIndex={0}
                   >
                     <rect
                       fill="var(--primary)"
@@ -449,44 +515,75 @@ export function FloorPlanPage({
                 </ul>
               )}
               {selectedId && (
-                <p className="bg-muted mt-3 rounded-lg px-3 py-2 text-xs" role="status">
-                  Seleccionado: {placements.find((item) => item.id === selectedId)?.code ?? 'elemento'} ·
-                  usa las flechas para ajustar mesas.
-                </p>
+                <output className="bg-muted mt-3 block rounded-lg px-3 py-2 text-xs">
+                  Seleccionado:{' '}
+                  {placements.find((item) => item.id === selectedId)?.code ?? 'elemento'} · usa las
+                  flechas para ajustar mesas.
+                </output>
               )}
               {selectedId && (
                 <div className="mt-3 flex gap-2">
-                  <Button onClick={duplicateSelected} type="button">Duplicar</Button>
-                  <Button onClick={removeSelected} type="button">Eliminar</Button>
+                  <Button onClick={duplicateSelected} type="button">
+                    Duplicar
+                  </Button>
+                  <Button onClick={removeSelected} type="button">
+                    Eliminar
+                  </Button>
                 </div>
               )}
-              {selectedId && (() => {
-                const selected = placements.find((item) => item.id === selectedId) ?? elements.find((item) => item.id === selectedId)
-                if (!selected) return null
-                return (
-                  <div className="border-border mt-4 space-y-3 rounded-lg border p-3">
-                    <p className="text-sm font-medium">Propiedades</p>
-                    <div className="grid grid-cols-2 gap-2">
-                      {(['xCm', 'yCm', 'widthCm', 'heightCm'] as const).map((key) => (
-                        <Field key={key}>
-                          <FieldLabel htmlFor={`selected-${key}`}>{key.replace('Cm', ' (cm)')}</FieldLabel>
-                          <Input id={`selected-${key}`} min={0} onChange={(event) => updateSelected({ [key]: Number(event.target.value) })} type="number" value={selected[key]} />
-                        </Field>
-                      ))}
-                    </div>
-                    <Field>
-                      <FieldLabel htmlFor="selected-rotation">Rotación (°)</FieldLabel>
-                      <Input id="selected-rotation" max={359} min={0} onChange={(event) => updateSelected({ rotationDeg: Number(event.target.value) })} type="number" value={selected.rotationDeg} />
-                    </Field>
-                    {'label' in selected && (
+              {selectedId &&
+                (() => {
+                  const selected =
+                    placements.find((item) => item.id === selectedId) ??
+                    elements.find((item) => item.id === selectedId)
+                  if (!selected) return null
+                  return (
+                    <div className="border-border mt-4 space-y-3 rounded-lg border p-3">
+                      <p className="text-sm font-medium">Propiedades</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {(['xCm', 'yCm', 'widthCm', 'heightCm'] as const).map((key) => (
+                          <Field key={key}>
+                            <FieldLabel htmlFor={`selected-${key}`}>
+                              {key.replace('Cm', ' (cm)')}
+                            </FieldLabel>
+                            <Input
+                              id={`selected-${key}`}
+                              min={0}
+                              onChange={(event) =>
+                                updateSelected({ [key]: Number(event.target.value) })
+                              }
+                              type="number"
+                              value={selected[key]}
+                            />
+                          </Field>
+                        ))}
+                      </div>
                       <Field>
-                        <FieldLabel htmlFor="selected-label">Etiqueta</FieldLabel>
-                        <Input id="selected-label" onChange={(event) => updateSelected({ label: event.target.value })} value={selected.label ?? ''} />
+                        <FieldLabel htmlFor="selected-rotation">Rotación (°)</FieldLabel>
+                        <Input
+                          id="selected-rotation"
+                          max={359}
+                          min={0}
+                          onChange={(event) =>
+                            updateSelected({ rotationDeg: Number(event.target.value) })
+                          }
+                          type="number"
+                          value={selected.rotationDeg}
+                        />
                       </Field>
-                    )}
-                  </div>
-                )
-              })()}
+                      {'label' in selected && (
+                        <Field>
+                          <FieldLabel htmlFor="selected-label">Etiqueta</FieldLabel>
+                          <Input
+                            id="selected-label"
+                            onChange={(event) => updateSelected({ label: event.target.value })}
+                            value={selected.label ?? ''}
+                          />
+                        </Field>
+                      )}
+                    </div>
+                  )
+                })()}
               <div className="mt-6 space-y-2">
                 <p className="text-muted-foreground text-sm">Elementos estructurales</p>
                 <div className="flex flex-wrap gap-2">

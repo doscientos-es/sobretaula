@@ -5,6 +5,7 @@ import {
   findSeatingConflicts,
   mergeTableIds,
   seatingCapacity,
+  suggestTableCombination,
   type ServiceReservation,
   type ServiceSession,
   type ServiceTable,
@@ -100,5 +101,31 @@ describe('service board', () => {
       'table-2',
       'table-3',
     ])
+  })
+
+  it('suggests the tightest free combination and ignores busy tables', () => {
+    const states = buildServiceTableStates({ now, reservations: [], sessions: [], tables })
+    const first = states[0]
+    const second = states[1]
+    const third = states[2]
+    if (!first || !second || !third) throw new Error('test fixture incomplete')
+    const busy = { ...second, status: 'occupied' as const, sessionId: 'busy', covers: 2 }
+    expect(suggestTableCombination([first, busy, third], 10)).toEqual(['table-1', 'table-3'])
+  })
+
+  it('returns no suggestion for invalid or impossible groups', () => {
+    const states = buildServiceTableStates({ now, reservations: [], sessions: [], tables })
+    expect(suggestTableCombination(states, 0)).toBeUndefined()
+    expect(suggestTableCombination(states, 99)).toBeUndefined()
+  })
+
+  it('prefers fewer tables when two combinations have the same capacity', () => {
+    const states = buildServiceTableStates({ now, reservations: [], sessions: [], tables })
+    const [first, second, third] = states
+    if (!first || !second || !third) throw new Error('test fixture incomplete')
+    const compact = { ...first, maxSeats: 6 }
+    const pairA = { ...second, maxSeats: 3 }
+    const pairB = { ...third, maxSeats: 3 }
+    expect(suggestTableCombination([compact, pairA, pairB], 6)).toEqual(['table-1'])
   })
 })

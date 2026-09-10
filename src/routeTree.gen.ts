@@ -23,12 +23,15 @@ import { Route as AdminEquipoRouteImport } from './routes/admin.equipo'
 import { Route as AdminFacturacionRouteImport } from './routes/admin.facturacion'
 import { Route as AdminFacturasRouteImport } from './routes/admin.facturas'
 import { Route as AdminInvitacionRouteImport } from './routes/admin.invitacion'
+import { Route as EsperaTokenRouteImport } from './routes/espera.$token'
 import { Route as ReservaTokenRouteImport } from './routes/reserva.$token'
 import { Route as ReservarSlugRouteImport } from './routes/reservar.$slug'
 import { Route as TSlugRouteImport } from './routes/t.$slug'
 import { Route as AdminTenantsIndexRouteImport } from './routes/admin.tenants.index'
 import { Route as AdminTenantsTenantIdRouteImport } from './routes/admin.tenants.$tenantId'
+import { Route as ApiCronNotificationsRouteImport } from './routes/api.cron.notifications'
 import { Route as ApiPlatformBillingReconcileRouteImport } from './routes/api.platform-billing.reconcile'
+import { Route as ApiWebhooksDepositsRouteImport } from './routes/api.webhooks.deposits'
 import { Route as ApiWebhooksRedsysRouteImport } from './routes/api.webhooks.redsys'
 import { Route as TSlugIndexRouteImport } from './routes/t.$slug.index'
 import { Route as TSlugCartaRouteImport } from './routes/t.$slug.carta'
@@ -40,6 +43,8 @@ import { Route as TSlugLVenueRouteImport } from './routes/t.$slug.l.$venue'
 import { Route as TSlugLNuevoRouteImport } from './routes/t.$slug.l.nuevo'
 import { Route as TSlugSuscripcionFacturasRouteImport } from './routes/t.$slug.suscripcion.facturas'
 import { Route as TSlugLVenueIndexRouteImport } from './routes/t.$slug.l.$venue.index'
+import { Route as TSlugLVenueClientesRouteImport } from './routes/t.$slug.l.$venue.clientes'
+import { Route as TSlugLVenueComunicacionesRouteImport } from './routes/t.$slug.l.$venue.comunicaciones'
 import { Route as TSlugLVenuePlanoRouteImport } from './routes/t.$slug.l.$venue.plano'
 import { Route as TSlugLVenueReservasRouteImport } from './routes/t.$slug.l.$venue.reservas'
 import { Route as TSlugLVenueServicioRouteImport } from './routes/t.$slug.l.$venue.servicio'
@@ -115,6 +120,11 @@ const AdminInvitacionRoute = AdminInvitacionRouteImport.update({
   path: '/invitacion',
   getParentRoute: () => AdminRoute,
 } as any)
+const EsperaTokenRoute = EsperaTokenRouteImport.update({
+  id: '/espera/$token',
+  path: '/espera/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ReservaTokenRoute = ReservaTokenRouteImport.update({
   id: '/reserva/$token',
   path: '/reserva/$token',
@@ -140,12 +150,22 @@ const AdminTenantsTenantIdRoute = AdminTenantsTenantIdRouteImport.update({
   path: '/tenants/$tenantId',
   getParentRoute: () => AdminRoute,
 } as any)
+const ApiCronNotificationsRoute = ApiCronNotificationsRouteImport.update({
+  id: '/api/cron/notifications',
+  path: '/api/cron/notifications',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPlatformBillingReconcileRoute =
   ApiPlatformBillingReconcileRouteImport.update({
     id: '/api/platform-billing/reconcile',
     path: '/api/platform-billing/reconcile',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiWebhooksDepositsRoute = ApiWebhooksDepositsRouteImport.update({
+  id: '/api/webhooks/deposits',
+  path: '/api/webhooks/deposits',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiWebhooksRedsysRoute = ApiWebhooksRedsysRouteImport.update({
   id: '/api/webhooks/redsys',
   path: '/api/webhooks/redsys',
@@ -203,6 +223,17 @@ const TSlugLVenueIndexRoute = TSlugLVenueIndexRouteImport.update({
   path: '/',
   getParentRoute: () => TSlugLVenueRoute,
 } as any)
+const TSlugLVenueClientesRoute = TSlugLVenueClientesRouteImport.update({
+  id: '/clientes',
+  path: '/clientes',
+  getParentRoute: () => TSlugLVenueRoute,
+} as any)
+const TSlugLVenueComunicacionesRoute =
+  TSlugLVenueComunicacionesRouteImport.update({
+    id: '/comunicaciones',
+    path: '/comunicaciones',
+    getParentRoute: () => TSlugLVenueRoute,
+  } as any)
 const TSlugLVenuePlanoRoute = TSlugLVenuePlanoRouteImport.update({
   id: '/plano',
   path: '/plano',
@@ -239,12 +270,15 @@ export interface FileRoutesByFullPath {
   '/admin/facturacion': typeof AdminFacturacionRoute
   '/admin/facturas': typeof AdminFacturasRoute
   '/admin/invitacion': typeof AdminInvitacionRoute
+  '/espera/$token': typeof EsperaTokenRoute
   '/reserva/$token': typeof ReservaTokenRoute
   '/reservar/$slug': typeof ReservarSlugRoute
   '/t/$slug': typeof TSlugRouteWithChildren
   '/admin/': typeof AdminIndexRoute
   '/admin/tenants/$tenantId': typeof AdminTenantsTenantIdRoute
+  '/api/cron/notifications': typeof ApiCronNotificationsRoute
   '/api/platform-billing/reconcile': typeof ApiPlatformBillingReconcileRoute
+  '/api/webhooks/deposits': typeof ApiWebhooksDepositsRoute
   '/api/webhooks/redsys': typeof ApiWebhooksRedsysRoute
   '/t/$slug/carta': typeof TSlugCartaRoute
   '/t/$slug/equipo': typeof TSlugEquipoRoute
@@ -256,6 +290,8 @@ export interface FileRoutesByFullPath {
   '/t/$slug/l/$venue': typeof TSlugLVenueRouteWithChildren
   '/t/$slug/l/nuevo': typeof TSlugLNuevoRoute
   '/t/$slug/suscripcion/facturas': typeof TSlugSuscripcionFacturasRoute
+  '/t/$slug/l/$venue/clientes': typeof TSlugLVenueClientesRoute
+  '/t/$slug/l/$venue/comunicaciones': typeof TSlugLVenueComunicacionesRoute
   '/t/$slug/l/$venue/plano': typeof TSlugLVenuePlanoRoute
   '/t/$slug/l/$venue/reservas': typeof TSlugLVenueReservasRoute
   '/t/$slug/l/$venue/servicio': typeof TSlugLVenueServicioRoute
@@ -275,11 +311,14 @@ export interface FileRoutesByTo {
   '/admin/facturacion': typeof AdminFacturacionRoute
   '/admin/facturas': typeof AdminFacturasRoute
   '/admin/invitacion': typeof AdminInvitacionRoute
+  '/espera/$token': typeof EsperaTokenRoute
   '/reserva/$token': typeof ReservaTokenRoute
   '/reservar/$slug': typeof ReservarSlugRoute
   '/admin': typeof AdminIndexRoute
   '/admin/tenants/$tenantId': typeof AdminTenantsTenantIdRoute
+  '/api/cron/notifications': typeof ApiCronNotificationsRoute
   '/api/platform-billing/reconcile': typeof ApiPlatformBillingReconcileRoute
+  '/api/webhooks/deposits': typeof ApiWebhooksDepositsRoute
   '/api/webhooks/redsys': typeof ApiWebhooksRedsysRoute
   '/t/$slug/carta': typeof TSlugCartaRoute
   '/t/$slug/equipo': typeof TSlugEquipoRoute
@@ -290,6 +329,8 @@ export interface FileRoutesByTo {
   '/api/t/$tenantId/verifactu-certificate': typeof ApiTTenantIdVerifactuCertificateRoute
   '/t/$slug/l/nuevo': typeof TSlugLNuevoRoute
   '/t/$slug/suscripcion/facturas': typeof TSlugSuscripcionFacturasRoute
+  '/t/$slug/l/$venue/clientes': typeof TSlugLVenueClientesRoute
+  '/t/$slug/l/$venue/comunicaciones': typeof TSlugLVenueComunicacionesRoute
   '/t/$slug/l/$venue/plano': typeof TSlugLVenuePlanoRoute
   '/t/$slug/l/$venue/reservas': typeof TSlugLVenueReservasRoute
   '/t/$slug/l/$venue/servicio': typeof TSlugLVenueServicioRoute
@@ -311,12 +352,15 @@ export interface FileRoutesById {
   '/admin/facturacion': typeof AdminFacturacionRoute
   '/admin/facturas': typeof AdminFacturasRoute
   '/admin/invitacion': typeof AdminInvitacionRoute
+  '/espera/$token': typeof EsperaTokenRoute
   '/reserva/$token': typeof ReservaTokenRoute
   '/reservar/$slug': typeof ReservarSlugRoute
   '/t/$slug': typeof TSlugRouteWithChildren
   '/admin/': typeof AdminIndexRoute
   '/admin/tenants/$tenantId': typeof AdminTenantsTenantIdRoute
+  '/api/cron/notifications': typeof ApiCronNotificationsRoute
   '/api/platform-billing/reconcile': typeof ApiPlatformBillingReconcileRoute
+  '/api/webhooks/deposits': typeof ApiWebhooksDepositsRoute
   '/api/webhooks/redsys': typeof ApiWebhooksRedsysRoute
   '/t/$slug/carta': typeof TSlugCartaRoute
   '/t/$slug/equipo': typeof TSlugEquipoRoute
@@ -328,6 +372,8 @@ export interface FileRoutesById {
   '/t/$slug/l/$venue': typeof TSlugLVenueRouteWithChildren
   '/t/$slug/l/nuevo': typeof TSlugLNuevoRoute
   '/t/$slug/suscripcion/facturas': typeof TSlugSuscripcionFacturasRoute
+  '/t/$slug/l/$venue/clientes': typeof TSlugLVenueClientesRoute
+  '/t/$slug/l/$venue/comunicaciones': typeof TSlugLVenueComunicacionesRoute
   '/t/$slug/l/$venue/plano': typeof TSlugLVenuePlanoRoute
   '/t/$slug/l/$venue/reservas': typeof TSlugLVenueReservasRoute
   '/t/$slug/l/$venue/servicio': typeof TSlugLVenueServicioRoute
@@ -350,12 +396,15 @@ export interface FileRouteTypes {
     | '/admin/facturacion'
     | '/admin/facturas'
     | '/admin/invitacion'
+    | '/espera/$token'
     | '/reserva/$token'
     | '/reservar/$slug'
     | '/t/$slug'
     | '/admin/'
     | '/admin/tenants/$tenantId'
+    | '/api/cron/notifications'
     | '/api/platform-billing/reconcile'
+    | '/api/webhooks/deposits'
     | '/api/webhooks/redsys'
     | '/t/$slug/carta'
     | '/t/$slug/equipo'
@@ -367,6 +416,8 @@ export interface FileRouteTypes {
     | '/t/$slug/l/$venue'
     | '/t/$slug/l/nuevo'
     | '/t/$slug/suscripcion/facturas'
+    | '/t/$slug/l/$venue/clientes'
+    | '/t/$slug/l/$venue/comunicaciones'
     | '/t/$slug/l/$venue/plano'
     | '/t/$slug/l/$venue/reservas'
     | '/t/$slug/l/$venue/servicio'
@@ -386,11 +437,14 @@ export interface FileRouteTypes {
     | '/admin/facturacion'
     | '/admin/facturas'
     | '/admin/invitacion'
+    | '/espera/$token'
     | '/reserva/$token'
     | '/reservar/$slug'
     | '/admin'
     | '/admin/tenants/$tenantId'
+    | '/api/cron/notifications'
     | '/api/platform-billing/reconcile'
+    | '/api/webhooks/deposits'
     | '/api/webhooks/redsys'
     | '/t/$slug/carta'
     | '/t/$slug/equipo'
@@ -401,6 +455,8 @@ export interface FileRouteTypes {
     | '/api/t/$tenantId/verifactu-certificate'
     | '/t/$slug/l/nuevo'
     | '/t/$slug/suscripcion/facturas'
+    | '/t/$slug/l/$venue/clientes'
+    | '/t/$slug/l/$venue/comunicaciones'
     | '/t/$slug/l/$venue/plano'
     | '/t/$slug/l/$venue/reservas'
     | '/t/$slug/l/$venue/servicio'
@@ -421,12 +477,15 @@ export interface FileRouteTypes {
     | '/admin/facturacion'
     | '/admin/facturas'
     | '/admin/invitacion'
+    | '/espera/$token'
     | '/reserva/$token'
     | '/reservar/$slug'
     | '/t/$slug'
     | '/admin/'
     | '/admin/tenants/$tenantId'
+    | '/api/cron/notifications'
     | '/api/platform-billing/reconcile'
+    | '/api/webhooks/deposits'
     | '/api/webhooks/redsys'
     | '/t/$slug/carta'
     | '/t/$slug/equipo'
@@ -438,6 +497,8 @@ export interface FileRouteTypes {
     | '/t/$slug/l/$venue'
     | '/t/$slug/l/nuevo'
     | '/t/$slug/suscripcion/facturas'
+    | '/t/$slug/l/$venue/clientes'
+    | '/t/$slug/l/$venue/comunicaciones'
     | '/t/$slug/l/$venue/plano'
     | '/t/$slug/l/$venue/reservas'
     | '/t/$slug/l/$venue/servicio'
@@ -453,10 +514,13 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   OnboardingRoute: typeof OnboardingRoute
   RegistroRoute: typeof RegistroRoute
+  EsperaTokenRoute: typeof EsperaTokenRoute
   ReservaTokenRoute: typeof ReservaTokenRoute
   ReservarSlugRoute: typeof ReservarSlugRoute
   TSlugRoute: typeof TSlugRouteWithChildren
+  ApiCronNotificationsRoute: typeof ApiCronNotificationsRoute
   ApiPlatformBillingReconcileRoute: typeof ApiPlatformBillingReconcileRoute
+  ApiWebhooksDepositsRoute: typeof ApiWebhooksDepositsRoute
   ApiWebhooksRedsysRoute: typeof ApiWebhooksRedsysRoute
   ApiTTenantIdVerifactuCertificateRoute: typeof ApiTTenantIdVerifactuCertificateRoute
 }
@@ -561,6 +625,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminInvitacionRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/espera/$token': {
+      id: '/espera/$token'
+      path: '/espera/$token'
+      fullPath: '/espera/$token'
+      preLoaderRoute: typeof EsperaTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reserva/$token': {
       id: '/reserva/$token'
       path: '/reserva/$token'
@@ -596,11 +667,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminTenantsTenantIdRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/api/cron/notifications': {
+      id: '/api/cron/notifications'
+      path: '/api/cron/notifications'
+      fullPath: '/api/cron/notifications'
+      preLoaderRoute: typeof ApiCronNotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/platform-billing/reconcile': {
       id: '/api/platform-billing/reconcile'
       path: '/api/platform-billing/reconcile'
       fullPath: '/api/platform-billing/reconcile'
       preLoaderRoute: typeof ApiPlatformBillingReconcileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/webhooks/deposits': {
+      id: '/api/webhooks/deposits'
+      path: '/api/webhooks/deposits'
+      fullPath: '/api/webhooks/deposits'
+      preLoaderRoute: typeof ApiWebhooksDepositsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/webhooks/redsys': {
@@ -680,6 +765,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TSlugLVenueIndexRouteImport
       parentRoute: typeof TSlugLVenueRoute
     }
+    '/t/$slug/l/$venue/clientes': {
+      id: '/t/$slug/l/$venue/clientes'
+      path: '/clientes'
+      fullPath: '/t/$slug/l/$venue/clientes'
+      preLoaderRoute: typeof TSlugLVenueClientesRouteImport
+      parentRoute: typeof TSlugLVenueRoute
+    }
+    '/t/$slug/l/$venue/comunicaciones': {
+      id: '/t/$slug/l/$venue/comunicaciones'
+      path: '/comunicaciones'
+      fullPath: '/t/$slug/l/$venue/comunicaciones'
+      preLoaderRoute: typeof TSlugLVenueComunicacionesRouteImport
+      parentRoute: typeof TSlugLVenueRoute
+    }
     '/t/$slug/l/$venue/plano': {
       id: '/t/$slug/l/$venue/plano'
       path: '/plano'
@@ -738,6 +837,8 @@ const AdminRouteChildren: AdminRouteChildren = {
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface TSlugLVenueRouteChildren {
+  TSlugLVenueClientesRoute: typeof TSlugLVenueClientesRoute
+  TSlugLVenueComunicacionesRoute: typeof TSlugLVenueComunicacionesRoute
   TSlugLVenuePlanoRoute: typeof TSlugLVenuePlanoRoute
   TSlugLVenueReservasRoute: typeof TSlugLVenueReservasRoute
   TSlugLVenueServicioRoute: typeof TSlugLVenueServicioRoute
@@ -746,6 +847,8 @@ interface TSlugLVenueRouteChildren {
 }
 
 const TSlugLVenueRouteChildren: TSlugLVenueRouteChildren = {
+  TSlugLVenueClientesRoute: TSlugLVenueClientesRoute,
+  TSlugLVenueComunicacionesRoute: TSlugLVenueComunicacionesRoute,
   TSlugLVenuePlanoRoute: TSlugLVenuePlanoRoute,
   TSlugLVenueReservasRoute: TSlugLVenueReservasRoute,
   TSlugLVenueServicioRoute: TSlugLVenueServicioRoute,
@@ -789,10 +892,13 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   OnboardingRoute: OnboardingRoute,
   RegistroRoute: RegistroRoute,
+  EsperaTokenRoute: EsperaTokenRoute,
   ReservaTokenRoute: ReservaTokenRoute,
   ReservarSlugRoute: ReservarSlugRoute,
   TSlugRoute: TSlugRouteWithChildren,
+  ApiCronNotificationsRoute: ApiCronNotificationsRoute,
   ApiPlatformBillingReconcileRoute: ApiPlatformBillingReconcileRoute,
+  ApiWebhooksDepositsRoute: ApiWebhooksDepositsRoute,
   ApiWebhooksRedsysRoute: ApiWebhooksRedsysRoute,
   ApiTTenantIdVerifactuCertificateRoute: ApiTTenantIdVerifactuCertificateRoute,
 }

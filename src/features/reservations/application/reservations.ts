@@ -38,6 +38,7 @@ const rescheduleReservationInput = venueInput.extend({
   reservationId: z.string().uuid(),
   startsAt: z.string().datetime({ offset: true }),
 })
+const reservationEventsInput = venueInput.extend({ reservationId: z.string().uuid() })
 
 export interface ReservationService {
   endsAtTime: string
@@ -59,6 +60,13 @@ export interface ReservationAgendaItem {
   startsAt: string
   status: string
   tableIds: string[]
+}
+
+export interface ReservationEvent {
+  actorKind: string
+  changes: string
+  createdAt: string
+  eventType: string
 }
 
 function requireReservationEditor(role: string): void {
@@ -169,6 +177,28 @@ export const getReservationsForDate = createServerFn({ method: 'GET' })
       startsAt: row.starts_at,
       status: row.status,
       tableIds: tables.get(row.id) ?? [],
+    }))
+  })
+
+export const getReservationEvents = createServerFn({ method: 'GET' })
+  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .validator(reservationEventsInput)
+  .handler(async ({ context, data }): Promise<ReservationEvent[]> => {
+    const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    const { data: events, error } = await supabase
+      .from('reservation_events')
+      .select('actor_kind, changes, created_at, event_type')
+      .eq('tenant_id', data.tenantId)
+      .eq('venue_id', data.venueId)
+      .eq('reservation_id', data.reservationId)
+      .order('created_at', { ascending: false })
+      .limit(20)
+    if (error) throw new Error(`reservation_events_load_failed:${error.code}`)
+    return (events ?? []).map((event) => ({
+      actorKind: event.actor_kind,
+      changes: JSON.stringify(event.changes ?? {}),
+      createdAt: event.created_at,
+      eventType: event.event_type,
     }))
   })
 

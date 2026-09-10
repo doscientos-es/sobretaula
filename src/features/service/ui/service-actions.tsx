@@ -15,7 +15,7 @@ import { Link, useParams } from '@tanstack/react-router'
 import { useState, type FormEvent } from 'react'
 
 import { closeSession, mergeSessions, moveSession, seatWalkIn } from '../application/table-service'
-import type { ServiceBoard } from '../domain/service-board'
+import { suggestTableCombination, type ServiceBoard } from '../domain/service-board'
 import { describeSession } from './service-labels'
 
 /** Everything the host does with the tables already selected on the plan. */
@@ -23,12 +23,16 @@ export function ServiceActions({
   board,
   onDone,
   selectedTableIds,
+  onSuggest,
+  areaOpen = true,
   tenantId,
   venueId,
 }: {
   board: ServiceBoard
   onDone: () => void
   selectedTableIds: readonly string[]
+  onSuggest: (tableIds: readonly string[]) => void
+  areaOpen?: boolean
   tenantId: string
   venueId: string
 }) {
@@ -37,6 +41,11 @@ export function ServiceActions({
   const [covers, setCovers] = useState(2)
   const [sessionId, setSessionId] = useState(board.sessions[0]?.id ?? '')
   const [mergeSourceId, setMergeSourceId] = useState(board.sessions[1]?.id ?? '')
+  const selectedTables = board.tables.filter((table) => selectedTableIds.includes(table.id))
+  const selectedCapacity = selectedTables.reduce((total, table) => total + table.maxSeats, 0)
+  const selectedMinimum = selectedTables.reduce((total, table) => total + table.minSeats, 0)
+  const suggestedIds = selectedTableIds.length === 0 ? suggestTableCombination(board.tables, covers) : undefined
+  const suggestedCodes = suggestedIds?.map((id) => board.tables.find((table) => table.id === id)?.code).filter(Boolean)
 
   async function run(action: () => Promise<unknown>, message: string) {
     if (feedback.pending) return
@@ -68,11 +77,26 @@ export function ServiceActions({
     <Card>
       <CardHeader>
         <CardTitle>Acciones de sala</CardTitle>
-        <CardDescription>
+          <CardDescription>
           {selectedTableIds.length === 0
             ? 'Sin mesas seleccionadas.'
             : `${selectedTableIds.length} mesa(s) seleccionada(s).`}
-        </CardDescription>
+          </CardDescription>
+          {selectedTableIds.length > 0 && (
+            <p className="text-muted-foreground text-xs">
+              Capacidad combinada: {selectedMinimum}–{selectedCapacity} comensales
+            </p>
+          )}
+          {suggestedCodes && suggestedCodes.length > 0 && (
+            <div className="space-y-2">
+            <p className="text-primary text-xs">
+              Sugerencia para {covers} comensales: mesas {suggestedCodes.join(', ')}. Selecciónalas en el plano o en la lista.
+            </p>
+            <Button onClick={() => onSuggest(suggestedIds ?? [])} type="button" variant="outline">
+              Seleccionar sugerencia
+            </Button>
+            </div>
+          )}
       </CardHeader>
       <CardContent className="space-y-6">
         <form className="grid gap-3" onSubmit={walkIn}>
@@ -87,9 +111,15 @@ export function ServiceActions({
               value={covers}
             />
           </Field>
-          <Button disabled={feedback.pending} type="submit">
-            Sentar en las mesas seleccionadas
-          </Button>
+            <Button disabled={feedback.pending || !areaOpen || selectedTableIds.length === 0 || covers > selectedCapacity} type="submit">
+              Sentar en las mesas seleccionadas
+            </Button>
+            {!areaOpen && <p className="text-destructive text-xs">La zona está cerrada temporalmente.</p>}
+            {selectedTableIds.length > 1 && covers > selectedCapacity && (
+              <p className="text-destructive text-xs" role="alert">
+                El grupo supera la capacidad combinada de las mesas seleccionadas.
+              </p>
+            )}
         </form>
         {board.sessions.length > 0 && (
           <div className="space-y-3 border-t pt-6">

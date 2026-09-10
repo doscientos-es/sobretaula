@@ -21,6 +21,8 @@ del diseñador y su uso diario.
 
 - [x] Revisar modelo y editor SVG existentes.
 - [x] Mantener borrador, versión activa e historial.
+- [x] Validar dimensiones, límites y solapes antes de publicar.
+- [x] Detectar conflictos entre layouts temporales.
 - [ ] Añadir pisos, zonas y tipo de espacio (interior, terraza cubierta,
   terraza exterior).
 - [ ] Documentar estados de carga, error, vacío, permisos y red inestable.
@@ -34,6 +36,7 @@ del diseñador y su uso diario.
 - [ ] Propiedades de elemento en panel lateral y numeración automática segura.
 - [ ] Validación visual de solapes, límites, pasillos y salidas bloqueadas.
 - [ ] Previsualización tablet/móvil y publicación programada.
+- [x] Selección, duplicado, eliminación y edición de propiedades.
 
 ### P2 · Operación de turno
 
@@ -42,6 +45,11 @@ del diseñador y su uso diario.
 - [ ] Acciones rápidas: sentar, liberar, limpiar, bloquear, nota y asignar.
 - [ ] Pisos/zonas filtrables y vista global para encargados.
 - [ ] Combinar/separar mesas preservando reservas y cuentas.
+- [x] Combinar/mover sesiones con validación de ocupación y capacidad en servidor.
+- [x] Filtrado por zona/planta y resumen de ocupación.
+- [x] Preflight de capacidad para grupos grandes.
+- [x] Sugerencia automática de combinación libre más ajustada por capacidad.
+- [x] Acción para seleccionar la combinación sugerida desde el panel operativo.
 - [ ] Realtime, reintento idempotente y modo degradado sin conexión.
 
 ### P3 · Inteligencia y casos avanzados
@@ -80,3 +88,5 @@ el servicio y latencia de sincronización.
 3. Extraer el lienzo en componentes accesibles y añadir selección múltiple.
 4. Cubrir validaciones de layout con pruebas unitarias y de UI.
 5. Ejecutar `pnpm lint`, `pnpm typecheck`, `pnpm test` y `pnpm build`.
+La decisión de persistencia de pisos y terrazas está documentada en
+[`adr/0008-pisos-y-terrazas.md`](./adr/0008-pisos-y-terrazas.md).

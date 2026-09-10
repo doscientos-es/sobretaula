@@ -14,6 +14,7 @@ export {
   findSeatingConflicts,
   mergeTableIds,
   seatingCapacity,
+  suggestTableCombination,
 } from './domain/service-board'
 export { ServicePage } from './ui/service-page'
 export type {

@@ -6,14 +6,22 @@ export interface FloorPlanArea {
   name: string
   venueId: string
   /** Optional until the floor/zone migration is rolled out. */
-  floorNumber?: number | null
-  spaceType?: 'indoor' | 'covered_terrace' | 'outdoor_terrace' | 'other'
+  floorNumber?: number | null | undefined
+  spaceType?: 'indoor' | 'covered_terrace' | 'outdoor_terrace' | 'other' | undefined
+  outdoorOpen?: boolean | undefined
 }
 
 export interface FloorAreaGroup {
   floorNumber: number | null
   label: string
   areas: readonly FloorPlanArea[]
+}
+
+export function describeSpaceType(type: FloorPlanArea['spaceType']): string {
+  if (type === 'covered_terrace') return 'Terraza cubierta'
+  if (type === 'outdoor_terrace') return 'Terraza exterior'
+  if (type === 'indoor') return 'Interior'
+  return 'Zona'
 }
 
 export function groupAreasByFloor(areas: readonly FloorPlanArea[]): FloorAreaGroup[] {
@@ -53,6 +61,20 @@ export function selectFloorPlanVersion(
       const from = version.activeFrom ? new Date(version.activeFrom).getTime() : Number.NEGATIVE_INFINITY
       const to = version.activeTo ? new Date(version.activeTo).getTime() : Number.POSITIVE_INFINITY
       return !Number.isNaN(from) && !Number.isNaN(to) && from <= timestamp && timestamp < to
+    })
+    .sort((a, b) => (b.activeFrom ?? '').localeCompare(a.activeFrom ?? ''))[0]
+}
+
+export function selectActiveFloorPlanVersion(
+  versions: readonly FloorPlanVersion[],
+  at = new Date(),
+): FloorPlanVersion | undefined {
+  const timestamp = at.getTime()
+  return versions
+    .filter((version) => {
+      const from = version.activeFrom ? new Date(version.activeFrom).getTime() : Number.NEGATIVE_INFINITY
+      const to = version.activeTo ? new Date(version.activeTo).getTime() : Number.POSITIVE_INFINITY
+      return from <= timestamp && timestamp < to
     })
     .sort((a, b) => (b.activeFrom ?? '').localeCompare(a.activeFrom ?? ''))[0]
 }

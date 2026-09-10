@@ -24,8 +24,10 @@ import {
   createReservation,
   createReservationService,
   getReservationsForDate,
+  getReservationEvents,
   rescheduleReservation,
   type ReservationAgendaItem,
+  type ReservationEvent,
   type ReservationService,
 } from '../application/reservations'
 import { reservationStatusLabel } from '../domain/reservation-labels'
@@ -86,6 +88,10 @@ export function ReservationPage({
   const [startsAt, setStartsAt] = useState('')
   const [agendaDate, setAgendaDate] = useState(() => new Date().toISOString().slice(0, 10))
   const [agenda, setAgenda] = useState<ReservationAgendaItem[]>([])
+  const [eventsByReservation, setEventsByReservation] = useState<
+    Record<string, ReservationEvent[]>
+  >({})
+  const [expandedReservationId, setExpandedReservationId] = useState<string | null>(null)
   const [agendaLoading, setAgendaLoading] = useState(false)
   const [agendaRefresh, setAgendaRefresh] = useState(0)
   const [editingReservationId, setEditingReservationId] = useState<string | null>(null)
@@ -181,6 +187,23 @@ export function ReservationPage({
       setAgendaRefresh((value) => value + 1)
     } catch {
       feedback.setError('No se ha podido cancelar la reserva.')
+    }
+  }
+
+  async function toggleReservationHistory(item: ReservationAgendaItem) {
+    if (expandedReservationId === item.id) {
+      setExpandedReservationId(null)
+      return
+    }
+    setExpandedReservationId(item.id)
+    if (eventsByReservation[item.id]) return
+    try {
+      const events = await getReservationEvents({
+        data: { reservationId: item.id, tenantId, venueId },
+      })
+      setEventsByReservation((current) => ({ ...current, [item.id]: events }))
+    } catch {
+      feedback.setError('No se pudo cargar el historial de la reserva.')
     }
   }
 
@@ -443,6 +466,33 @@ export function ReservationPage({
                         <div>
                           {item.tableIds.length ? `Mesa ${item.tableIds.join(', ')}` : 'Sin mesa'}
                         </div>
+                        <Button
+                          className="mt-2"
+                          onClick={() => void toggleReservationHistory(item)}
+                          size="sm"
+                          type="button"
+                          variant="ghost"
+                        >
+                          {expandedReservationId === item.id
+                            ? 'Ocultar historial'
+                            : 'Ver historial'}
+                        </Button>
+                        {expandedReservationId === item.id ? (
+                          <ol className="border-border mt-2 grid gap-1 border-l pl-3 text-left text-xs">
+                            {(eventsByReservation[item.id] ?? []).map((event) => (
+                              <li key={`${event.createdAt}-${event.eventType}`}>
+                                <span className="font-medium">{event.eventType}</span>{' '}
+                                <span className="text-muted-foreground">
+                                  · {new Date(event.createdAt).toLocaleString(locale)} ·{' '}
+                                  {event.actorKind}
+                                </span>
+                              </li>
+                            ))}
+                            {!eventsByReservation[item.id]?.length ? (
+                              <li>Cargando historial…</li>
+                            ) : null}
+                          </ol>
+                        ) : null}
                         {['pending', 'confirmed'].includes(item.status) ? (
                           <span className="mt-2 flex flex-wrap justify-end gap-2">
                             {canMarkNoShow(item.startsAt) ? (

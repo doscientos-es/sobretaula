@@ -72,21 +72,18 @@ export const getFloorPlan = createServerFn({ method: 'GET' })
     const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
     const areasResult = await supabase
       .from('areas')
-      .select('id, is_online_bookable, name, venue_id')
+      .select('floor_number, id, is_online_bookable, name, outdoor_open, space_type, venue_id')
       .eq('tenant_id', data.tenantId)
       .eq('venue_id', data.venueId)
       .order('name')
     if (areasResult.error) throw new Error(`floor_plan_load_failed:${areasResult.error.code}`)
     const areaIds = (areasResult.data ?? []).map((area) => area.id)
 
-    const now = new Date().toISOString()
     const versionsResult = await supabase
       .from('floor_plan_versions')
-      .select('area_id, height_cm, id, name, width_cm')
+      .select('active_from, active_to, area_id, height_cm, id, name, width_cm')
       .eq('tenant_id', data.tenantId)
       .in('area_id', areaIds)
-      .lte('active_from', now)
-      .or(`active_to.is.null,active_to.gt.${now}`)
       .order('active_from', { ascending: false })
     if (versionsResult.error) throw new Error(`floor_plan_load_failed:${versionsResult.error.code}`)
     const versionIds = (versionsResult.data ?? []).map((version) => version.id)
@@ -123,6 +120,9 @@ export const getFloorPlan = createServerFn({ method: 'GET' })
         id: area.id,
         isOnlineBookable: area.is_online_bookable,
         name: area.name,
+        floorNumber: area.floor_number,
+        outdoorOpen: area.outdoor_open,
+        spaceType: (area.space_type ?? 'indoor') as FloorPlanData['areas'][number]['spaceType'],
         venueId: area.venue_id,
       })),
       elements: (elementsResult.data ?? []).map((element) => ({
@@ -147,6 +147,8 @@ export const getFloorPlan = createServerFn({ method: 'GET' })
         yCm: placement.y_cm,
       })),
       versions: (versionsResult.data ?? []).map((version) => ({
+        activeFrom: version.active_from,
+        activeTo: version.active_to,
         areaId: version.area_id,
         heightCm: version.height_cm,
         id: version.id,

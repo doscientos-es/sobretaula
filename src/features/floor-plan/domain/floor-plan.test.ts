@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { findVersionScheduleConflicts, selectFloorPlanVersion } from './floor-plan'
+import { describeSpaceType, findVersionScheduleConflicts, selectActiveFloorPlanVersion, selectFloorPlanVersion } from './floor-plan'
 
 describe('floor plan versions', () => {
   it('selects the scheduled version active at a given time', () => {
@@ -20,5 +20,21 @@ describe('floor plan versions', () => {
       { id: 'c', areaId: 'terrace', name: 'C', widthCm: 1, heightCm: 1, activeFrom: '2026-02-01T00:00:00Z' },
     ])
     expect(conflicts).toEqual([{ areaId: 'room', firstVersionId: 'a', secondVersionId: 'b' }])
+  })
+
+  it('selects the active version globally instead of a future scheduled one', () => {
+    const versions = [
+      { id: 'future', areaId: 'terrace', name: 'Evento', widthCm: 1, heightCm: 1, activeFrom: '2027-01-01T00:00:00Z' },
+      { id: 'current', areaId: 'room', name: 'Actual', widthCm: 1, heightCm: 1, activeFrom: '2026-01-01T00:00:00Z' },
+    ]
+    expect(selectActiveFloorPlanVersion(versions, new Date('2026-09-10T00:00:00Z'))?.id).toBe('current')
+  })
+})
+
+describe('floor plan space types', () => {
+  it('uses safe labels for terraces and legacy values', () => {
+    expect(describeSpaceType('covered_terrace')).toBe('Terraza cubierta')
+    expect(describeSpaceType('outdoor_terrace')).toBe('Terraza exterior')
+    expect(describeSpaceType(undefined)).toBe('Zona')
   })
 })
