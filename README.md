@@ -64,8 +64,9 @@ estáticos: el servidor Node es parte del producto (fiscalidad, PDF, webhooks).
    creado (migraciones `20260909000001` a `20260909000003`).
 2. Secretos del servidor configurados en el gestor del entorno; nunca en el
    repositorio.
-3. En Supabase Auth, añadir `${APP_URL}/activar-cuenta` a las Redirect URLs
-   autorizadas para los enlaces de invitación.
+3. En Supabase Auth, añadir `${APP_URL}/activar-cuenta` y
+   `${APP_URL}/restablecer-contrasena` a las Redirect URLs autorizadas para los
+   enlaces de invitación y recuperación de contraseña.
 4. En Vercel, importar el repositorio con `internal/projects/sobretaula` como
    **Root Directory**, Node 22+ y `pnpm build` como Build Command. Nitro usa
    el preset de Vercel y genera el artefacto serverless automáticamente.

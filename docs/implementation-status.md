@@ -14,19 +14,19 @@ reproducible (comando ejecutado y su resultado).
 
 ## Fases
 
-| Fase                   | Entregable                                                                 | Estado                                                           |
-| ---------------------- | -------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| F0 · Papeleo           | `project-design.md`, `data-model.md`, ADR 0001–0007                        | Hecho                                                            |
-| F0 · Esqueleto         | Proyecto Start, `@doscientos/configs`, CI, `.env.example`                  | Hecho                                                            |
-| F1 · Tenancy + Auth    | Registro, onboarding, perfiles, equipo, RLS, `/t/:slug`                    | Implementado; RLS real sin evidenciar                            |
-| F1a · Gobierno global  | Dashboard, tenants, auditoría, operadores y controles de acceso            | Implementado; falta evidencia RLS dedicada                       |
-| F1b · Billing SaaS     | Precios, Founders, cobro Redsys, gracia, facturas SaaS y suspensión segura | Parcial                                                          |
-| F2 · Diseñador de sala | Editor SVG, snap, historial, elementos y layouts versionados               | Implementado; entrega bloqueada                                  |
-| F3 · Motor de reservas | Turnos, pacing, disponibilidad, best-fit, EXCLUDE                          | Implementado; falta aplicar migraciones públicas y humo dedicado |
-| F4 · Vista de servicio | Plano en vivo, sentar/mover/unir, walk-ins, espera, no-show                | Implementado; entrega bloqueada                                  |
-| F5 · Cuenta de mesa    | Catálogo, líneas, dividir, cerrar, cobrar                                  | Implementado; entrega bloqueada                                  |
-| F6 · Facturación       | Ajustes fiscales, series, ledger/outbox, PDF, modo test                    | Implementado; entrega bloqueada                                  |
-| F7 · Entrega           | Documentación operativa, smoke, despliegue autorizado                      | Parcial                                                          |
+| Fase                   | Entregable                                                                  | Estado                                                           |
+| ---------------------- | --------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| F0 · Papeleo           | `project-design.md`, `data-model.md`, ADR 0001–0007                         | Hecho                                                            |
+| F0 · Esqueleto         | Proyecto Start, `@doscientos/configs`, CI, `.env.example`                   | Hecho                                                            |
+| F1 · Tenancy + Auth    | Registro, onboarding, perfiles, equipo, RLS, `/t/:slug`                     | Implementado; RLS real sin evidenciar                            |
+| F1a · Gobierno global  | Dashboard, tenants, auditoría, operadores y controles de acceso             | Implementado; falta evidencia RLS dedicada                       |
+| F1b · Billing SaaS     | Precios, Founders, cobro Redsys, gracia, facturas SaaS y suspensión segura  | Parcial                                                          |
+| F2 · Diseñador de sala | Editor SVG, snap, historial, elementos, rotación real y layouts versionados | Implementado; entrega bloqueada                                  |
+| F3 · Motor de reservas | Turnos, pacing, disponibilidad, best-fit, EXCLUDE                           | Implementado; falta aplicar migraciones públicas y humo dedicado |
+| F4 · Vista de servicio | Plano en vivo, sentar/mover/unir, walk-ins, espera, no-show                 | Implementado; entrega bloqueada                                  |
+| F5 · Cuenta de mesa    | Catálogo, líneas, dividir, cerrar, cobrar                                   | Implementado; entrega bloqueada                                  |
+| F6 · Facturación       | Ajustes fiscales, series, ledger/outbox, PDF, modo test                     | Implementado; entrega bloqueada                                  |
+| F7 · Entrega           | Documentación operativa, smoke, despliegue autorizado                       | Parcial                                                          |
 
 El dashboard operativo ya calcula reservas activas, reservas de la semana,
 sesiones abiertas y cobros del día desde Supabase; la actividad detallada sigue consultándose en las vistas
@@ -85,6 +85,15 @@ hasta que un asesor fiscal valide el reparto de responsabilidad.
 `pnpm test`, `pnpm quality`, `pnpm build`.
 
 ### Última ejecución local (2026-09-10)
+
+Tras añadir la validación geométrica de la huella rotada de mesas, la suite
+local queda en 47 archivos correctos y 204 pruebas correctas; 1 archivo y 3
+pruebas RLS siguen omitidos por falta de entorno Supabase dedicado.
+
+La verificación posterior de producción (`pnpm build`) también completa
+correctamente y genera el artefacto Nitro/Vercel. La suite global actual queda
+en 48 archivos y 207 pruebas correctas; las 3 RLS continúan omitidas por el
+conector no autorizado.
 
 | Comando                | Resultado                                                                 |
 | ---------------------- | ------------------------------------------------------------------------- |

@@ -275,37 +275,50 @@ export const createReservation = createServerFn({ method: 'POST' })
       throw new Response('Outside service', { status: 422 })
     }
 
-    const [ruleResult, tablesResult, reservationsResult, reservationTablesResult, closuresResult] =
-      await Promise.all([
-        supabase.from('availability_rules').select('*').eq('service_id', service.id).single(),
-        supabase
-          .from('tables')
-          .select('id, is_bookable, max_seats, min_seats')
-          .eq('tenant_id', data.tenantId)
-          .eq('venue_id', service.venue_id)
-          .eq('is_active', true),
-        supabase
-          .from('reservations')
-          .select('id, party_size')
-          .eq('tenant_id', data.tenantId)
-          .eq('venue_id', service.venue_id),
-        supabase
-          .from('reservation_tables')
-          .select('period, reservation_id, status, table_id')
-          .eq('tenant_id', data.tenantId),
-        supabase
-          .from('closures')
-          .select('period')
-          .eq('tenant_id', data.tenantId)
-          .eq('venue_id', service.venue_id),
-      ])
+    const [
+      ruleResult,
+      tablesResult,
+      reservationsResult,
+      reservationTablesResult,
+      closuresResult,
+      blocksResult,
+    ] = await Promise.all([
+      supabase.from('availability_rules').select('*').eq('service_id', service.id).single(),
+      supabase
+        .from('tables')
+        .select('id, is_bookable, max_seats, min_seats')
+        .eq('tenant_id', data.tenantId)
+        .eq('venue_id', service.venue_id)
+        .eq('is_active', true),
+      supabase
+        .from('reservations')
+        .select('id, party_size')
+        .eq('tenant_id', data.tenantId)
+        .eq('venue_id', service.venue_id),
+      supabase
+        .from('reservation_tables')
+        .select('period, reservation_id, status, table_id')
+        .eq('tenant_id', data.tenantId),
+      supabase
+        .from('closures')
+        .select('period')
+        .eq('tenant_id', data.tenantId)
+        .eq('venue_id', service.venue_id),
+      supabase
+        .from('scheduling_blocks')
+        .select('period')
+        .eq('tenant_id', data.tenantId)
+        .eq('venue_id', service.venue_id)
+        .eq('affects_staff', true),
+    ])
     if (
       ruleResult.error ||
       !ruleResult.data ||
       tablesResult.error ||
       reservationsResult.error ||
       reservationTablesResult.error ||
-      closuresResult.error
+      closuresResult.error ||
+      blocksResult.error
     ) {
       throw new Error('reservation_availability_load_failed')
     }
@@ -335,7 +348,10 @@ export const createReservation = createServerFn({ method: 'POST' })
       slotMinutes: ruleResult.data.slot_minutes,
     }
     const availability = checkAvailability({
-      closures: (closuresResult.data ?? []).map((closure) => parsePeriod(closure.period)),
+      closures: [
+        ...(closuresResult.data ?? []).map((closure) => parsePeriod(closure.period)),
+        ...(blocksResult.data ?? []).map((block) => parsePeriod(block.period)),
+      ],
       now: new Date(),
       partySize: data.partySize,
       requestedStartsAt,

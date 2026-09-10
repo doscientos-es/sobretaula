@@ -46,7 +46,7 @@ export function ServicePlan({
               rx="12"
               stroke={selected ? 'var(--foreground)' : 'transparent'}
               strokeWidth="6"
-              transform={`rotate(${placement.rotationDeg} ${placement.xCm} ${placement.yCm})`}
+              transform={`rotate(${placement.rotationDeg} ${placement.xCm + placement.widthCm / 2} ${placement.yCm + placement.heightCm / 2})`}
               width={placement.widthCm}
               x={placement.xCm}
               y={placement.yCm}

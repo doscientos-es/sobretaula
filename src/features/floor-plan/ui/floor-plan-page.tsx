@@ -14,7 +14,7 @@ import {
   PageHeaderTitle,
   useFormFeedback,
 } from '@doscientos/ui'
-import { useState, type FormEvent, type KeyboardEvent, type PointerEvent } from 'react'
+import { useEffect, useState, type FormEvent, type KeyboardEvent, type PointerEvent } from 'react'
 
 import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
 
@@ -31,6 +31,8 @@ import {
 } from '../domain/editor-history'
 import {
   findVersionScheduleConflicts,
+  describeSpaceType,
+  selectFloorPlanVersion,
   type FloorPlanData,
   type FloorPlanElement,
   type PlanElementKind,
@@ -57,6 +59,11 @@ export function FloorPlanPage({
   const [areaName, setAreaName] = useState('Sala principal')
   const [widthCm, setWidthCm] = useState(800)
   const [heightCm, setHeightCm] = useState(600)
+  const [floorNumber, setFloorNumber] = useState<number | null>(0)
+  const [spaceType, setSpaceType] = useState<
+    'indoor' | 'covered_terrace' | 'outdoor_terrace' | 'other'
+  >('indoor')
+  const [outdoorOpen, setOutdoorOpen] = useState(true)
   const [tableCode, setTableCode] = useState('1')
   const [tableSeats, setTableSeats] = useState(4)
   const [tableXCm, setTableXCm] = useState(50)
@@ -65,9 +72,15 @@ export function FloorPlanPage({
   const [versionActivation, setVersionActivation] = useState('')
   const [draggingTableId, setDraggingTableId] = useState<string>()
   const [selectedId, setSelectedId] = useState<string>()
-  const activeVersion = data.versions[0]
-  const activeArea = activeVersion
-    ? data.areas.find((area) => area.id === activeVersion.areaId)
+  const [selectedAreaId, setSelectedAreaId] = useState(data.areas[0]?.id)
+  useEffect(() => {
+    if (selectedAreaId && data.areas.some((area) => area.id === selectedAreaId)) return
+    setSelectedAreaId(data.areas[0]?.id)
+  }, [data.areas, selectedAreaId])
+  const activeArea = data.areas.find((area) => area.id === selectedAreaId) ?? data.areas[0]
+  const activeVersion = activeArea
+    ? (selectFloorPlanVersion(data.versions, activeArea.id) ??
+      data.versions.find((version) => version.areaId === activeArea.id))
     : undefined
   const savedPlacements = activeVersion
     ? data.placements.filter((placement) => placement.floorPlanVersionId === activeVersion.id)
@@ -87,7 +100,16 @@ export function FloorPlanPage({
 
     try {
       await createInitialFloorPlan({
-        data: { areaName, heightCm, tenantId, venueId, widthCm },
+        data: {
+          areaName,
+          floorNumber,
+          heightCm,
+          outdoorOpen,
+          spaceType,
+          tenantId,
+          venueId,
+          widthCm,
+        },
       })
       reload()
     } catch {
@@ -142,6 +164,22 @@ export function FloorPlanPage({
     )
   }
 
+  function switchArea(areaId: string) {
+    const version =
+      selectFloorPlanVersion(data.versions, areaId) ??
+      data.versions.find((candidate) => candidate.areaId === areaId)
+    setSelectedAreaId(areaId)
+    setSelectedId(undefined)
+    setHistory(
+      createEditorHistory({
+        elements: data.elements.filter((element) => element.floorPlanVersionId === version?.id),
+        placements: data.placements.filter(
+          (placement) => placement.floorPlanVersionId === version?.id,
+        ),
+      }),
+    )
+  }
+
   function moveWithKeyboard(event: KeyboardEvent<HTMLButtonElement>, id: string) {
     const distance = event.shiftKey ? 5 : DEFAULT_GRID_SIZE_CM
     const current = placements.find((placement) => placement.id === id)
@@ -159,12 +197,17 @@ export function FloorPlanPage({
 
   function finishDrag(event: PointerEvent<SVGSVGElement>) {
     if (!activeVersion || !draggingTableId) return
-    const rectangle = event.currentTarget.getBoundingClientRect()
-    changePlacement(
-      draggingTableId,
-      ((event.clientX - rectangle.left) / rectangle.width) * activeVersion.widthCm,
-      ((event.clientY - rectangle.top) / rectangle.height) * activeVersion.heightCm,
-    )
+    const svg = event.currentTarget
+    const transform = svg.getScreenCTM()
+    if (!transform) {
+      setDraggingTableId(undefined)
+      return
+    }
+    const point = svg.createSVGPoint()
+    point.x = event.clientX
+    point.y = event.clientY
+    const planPoint = point.matrixTransform(transform.inverse())
+    changePlacement(draggingTableId, planPoint.x, planPoint.y)
     setDraggingTableId(undefined)
   }
 
@@ -190,12 +233,21 @@ export function FloorPlanPage({
     if (!selectedId || !activeVersion) return
     const table = placements.find((item) => item.id === selectedId)
     if (table) {
-      const copy = {
+      const copyId = crypto.randomUUID()
+      const copy = Array.from({ length: 40 }, (_, index) => ({
         ...table,
-        id: crypto.randomUUID(),
+        id: copyId,
         code: `${table.code}-copia`,
-        xCm: table.xCm + 25,
-        yCm: table.yCm + 25,
+        xCm: table.xCm + ((index + 1) % 8) * 25,
+        yCm: table.yCm + Math.floor((index + 1) / 8) * 25,
+      })).find(
+        (candidate) =>
+          isPlacementWithinBounds(candidate, activeVersion) &&
+          findPlacementCollisions(candidate, placements).length === 0,
+      )
+      if (!copy) {
+        feedback.setError('No hay espacio libre suficiente para duplicar esta mesa.')
+        return
       }
       setHistory((current) =>
         commitEditorHistory(current, { ...current.present, placements: [...placements, copy] }),
@@ -374,6 +426,41 @@ export function FloorPlanPage({
                   value={heightCm}
                 />
               </Field>
+              <Field>
+                <FieldLabel htmlFor="floor-number">Planta</FieldLabel>
+                <Input
+                  id="floor-number"
+                  onChange={(event) =>
+                    setFloorNumber(event.target.value === '' ? null : Number(event.target.value))
+                  }
+                  type="number"
+                  value={floorNumber ?? ''}
+                />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="space-type">Tipo de zona</FieldLabel>
+                <select
+                  className="border-border rounded-md border px-2"
+                  id="space-type"
+                  onChange={(event) => setSpaceType(event.target.value as typeof spaceType)}
+                  value={spaceType}
+                >
+                  <option value="indoor">Interior</option>
+                  <option value="covered_terrace">Terraza cubierta</option>
+                  <option value="outdoor_terrace">Terraza exterior</option>
+                  <option value="other">Otra zona</option>
+                </select>
+              </Field>
+              {spaceType !== 'indoor' && (
+                <label className="flex items-center gap-2 text-sm sm:col-span-2">
+                  <input
+                    checked={outdoorOpen}
+                    onChange={(event) => setOutdoorOpen(event.target.checked)}
+                    type="checkbox"
+                  />
+                  Terraza abierta para operar
+                </label>
+              )}
               <div className="sm:col-span-2">
                 <FormFeedback pendingLabel="Creando plano…" state={feedback.state} />
                 <Button className="mt-2" disabled={feedback.pending} type="submit">
@@ -392,6 +479,30 @@ export function FloorPlanPage({
                 {activeVersion.widthCm / 100} m × {activeVersion.heightCm / 100} m ·{' '}
                 {placements.length} mesas
               </CardDescription>
+              {data.areas.length > 1 && (
+                <Field className="pt-2">
+                  <FieldLabel htmlFor="floor-plan-area">Zona a editar</FieldLabel>
+                  <select
+                    aria-label="Zona a editar"
+                    className="border-border rounded-md border px-2 py-1 text-sm"
+                    id="floor-plan-area"
+                    onChange={(event) => switchArea(event.target.value)}
+                    value={activeArea?.id ?? ''}
+                  >
+                    {data.areas.map((area) => (
+                      <option key={area.id} value={area.id}>
+                        {area.name} ·{' '}
+                        {area.floorNumber === 0
+                          ? 'Planta baja'
+                          : area.floorNumber === null || area.floorNumber === undefined
+                            ? 'Sin planta'
+                            : `Planta ${area.floorNumber}`}{' '}
+                        · {describeSpaceType(area.spaceType)}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+              )}
             </CardHeader>
             <CardContent>
               {layoutIssues.length > 0 && (
@@ -422,8 +533,23 @@ export function FloorPlanPage({
                 onPointerUp={finishDrag}
                 viewBox={`0 0 ${activeVersion.widthCm} ${activeVersion.heightCm}`}
               >
+                <defs>
+                  <pattern
+                    height={DEFAULT_GRID_SIZE_CM}
+                    id="floor-plan-grid"
+                    patternUnits="userSpaceOnUse"
+                    width={DEFAULT_GRID_SIZE_CM}
+                  >
+                    <path
+                      d={`M ${DEFAULT_GRID_SIZE_CM} 0 L 0 0 0 ${DEFAULT_GRID_SIZE_CM}`}
+                      fill="none"
+                      stroke="var(--border)"
+                      strokeWidth="2"
+                    />
+                  </pattern>
+                </defs>
                 <rect
-                  fill="transparent"
+                  fill="url(#floor-plan-grid)"
                   height={activeVersion.heightCm}
                   width={activeVersion.widthCm}
                 />
@@ -433,6 +559,13 @@ export function FloorPlanPage({
                     aria-label={element.label ?? `Elemento ${element.kind}`}
                     className="cursor-pointer"
                     onClick={() => setSelectedId(element.id)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault()
+                        setSelectedId(element.id)
+                      }
+                    }}
+                    role="button"
                     tabIndex={0}
                   >
                     <rect
@@ -444,6 +577,7 @@ export function FloorPlanPage({
                       rx="8"
                       stroke={selectedId === element.id ? 'var(--ring)' : 'transparent'}
                       strokeWidth={selectedId === element.id ? 8 : 0}
+                      transform={`rotate(${element.rotationDeg} ${element.xCm + element.widthCm / 2} ${element.yCm + element.heightCm / 2})`}
                       width={element.widthCm}
                       x={element.xCm}
                       y={element.yCm}
@@ -461,6 +595,13 @@ export function FloorPlanPage({
                     aria-label={`Mesa ${placement.code}`}
                     className="cursor-pointer"
                     onClick={() => setSelectedId(placement.id)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault()
+                        setSelectedId(placement.id)
+                      }
+                    }}
+                    role="button"
                     tabIndex={0}
                   >
                     <rect
@@ -471,7 +612,7 @@ export function FloorPlanPage({
                       rx="12"
                       stroke={selectedId === placement.id ? 'var(--ring)' : 'transparent'}
                       strokeWidth={selectedId === placement.id ? 8 : 0}
-                      transform={`rotate(${placement.rotationDeg} ${placement.xCm} ${placement.yCm})`}
+                      transform={`rotate(${placement.rotationDeg} ${placement.xCm + placement.widthCm / 2} ${placement.yCm + placement.heightCm / 2})`}
                       width={placement.widthCm}
                       x={placement.xCm}
                       y={placement.yCm}

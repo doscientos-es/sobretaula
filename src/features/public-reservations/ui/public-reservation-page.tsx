@@ -63,6 +63,7 @@ function formatDate(date: string): string {
 export function PublicReservationPage({ profile }: { profile: PublicReservationProfile }) {
   const feedback = useFormFeedback()
   const [serviceId, setServiceId] = useState(profile.services[0]?.id ?? '')
+  const [areaId, setAreaId] = useState('')
   const [date, setDate] = useState('')
   const [time, setTime] = useState('')
   const [partySize, setPartySize] = useState(2)
@@ -84,7 +85,7 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
     setAvailableSlots([])
   }
 
-  async function selectDate(value: string, size = partySize) {
+  async function selectDate(value: string, size = partySize, selectedArea = areaId) {
     setDate(value)
     setTime('')
     if (!value || !service) {
@@ -95,6 +96,7 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
     try {
       const result = await getPublicReservationAvailability({
         data: {
+          ...(selectedArea ? { areaId: selectedArea } : {}),
           date: value,
           partySize: size,
           serviceId: service.id,
@@ -121,6 +123,7 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
         data: {
           ...(email ? { email } : {}),
           ...(phone ? { phone } : {}),
+          ...(areaId ? { areaId } : {}),
           guestName,
           partySize,
           serviceId,
@@ -240,6 +243,27 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                   ))}
                 </select>
               </Field>
+              {profile.areas.length ? (
+                <Field>
+                  <FieldLabel htmlFor="public-area">Zona (opcional)</FieldLabel>
+                  <select
+                    id="public-area"
+                    className="min-h-12 bg-white"
+                    onChange={(event) => {
+                      setAreaId(event.target.value)
+                      if (date) void selectDate(date, partySize, event.target.value)
+                    }}
+                    value={areaId}
+                  >
+                    <option value="">Cualquier zona</option>
+                    {profile.areas.map((area) => (
+                      <option key={area.id} value={area.id}>
+                        {area.name}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+              ) : null}
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field>
                   <FieldLabel htmlFor="public-date">

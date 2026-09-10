@@ -16,6 +16,9 @@ const venueInput = tenantInput.extend({ venueId: z.string().uuid() })
 const initialFloorPlanInput = venueInput.extend({
   areaName: z.string().trim().min(1).max(100),
   heightCm: z.number().int().min(100).max(10_000),
+  floorNumber: z.number().int().min(-2).max(200).nullable().default(null),
+  outdoorOpen: z.boolean().default(true),
+  spaceType: z.enum(['indoor', 'covered_terrace', 'outdoor_terrace', 'other']).default('indoor'),
   widthCm: z.number().int().min(100).max(10_000),
 })
 const createTableInput = venueInput
@@ -166,7 +169,14 @@ export const createInitialFloorPlan = createServerFn({ method: 'POST' })
     const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
     const { data: area, error: areaError } = await supabase
       .from('areas')
-      .insert({ name: data.areaName, tenant_id: data.tenantId, venue_id: data.venueId })
+      .insert({
+        floor_number: data.floorNumber,
+        name: data.areaName,
+        outdoor_open: data.outdoorOpen,
+        space_type: data.spaceType,
+        tenant_id: data.tenantId,
+        venue_id: data.venueId,
+      })
       .select('id')
       .single()
     if (areaError || !area)

@@ -8,8 +8,9 @@ import {
   Scripts,
 } from '@tanstack/react-router'
 import { CircleAlert, House, RefreshCw, Utensils } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 
+import { isPasswordRecoveryHash, PasswordResetPage } from '@/features/auth'
 import { DEFAULT_LOCALE } from '@/shared/lib/i18n/locale'
 import { createTranslator } from '@/shared/lib/i18n/messages'
 
@@ -52,6 +53,16 @@ function RootLayout() {
 }
 
 function RootError({ reset }: { reset: () => void }) {
+  const [isPasswordRecovery, setPasswordRecovery] = useState(false)
+
+  useEffect(() => {
+    setPasswordRecovery(isPasswordRecoveryHash(window.location.hash))
+  }, [])
+
+  if (isPasswordRecovery) {
+    return <PasswordResetPage />
+  }
+
   return (
     <main aria-labelledby="error-title" className="st-error-page">
       <span aria-hidden="true" className="st-error-orb st-error-orb--top" />

@@ -4,6 +4,7 @@ import {
   findPlacementCollisions,
   isPlacementWithinBounds,
   movePlacement,
+  placementBoundingBox,
   placementsOverlap,
   snapCoordinate,
   validateLayout,
@@ -46,6 +47,29 @@ describe('floor plan geometry', () => {
     expect(isPlacementWithinBounds({ ...table, xCm: 1 }, { heightCm: 100, widthCm: 100 })).toBe(
       false,
     )
+  })
+
+  it('accounts for rotated footprints when validating bounds and collisions', () => {
+    const rotated = { ...table, rotationDeg: 45, xCm: 0, yCm: 0 }
+    expect(isPlacementWithinBounds(rotated, { widthCm: 100, heightCm: 100 })).toBe(false)
+    expect(placementsOverlap(rotated, { ...table, id: 'nearby', xCm: 90 })).toBe(true)
+  })
+
+  it('rotates around the centre without changing the footprint at right angles', () => {
+    expect(placementBoundingBox({ ...table, rotationDeg: 90 })).toMatchObject({
+      heightCm: 100,
+      widthCm: 100,
+      xCm: 0,
+      yCm: 0,
+    })
+    expect(
+      placementBoundingBox({ ...table, heightCm: 50, rotationDeg: 90, widthCm: 100 }),
+    ).toMatchObject({
+      heightCm: 100,
+      widthCm: 50,
+      xCm: 25,
+      yCm: -25,
+    })
   })
 
   it('reports invalid size, bounds and each overlap once', () => {

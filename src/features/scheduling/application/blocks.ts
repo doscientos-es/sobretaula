@@ -26,6 +26,24 @@ export interface SchedulingBlock {
   endsAt: string
   visibleOnline: boolean
 }
+export interface SchedulingArea {
+  id: string
+  name: string
+}
+export const getSchedulingAreas = createServerFn({ method: 'GET' })
+  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .validator(base)
+  .handler(async ({ context, data }): Promise<SchedulingArea[]> => {
+    const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    const { data: areas, error } = await supabase
+      .from('areas')
+      .select('id, name')
+      .eq('tenant_id', data.tenantId)
+      .eq('venue_id', data.venueId)
+      .order('name')
+    if (error) throw new Error(`scheduling_areas_load_failed:${error.code}`)
+    return areas ?? []
+  })
 export const getSchedulingBlocks = createServerFn({ method: 'GET' })
   .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
   .validator(base)

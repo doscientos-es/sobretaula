@@ -86,7 +86,11 @@ probada contra un proyecto de Supabase dedicado.
 5. Añadir índices compuestos por tenant/local/fecha y por periodo de bloque según
    los planes de consulta reales. **Reglas y bloques base añadidos en
    `20260910000034`; el editor de bloques ya está disponible en `/bloques` y
-   queda pendiente incorporar estos bloqueos al cálculo de disponibilidad.**
+   queda pendiente incorporar estos bloqueos al cálculo interno. El RPC público
+   también excluye bloques visibles online desde `20260910000035`, y la defensa
+   transaccional de reservas web se aplica en `20260910000037`. El perfil público
+   ya ofrece áreas y la creación con área usa `20260910000038`; queda ajustar la
+   consulta de franjas para filtrar área antes de mostrar opciones.**
 
 ### R1 · Operación atómica y auditoría
 

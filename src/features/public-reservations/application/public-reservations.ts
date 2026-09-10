@@ -7,6 +7,7 @@ import { createAnonSupabaseClient } from '@/shared/lib/supabase/server/create-se
 
 const slugInput = z.object({ slug: z.string().trim().min(2).max(50) })
 const reservationInput = z.object({
+  areaId: z.string().uuid().optional(),
   email: z.string().trim().email().max(200).optional(),
   guestName: z.string().trim().min(2).max(200),
   partySize: z.number().int().min(1).max(50),
@@ -17,11 +18,13 @@ const reservationInput = z.object({
 })
 const tokenInput = z.object({ token: z.string().regex(/^[a-f0-9]{64}$/) })
 const availabilityInput = z.object({
+  areaId: z.string().uuid().optional(),
   date: z.string().date(),
   partySize: z.number().int().min(1).max(50),
   serviceId: z.string().uuid(),
   slug: z.string().trim().min(2).max(50),
 })
+const areasInput = z.object({ slug: z.string().trim().min(2).max(50) })
 
 export interface PublicReservationService {
   endsAtTime: string
@@ -38,6 +41,7 @@ export interface PublicReservationProfile {
   timezone: string
   venueName: string
   services: PublicReservationService[]
+  areas: Array<{ id: string; name: string }>
 }
 
 export interface PublicReservation {
@@ -68,6 +72,11 @@ interface PublicReservationProfileRow {
   weekday: number
 }
 
+interface PublicReservationAreaRow {
+  area_id: string
+  area_name: string
+}
+
 function isServiceRow(row: PublicReservationProfileRow): row is PublicReservationProfileRow & {
   ends_at_time: string
   service_id: string
@@ -89,6 +98,10 @@ export const getPublicReservationProfile = createServerFn({ method: 'GET' })
     if (!typedRows.length) return null
     const first = typedRows[0]
     if (!first) return null
+    const { data: areaRows } = await createAnonSupabaseClient().rpc('public_reservation_areas', {
+      p_slug: data.slug,
+    })
+    const typedAreaRows = (areaRows ?? []) as PublicReservationAreaRow[]
     return {
       name: first.tenant_name,
       services: typedRows.filter(isServiceRow).map((row) => ({
@@ -99,29 +112,53 @@ export const getPublicReservationProfile = createServerFn({ method: 'GET' })
         startsAtTime: row.starts_at_time,
         weekday: row.weekday,
       })),
+      areas: typedAreaRows.map((area) => ({ id: area.area_id, name: area.area_name })),
       slug: first.tenant_slug,
       timezone: first.timezone,
       venueName: first.venue_name,
     }
   })
 
+export const getPublicReservationAreas = createServerFn({ method: 'GET' })
+  .validator(areasInput)
+  .handler(async ({ data }) => {
+    const { data: areas, error } = await createAnonSupabaseClient().rpc(
+      'public_reservation_areas',
+      { p_slug: data.slug },
+    )
+    if (error) throw new Error(`public_reservation_areas_failed:${error.code}`)
+    const typedAreas = (areas ?? []) as PublicReservationAreaRow[]
+    return typedAreas.map((area) => ({ id: area.area_id, name: area.area_name }))
+  })
+
 export const createPublicReservation = createServerFn({ method: 'POST' })
   .validator(reservationInput)
   .handler(async ({ data }) => {
     const token = randomBytes(32).toString('hex')
-    const { data: result, error } = await createAnonSupabaseClient().rpc(
-      'create_public_reservation',
-      {
-        p_guest_email: data.email ?? null,
-        p_guest_name: data.guestName,
-        p_guest_phone: data.phone ?? null,
-        p_party_size: data.partySize,
-        p_service_id: data.serviceId,
-        p_slug: data.slug,
-        p_starts_at: data.startsAt,
-        p_public_token_hash: hashPublicToken(token),
-      },
-    )
+    const rpcName = data.areaId ? 'create_public_reservation_in_area' : 'create_public_reservation'
+    const rpcArgs = data.areaId
+      ? {
+          p_area_id: data.areaId,
+          p_guest_email: data.email ?? null,
+          p_guest_name: data.guestName,
+          p_guest_phone: data.phone ?? null,
+          p_party_size: data.partySize,
+          p_public_token_hash: hashPublicToken(token),
+          p_service_id: data.serviceId,
+          p_slug: data.slug,
+          p_starts_at: data.startsAt,
+        }
+      : {
+          p_guest_email: data.email ?? null,
+          p_guest_name: data.guestName,
+          p_guest_phone: data.phone ?? null,
+          p_party_size: data.partySize,
+          p_service_id: data.serviceId,
+          p_slug: data.slug,
+          p_starts_at: data.startsAt,
+          p_public_token_hash: hashPublicToken(token),
+        }
+    const { data: result, error } = await createAnonSupabaseClient().rpc(rpcName, rpcArgs)
     if (error) {
       if (error.code === '23P01' || error.message.includes('public_slot_unavailable')) {
         throw new Response('Slot unavailable', { status: 409 })
@@ -176,15 +213,24 @@ export const getPublicReservationAvailability = createServerFn({
 })
   .validator(availabilityInput)
   .handler(async ({ data }): Promise<string[]> => {
-    const { data: rows, error } = await createAnonSupabaseClient().rpc(
-      'public_reservation_availability',
-      {
-        p_date: data.date,
-        p_party_size: data.partySize,
-        p_service_id: data.serviceId,
-        p_slug: data.slug,
-      },
-    )
+    const rpcName = data.areaId
+      ? 'public_reservation_availability_for_area'
+      : 'public_reservation_availability'
+    const rpcArgs = data.areaId
+      ? {
+          p_area_id: data.areaId,
+          p_date: data.date,
+          p_party_size: data.partySize,
+          p_service_id: data.serviceId,
+          p_slug: data.slug,
+        }
+      : {
+          p_date: data.date,
+          p_party_size: data.partySize,
+          p_service_id: data.serviceId,
+          p_slug: data.slug,
+        }
+    const { data: rows, error } = await createAnonSupabaseClient().rpc(rpcName, rpcArgs)
     if (error) throw new Error(`public_reservation_availability_failed:${error.code}`)
     return ((rows ?? []) as Array<{ starts_at: string }>).map((row) => row.starts_at)
   })

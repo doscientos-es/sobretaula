@@ -16,6 +16,7 @@ import { Route as InvitacionRouteImport } from './routes/invitacion'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as RegistroRouteImport } from './routes/registro'
+import { Route as RestablecerContrasenaRouteImport } from './routes/restablecer-contrasena'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminAjustesRouteImport } from './routes/admin.ajustes'
 import { Route as AdminAuditoriaRouteImport } from './routes/admin.auditoria'
@@ -84,6 +85,11 @@ const OnboardingRoute = OnboardingRouteImport.update({
 const RegistroRoute = RegistroRouteImport.update({
   id: '/registro',
   path: '/registro',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RestablecerContrasenaRoute = RestablecerContrasenaRouteImport.update({
+  id: '/restablecer-contrasena',
+  path: '/restablecer-contrasena',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
@@ -270,6 +276,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/registro': typeof RegistroRoute
+  '/restablecer-contrasena': typeof RestablecerContrasenaRoute
   '/admin/ajustes': typeof AdminAjustesRoute
   '/admin/auditoria': typeof AdminAuditoriaRoute
   '/admin/equipo': typeof AdminEquipoRoute
@@ -312,6 +319,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/registro': typeof RegistroRoute
+  '/restablecer-contrasena': typeof RestablecerContrasenaRoute
   '/admin/ajustes': typeof AdminAjustesRoute
   '/admin/auditoria': typeof AdminAuditoriaRoute
   '/admin/equipo': typeof AdminEquipoRoute
@@ -354,6 +362,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/registro': typeof RegistroRoute
+  '/restablecer-contrasena': typeof RestablecerContrasenaRoute
   '/admin/ajustes': typeof AdminAjustesRoute
   '/admin/auditoria': typeof AdminAuditoriaRoute
   '/admin/equipo': typeof AdminEquipoRoute
@@ -399,6 +408,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/onboarding'
     | '/registro'
+    | '/restablecer-contrasena'
     | '/admin/ajustes'
     | '/admin/auditoria'
     | '/admin/equipo'
@@ -441,6 +451,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/onboarding'
     | '/registro'
+    | '/restablecer-contrasena'
     | '/admin/ajustes'
     | '/admin/auditoria'
     | '/admin/equipo'
@@ -482,6 +493,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/onboarding'
     | '/registro'
+    | '/restablecer-contrasena'
     | '/admin/ajustes'
     | '/admin/auditoria'
     | '/admin/equipo'
@@ -526,6 +538,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   OnboardingRoute: typeof OnboardingRoute
   RegistroRoute: typeof RegistroRoute
+  RestablecerContrasenaRoute: typeof RestablecerContrasenaRoute
   EsperaTokenRoute: typeof EsperaTokenRoute
   ReservaTokenRoute: typeof ReservaTokenRoute
   ReservarSlugRoute: typeof ReservarSlugRoute
@@ -586,6 +599,13 @@ declare module '@tanstack/react-router' {
       path: '/registro'
       fullPath: '/registro'
       preLoaderRoute: typeof RegistroRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/restablecer-contrasena': {
+      id: '/restablecer-contrasena'
+      path: '/restablecer-contrasena'
+      fullPath: '/restablecer-contrasena'
+      preLoaderRoute: typeof RestablecerContrasenaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/': {
@@ -913,6 +933,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   OnboardingRoute: OnboardingRoute,
   RegistroRoute: RegistroRoute,
+  RestablecerContrasenaRoute: RestablecerContrasenaRoute,
   EsperaTokenRoute: EsperaTokenRoute,
   ReservaTokenRoute: ReservaTokenRoute,
   ReservarSlugRoute: ReservarSlugRoute,

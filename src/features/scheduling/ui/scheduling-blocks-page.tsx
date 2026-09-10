@@ -16,6 +16,8 @@ import {
   createSchedulingBlock,
   deleteSchedulingBlock,
   getSchedulingBlocks,
+  getSchedulingAreas,
+  type SchedulingArea,
   type SchedulingBlock,
 } from '../application/blocks'
 export function SchedulingBlocksPage({ tenantId, venueId }: { tenantId: string; venueId: string }) {
@@ -24,6 +26,8 @@ export function SchedulingBlocksPage({ tenantId, venueId }: { tenantId: string; 
   const [blockType, setBlockType] = useState('closure')
   const [startsAt, setStartsAt] = useState('')
   const [endsAt, setEndsAt] = useState('')
+  const [areas, setAreas] = useState<SchedulingArea[]>([])
+  const [areaId, setAreaId] = useState('')
   const load = useCallback(
     () => void getSchedulingBlocks({ data: { tenantId, venueId } }).then(setBlocks),
     [tenantId, venueId],
@@ -31,12 +35,16 @@ export function SchedulingBlocksPage({ tenantId, venueId }: { tenantId: string; 
   useEffect(() => {
     load()
   }, [load])
+  useEffect(() => {
+    void getSchedulingAreas({ data: { tenantId, venueId } }).then(setAreas)
+  }, [tenantId, venueId])
   async function submit(event: FormEvent) {
     event.preventDefault()
     await createSchedulingBlock({
       data: {
         tenantId,
         venueId,
+        areaId: areaId || null,
         blockType: blockType as
           | 'closure'
           | 'vacation'
@@ -89,6 +97,19 @@ export function SchedulingBlocksPage({ tenantId, venueId }: { tenantId: string; 
               <option value="private_event">Evento privado</option>
               <option value="maintenance">Mantenimiento</option>
               <option value="last_minute">Última hora</option>
+            </select>
+            <select
+              aria-label="Área"
+              className="border-border rounded-md border px-2"
+              onChange={(e) => setAreaId(e.target.value)}
+              value={areaId}
+            >
+              <option value="">Todo el local</option>
+              {areas.map((area) => (
+                <option key={area.id} value={area.id}>
+                  {area.name}
+                </option>
+              ))}
             </select>
             <Input
               aria-label="Inicio"

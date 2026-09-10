@@ -3,6 +3,7 @@ export {
   findPlacementCollisions,
   isPlacementWithinBounds,
   movePlacement,
+  placementBoundingBox,
   placementsOverlap,
   snapCoordinate,
 } from './domain/geometry'

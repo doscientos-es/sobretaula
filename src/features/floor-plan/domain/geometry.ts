@@ -27,6 +27,22 @@ export interface LayoutIssue {
   relatedPlacementId?: string
 }
 
+/** Axis-aligned footprint after rotating around the placement centre. */
+export function placementBoundingBox(placement: PlanPlacement): PlanPlacement {
+  const radians = ((placement.rotationDeg % 360) * Math.PI) / 180
+  const sine = Math.abs(Math.sin(radians))
+  const cosine = Math.abs(Math.cos(radians))
+  const width = Math.round((placement.widthCm * cosine + placement.heightCm * sine) * 1e6) / 1e6
+  const height = Math.round((placement.widthCm * sine + placement.heightCm * cosine) * 1e6) / 1e6
+  return {
+    ...placement,
+    heightCm: height,
+    widthCm: width,
+    xCm: Math.round((placement.xCm + (placement.widthCm - width) / 2) * 1e6) / 1e6,
+    yCm: Math.round((placement.yCm + (placement.heightCm - height) / 2) * 1e6) / 1e6,
+  }
+}
+
 /** Returns deterministic, user-actionable issues for a draft layout. */
 export function validateLayout(
   placements: readonly PlanPlacement[],
@@ -73,11 +89,13 @@ export function movePlacement(
 
 /** Edges may touch: a collision requires overlapping usable floor surface. */
 export function placementsOverlap(first: PlanPlacement, second: PlanPlacement): boolean {
+  const firstBounds = placementBoundingBox(first)
+  const secondBounds = placementBoundingBox(second)
   return (
-    first.xCm < second.xCm + second.widthCm &&
-    first.xCm + first.widthCm > second.xCm &&
-    first.yCm < second.yCm + second.heightCm &&
-    first.yCm + first.heightCm > second.yCm
+    firstBounds.xCm < secondBounds.xCm + secondBounds.widthCm &&
+    firstBounds.xCm + firstBounds.widthCm > secondBounds.xCm &&
+    firstBounds.yCm < secondBounds.yCm + secondBounds.heightCm &&
+    firstBounds.yCm + firstBounds.heightCm > secondBounds.yCm
   )
 }
 
@@ -91,10 +109,11 @@ export function findPlacementCollisions(
 }
 
 export function isPlacementWithinBounds(placement: PlanPlacement, bounds: PlanBounds): boolean {
+  const footprint = placementBoundingBox(placement)
   return (
-    placement.xCm >= 0 &&
-    placement.yCm >= 0 &&
-    placement.xCm + placement.widthCm <= bounds.widthCm &&
-    placement.yCm + placement.heightCm <= bounds.heightCm
+    footprint.xCm >= 0 &&
+    footprint.yCm >= 0 &&
+    footprint.xCm + footprint.widthCm <= bounds.widthCm &&
+    footprint.yCm + footprint.heightCm <= bounds.heightCm
   )
 }
