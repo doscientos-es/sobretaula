@@ -144,6 +144,13 @@ de descanso, pausa de 15 minutos tras más de 6 h continuadas y tramo nocturno
 calendario y contrato siguen siendo la fuente que debe alimentar el siguiente
 incremento de persistencia y portal.
 
+La persistencia ya está disponible y verificada en el proyecto autorizado:
+`20260910000085_timekeeping_labor_terms.sql` se aplicó como
+`timekeeping_labor_terms` (versión `20260910214159`). Conserva condiciones por
+empleado y fecha de vigencia, además del calendario de festivos por local; ambas
+tablas tienen RLS forzado, lectura propia o de responsables y escritura limitada
+a owner/manager. No se insertaron condiciones ni festivos en datos reales.
+
 La política de terraza ya está aislada en dominio (`weather-policy.ts`): permite
 decidir de forma determinista si mantener el exterior, trasladar al interior o
 pedir revisión por calor. También calcula un plan de traslado por capacidad y
