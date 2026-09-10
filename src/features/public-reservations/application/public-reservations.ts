@@ -14,6 +14,7 @@ export const publicReservationInput = z.object({
   notes: z.string().trim().max(1000).optional(),
   phone: z.string().trim().min(6).max(40).optional(),
   privacyAccepted: z.literal(true),
+  termsVersionId: z.string().uuid().optional(),
   serviceId: z.string().uuid(),
   slug: z.string().trim().min(2).max(50),
   startsAt: z.string().datetime({ offset: true }),
@@ -44,6 +45,7 @@ export interface PublicReservationProfile {
   venueName: string
   services: PublicReservationService[]
   areas: Array<{ id: string; name: string }>
+  terms: { body: string; id: string; title: string; version: number } | null
 }
 
 export interface PublicReservation {
@@ -62,6 +64,12 @@ function hashPublicToken(token: string): string {
   return createHash('sha256').update(token).digest('hex')
 }
 
+function hashRateKey(slug: string, email: string, phone?: string): string {
+  return createHash('sha256')
+    .update(`${slug}|${email.trim().toLowerCase()}|${phone?.trim() ?? ''}`)
+    .digest('hex')
+}
+
 interface PublicReservationProfileRow {
   ends_at_time: string | null
   service_id: string | null
@@ -78,6 +86,14 @@ interface PublicReservationProfileRow {
 interface PublicReservationAreaRow {
   area_id: string
   area_name: string
+}
+
+interface PublicReservationTermsRow {
+  body: string
+  id: string
+  locale: string
+  title: string
+  version: number
 }
 
 function isServiceRow(row: PublicReservationProfileRow): row is PublicReservationProfileRow & {
@@ -101,10 +117,14 @@ export const getPublicReservationProfile = createServerFn({ method: 'GET' })
     if (!typedRows.length) return null
     const first = typedRows[0]
     if (!first) return null
-    const { data: areaRows } = await createAnonSupabaseClient().rpc('public_reservation_areas', {
-      p_slug: data.slug,
-    })
+    const [areasResult, termsResult] = await Promise.all([
+      createAnonSupabaseClient().rpc('public_reservation_areas', { p_slug: data.slug }),
+      createAnonSupabaseClient().rpc('public_reservation_terms', { p_slug: data.slug }),
+    ])
+    if (termsResult.error) throw new Error(`public_reservation_terms_failed:${termsResult.error.code}`)
+    const areaRows = areasResult.data
     const typedAreaRows = (areaRows ?? []) as PublicReservationAreaRow[]
+    const terms = ((termsResult.data ?? []) as PublicReservationTermsRow[])[0]
     return {
       name: first.tenant_name,
       services: typedRows.filter(isServiceRow).map((row) => ({
@@ -119,6 +139,9 @@ export const getPublicReservationProfile = createServerFn({ method: 'GET' })
       slug: first.tenant_slug,
       timezone: first.timezone,
       venueName: first.venue_name,
+      terms: terms
+        ? { body: terms.body, id: terms.id, title: terms.title, version: terms.version }
+        : null,
     }
   })
 
@@ -139,7 +162,7 @@ export const createPublicReservation = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     const token = randomBytes(32).toString('hex')
     const { data: result, error } = await createAnonSupabaseClient().rpc(
-      'create_public_reservation_with_details',
+      'create_public_reservation_with_details_v2',
       {
         p_area_id: data.areaId ?? null,
         p_guest_email: data.email,
@@ -149,14 +172,22 @@ export const createPublicReservation = createServerFn({ method: 'POST' })
         p_party_size: data.partySize,
         p_privacy_accepted: data.privacyAccepted,
         p_public_token_hash: hashPublicToken(token),
+        p_rate_key: hashRateKey(data.slug, data.email, data.phone),
         p_service_id: data.serviceId,
         p_slug: data.slug,
         p_starts_at: data.startsAt,
+        p_terms_version_id: data.termsVersionId ?? null,
       },
     )
     if (error) {
       if (error.code === '23P01' || error.message.includes('public_slot_unavailable')) {
         throw new Response('Slot unavailable', { status: 409 })
+      }
+      if (error.message.includes('public_reservation_rate_limited')) {
+        throw new Response('Too many attempts', { status: 429 })
+      }
+      if (error.message.includes('invalid_terms_version')) {
+        throw new Response('Terms version unavailable', { status: 422 })
       }
       if (error.code === 'P0002') throw new Response('Not found', { status: 404 })
       throw new Error(`public_reservation_create_failed:${error.code}`)

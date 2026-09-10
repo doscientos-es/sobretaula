@@ -30,6 +30,12 @@ const mergeInput = z.object({
   sourceGuestId: z.string().uuid(),
   targetGuestId: z.string().uuid(),
 })
+const guestAttributeInput = z.object({
+  guestId: z.string().uuid(),
+  notes: z.string().trim().max(500).optional(),
+  tenantId: z.string().uuid(),
+  value: z.string().trim().min(1).max(120),
+})
 
 export interface GuestSummary {
   id: string
@@ -42,6 +48,8 @@ export interface GuestSummary {
   spendCents: number
   tags: string[]
   history: Array<{ body: string; category: string; createdAt: string }>
+  allergies: Array<{ allergen: string; notes: string | null; severity: string }>
+  preferences: Array<{ notes: string | null; preference: string }>
 }
 
 export const searchGuests = createServerFn({ method: 'GET' })
@@ -65,7 +73,7 @@ export const searchGuests = createServerFn({ method: 'GET' })
     const { data: reservations, error: reservationsError } = ids.length
       ? await supabase
           .from('reservations')
-          .select('guest_id, id')
+          .select('guest_id, id, starts_at, status')
           .eq('tenant_id', data.tenantId)
           .eq('venue_id', data.venueId)
           .in('guest_id', ids)
@@ -93,7 +101,7 @@ export const searchGuests = createServerFn({ method: 'GET' })
           )
       : { data: [], error: null }
     if (paymentsError) throw new Error(`guest_spend_failed:${paymentsError.code}`)
-    const [assignmentsResult, notesResult] = ids.length
+    const [assignmentsResult, notesResult, allergiesResult, preferencesResult] = ids.length
       ? await Promise.all([
           supabase
             .from('guest_tag_assignments')
@@ -107,12 +115,30 @@ export const searchGuests = createServerFn({ method: 'GET' })
             .in('guest_id', ids)
             .order('created_at', { ascending: false })
             .limit(200),
+          supabase
+            .from('guest_allergies')
+            .select('allergen, guest_id, notes, severity')
+            .eq('tenant_id', data.tenantId)
+            .in('guest_id', ids),
+          supabase
+            .from('guest_preferences')
+            .select('guest_id, notes, preference')
+            .eq('tenant_id', data.tenantId)
+            .in('guest_id', ids),
         ])
       : [
           { data: [], error: null },
           { data: [], error: null },
+          { data: [], error: null },
+          { data: [], error: null },
         ]
-    if (assignmentsResult.error || notesResult.error) throw new Error('guest_profile_load_failed')
+    if (
+      assignmentsResult.error ||
+      notesResult.error ||
+      allergiesResult.error ||
+      preferencesResult.error
+    )
+      throw new Error('guest_profile_load_failed')
     const counts = new Map<string, number>()
     for (const row of reservations ?? [])
       counts.set(row.guest_id, (counts.get(row.guest_id) ?? 0) + 1)
@@ -145,6 +171,33 @@ export const searchGuests = createServerFn({ method: 'GET' })
         ...(history.get(note.guest_id) ?? []),
         { body: note.body, category: note.category, createdAt: note.created_at },
       ])
+    for (const reservation of reservations ?? []) {
+      history.set(reservation.guest_id, [
+        ...(history.get(reservation.guest_id) ?? []),
+        {
+          body:
+            reservation.status === 'no_show'
+              ? 'No presentado'
+              : reservation.status === 'cancelled'
+                ? 'Reserva cancelada'
+                : 'Reserva registrada',
+          category: 'reservation',
+          createdAt: reservation.starts_at,
+        },
+      ])
+    }
+    const allergies = new Map<string, Array<{ allergen: string; notes: string | null; severity: string }>>()
+    for (const allergy of allergiesResult.data ?? [])
+      allergies.set(allergy.guest_id, [
+        ...(allergies.get(allergy.guest_id) ?? []),
+        { allergen: allergy.allergen, notes: allergy.notes, severity: allergy.severity },
+      ])
+    const preferences = new Map<string, Array<{ notes: string | null; preference: string }>>()
+    for (const preference of preferencesResult.data ?? [])
+      preferences.set(preference.guest_id, [
+        ...(preferences.get(preference.guest_id) ?? []),
+        { notes: preference.notes, preference: preference.preference },
+      ])
     return (guests ?? []).map((guest) => ({
       id: guest.id,
       name: guest.full_name,
@@ -156,6 +209,8 @@ export const searchGuests = createServerFn({ method: 'GET' })
       spendCents: spend.get(guest.id) ?? 0,
       tags: tags.get(guest.id) ?? [],
       history: history.get(guest.id) ?? [],
+      allergies: allergies.get(guest.id) ?? [],
+      preferences: preferences.get(guest.id) ?? [],
     }))
   })
 
@@ -172,6 +227,42 @@ export const addGuestNote = createServerFn({ method: 'POST' })
       author_user_id: context.principal.userId,
     })
     if (error) throw new Error(`guest_note_create_failed:${error.code}`)
+  })
+
+export const addGuestAllergy = createServerFn({ method: 'POST' })
+  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .validator(guestAttributeInput)
+  .handler(async ({ context, data }) => {
+    const { error } = await createRequestSupabaseClient(context.tenantMembership.accessToken)
+      .from('guest_allergies')
+      .upsert(
+        {
+          allergen: data.value,
+          guest_id: data.guestId,
+          notes: data.notes ?? null,
+          tenant_id: data.tenantId,
+        },
+        { onConflict: 'tenant_id,guest_id,allergen' },
+      )
+    if (error) throw new Error(`guest_allergy_create_failed:${error.code}`)
+  })
+
+export const addGuestPreference = createServerFn({ method: 'POST' })
+  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .validator(guestAttributeInput)
+  .handler(async ({ context, data }) => {
+    const { error } = await createRequestSupabaseClient(context.tenantMembership.accessToken)
+      .from('guest_preferences')
+      .upsert(
+        {
+          guest_id: data.guestId,
+          notes: data.notes ?? null,
+          preference: data.value,
+          tenant_id: data.tenantId,
+        },
+        { onConflict: 'tenant_id,guest_id,preference' },
+      )
+    if (error) throw new Error(`guest_preference_create_failed:${error.code}`)
   })
 
 export const getGuestTags = createServerFn({ method: 'GET' })

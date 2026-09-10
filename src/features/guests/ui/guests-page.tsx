@@ -13,7 +13,9 @@ import {
 import { useEffect, useState } from 'react'
 
 import {
+  addGuestAllergy,
   addGuestNote,
+  addGuestPreference,
   getGuestTags,
   mergeGuests,
   searchGuests,
@@ -35,6 +37,7 @@ export function GuestsPage({ tenantId, venueId }: { tenantId: string; venueId: s
   const [mergeTarget, setMergeTarget] = useState('')
   const [reloadToken, setReloadToken] = useState(0)
   const [tags, setTags] = useState<Array<{ id: string; label: string }>>([])
+  const [attribute, setAttribute] = useState('')
   useEffect(() => {
     void getGuestTags({ data: { tenantId } })
       .then(setTags)
@@ -219,6 +222,80 @@ export function GuestsPage({ tenantId, venueId }: { tenantId: string; venueId: s
                           ))}
                         </div>
                       ) : null}
+                      <div className="grid gap-2 border-t pt-3 text-xs">
+                        <p className="font-medium">Alergias y preferencias</p>
+                        <div className="flex flex-wrap gap-1">
+                          {guest.allergies.map((allergy) => (
+                            <span className="rounded-full bg-red-100 px-2 py-0.5 text-red-800" key={allergy.allergen}>
+                              {allergy.allergen} · {allergy.severity}
+                            </span>
+                          ))}
+                          {guest.preferences.map((preference) => (
+                            <span className="rounded-full bg-blue-100 px-2 py-0.5 text-blue-800" key={preference.preference}>
+                              {preference.preference}
+                            </span>
+                          ))}
+                          {!guest.allergies.length && !guest.preferences.length ? (
+                            <span className="text-muted-foreground">Sin atributos registrados.</span>
+                          ) : null}
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <Input
+                            aria-label={`Nuevo atributo para ${guest.name}`}
+                            onChange={(event) => setAttribute(event.target.value)}
+                            placeholder="Alergia o preferencia…"
+                            value={attribute}
+                          />
+                          <Button
+                            disabled={!attribute.trim() || saving}
+                            onClick={() =>
+                              void (async () => {
+                                setSaving(true)
+                                try {
+                                  await addGuestPreference({
+                                    data: { guestId: guest.id, tenantId, value: attribute },
+                                  })
+                                  setAttribute('')
+                                  setGuests(await searchGuests({ data: { tenantId, venueId, query } }))
+                                } catch {
+                                  setError('No se ha podido guardar la preferencia.')
+                                } finally {
+                                  setSaving(false)
+                                }
+                              })()
+                            }
+                            size="sm"
+                            type="button"
+                            variant="outline"
+                          >
+                            Preferencia
+                          </Button>
+                          <Button
+                            disabled={!attribute.trim() || saving}
+                            onClick={() =>
+                              void (async () => {
+                                setSaving(true)
+                                try {
+                                  await addGuestAllergy({
+                                    data: { guestId: guest.id, tenantId, value: attribute },
+                                  })
+                                  setAttribute('')
+                                  setGuests(await searchGuests({ data: { tenantId, venueId, query } }))
+                                } catch {
+                                  setError('No se ha podido guardar la alergia.')
+                                } finally {
+                                  setSaving(false)
+                                }
+                              })()
+                            }
+                            size="sm"
+                            type="button"
+                            variant="outline"
+                          >
+                            Alergia
+                          </Button>
+                        </div>
+                      </div>
                       <div className="flex flex-wrap gap-2">
                         <Input
                           aria-label={`Nueva nota para ${guest.name}`}

@@ -81,6 +81,7 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
   const [email, setEmail] = useState('')
   const [notes, setNotes] = useState('')
   const [privacyAccepted, setPrivacyAccepted] = useState(false)
+  const [termsAccepted, setTermsAccepted] = useState(!profile.terms)
   const [confirmed, setConfirmed] = useState(false)
   const [managementToken, setManagementToken] = useState('')
   const [availableSlots, setAvailableSlots] = useState<string[]>([])
@@ -149,6 +150,10 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
       feedback.setError('Acepta la política de privacidad para continuar.')
       return
     }
+    if (profile.terms && !termsAccepted) {
+      feedback.setError('Acepta las condiciones de reserva para continuar.')
+      return
+    }
     feedback.setPending()
     try {
       const result = await createPublicReservation({
@@ -160,6 +165,7 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
           ...(notes ? { notes } : {}),
           partySize,
           privacyAccepted: true,
+          ...(profile.terms ? { termsVersionId: profile.terms.id } : {}),
           serviceId,
           slug: profile.slug,
           // The browser's local zone is the restaurant's zone in this MVP. The
@@ -442,6 +448,23 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                   gestionar esta reserva.
                 </span>
               </label>
+              {profile.terms ? (
+                <div className="grid gap-2 rounded-md border border-[#292d34]/10 bg-[#fbfaf8] p-3 text-xs leading-5 text-[#60656d]">
+                  <p className="font-semibold text-[#292d34]">
+                    {profile.terms.title} · versión {profile.terms.version}
+                  </p>
+                  <p className="max-h-28 overflow-y-auto whitespace-pre-wrap">{profile.terms.body}</p>
+                  <label className="flex items-start gap-2">
+                    <input
+                      checked={termsAccepted}
+                      onChange={(event) => setTermsAccepted(event.target.checked)}
+                      required
+                      type="checkbox"
+                    />
+                    <span>Acepto las condiciones de reserva indicadas arriba.</span>
+                  </label>
+                </div>
+              ) : null}
               <FormFeedback pendingLabel="Comprobando disponibilidad…" state={feedback.state} />
               <Button
                 className="w-full"
