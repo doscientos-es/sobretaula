@@ -26,15 +26,21 @@ function TerminalMetric({ label, value }: { label: string; value: number }) {
 
 /** Home of the daily terminal. Actions are progressively embedded in this module. */
 export function PosTerminalPage({
+  accountWorkspace,
   board,
   canAccessAccounts,
-  children,
+  canManageCash,
+  kitchenWorkspace,
+  managementWorkspace,
   slug,
   venue,
 }: {
+  accountWorkspace?: ReactNode | undefined
   board: ServiceBoard
   canAccessAccounts: boolean
-  children?: ReactNode
+  canManageCash: boolean
+  kitchenWorkspace?: ReactNode | undefined
+  managementWorkspace?: ReactNode | undefined
   slug: string
   venue: string
 }) {
@@ -79,7 +85,7 @@ export function PosTerminalPage({
             Consultar llegadas, lista de espera y próximos servicios.
           </span>
         </Link>
-        {canAccessAccounts && (
+        {canManageCash && (
           <Link
             className="bg-card hover:bg-muted/60 rounded-xl border p-5 transition-colors"
             params={params}
@@ -95,13 +101,13 @@ export function PosTerminalPage({
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
         <Card>
           <CardHeader>
-            <CardTitle>{children ? 'Comanda seleccionada' : 'Cuentas activas'}</CardTitle>
+            <CardTitle>{accountWorkspace ? 'Comanda seleccionada' : 'Cuentas activas'}</CardTitle>
             <CardDescription>
-              {children
+              {accountWorkspace
                 ? 'Apunta, anula y consulta las líneas sin salir del TPV.'
                 : 'Selecciona una mesa para continuar su comanda o cobro.'}
             </CardDescription>
-            {children && canAccessAccounts && (
+            {accountWorkspace && canAccessAccounts && (
               <Link
                 className="text-primary text-sm font-medium"
                 params={params}
@@ -113,7 +119,7 @@ export function PosTerminalPage({
             )}
           </CardHeader>
           <CardContent>
-            {children ??
+            {accountWorkspace ??
               (board.sessions.length === 0 ? (
                 <p className="text-muted-foreground text-sm">
                   No hay cuentas abiertas en este momento.
@@ -172,6 +178,8 @@ export function PosTerminalPage({
           </CardContent>
         </Card>
       </div>
+      {kitchenWorkspace}
+      {managementWorkspace}
     </section>
   )
 }

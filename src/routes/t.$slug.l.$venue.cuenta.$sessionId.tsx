@@ -27,12 +27,13 @@ export const Route = createFileRoute('/t/$slug/l/$venue/cuenta/$sessionId')({
 })
 
 function AccountRoute() {
-  const { tenant, venue } = Route.useRouteContext()
+  const { tenant, tenantMembership, venue } = Route.useRouteContext()
   const { account, invoiceSeries, menu } = Route.useLoaderData()
 
   return (
     <AccountPage
       account={account}
+      canManageAdjustments={['owner', 'manager'].includes(tenantMembership.role)}
       invoiceSeries={invoiceSeries}
       locale={tenant.defaultLocale}
       menu={menu}

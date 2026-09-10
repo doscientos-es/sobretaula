@@ -32,12 +32,14 @@ const SPLIT_OPTIONS = [2, 3, 4, 5, 6] as const
 /** Totals of the account plus the charge form with equal-part splitting. */
 export function AccountPayments({
   account,
+  canManageAdjustments,
   locale,
   onDone,
   tenantId,
   venueId,
 }: {
   account: AccountView
+  canManageAdjustments: boolean
   locale: Locale
   onDone: () => void
   tenantId: string
@@ -113,7 +115,9 @@ export function AccountPayments({
     <Card>
       <CardHeader>
         <CardTitle>Cobrar</CardTitle>
-        <CardDescription>Los importes salen de la carta con IVA incluido.</CardDescription>
+        <CardDescription>
+          Tarjeta se registra manualmente tras confirmarla en el datáfono; no se encola sin red.
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <dl className="bg-surface-subtle space-y-2 rounded-xl p-4 text-sm">
@@ -140,7 +144,7 @@ export function AccountPayments({
             </dd>
           </div>
         </dl>
-        {open && <form className="flex flex-wrap items-end gap-2 border-b pb-4" onSubmit={discount}><Field><FieldLabel htmlFor="discount-amount">Descuento (€)</FieldLabel><Input id="discount-amount" min="0.01" onChange={(event) => setDiscountDraft(event.target.value)} required value={discountDraft} /></Field><Field><FieldLabel htmlFor="discount-reason">Motivo</FieldLabel><Input id="discount-reason" onChange={(event) => setDiscountReason(event.target.value)} required value={discountReason} /></Field><Button disabled={feedback.pending} size="sm" type="submit">Aplicar descuento</Button></form>}
+        {open && canManageAdjustments && <form className="flex flex-wrap items-end gap-2 border-b pb-4" onSubmit={discount}><Field><FieldLabel htmlFor="discount-amount">Descuento (€)</FieldLabel><Input id="discount-amount" min="0.01" onChange={(event) => setDiscountDraft(event.target.value)} required value={discountDraft} /></Field><Field><FieldLabel htmlFor="discount-reason">Motivo</FieldLabel><Input id="discount-reason" onChange={(event) => setDiscountReason(event.target.value)} required value={discountReason} /></Field><Button disabled={feedback.pending} size="sm" type="submit">Aplicar descuento</Button></form>}
         {!open && <p className="text-muted-foreground text-sm">La cuenta está cerrada.</p>}
         {open && settled && (
           <p className="text-success text-sm font-medium">Cuenta pagada por completo.</p>
@@ -230,7 +234,7 @@ export function AccountPayments({
                   {formatMoney(payment.amountCents, locale)}
                   {(payment.refundedCents ?? 0) > 0 && ` · devuelto ${formatMoney(payment.refundedCents ?? 0, locale)}`}
                   {payment.tipCents > 0 && ` + ${formatMoney(payment.tipCents, locale)} propina`}
-                  <Button disabled={feedback.pending} onClick={() => refund(payment.id, payment.amountCents)} size="sm" type="button" variant="ghost">Devolver</Button>
+                  {canManageAdjustments && <Button disabled={feedback.pending} onClick={() => refund(payment.id, payment.amountCents)} size="sm" type="button" variant="ghost">Devolver</Button>}
                 </span>
               </li>
             ))}

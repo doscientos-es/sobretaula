@@ -15,7 +15,7 @@ export const getSalesReport = createServerFn({ method: 'GET' }).middleware([auth
   const [payments, orders] = await Promise.all([supabase.from('payments').select('id, method, amount_cents').eq('tenant_id', data.tenantId).in('session_id', sessionIds).gte('paid_at', data.from).lt('paid_at', data.to), supabase.from('orders').select('id').eq('tenant_id', data.tenantId).in('session_id', sessionIds)])
   if (payments.error || orders.error) throw new Error('sales_report_load_failed')
   const orderIds = (orders.data ?? []).map((order) => order.id as string)
-  const items = orderIds.length ? await supabase.from('order_items').select('name_snapshot, quantity, unit_price_cents, vat_rate_bps').eq('tenant_id', data.tenantId).in('order_id', orderIds) : { data: [], error: null }
+  const items = orderIds.length ? await supabase.from('order_items').select('name_snapshot, quantity, unit_price_cents, vat_rate_bps').eq('tenant_id', data.tenantId).in('order_id', orderIds).neq('status', 'cancelled') : { data: [], error: null }
   if (items.error) throw new Error(`sales_products_failed:${items.error.code}`)
   const paymentIds = (payments.data ?? []).map((payment) => payment.id as string)
   const refunds = paymentIds.length ? await supabase.from('payment_refunds').select('amount_cents').eq('tenant_id', data.tenantId).in('payment_id', paymentIds) : { data: [], error: null }
@@ -34,7 +34,7 @@ export const exportSalesReportCsv = createServerFn({ method: 'GET' }).middleware
   const ids = (sessions ?? []).map((session) => session.id as string)
   const { data: orders } = ids.length ? await supabase.from('orders').select('id').eq('tenant_id', data.tenantId).in('session_id', ids) : { data: [] }
   const orderIds = (orders ?? []).map((order) => order.id as string)
-  const { data: items, error: itemsError } = orderIds.length ? await supabase.from('order_items').select('name_snapshot, quantity, unit_price_cents, vat_rate_bps').eq('tenant_id', data.tenantId).in('order_id', orderIds) : { data: [], error: null }
+  const { data: items, error: itemsError } = orderIds.length ? await supabase.from('order_items').select('name_snapshot, quantity, unit_price_cents, vat_rate_bps').eq('tenant_id', data.tenantId).in('order_id', orderIds).neq('status', 'cancelled') : { data: [], error: null }
   if (itemsError) throw new Error(`sales_export_items_failed:${itemsError.code}`)
   const escape = (value: unknown) => `"${String(value ?? '').replaceAll('"', '""')}"`
   return ['producto,cantidad,total_cents,iva_bps', ...(items ?? []).map((item) => [item.name_snapshot, item.quantity, (item.quantity as number) * (item.unit_price_cents as number), item.vat_rate_bps].map(escape).join(','))].join('\n')

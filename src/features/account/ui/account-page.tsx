@@ -13,6 +13,7 @@ import { AccountPayments } from './account-payments'
 /** Cuenta de una sesión de mesa: consumiciones a la izquierda, cobro a la derecha. */
 export function AccountPage({
   account,
+  canManageAdjustments,
   invoiceSeries,
   locale,
   menu,
@@ -20,6 +21,7 @@ export function AccountPage({
   venueId,
 }: {
   account: AccountView
+  canManageAdjustments: boolean
   invoiceSeries: InvoiceSeries[]
   locale: Locale
   menu: MenuCatalog
@@ -59,6 +61,7 @@ export function AccountPage({
         <aside className="space-y-6 lg:sticky lg:top-6 lg:self-start">
           <AccountPayments
             account={account}
+            canManageAdjustments={canManageAdjustments}
             locale={locale}
             onDone={reload}
             tenantId={tenantId}
