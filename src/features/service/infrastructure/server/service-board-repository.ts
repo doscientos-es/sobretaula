@@ -6,6 +6,7 @@ import {
   type ServiceBoard,
   type ServiceReservation,
   type ServiceSession,
+  type ServiceStaffMember,
   type ServiceTable,
   type WaitlistEntry,
 } from '../../domain/service-board'
@@ -80,6 +81,47 @@ export async function loadServiceBoard(
     : { data: [], error: null }
   if (presetsResult.error)
     throw new Error(`service_board_presets_load_failed:${presetsResult.error.code}`)
+
+  const [areaAssignmentsResult, membersResult] = await Promise.all([
+    areaIds.length
+      ? supabase
+          .from('area_staff_assignments')
+          .select('area_id, user_id')
+          .eq('tenant_id', tenantId)
+          .in('area_id', areaIds)
+      : Promise.resolve({ data: [], error: null }),
+    supabase
+      .from('memberships')
+      .select('role, status, user_id')
+      .eq('tenant_id', tenantId)
+      .eq('status', 'active')
+      .in('role', ['owner', 'manager', 'host', 'waiter']),
+  ])
+  if (areaAssignmentsResult.error || membersResult.error)
+    throw new Error('service_board_staff_load_failed')
+  const memberIds = (membersResult.data ?? []).map((member) => member.user_id)
+  const profilesResult = memberIds.length
+    ? await supabase.from('profiles').select('display_name, user_id').in('user_id', memberIds)
+    : { data: [], error: null }
+  if (profilesResult.error) throw new Error('service_board_staff_profiles_failed')
+  const profileNames = new Map<string, string>(
+    (profilesResult.data ?? []).map((profile) => [
+      profile.user_id as string,
+      profile.display_name as string,
+    ]),
+  )
+  const staff: ServiceStaffMember[] = (membersResult.data ?? []).map((member) => ({
+    displayName: profileNames.get(member.user_id) ?? 'Equipo',
+    role: member.role as ServiceStaffMember['role'],
+    userId: member.user_id as string,
+  }))
+  const areaStaffAssignments: Record<string, string[]> = {}
+  for (const assignment of areaAssignmentsResult.data ?? []) {
+    areaStaffAssignments[assignment.area_id] = [
+      ...(areaStaffAssignments[assignment.area_id] ?? []),
+      assignment.user_id,
+    ]
+  }
 
   const reservationIds = (reservationsResult.data ?? []).map((reservation) => reservation.id)
   const guestIds = [
@@ -156,6 +198,7 @@ export async function loadServiceBoard(
   }))
 
   return {
+    areaStaffAssignments,
     reservations,
     sessions,
     tables: buildServiceTableStates({
@@ -171,6 +214,7 @@ export async function loadServiceBoard(
       name: preset.name,
       tableIds: preset.table_ids as string[],
     })),
+    staff,
     waitlist,
   }
 }

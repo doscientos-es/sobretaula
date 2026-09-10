@@ -23,6 +23,12 @@ export interface ServiceTableGroupPreset {
   tableIds: string[]
 }
 
+export interface ServiceStaffMember {
+  displayName: string
+  role: 'host' | 'manager' | 'owner' | 'waiter'
+  userId: string
+}
+
 export interface ServicePresetPreflight {
   capacity: number
   missingTableIds: string[]
@@ -65,11 +71,61 @@ export interface ServiceTableState extends ServiceTable {
 }
 
 export interface ServiceBoard {
+  areaStaffAssignments?: Readonly<Record<string, readonly string[]>>
   reservations: readonly ServiceReservation[]
   sessions: readonly ServiceSession[]
+  staff?: readonly ServiceStaffMember[]
   tables: readonly ServiceTableState[]
   tableGroupPresets?: readonly ServiceTableGroupPreset[]
   waitlist: readonly WaitlistEntry[]
+}
+
+/** Minutes elapsed since a party was seated, clamped for invalid clocks. */
+export function sessionElapsedMinutes(session: ServiceSession, now: Date): number {
+  const opened = new Date(session.openedAt).getTime()
+  if (!Number.isFinite(opened)) return 0
+  return Math.max(0, Math.floor((now.getTime() - opened) / 60_000))
+}
+
+export function sessionPacingState(
+  session: ServiceSession,
+  now: Date,
+  targetMinutes = 90,
+): 'on_track' | 'attention' {
+  return sessionElapsedMinutes(session, now) > targetMinutes ? 'attention' : 'on_track'
+}
+
+export interface ServiceHandoverSection {
+  activeSessions: number
+  assignedStaffIds: readonly string[]
+  attentionSessions: number
+  areaId: string
+  blockedTables: number
+  cleaningTables: number
+}
+
+/** Builds a compact, deterministic handover snapshot for the next shift. */
+export function buildServiceHandover(board: ServiceBoard, now: Date): ServiceHandoverSection[] {
+  const areaIds = new Set(
+    board.tables.map((table) => table.areaId).filter((id): id is string => Boolean(id)),
+  )
+  return [...areaIds].map((areaId) => {
+    const areaTables = board.tables.filter((table) => table.areaId === areaId)
+    const sessionIds = new Set(
+      areaTables.map((table) => table.sessionId).filter((id): id is string => Boolean(id)),
+    )
+    const sessions = board.sessions.filter((session) => sessionIds.has(session.id))
+    return {
+      activeSessions: sessions.length,
+      assignedStaffIds: board.areaStaffAssignments?.[areaId] ?? [],
+      attentionSessions: sessions.filter(
+        (session) => sessionPacingState(session, now) === 'attention',
+      ).length,
+      areaId,
+      blockedTables: areaTables.filter((table) => table.status === 'blocked').length,
+      cleaningTables: areaTables.filter((table) => table.status === 'cleaning').length,
+    }
+  })
 }
 
 /**

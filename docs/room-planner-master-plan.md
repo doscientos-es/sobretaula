@@ -103,7 +103,11 @@ seguras y se bloquean las que puedan perder una reserva o cuenta.
       reserva.
 - [ ] Layouts temporales para eventos, temporada y cierre de terraza.
 - [ ] Reglas meteorológicas y traslado terraza ↔ interior.
-- [ ] Pacing, cronómetros, secciones de camareros y handover de turno.
+- [~] Secciones de camareros: cada área puede tener varios miembros activos
+  asignados y se puede editar desde Servicio; pacing, cronómetros y
+  handover estructurado quedan pendientes. El panel ya muestra el tiempo
+  de sesión, avisa cuando supera 90 minutos y presenta un resumen vivo por
+  sección.
 - [ ] Importación desde imagen/PDF y plantillas reutilizables.
 
 ## Edge cases obligatorios

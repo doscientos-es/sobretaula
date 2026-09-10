@@ -51,6 +51,24 @@ export const updateTableBlockInput = serviceVenueInput.extend({
 
 export const cleanTablesInput = serviceVenueInput.extend({ tableIds })
 
+export const updateAreaStaffInput = serviceVenueInput.extend({
+  areaId: z.string().uuid(),
+  userIds: z.array(z.string().uuid()).max(8),
+})
+
+export const createHandoverSnapshotInput = serviceVenueInput.extend({
+  summary: z.array(
+    z.object({
+      activeSessions: z.number().int().nonnegative(),
+      areaId: z.string().uuid(),
+      attentionSessions: z.number().int().nonnegative(),
+      assignedStaffIds: z.array(z.string().uuid()),
+      blockedTables: z.number().int().nonnegative(),
+      cleaningTables: z.number().int().nonnegative(),
+    }),
+  ),
+})
+
 export const noShowReservationInput = serviceVenueInput.extend({
   reason: z.string().trim().max(500).optional(),
   reservationId: z.string().uuid(),

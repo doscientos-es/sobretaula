@@ -1,0 +1,25 @@
+name: Process notification jobs
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  process:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Invoke the notification worker
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          NOTIFICATION_CRON_SECRET: ${{ secrets.NOTIFICATION_CRON_SECRET }}
+        run: |
+          test -n "$APP_URL" || { echo 'Missing GitHub secret: APP_URL'; exit 1; }
+          test -n "$NOTIFICATION_CRON_SECRET" || { echo 'Missing GitHub secret: NOTIFICATION_CRON_SECRET'; exit 1; }
+          curl --fail-with-body --retry 2 --retry-all-errors --connect-timeout 10 --max-time 60 \
+            --request POST \
+            --header "Authorization: Bearer $NOTIFICATION_CRON_SECRET" \
+            "${APP_URL%/}/api/cron/notifications"

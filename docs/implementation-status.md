@@ -55,6 +55,17 @@ El realtime de servicio escucha ahora `table_sessions` y `tables` además de
 reservas y asignaciones, por lo que bloqueos, limpieza y cierres actualizan el
 panel sin recarga manual.
 
+Las áreas ya admiten asignación de uno o varios miembros activos del equipo
+(owner, manager, host o waiter) desde Servicio. La relación se guarda con RLS
+en `area_staff_assignments` (`20260910000049_area_staff_assignments.sql`).
+
+El panel muestra un cronómetro de cada cuenta abierta y marca el estado de
+pacing cuando supera los 90 minutos (umbral configurable en el dominio). La
+medición es pura y usa el reloj compartido de la vista para refrescarse.
+
+Servicio incluye también un handover vivo por área con equipo asignado, cuentas
+abiertas, mesas por limpiar, bloqueos y sesiones que requieren atención.
+
 Las acciones de sentar una reserva, abrir un walk-in y sentar una espera soportan
 ahora modo offline: guardan una operación local, la reintentan al recuperar la
 conexión y envían un `operation_id` único. La restricción parcial

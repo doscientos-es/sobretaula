@@ -25,6 +25,9 @@ import { Route as AdminFacturacionRouteImport } from './routes/admin.facturacion
 import { Route as AdminFacturasRouteImport } from './routes/admin.facturas'
 import { Route as AdminInvitacionRouteImport } from './routes/admin.invitacion'
 import { Route as EsperaTokenRouteImport } from './routes/espera.$token'
+import { Route as LegalCondicionesSaasRouteImport } from './routes/legal.condiciones-saas'
+import { Route as LegalCookiesRouteImport } from './routes/legal.cookies'
+import { Route as LegalPrivacidadRouteImport } from './routes/legal.privacidad'
 import { Route as ReservaTokenRouteImport } from './routes/reserva.$token'
 import { Route as ReservarSlugRouteImport } from './routes/reservar.$slug'
 import { Route as TSlugRouteImport } from './routes/t.$slug'
@@ -34,6 +37,8 @@ import { Route as ApiCronNotificationsRouteImport } from './routes/api.cron.noti
 import { Route as ApiPlatformBillingReconcileRouteImport } from './routes/api.platform-billing.reconcile'
 import { Route as ApiWebhooksDepositsRouteImport } from './routes/api.webhooks.deposits'
 import { Route as ApiWebhooksRedsysRouteImport } from './routes/api.webhooks.redsys'
+import { Route as ReservarSlugCondicionesRouteImport } from './routes/reservar.$slug.condiciones'
+import { Route as ReservarSlugPrivacidadRouteImport } from './routes/reservar.$slug.privacidad'
 import { Route as TSlugIndexRouteImport } from './routes/t.$slug.index'
 import { Route as TSlugCartaRouteImport } from './routes/t.$slug.carta'
 import { Route as TSlugEquipoRouteImport } from './routes/t.$slug.equipo'
@@ -132,6 +137,21 @@ const EsperaTokenRoute = EsperaTokenRouteImport.update({
   path: '/espera/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LegalCondicionesSaasRoute = LegalCondicionesSaasRouteImport.update({
+  id: '/legal/condiciones-saas',
+  path: '/legal/condiciones-saas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LegalCookiesRoute = LegalCookiesRouteImport.update({
+  id: '/legal/cookies',
+  path: '/legal/cookies',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LegalPrivacidadRoute = LegalPrivacidadRouteImport.update({
+  id: '/legal/privacidad',
+  path: '/legal/privacidad',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ReservaTokenRoute = ReservaTokenRouteImport.update({
   id: '/reserva/$token',
   path: '/reserva/$token',
@@ -177,6 +197,16 @@ const ApiWebhooksRedsysRoute = ApiWebhooksRedsysRouteImport.update({
   id: '/api/webhooks/redsys',
   path: '/api/webhooks/redsys',
   getParentRoute: () => rootRouteImport,
+} as any)
+const ReservarSlugCondicionesRoute = ReservarSlugCondicionesRouteImport.update({
+  id: '/condiciones',
+  path: '/condiciones',
+  getParentRoute: () => ReservarSlugRoute,
+} as any)
+const ReservarSlugPrivacidadRoute = ReservarSlugPrivacidadRouteImport.update({
+  id: '/privacidad',
+  path: '/privacidad',
+  getParentRoute: () => ReservarSlugRoute,
 } as any)
 const TSlugIndexRoute = TSlugIndexRouteImport.update({
   id: '/',
@@ -284,8 +314,11 @@ export interface FileRoutesByFullPath {
   '/admin/facturas': typeof AdminFacturasRoute
   '/admin/invitacion': typeof AdminInvitacionRoute
   '/espera/$token': typeof EsperaTokenRoute
+  '/legal/condiciones-saas': typeof LegalCondicionesSaasRoute
+  '/legal/cookies': typeof LegalCookiesRoute
+  '/legal/privacidad': typeof LegalPrivacidadRoute
   '/reserva/$token': typeof ReservaTokenRoute
-  '/reservar/$slug': typeof ReservarSlugRoute
+  '/reservar/$slug': typeof ReservarSlugRouteWithChildren
   '/t/$slug': typeof TSlugRouteWithChildren
   '/admin/': typeof AdminIndexRoute
   '/admin/tenants/$tenantId': typeof AdminTenantsTenantIdRoute
@@ -293,6 +326,8 @@ export interface FileRoutesByFullPath {
   '/api/platform-billing/reconcile': typeof ApiPlatformBillingReconcileRoute
   '/api/webhooks/deposits': typeof ApiWebhooksDepositsRoute
   '/api/webhooks/redsys': typeof ApiWebhooksRedsysRoute
+  '/reservar/$slug/condiciones': typeof ReservarSlugCondicionesRoute
+  '/reservar/$slug/privacidad': typeof ReservarSlugPrivacidadRoute
   '/t/$slug/carta': typeof TSlugCartaRoute
   '/t/$slug/equipo': typeof TSlugEquipoRoute
   '/t/$slug/facturacion': typeof TSlugFacturacionRoute
@@ -327,14 +362,19 @@ export interface FileRoutesByTo {
   '/admin/facturas': typeof AdminFacturasRoute
   '/admin/invitacion': typeof AdminInvitacionRoute
   '/espera/$token': typeof EsperaTokenRoute
+  '/legal/condiciones-saas': typeof LegalCondicionesSaasRoute
+  '/legal/cookies': typeof LegalCookiesRoute
+  '/legal/privacidad': typeof LegalPrivacidadRoute
   '/reserva/$token': typeof ReservaTokenRoute
-  '/reservar/$slug': typeof ReservarSlugRoute
+  '/reservar/$slug': typeof ReservarSlugRouteWithChildren
   '/admin': typeof AdminIndexRoute
   '/admin/tenants/$tenantId': typeof AdminTenantsTenantIdRoute
   '/api/cron/notifications': typeof ApiCronNotificationsRoute
   '/api/platform-billing/reconcile': typeof ApiPlatformBillingReconcileRoute
   '/api/webhooks/deposits': typeof ApiWebhooksDepositsRoute
   '/api/webhooks/redsys': typeof ApiWebhooksRedsysRoute
+  '/reservar/$slug/condiciones': typeof ReservarSlugCondicionesRoute
+  '/reservar/$slug/privacidad': typeof ReservarSlugPrivacidadRoute
   '/t/$slug/carta': typeof TSlugCartaRoute
   '/t/$slug/equipo': typeof TSlugEquipoRoute
   '/t/$slug/facturacion': typeof TSlugFacturacionRoute
@@ -370,8 +410,11 @@ export interface FileRoutesById {
   '/admin/facturas': typeof AdminFacturasRoute
   '/admin/invitacion': typeof AdminInvitacionRoute
   '/espera/$token': typeof EsperaTokenRoute
+  '/legal/condiciones-saas': typeof LegalCondicionesSaasRoute
+  '/legal/cookies': typeof LegalCookiesRoute
+  '/legal/privacidad': typeof LegalPrivacidadRoute
   '/reserva/$token': typeof ReservaTokenRoute
-  '/reservar/$slug': typeof ReservarSlugRoute
+  '/reservar/$slug': typeof ReservarSlugRouteWithChildren
   '/t/$slug': typeof TSlugRouteWithChildren
   '/admin/': typeof AdminIndexRoute
   '/admin/tenants/$tenantId': typeof AdminTenantsTenantIdRoute
@@ -379,6 +422,8 @@ export interface FileRoutesById {
   '/api/platform-billing/reconcile': typeof ApiPlatformBillingReconcileRoute
   '/api/webhooks/deposits': typeof ApiWebhooksDepositsRoute
   '/api/webhooks/redsys': typeof ApiWebhooksRedsysRoute
+  '/reservar/$slug/condiciones': typeof ReservarSlugCondicionesRoute
+  '/reservar/$slug/privacidad': typeof ReservarSlugPrivacidadRoute
   '/t/$slug/carta': typeof TSlugCartaRoute
   '/t/$slug/equipo': typeof TSlugEquipoRoute
   '/t/$slug/facturacion': typeof TSlugFacturacionRoute
@@ -416,6 +461,9 @@ export interface FileRouteTypes {
     | '/admin/facturas'
     | '/admin/invitacion'
     | '/espera/$token'
+    | '/legal/condiciones-saas'
+    | '/legal/cookies'
+    | '/legal/privacidad'
     | '/reserva/$token'
     | '/reservar/$slug'
     | '/t/$slug'
@@ -425,6 +473,8 @@ export interface FileRouteTypes {
     | '/api/platform-billing/reconcile'
     | '/api/webhooks/deposits'
     | '/api/webhooks/redsys'
+    | '/reservar/$slug/condiciones'
+    | '/reservar/$slug/privacidad'
     | '/t/$slug/carta'
     | '/t/$slug/equipo'
     | '/t/$slug/facturacion'
@@ -459,6 +509,9 @@ export interface FileRouteTypes {
     | '/admin/facturas'
     | '/admin/invitacion'
     | '/espera/$token'
+    | '/legal/condiciones-saas'
+    | '/legal/cookies'
+    | '/legal/privacidad'
     | '/reserva/$token'
     | '/reservar/$slug'
     | '/admin'
@@ -467,6 +520,8 @@ export interface FileRouteTypes {
     | '/api/platform-billing/reconcile'
     | '/api/webhooks/deposits'
     | '/api/webhooks/redsys'
+    | '/reservar/$slug/condiciones'
+    | '/reservar/$slug/privacidad'
     | '/t/$slug/carta'
     | '/t/$slug/equipo'
     | '/t/$slug/facturacion'
@@ -501,6 +556,9 @@ export interface FileRouteTypes {
     | '/admin/facturas'
     | '/admin/invitacion'
     | '/espera/$token'
+    | '/legal/condiciones-saas'
+    | '/legal/cookies'
+    | '/legal/privacidad'
     | '/reserva/$token'
     | '/reservar/$slug'
     | '/t/$slug'
@@ -510,6 +568,8 @@ export interface FileRouteTypes {
     | '/api/platform-billing/reconcile'
     | '/api/webhooks/deposits'
     | '/api/webhooks/redsys'
+    | '/reservar/$slug/condiciones'
+    | '/reservar/$slug/privacidad'
     | '/t/$slug/carta'
     | '/t/$slug/equipo'
     | '/t/$slug/facturacion'
@@ -540,8 +600,11 @@ export interface RootRouteChildren {
   RegistroRoute: typeof RegistroRoute
   RestablecerContrasenaRoute: typeof RestablecerContrasenaRoute
   EsperaTokenRoute: typeof EsperaTokenRoute
+  LegalCondicionesSaasRoute: typeof LegalCondicionesSaasRoute
+  LegalCookiesRoute: typeof LegalCookiesRoute
+  LegalPrivacidadRoute: typeof LegalPrivacidadRoute
   ReservaTokenRoute: typeof ReservaTokenRoute
-  ReservarSlugRoute: typeof ReservarSlugRoute
+  ReservarSlugRoute: typeof ReservarSlugRouteWithChildren
   TSlugRoute: typeof TSlugRouteWithChildren
   ApiCronNotificationsRoute: typeof ApiCronNotificationsRoute
   ApiPlatformBillingReconcileRoute: typeof ApiPlatformBillingReconcileRoute
@@ -664,6 +727,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EsperaTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/legal/condiciones-saas': {
+      id: '/legal/condiciones-saas'
+      path: '/legal/condiciones-saas'
+      fullPath: '/legal/condiciones-saas'
+      preLoaderRoute: typeof LegalCondicionesSaasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/legal/cookies': {
+      id: '/legal/cookies'
+      path: '/legal/cookies'
+      fullPath: '/legal/cookies'
+      preLoaderRoute: typeof LegalCookiesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/legal/privacidad': {
+      id: '/legal/privacidad'
+      path: '/legal/privacidad'
+      fullPath: '/legal/privacidad'
+      preLoaderRoute: typeof LegalPrivacidadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reserva/$token': {
       id: '/reserva/$token'
       path: '/reserva/$token'
@@ -726,6 +810,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/webhooks/redsys'
       preLoaderRoute: typeof ApiWebhooksRedsysRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/reservar/$slug/condiciones': {
+      id: '/reservar/$slug/condiciones'
+      path: '/condiciones'
+      fullPath: '/reservar/$slug/condiciones'
+      preLoaderRoute: typeof ReservarSlugCondicionesRouteImport
+      parentRoute: typeof ReservarSlugRoute
+    }
+    '/reservar/$slug/privacidad': {
+      id: '/reservar/$slug/privacidad'
+      path: '/privacidad'
+      fullPath: '/reservar/$slug/privacidad'
+      preLoaderRoute: typeof ReservarSlugPrivacidadRouteImport
+      parentRoute: typeof ReservarSlugRoute
     }
     '/t/$slug/': {
       id: '/t/$slug/'
@@ -875,6 +973,20 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface ReservarSlugRouteChildren {
+  ReservarSlugCondicionesRoute: typeof ReservarSlugCondicionesRoute
+  ReservarSlugPrivacidadRoute: typeof ReservarSlugPrivacidadRoute
+}
+
+const ReservarSlugRouteChildren: ReservarSlugRouteChildren = {
+  ReservarSlugCondicionesRoute: ReservarSlugCondicionesRoute,
+  ReservarSlugPrivacidadRoute: ReservarSlugPrivacidadRoute,
+}
+
+const ReservarSlugRouteWithChildren = ReservarSlugRoute._addFileChildren(
+  ReservarSlugRouteChildren,
+)
+
 interface TSlugLVenueRouteChildren {
   TSlugLVenueBloquesRoute: typeof TSlugLVenueBloquesRoute
   TSlugLVenueClientesRoute: typeof TSlugLVenueClientesRoute
@@ -935,8 +1047,11 @@ const rootRouteChildren: RootRouteChildren = {
   RegistroRoute: RegistroRoute,
   RestablecerContrasenaRoute: RestablecerContrasenaRoute,
   EsperaTokenRoute: EsperaTokenRoute,
+  LegalCondicionesSaasRoute: LegalCondicionesSaasRoute,
+  LegalCookiesRoute: LegalCookiesRoute,
+  LegalPrivacidadRoute: LegalPrivacidadRoute,
   ReservaTokenRoute: ReservaTokenRoute,
-  ReservarSlugRoute: ReservarSlugRoute,
+  ReservarSlugRoute: ReservarSlugRouteWithChildren,
   TSlugRoute: TSlugRouteWithChildren,
   ApiCronNotificationsRoute: ApiCronNotificationsRoute,
   ApiPlatformBillingReconcileRoute: ApiPlatformBillingReconcileRoute,

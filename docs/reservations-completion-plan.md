@@ -151,10 +151,11 @@ sesiones sin reserva. Estas reglas están cubiertas por
    `finish_reservation_notification_job`, con backoff exponencial y máximo de
    cinco intentos. La Edge Function `process-notification-jobs` ejecuta ese
    ciclo y delega el envío en endpoints configurables por canal.**
-   En despliegues Vercel, `vercel.json` ejecuta `/api/cron/notifications` cada
-   cinco minutos; el endpoint exige `NOTIFICATION_CRON_SECRET` y reenvía con el
-   token de worker. En Supabase Cron puede invocarse directamente la Edge
-   Function con el mismo `NOTIFICATION_WORKER_TOKEN`.
+   GitHub Actions ejecuta `/api/cron/notifications` cada cinco minutos; el
+   endpoint exige `NOTIFICATION_CRON_SECRET` y reenvía con el token de worker.
+   El repositorio debe definir los secretos `APP_URL` y
+   `NOTIFICATION_CRON_SECRET`. En Supabase Cron puede invocarse directamente la
+   Edge Function con el mismo `NOTIFICATION_WORKER_TOKEN`.
 4. Crear `reservation_group_terms` y `reservation_deposits`: condiciones
    congeladas, importe en céntimos, moneda, vencimiento, estado, proveedor,
    referencia e idempotencia. No almacenar medios de pago. **Modelo base creado

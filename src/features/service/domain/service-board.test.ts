@@ -6,6 +6,8 @@ import {
   findSeatingConflicts,
   mergeTableIds,
   seatingCapacity,
+  sessionElapsedMinutes,
+  sessionPacingState,
   suggestTableCombination,
   type ServiceReservation,
   type ServiceSession,
@@ -93,6 +95,13 @@ describe('service board', () => {
 
     expect(states[0]).toMatchObject({ status: 'cleaning' })
     expect(suggestTableCombination(states, 2)).toBeUndefined()
+  })
+
+  it('calculates pacing from the session start', () => {
+    const current = new Date('2026-09-09T20:45:00.000Z')
+    expect(sessionElapsedMinutes(session, current)).toBe(125)
+    expect(sessionPacingState(session, current)).toBe('attention')
+    expect(sessionPacingState(session, current, 130)).toBe('on_track')
   })
 
   it('keeps the earliest reservation when two share a table', () => {

@@ -21,7 +21,7 @@ import {
 import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
 import { createBrowserSupabaseClient } from '@/shared/lib/supabase/client'
 
-import type { ServiceBoard } from '../domain/service-board'
+import { buildServiceHandover, type ServiceBoard } from '../domain/service-board'
 import { ServiceActions } from './service-actions'
 import { describeStatus } from './service-labels'
 import { ServicePlan } from './service-plan'
@@ -137,6 +137,7 @@ export function ServicePage({
     selectedAreaId === 'all'
       ? board.tables
       : board.tables.filter((table) => visibleTableCodes.has(table.code))
+  const handover = buildServiceHandover(board, clock)
   const activeVersionIds = new Set(
     plan.areas
       .map((area) => selectFloorPlanVersion(plan.versions, area.id)?.id)
@@ -415,6 +416,48 @@ export function ServicePage({
           )}
         </div>
         <aside className="space-y-6 lg:sticky lg:top-6 lg:self-start">
+          {handover.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Handover de turno</CardTitle>
+                <CardDescription>
+                  Resumen vivo para entregar la sala al siguiente equipo.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2 text-sm">
+                {handover.map((section) => {
+                  const areaName = plan.areas.find((area) => area.id === section.areaId)?.name
+                  const staffNames = section.assignedStaffIds
+                    .map((id) => board.staff?.find((member) => member.userId === id)?.displayName)
+                    .filter(Boolean)
+                  return (
+                    <div className="border-border rounded-lg border p-3" key={section.areaId}>
+                      <p className="font-medium">{areaName ?? 'Sección'}</p>
+                      <p className="text-muted-foreground text-xs">
+                        {staffNames.length > 0 ? staffNames.join(', ') : 'Sin equipo asignado'} ·{' '}
+                        {section.activeSessions} cuentas abiertas
+                      </p>
+                      {(section.attentionSessions > 0 ||
+                        section.cleaningTables > 0 ||
+                        section.blockedTables > 0) && (
+                        <p className="text-warning text-xs">
+                          {section.attentionSessions > 0
+                            ? `${section.attentionSessions} pacing`
+                            : ''}
+                          {section.cleaningTables > 0
+                            ? ` · ${section.cleaningTables} por limpiar`
+                            : ''}
+                          {section.blockedTables > 0
+                            ? ` · ${section.blockedTables} bloqueadas`
+                            : ''}
+                        </p>
+                      )}
+                    </div>
+                  )
+                })}
+              </CardContent>
+            </Card>
+          )}
           <ServiceActions
             areaOpen={
               selectedAreaId === 'all' ||
@@ -427,6 +470,7 @@ export function ServicePage({
             selectedTableIds={selectedTableIds}
             tenantId={tenantId}
             venueId={venueId}
+            now={clock}
           />
           <ServiceQueue
             board={board}

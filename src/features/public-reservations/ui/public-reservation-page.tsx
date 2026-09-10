@@ -426,8 +426,25 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                 Reservar mesa
               </Button>
               <p className="m-0 text-xs leading-5 text-[#737983]">
-                Al reservar, tus datos se compartirán solo con {profile.name} para gestionar esta
-                reserva.
+                Al reservar, {profile.name} tratará tus datos para gestionar la reserva. Consulta su{' '}
+                <Link
+                  className="underline underline-offset-2"
+                  params={{ slug: profile.slug }}
+                  target="_blank"
+                  to="/reservar/$slug/privacidad"
+                >
+                  política de privacidad
+                </Link>{' '}
+                y las{' '}
+                <Link
+                  className="underline underline-offset-2"
+                  params={{ slug: profile.slug }}
+                  target="_blank"
+                  to="/reservar/$slug/condiciones"
+                >
+                  condiciones de reserva
+                </Link>
+                .
               </p>
             </form>
           </CardContent>

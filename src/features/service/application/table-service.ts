@@ -23,6 +23,8 @@ import {
   serviceVenueInput,
   updateSessionNoteInput,
   updateTableBlockInput,
+  updateAreaStaffInput,
+  createHandoverSnapshotInput,
 } from './service-schema'
 
 const seatReservationInput = serviceVenueInput.extend({
@@ -135,6 +137,65 @@ export const cleanTables = createServerFn({ method: 'POST' })
       .select('id')
     if (error) throw new Error(`table_clean_failed:${error.code}`)
     return { tableIds: (updated ?? []).map((table) => table.id as string) }
+  })
+
+/** Replaces the active staff assigned to one room area. */
+export const updateAreaStaff = createServerFn({ method: 'POST' })
+  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .validator(updateAreaStaffInput)
+  .handler(async ({ context, data }) => {
+    if (!['owner', 'manager'].includes(context.tenantMembership.role))
+      throw new Response('Forbidden', { status: 403 })
+    const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    const { data: members, error: memberError } = await supabase
+      .from('memberships')
+      .select('user_id')
+      .eq('tenant_id', data.tenantId)
+      .eq('status', 'active')
+      .in('role', ['owner', 'manager', 'host', 'waiter'])
+      .in('user_id', data.userIds)
+    if (memberError) throw new Error(`area_staff_members_failed:${memberError.code}`)
+    if ((members ?? []).length !== new Set(data.userIds).size)
+      throw new Response('Invalid staff member', { status: 422 })
+    const { error: deleteError } = await supabase
+      .from('area_staff_assignments')
+      .delete()
+      .eq('tenant_id', data.tenantId)
+      .eq('area_id', data.areaId)
+    if (deleteError) throw new Error(`area_staff_clear_failed:${deleteError.code}`)
+    if (data.userIds.length > 0) {
+      const { error: insertError } = await supabase.from('area_staff_assignments').insert(
+        data.userIds.map((userId) => ({
+          area_id: data.areaId,
+          tenant_id: data.tenantId,
+          user_id: userId,
+        })),
+      )
+      if (insertError) throw new Error(`area_staff_assign_failed:${insertError.code}`)
+    }
+    return { areaId: data.areaId, userIds: data.userIds }
+  })
+
+/** Persists an immutable handover snapshot for the next shift. */
+export const createHandoverSnapshot = createServerFn({ method: 'POST' })
+  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .validator(createHandoverSnapshotInput)
+  .handler(async ({ context, data }) => {
+    if (!['owner', 'manager', 'host'].includes(context.tenantMembership.role))
+      throw new Response('Forbidden', { status: 403 })
+    const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    const { data: snapshot, error } = await supabase
+      .from('service_handover_snapshots')
+      .insert({
+        created_by: context.tenantMembership.userId,
+        summary: data.summary,
+        tenant_id: data.tenantId,
+        venue_id: data.venueId,
+      })
+      .select('created_at, id')
+      .single()
+    if (error || !snapshot) throw new Error(`handover_snapshot_failed:${error?.code ?? 'unknown'}`)
+    return { createdAt: snapshot.created_at as string, id: snapshot.id as string }
   })
 
 /** Opens the live table session and converts its pending reservation into seated. */

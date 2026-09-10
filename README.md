@@ -39,6 +39,7 @@ Nunca se edita una migración ya aplicada: se añade una nueva. Para aplicarlas:
 | `VERIFACTU_DEFAULT_ENV`                                                                            | Servidor | Entorno fiscal inicial de nuevos tenants (`test`)    |
 | `TENANT_CERTIFICATE_MASTER_KEY`                                                                    | Servidor | Cifrado en reposo de certificados por tenant         |
 | `REDSYS_*`, `APP_URL`, `PLATFORM_BILLING_CRON_SECRET`, `PLATFORM_PAYMENT_REFERENCE_ENCRYPTION_KEY` | Servidor | Cobros SaaS, invitaciones y callbacks firmados       |
+| `NOTIFICATION_CRON_SECRET`, `NOTIFICATION_WORKER_TOKEN`                                            | Servidor | Worker autenticado de notificaciones                 |
 | `SUPABASE_TEST_URL`, `SUPABASE_TEST_PUBLISHABLE_KEY`, `SUPABASE_TEST_SECRET_KEY`                   | CI       | Solo con proyecto de pruebas dedicado; hoy no aplica |
 
 ## Pruebas de integración
@@ -72,6 +73,9 @@ estáticos: el servidor Node es parte del producto (fiscalidad, PDF, webhooks).
    el preset de Vercel y genera el artefacto serverless automáticamente.
 5. Configurar `APP_URL` con el dominio de producción y los demás secretos sólo
    en las variables de entorno de Vercel; nunca en el repositorio.
+   Configurar también los secretos `APP_URL` y `NOTIFICATION_CRON_SECRET` en
+   GitHub Actions: el workflow `process-notifications.yml` activa el worker de
+   notificaciones cada cinco minutos.
 6. `pnpm quality` y `pnpm build` en verde.
 7. Post-despliegue: revisar advisors de Supabase y logs del servidor.
 
