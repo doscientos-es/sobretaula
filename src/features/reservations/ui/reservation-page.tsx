@@ -118,6 +118,9 @@ export function ReservationPage({
     'all',
   )
   const [editingReservationId, setEditingReservationId] = useState<string | null>(null)
+  const [reasonReservationId, setReasonReservationId] = useState<string | null>(null)
+  const [reasonAction, setReasonAction] = useState<'cancel' | 'no-show'>('cancel')
+  const [transitionReason, setTransitionReason] = useState('')
   const [editingStartsAt, setEditingStartsAt] = useState('')
   const [editingPartySize, setEditingPartySize] = useState(1)
   const visibleAgenda = agenda.filter((item) => {
@@ -210,10 +213,11 @@ export function ReservationPage({
   }, [])
 
   async function cancelAgendaReservation(reservationId: string) {
-    if (!window.confirm('¿Cancelar esta reserva?')) return
     try {
-      const reason = window.prompt('Motivo de cancelación (opcional)')?.trim() || undefined
+      const reason = transitionReason.trim() || undefined
       await cancelReservation({ data: { reservationId, reason, tenantId, venueId } })
+      setReasonReservationId(null)
+      setTransitionReason('')
       setAgendaLoading(true)
       setAgendaRefresh((value) => value + 1)
     } catch {
@@ -239,10 +243,11 @@ export function ReservationPage({
   }
 
   async function markAgendaNoShow(reservationId: string) {
-    if (!window.confirm('¿Marcar esta reserva como no presentada?')) return
     try {
-      const reason = window.prompt('Motivo del no-show (opcional)')?.trim() || undefined
+      const reason = transitionReason.trim() || undefined
       await markReservationNoShow({ data: { reservationId, reason, tenantId, venueId } })
+      setReasonReservationId(null)
+      setTransitionReason('')
       setAgendaLoading(true)
       setAgendaRefresh((value) => value + 1)
     } catch {
@@ -599,7 +604,11 @@ export function ReservationPage({
                             {canMarkNoShow(item.startsAt) ? (
                               <Button
                                 disabled={feedback.pending}
-                                onClick={() => void markAgendaNoShow(item.id)}
+                                onClick={() => {
+                                  setReasonAction('no-show')
+                                  setTransitionReason('')
+                                  setReasonReservationId(item.id)
+                                }}
                                 size="sm"
                                 type="button"
                                 variant="outline"
@@ -609,13 +618,59 @@ export function ReservationPage({
                             ) : null}
                             <Button
                               disabled={feedback.pending}
-                              onClick={() => void cancelAgendaReservation(item.id)}
+                              onClick={() => {
+                                setReasonAction('cancel')
+                                setTransitionReason('')
+                                setReasonReservationId(item.id)
+                              }}
                               size="sm"
                               type="button"
                             >
                               Cancelar
                             </Button>
                           </span>
+                        ) : null}
+                        {reasonReservationId === item.id ? (
+                          <form
+                            aria-label={
+                              reasonAction === 'cancel'
+                                ? 'Motivo de cancelación'
+                                : 'Motivo del no-show'
+                            }
+                            className="mt-2 grid gap-2"
+                            onSubmit={(event) => {
+                              event.preventDefault()
+                              void (reasonAction === 'cancel'
+                                ? cancelAgendaReservation(item.id)
+                                : markAgendaNoShow(item.id))
+                            }}
+                          >
+                            <Field>
+                              <FieldLabel htmlFor={`transition-reason-${item.id}`}>
+                                Motivo (opcional)
+                              </FieldLabel>
+                              <Input
+                                id={`transition-reason-${item.id}`}
+                                maxLength={500}
+                                onChange={(event) => setTransitionReason(event.target.value)}
+                                value={transitionReason}
+                              />
+                            </Field>
+                            <span className="flex flex-wrap justify-end gap-2">
+                              <Button disabled={feedback.pending} type="submit">
+                                {reasonAction === 'cancel'
+                                  ? 'Confirmar cancelación'
+                                  : 'Confirmar no-show'}
+                              </Button>
+                              <Button
+                                onClick={() => setReasonReservationId(null)}
+                                type="button"
+                                variant="outline"
+                              >
+                                Volver
+                              </Button>
+                            </span>
+                          </form>
                         ) : null}
                         {editingReservationId === item.id ? (
                           <div className="mt-2 grid gap-2">
