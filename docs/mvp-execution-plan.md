@@ -8,6 +8,31 @@ un agente puede ejecutar en orden. La petición del cliente prevalece si hay
 conflicto. No se considera terminado un bloque sin pruebas, accesibilidad,
 autorización en servidor y actualización de `implementation-status.md`.
 
+## Acuerdo de ejecución vigente
+
+Esta sección prevalece sobre las dependencias históricas de este backlog.
+
+- El flujo diario se centraliza en `/t/:slug/l/:venue/tpv`; las rutas actuales
+  se conservan como administración compatible durante la transición.
+- Se mantienen los roles existentes. Host y waiter operan mesas y anulan líneas
+  no cobradas con motivo; owner y manager aplican descuentos, devoluciones,
+  arqueo, cierre y ajustes financieros.
+- Se encolan de forma idempotente servicio, comandas y efectivo cuando no hay
+  red. Los cobros de tarjeta requieren confirmación online.
+- La reserva web se confirma automáticamente conforme a reglas del restaurante.
+  No hay depósito por defecto; owner y manager pueden configurarlo para grupos.
+  Cambio o cancelación pública se permite hasta dos horas antes inicialmente.
+- Se entrega correo electrónico; SMS y WhatsApp no se activan sin proveedor y
+  consentimiento configurados. Fichaje estará disponible desde terminal y móvil.
+- Hardware y datáfono se abstraen mediante adaptadores; la tarjeta se registra
+  manualmente ahora y la impresión/cajón/KDS se configura por restaurante.
+- El IVA de restauración se preselecciona al 10 % según la guía vigente de AEAT.
+  Cada producto conserva un tipo explícito editable (0 %, 4 %, 10 % o 21 %).
+- VERI*FACTU es opcional: pruebas por defecto; producción solo tras identidad
+  fiscal, serie, certificado válido y adaptador AEAT configurados por el owner.
+- No se crea ningún Supabase nuevo. El existente solo recibe migraciones propias
+  revisadas y nunca fixtures, humo, carga ni pruebas de concurrencia.
+
 ## Diagnóstico de partida
 
 - Base disponible: tenancy, Auth y roles; plano y servicio; reservas internas y
@@ -39,23 +64,23 @@ autorización en servidor y actualización de `implementation-status.md`.
 
 ## Gates externos (bloquean solo sus dependientes)
 
-| ID | Decisión o recurso | Necesario para |
-| -- | ------------------ | -------------- |
-| G1 | Proyecto Supabase no productivo, CI y credenciales de prueba | E0 y toda entrega de esquema |
-| G2 | Variante TPV: nativo, integración o exportación temporal | E3--E6 y hardware |
-| G3 | Modelos/protocolos de impresora, cajón y datáfono | E6 |
-| G4 | Proveedor, coste y consentimientos para SMS/WhatsApp | E8 (email puede avanzar) |
-| G5 | Asesoría: fiscal/VERI*FACTU y registro horario | E6, E10 y activación fiscal prod |
-| G6 | Merchant distinto del restaurante para depósitos y reglas | E9 |
-| G7 | Política de retención, exportación y anonimización de clientes | E8--E9 |
+| ID  | Decisión o recurso                                             | Necesario para                   |
+| --- | -------------------------------------------------------------- | -------------------------------- |
+| G1  | Proyecto Supabase no productivo, CI y credenciales de prueba   | E0 y toda entrega de esquema     |
+| G2  | Variante TPV: nativo, integración o exportación temporal       | E3--E6 y hardware                |
+| G3  | Modelos/protocolos de impresora, cajón y datáfono              | E6                               |
+| G4  | Proveedor, coste y consentimientos para SMS/WhatsApp           | E8 (email puede avanzar)         |
+| G5  | Asesoría: fiscal/VERI*FACTU y registro horario                 | E6, E10 y activación fiscal prod |
+| G6  | Merchant distinto del restaurante para depósitos y reglas      | E9                               |
+| G7  | Política de retención, exportación y anonimización de clientes | E8--E9                           |
 
 ## Backlog secuenciado
 
 ### E0 — Entorno seguro y evidencia de base (P0)
 
-- [ ] **E0.1 · Inventario de esquema.** Confirmar el proyecto de pruebas,
-  reconciliar `migration list` y prefijos duplicados, y documentar qué
-  migraciones están aplicadas en cada entorno. No cambiar historial aplicado.
+- [x] **E0.1 · Inventario de esquema.** Confirmado el único proyecto autorizado,
+  reconciliado `migration list` y aplicadas individualmente las migraciones
+  pendientes revisadas. No se cambia historial previamente aplicado.
 - [ ] **E0.2 · Reset reproducible.** Aplicar desde vacío al proyecto de pruebas
   y añadir CI que ejecute migraciones y las pruebas de integración sin secretos
   expuestos en logs.
