@@ -19,12 +19,65 @@ export interface Position {
   yCm: number
 }
 
-export type LayoutIssueCode = 'invalid_size' | 'outside_bounds' | 'overlap'
+export type LayoutIssueCode = 'invalid_size' | 'outside_bounds' | 'overlap' | 'narrow_passage'
 
 export interface LayoutIssue {
   code: LayoutIssueCode
   placementId: string
   relatedPlacementId?: string
+}
+
+/**
+ * Finds pairs of usable elements whose free gap is below the configured aisle
+ * width. Elements that only touch at an edge are intentionally ignored.
+ */
+export function findNarrowPassages(
+  placements: readonly PlanPlacement[],
+  minimumClearanceCm: number,
+): Array<{ firstPlacementId: string; secondPlacementId: string; clearanceCm: number }> {
+  if (!Number.isFinite(minimumClearanceCm) || minimumClearanceCm <= 0) return []
+  const result: Array<{
+    firstPlacementId: string
+    secondPlacementId: string
+    clearanceCm: number
+  }> = []
+  for (let index = 0; index < placements.length; index += 1) {
+    const first = placements[index]
+    if (!first) continue
+    const firstBounds = placementBoundingBox(first)
+    for (let otherIndex = index + 1; otherIndex < placements.length; otherIndex += 1) {
+      const second = placements[otherIndex]
+      if (!second || placementsOverlap(first, second)) continue
+      const secondBounds = placementBoundingBox(second)
+      const horizontalGap =
+        firstBounds.xCm + firstBounds.widthCm <= secondBounds.xCm
+          ? secondBounds.xCm - (firstBounds.xCm + firstBounds.widthCm)
+          : firstBounds.xCm - (secondBounds.xCm + secondBounds.widthCm)
+      const verticalGap =
+        firstBounds.yCm + firstBounds.heightCm <= secondBounds.yCm
+          ? secondBounds.yCm - (firstBounds.yCm + firstBounds.heightCm)
+          : firstBounds.yCm - (secondBounds.yCm + secondBounds.heightCm)
+      const horizontalOverlap =
+        firstBounds.xCm < secondBounds.xCm + secondBounds.widthCm &&
+        firstBounds.xCm + firstBounds.widthCm > secondBounds.xCm
+      const verticalOverlap =
+        firstBounds.yCm < secondBounds.yCm + secondBounds.heightCm &&
+        firstBounds.yCm + firstBounds.heightCm > secondBounds.yCm
+      const clearanceCm = horizontalOverlap
+        ? verticalGap
+        : verticalOverlap
+          ? horizontalGap
+          : Math.hypot(horizontalGap, verticalGap)
+      if (clearanceCm < minimumClearanceCm) {
+        result.push({
+          clearanceCm,
+          firstPlacementId: first.id,
+          secondPlacementId: second.id,
+        })
+      }
+    }
+  }
+  return result
 }
 
 export interface PlanObstacle extends PlanPlacement {

@@ -10,6 +10,7 @@ export interface ServiceTable {
   blockReason?: string | null
   isBlocked?: boolean
   isPendingCleaning?: boolean
+  isAccessible?: boolean
   code: string
   id: string
   maxSeats: number
@@ -32,6 +33,7 @@ export interface ServiceStaffMember {
 export interface ServiceHandoverSnapshot {
   createdAt: string
   createdBy: string
+  createdByName?: string
   id: string
   summary: readonly ServiceHandoverSection[]
 }
@@ -57,6 +59,7 @@ export interface ServiceReservation {
   guestPhone?: string | null
   id: string
   partySize: number
+  preferences?: readonly string[]
   startsAt: string
   tableIds: readonly string[]
 }
@@ -72,6 +75,8 @@ export interface WaitlistEntry {
 
 export interface ServiceTableState extends ServiceTable {
   covers: number | null
+  nextReservationStartsAt?: string
+  reservationStartsAt?: string
   reservationId: string | null
   sessionId: string | null
   status: ServiceTableStatus
@@ -81,11 +86,35 @@ export interface ServiceBoard {
   areaStaffAssignments?: Readonly<Record<string, readonly string[]>>
   reservations: readonly ServiceReservation[]
   sessions: readonly ServiceSession[]
+  pacingTargetMinutes?: number
+  kitchenLoad?: number
+  kitchenAlertOrderCount?: number
+  kitchenAlertMinutes?: number
+  kitchenLoadByStation?: Readonly<Record<string, number>>
   staff?: readonly ServiceStaffMember[]
   handoverSnapshots?: readonly ServiceHandoverSnapshot[]
   tables: readonly ServiceTableState[]
   tableGroupPresets?: readonly ServiceTableGroupPreset[]
   waitlist: readonly WaitlistEntry[]
+}
+
+export function kitchenLoadState(
+  recentOrderCount: number,
+  alertThreshold = 12,
+): 'normal' | 'attention' {
+  return recentOrderCount >= alertThreshold ? 'attention' : 'normal'
+}
+
+export function kitchenStationLoadState(
+  load: Readonly<Record<string, number>>,
+  threshold = 6,
+): Readonly<Record<string, 'normal' | 'attention'>> {
+  return Object.fromEntries(
+    Object.entries(load).map(([station, count]) => [
+      station,
+      count >= threshold ? 'attention' : 'normal',
+    ]),
+  )
 }
 
 /** Minutes elapsed since a party was seated, clamped for invalid clocks. */
@@ -127,7 +156,8 @@ export function buildServiceHandover(board: ServiceBoard, now: Date): ServiceHan
       activeSessions: sessions.length,
       assignedStaffIds: board.areaStaffAssignments?.[areaId] ?? [],
       attentionSessions: sessions.filter(
-        (session) => sessionPacingState(session, now) === 'attention',
+        (session) =>
+          sessionPacingState(session, now, board.pacingTargetMinutes ?? 90) === 'attention',
       ).length,
       areaId,
       blockedTables: areaTables.filter((table) => table.status === 'blocked').length,
@@ -195,7 +225,7 @@ export function buildServiceTableStates({
   const reserved = new Map<string, ServiceReservation>()
   for (const reservation of reservations) {
     const startsAt = new Date(reservation.startsAt).getTime()
-    if (Number.isNaN(startsAt) || startsAt > windowEnd) continue
+    if (Number.isNaN(startsAt)) continue
     for (const tableId of reservation.tableIds) {
       const current = reserved.get(tableId)
       if (!current || startsAt < new Date(current.startsAt).getTime()) {
@@ -222,12 +252,18 @@ export function buildServiceTableStates({
       }
     }
     const reservation = reserved.get(table.id)
+    const startsAt = reservation ? new Date(reservation.startsAt).getTime() : Number.NaN
+    const withinWindow = Number.isFinite(startsAt) && startsAt <= windowEnd
     return {
       ...table,
-      covers: reservation?.partySize ?? null,
-      reservationId: reservation?.id ?? null,
+      covers: withinWindow ? (reservation?.partySize ?? null) : null,
+      ...(withinWindow && reservation
+        ? { reservationId: reservation.id }
+        : { reservationId: null }),
+      ...(withinWindow && reservation ? { reservationStartsAt: reservation.startsAt } : {}),
+      ...(reservation ? { nextReservationStartsAt: reservation.startsAt } : {}),
       sessionId: null,
-      status: reservation ? 'reserved' : 'free',
+      status: withinWindow && reservation ? 'reserved' : 'free',
     }
   })
 }
@@ -283,26 +319,96 @@ export function mergeTableIds(first: readonly string[], second: readonly string[
   return [...new Set([...first, ...second])]
 }
 
+export type SessionSplitPlan =
+  | { ok: true; remainingTableIds: string[] }
+  | { ok: false; reason: 'empty_selection' | 'unknown_table' | 'all_tables' | 'invalid_covers' }
+
+/** Pure validation for splitting a session before any account mutation occurs. */
+export function planSessionSplit(
+  session: Pick<ServiceSession, 'covers' | 'tableIds'>,
+  selectedTableIds: readonly string[],
+  newCovers: number,
+): SessionSplitPlan {
+  if (selectedTableIds.length === 0) return { ok: false, reason: 'empty_selection' }
+  if (selectedTableIds.some((tableId) => !session.tableIds.includes(tableId)))
+    return { ok: false, reason: 'unknown_table' }
+  const selected = new Set(selectedTableIds)
+  const remainingTableIds = session.tableIds.filter((tableId) => !selected.has(tableId))
+  if (remainingTableIds.length === 0) return { ok: false, reason: 'all_tables' }
+  if (!Number.isInteger(newCovers) || newCovers < 1 || newCovers >= session.covers)
+    return { ok: false, reason: 'invalid_covers' }
+  return { ok: true, remainingTableIds }
+}
+
 /** Suggests the smallest free-table combination that fits a party. */
 export function suggestTableCombination(
   states: readonly ServiceTableState[],
   covers: number,
+  areaId?: string,
+  accessibleOnly = false,
+  now = new Date(),
+  reservationBufferMinutes = 120,
+  areaLoads: Readonly<Record<string, number>> = {},
+  preferences: readonly string[] = [],
+  kitchenLoads: Readonly<Record<string, number>> = {},
 ): string[] | undefined {
   if (!Number.isInteger(covers) || covers <= 0) return undefined
-  const available = states.filter((state) => state.status === 'free')
+  const available = states.filter(
+    (state) =>
+      state.status === 'free' &&
+      (!areaId || state.areaId === areaId) &&
+      (!accessibleOnly || state.isAccessible === true),
+  )
+  const protectedUntil = now.getTime() + reservationBufferMinutes * 60_000
+  const safeAvailable = available.filter((state) => {
+    if (!state.nextReservationStartsAt) return true
+    const startsAt = new Date(state.nextReservationStartsAt).getTime()
+    return !Number.isFinite(startsAt) || startsAt >= protectedUntil
+  })
+  const candidates = safeAvailable.length >= 1 ? safeAvailable : available
+  const combinationLoad = (chosen: readonly ServiceTableState[]) =>
+    chosen.reduce((total, table) => total + (table.areaId ? (areaLoads[table.areaId] ?? 0) : 0), 0)
+  const combinationKitchenLoad = (chosen: readonly ServiceTableState[]) =>
+    chosen.reduce(
+      (total, table) => total + (table.areaId ? (kitchenLoads[table.areaId] ?? 0) : 0),
+      0,
+    )
+  const preferredAreas = new Set(
+    preferences.flatMap((preference) => {
+      const normalized = preference.trim().toLowerCase()
+      return normalized.startsWith('area:') ? [normalized.slice(5)] : [normalized]
+    }),
+  )
+  const preferenceScore = (chosen: readonly ServiceTableState[]) =>
+    chosen.reduce(
+      (total, table) =>
+        total + (table.areaId && preferredAreas.has(table.areaId.toLowerCase()) ? 1 : 0),
+      0,
+    )
   let best: ServiceTableState[] | undefined
   const visit = (start: number, chosen: ServiceTableState[], capacity: number) => {
+    const bestCapacity = best?.reduce((sum, table) => sum + table.maxSeats, 0)
+    let betterTie = false
+    if (best) {
+      const preferenceDelta = preferenceScore(chosen) - preferenceScore(best)
+      const kitchenDelta = combinationKitchenLoad(chosen) - combinationKitchenLoad(best)
+      const areaDelta = combinationLoad(chosen) - combinationLoad(best)
+      betterTie =
+        chosen.length < best.length ||
+        (chosen.length === best.length &&
+          (preferenceDelta > 0 ||
+            (preferenceDelta === 0 && (kitchenDelta < 0 || (kitchenDelta === 0 && areaDelta < 0)))))
+    }
     if (
       capacity >= covers &&
       (!best ||
-        capacity - covers < best.reduce((sum, table) => sum + table.maxSeats, 0) - covers ||
-        (capacity === best.reduce((sum, table) => sum + table.maxSeats, 0) &&
-          chosen.length < best.length))
+        (bestCapacity !== undefined && capacity - covers < bestCapacity - covers) ||
+        (bestCapacity !== undefined && capacity === bestCapacity && betterTie))
     )
       best = chosen
     if (chosen.length >= 6 || capacity >= covers) return
-    for (let index = start; index < available.length; index += 1) {
-      const candidate = available[index]
+    for (let index = start; index < candidates.length; index += 1) {
+      const candidate = candidates[index]
       if (candidate) visit(index + 1, [...chosen, candidate], capacity + candidate.maxSeats)
     }
   }

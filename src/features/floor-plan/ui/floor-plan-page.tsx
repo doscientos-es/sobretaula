@@ -19,6 +19,7 @@ import {
   useRef,
   useState,
   type FormEvent,
+  type ChangeEvent,
   type KeyboardEvent,
   type PointerEvent,
 } from 'react'
@@ -28,6 +29,9 @@ import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
 import {
   createFloorPlanTable,
   createInitialFloorPlan,
+  createEventLayoutTemplate,
+  deleteEventLayoutTemplate,
+  updateEventLayoutTemplate,
   createTableGroupPreset,
   deleteTableGroupPreset,
   saveFloorPlanVersion,
@@ -50,10 +54,16 @@ import {
   DEFAULT_GRID_SIZE_CM,
   findPlacementCollisions,
   findBlockedAccesses,
+  findNarrowPassages,
   isPlacementWithinBounds,
   movePlacement,
   validateLayout,
 } from '../domain/geometry'
+import {
+  createLayoutTemplate,
+  parseLayoutTemplate,
+  serializeLayoutTemplate,
+} from '../domain/layout-template'
 import { inspectTableGroupPresetAvailability } from '../domain/table-group-presets'
 
 function readLockedIds(lockStorageKey: string | undefined): string[] {
@@ -88,6 +98,7 @@ export function FloorPlanPage({
   const [outdoorOpen, setOutdoorOpen] = useState(true)
   const [tableCode, setTableCode] = useState('1')
   const [tableSeats, setTableSeats] = useState(4)
+  const [tableAccessible, setTableAccessible] = useState(false)
   const [tableXCm, setTableXCm] = useState(50)
   const [tableYCm, setTableYCm] = useState(50)
   const [presetName, setPresetName] = useState('Combinación')
@@ -95,12 +106,18 @@ export function FloorPlanPage({
   const [versionName, setVersionName] = useState('Nueva versión')
   const [versionActivation, setVersionActivation] = useState('')
   const [versionDeactivation, setVersionDeactivation] = useState('')
+  const [eventName, setEventName] = useState('')
+  const [eventFrom, setEventFrom] = useState('')
+  const [eventTo, setEventTo] = useState('')
+  const [editingEventId, setEditingEventId] = useState<string>()
+  const templateInputRef = useRef<HTMLInputElement>(null)
   const [previewDevice, setPreviewDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop')
   const [draggingTableId, setDraggingTableId] = useState<string>()
   const [selectedId, setSelectedId] = useState<string>()
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [zoom, setZoom] = useState(1)
   const [gridSize, setGridSize] = useState(DEFAULT_GRID_SIZE_CM)
+  const [minimumAisleCm, setMinimumAisleCm] = useState(90)
   const [pan, setPan] = useState({ x: 0, y: 0 })
   const panPointer = useRef<{ id: number; x: number; y: number } | undefined>(undefined)
   const [selectedAreaId, setSelectedAreaId] = useState(data.areas[0]?.id)
@@ -113,7 +130,13 @@ export function FloorPlanPage({
   const lockStorageKey = activeVersion
     ? `sobretaula:floor-plan-locks:${activeVersion.id}`
     : undefined
-  const [lockedIds, setLockedIds] = useState(() => readLockedIds(lockStorageKey))
+  const [lockedIds, setLockedIds] = useState(() => {
+    const local = readLockedIds(lockStorageKey)
+    const persisted = data.placements
+      .filter((placement) => placement.isLocked)
+      .map((placement) => placement.id)
+    return [...new Set([...persisted, ...local])]
+  })
   useEffect(() => {
     if (!lockStorageKey || typeof window === 'undefined') return
     try {
@@ -142,7 +165,98 @@ export function FloorPlanPage({
         : [id],
     )
   }
-  const layoutIssues = activeVersion ? validateLayout(placements, activeVersion) : []
+  function exportTemplate() {
+    if (!activeVersion) return
+    const template = createLayoutTemplate({
+      widthCm: activeVersion.widthCm,
+      heightCm: activeVersion.heightCm,
+      tables: placements,
+      elements,
+    })
+    const blob = new Blob([serializeLayoutTemplate(template)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = `${activeVersion.name.toLowerCase().replace(/[^a-z0-9]+/gi, '-') || 'plano'}.json`
+    anchor.click()
+    URL.revokeObjectURL(url)
+  }
+  function importTemplate(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file || !activeVersion) return
+    void file.text().then((value) => {
+      try {
+        const template = parseLayoutTemplate(value)
+        const nextPlacements = template.tables.map((table) => ({
+          ...table,
+          id: crypto.randomUUID(),
+          floorPlanVersionId: activeVersion.id,
+        }))
+        const nextElements = template.elements.map((element) => ({
+          ...element,
+          id: crypto.randomUUID(),
+          floorPlanVersionId: activeVersion.id,
+        }))
+        setHistory((current) =>
+          commitEditorHistory(current, { placements: nextPlacements, elements: nextElements }),
+        )
+        setSelectedId(undefined)
+        setSelectedIds([])
+        feedback.setSuccess('Plantilla cargada en el editor. Revísala antes de guardar.')
+      } catch (error) {
+        feedback.setError(
+          error instanceof Error ? error.message : 'No se ha podido leer la plantilla.',
+        )
+      }
+    })
+  }
+  async function createEventTemplate() {
+    if (!activeVersion || !activeArea || !eventName.trim() || !eventFrom) {
+      feedback.setError('Indica nombre y fecha de inicio del evento.')
+      return
+    }
+    feedback.setPending()
+    try {
+      const payload = {
+        activeFrom: new Date(eventFrom).toISOString(),
+        activeTo: eventTo ? new Date(eventTo).toISOString() : null,
+        areaIds: [activeArea.id],
+        layout: createLayoutTemplate({
+          widthCm: activeVersion.widthCm,
+          heightCm: activeVersion.heightCm,
+          tables: placements,
+          elements,
+        }) as unknown as Record<string, unknown>,
+        name: eventName,
+        tenantId,
+        venueId,
+      }
+      if (editingEventId)
+        await updateEventLayoutTemplate({ data: { ...payload, templateId: editingEventId } })
+      else await createEventLayoutTemplate({ data: payload })
+      setEventName('')
+      setEventFrom('')
+      setEventTo('')
+      setEditingEventId(undefined)
+      feedback.setSuccess(
+        editingEventId ? 'Plantilla de evento actualizada.' : 'Plantilla de evento guardada.',
+      )
+      reload()
+    } catch {
+      feedback.setError('No se ha podido guardar la plantilla de evento.')
+    }
+  }
+  const layoutIssues = activeVersion
+    ? [
+        ...validateLayout(placements, activeVersion),
+        ...findNarrowPassages(placements, minimumAisleCm).map((passage) => ({
+          code: 'narrow_passage' as const,
+          placementId: passage.firstPlacementId,
+          relatedPlacementId: passage.secondPlacementId,
+        })),
+      ]
+    : []
   const blockedAccesses = findBlockedAccesses(placements, elements)
   const selectedPlacement = placements.find((item) => item.id === selectedId)
   const alignmentGuides = selectedPlacement
@@ -213,6 +327,7 @@ export function FloorPlanPage({
           heightCm: 100,
           maxSeats: tableSeats,
           minSeats: 1,
+          isAccessible: tableAccessible,
           tenantId,
           venueId,
           versionId: activeVersion.id,
@@ -622,7 +737,10 @@ export function FloorPlanPage({
           activeTo: deactivationDate?.toISOString() ?? null,
           elements,
           name: versionName,
-          placements,
+          placements: placements.map((placement) => ({
+            ...placement,
+            isLocked: lockedIds.includes(placement.id),
+          })),
           sourceVersionId: activeVersion.id,
           tenantId,
           venueId,
@@ -644,6 +762,101 @@ export function FloorPlanPage({
           </PageHeaderDescription>
         </div>
       </PageHeader>
+      {(data.eventLayoutTemplates?.length ?? 0) > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Plantillas de evento</CardTitle>
+            <CardDescription>Servicios especiales programados por zona.</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {data.eventLayoutTemplates?.map((template) => (
+              <div className="border-border rounded-lg border p-3" key={template.id}>
+                <p className="font-medium">{template.name}</p>
+                <p className="text-muted-foreground text-xs">
+                  Desde {new Date(template.activeFrom).toLocaleString('es-ES')}
+                  {template.activeTo
+                    ? ` · hasta ${new Date(template.activeTo).toLocaleString('es-ES')}`
+                    : ''}
+                </p>
+                <p className="text-muted-foreground mt-1 text-xs">
+                  {template.areaIds.length} zonas afectadas
+                </p>
+                <Button
+                  className="mt-2"
+                  disabled={feedback.pending}
+                  onClick={() => {
+                    if (!window.confirm(`¿Borrar la plantilla «${template.name}»?`)) return
+                    feedback.setPending()
+                    void deleteEventLayoutTemplate({
+                      data: { templateId: template.id, tenantId, venueId },
+                    })
+                      .then(() => {
+                        feedback.setSuccess('Plantilla eliminada.')
+                        reload()
+                      })
+                      .catch(() => feedback.setError('No se ha podido borrar la plantilla.'))
+                  }}
+                  type="button"
+                  variant="outline"
+                >
+                  Borrar
+                </Button>
+                <Button
+                  className="mt-2 ml-2"
+                  onClick={() => {
+                    setEditingEventId(template.id)
+                    setEventName(template.name)
+                    setEventFrom(template.activeFrom.slice(0, 16))
+                    setEventTo(template.activeTo?.slice(0, 16) ?? '')
+                    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })
+                  }}
+                  type="button"
+                  variant="outline"
+                >
+                  Editar
+                </Button>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+      {activeVersion && activeArea && (
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              {editingEventId ? 'Editar plantilla de evento' : 'Crear plantilla de evento'}
+            </CardTitle>
+            <CardDescription>Guarda el layout actual para {activeArea.name}.</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-3 sm:grid-cols-4">
+            <Input
+              aria-label="Nombre del evento"
+              onChange={(event) => setEventName(event.target.value)}
+              placeholder="Nombre"
+              value={eventName}
+            />
+            <Input
+              aria-label="Inicio del evento"
+              onChange={(event) => setEventFrom(event.target.value)}
+              type="datetime-local"
+              value={eventFrom}
+            />
+            <Input
+              aria-label="Fin del evento"
+              onChange={(event) => setEventTo(event.target.value)}
+              type="datetime-local"
+              value={eventTo}
+            />
+            <Button
+              disabled={feedback.pending}
+              onClick={() => void createEventTemplate()}
+              type="button"
+            >
+              {editingEventId ? 'Guardar cambios' : 'Guardar evento'}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
       {!activeVersion ? (
         <Card className="max-w-2xl">
           <CardHeader>
@@ -805,6 +1018,20 @@ export function FloorPlanPage({
                     <option value={100}>1 m</option>
                   </select>
                 </label>
+                <label className="text-muted-foreground ml-2 flex items-center gap-2 text-sm">
+                  Pasillo mínimo
+                  <select
+                    aria-label="Anchura mínima de pasillo"
+                    className="border-border rounded-md border px-2 py-1"
+                    onChange={(event) => setMinimumAisleCm(Number(event.target.value))}
+                    value={minimumAisleCm}
+                  >
+                    <option value={0}>Sin validar</option>
+                    <option value={75}>75 cm</option>
+                    <option value={90}>90 cm</option>
+                    <option value={120}>1,2 m</option>
+                  </select>
+                </label>
               </div>
               {alignmentGuides.length > 0 && (
                 <p aria-live="polite" className="text-muted-foreground pt-2 text-xs">
@@ -858,9 +1085,11 @@ export function FloorPlanPage({
                       >
                         {issue.code === 'overlap'
                           ? `Solape entre ${issue.placementId} y ${issue.relatedPlacementId}`
-                          : issue.code === 'outside_bounds'
-                            ? `${issue.placementId} queda fuera del plano`
-                            : `${issue.placementId} tiene un tamaño inválido`}
+                          : issue.code === 'narrow_passage'
+                            ? `Pasillo demasiado estrecho entre ${issue.placementId} y ${issue.relatedPlacementId}`
+                            : issue.code === 'outside_bounds'
+                              ? `${issue.placementId} queda fuera del plano`
+                              : `${issue.placementId} tiene un tamaño inválido`}
                       </li>
                     ))}
                   </ul>
@@ -891,7 +1120,11 @@ export function FloorPlanPage({
                   onPointerDown={(event) => {
                     if (event.button !== 1 && !event.altKey) return
                     event.preventDefault()
-                    panPointer.current = { id: event.pointerId, x: event.clientX, y: event.clientY }
+                    panPointer.current = {
+                      id: event.pointerId,
+                      x: event.clientX,
+                      y: event.clientY,
+                    }
                     event.currentTarget.setPointerCapture(event.pointerId)
                   }}
                   onPointerMove={(event) => {
@@ -1365,6 +1598,14 @@ export function FloorPlanPage({
                       />
                     </Field>
                   </div>
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      checked={tableAccessible}
+                      onChange={(event) => setTableAccessible(event.target.checked)}
+                      type="checkbox"
+                    />
+                    Mesa accesible
+                  </label>
                   <FormFeedback pendingLabel="Añadiendo mesa…" state={feedback.state} />
                   <Button disabled={feedback.pending} type="submit">
                     Añadir mesa
@@ -1422,6 +1663,23 @@ export function FloorPlanPage({
                   >
                     Guardar
                   </Button>
+                  <Button onClick={exportTemplate} type="button" variant="outline">
+                    Exportar plantilla
+                  </Button>
+                  <Button
+                    onClick={() => templateInputRef.current?.click()}
+                    type="button"
+                    variant="outline"
+                  >
+                    Importar plantilla
+                  </Button>
+                  <input
+                    accept="application/json,.json"
+                    className="hidden"
+                    onChange={importTemplate}
+                    ref={templateInputRef}
+                    type="file"
+                  />
                 </div>
               </div>
             </CardContent>

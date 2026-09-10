@@ -14,6 +14,102 @@ import { normalizeTableGroupPreset } from '../domain/table-group-presets'
 
 const tenantInput = z.object({ tenantId: z.string().uuid() })
 const venueInput = tenantInput.extend({ venueId: z.string().uuid() })
+export const eventLayoutTemplateInput = venueInput.extend({
+  activeFrom: z.string().datetime({ offset: true }),
+  activeTo: z.string().datetime({ offset: true }).nullable().optional(),
+  areaIds: z.array(z.string().uuid()).min(1).max(50),
+  layout: z.record(z.unknown()),
+  name: z.string().trim().min(1).max(120),
+})
+
+export const listEventLayoutTemplates = createServerFn({ method: 'GET' })
+  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .validator(venueInput)
+  .handler(async ({ context, data }) => {
+    requireManager(context.tenantMembership.role)
+    const { data: templates, error } = await createRequestSupabaseClient(
+      context.tenantMembership.accessToken,
+    )
+      .from('event_layout_templates')
+      .select('id, name, area_ids, layout, active_from, active_to')
+      .eq('tenant_id', data.tenantId)
+      .eq('venue_id', data.venueId)
+      .order('active_from', { ascending: false })
+    if (error) throw new Error(`event_layout_template_list_failed:${error.code}`)
+    return { templates: templates ?? [] }
+  })
+
+export const createEventLayoutTemplate = createServerFn({ method: 'POST' })
+  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .validator(eventLayoutTemplateInput)
+  .handler(async ({ context, data }) => {
+    requireManager(context.tenantMembership.role)
+    const activeTo = data.activeTo ?? null
+    if (activeTo && new Date(activeTo).getTime() <= new Date(data.activeFrom).getTime())
+      throw new Response('Invalid event interval', { status: 422 })
+    const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    const { data: template, error } = await supabase
+      .from('event_layout_templates')
+      .insert({
+        active_from: data.activeFrom,
+        active_to: activeTo,
+        area_ids: data.areaIds,
+        created_by: context.tenantMembership.userId,
+        layout: data.layout,
+        name: data.name,
+        tenant_id: data.tenantId,
+        venue_id: data.venueId,
+      })
+      .select('id')
+      .single()
+    if (error || !template)
+      throw new Error(`event_layout_template_create_failed:${error?.code ?? 'unknown'}`)
+    return { templateId: template.id as string }
+  })
+
+const updateEventLayoutTemplateInput = eventLayoutTemplateInput.extend({
+  templateId: z.string().uuid(),
+})
+const deleteEventLayoutTemplateInput = venueInput.extend({ templateId: z.string().uuid() })
+
+export const updateEventLayoutTemplate = createServerFn({ method: 'POST' })
+  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .validator(updateEventLayoutTemplateInput)
+  .handler(async ({ context, data }) => {
+    requireManager(context.tenantMembership.role)
+    const activeTo = data.activeTo ?? null
+    if (activeTo && new Date(activeTo).getTime() <= new Date(data.activeFrom).getTime())
+      throw new Response('Invalid event interval', { status: 422 })
+    const { error } = await createRequestSupabaseClient(context.tenantMembership.accessToken)
+      .from('event_layout_templates')
+      .update({
+        active_from: data.activeFrom,
+        active_to: activeTo,
+        area_ids: data.areaIds,
+        layout: data.layout,
+        name: data.name,
+      })
+      .eq('id', data.templateId)
+      .eq('tenant_id', data.tenantId)
+      .eq('venue_id', data.venueId)
+    if (error) throw new Error(`event_layout_template_update_failed:${error.code}`)
+    return { templateId: data.templateId }
+  })
+
+export const deleteEventLayoutTemplate = createServerFn({ method: 'POST' })
+  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .validator(deleteEventLayoutTemplateInput)
+  .handler(async ({ context, data }) => {
+    requireManager(context.tenantMembership.role)
+    const { error } = await createRequestSupabaseClient(context.tenantMembership.accessToken)
+      .from('event_layout_templates')
+      .delete()
+      .eq('id', data.templateId)
+      .eq('tenant_id', data.tenantId)
+      .eq('venue_id', data.venueId)
+    if (error) throw new Error(`event_layout_template_delete_failed:${error.code}`)
+    return { templateId: data.templateId }
+  })
 const initialFloorPlanInput = venueInput.extend({
   areaName: z.string().trim().min(1).max(100),
   heightCm: z.number().int().min(100).max(10_000),
@@ -29,6 +125,7 @@ const createTableInput = venueInput
     heightCm: z.number().int().min(25).max(500),
     maxSeats: z.number().int().min(1).max(50),
     minSeats: z.number().int().min(1).max(50),
+    isAccessible: z.boolean().default(false),
     rotationDeg: z.number().int().min(0).max(359).default(0),
     shape: z.enum(['square', 'rectangle', 'round', 'oval', 'custom']).default('square'),
     versionId: z.string().uuid(),
@@ -47,6 +144,7 @@ const placementInput = z.object({
   widthCm: z.number().int().min(25).max(500),
   xCm: z.number().int().min(0).max(10_000),
   yCm: z.number().int().min(0).max(10_000),
+  isLocked: z.boolean().optional(),
 })
 const planElementInput = z.object({
   heightCm: z.number().int().min(1).max(10_000),
@@ -113,7 +211,13 @@ export const getFloorPlan = createServerFn({ method: 'GET' })
     if (versionsResult.error) throw new Error(`floor_plan_load_failed:${versionsResult.error.code}`)
     const versionIds = (versionsResult.data ?? []).map((version) => version.id)
 
-    const [tablesResult, placementsResult, elementsResult, presetsResult] = await Promise.all([
+    const [
+      tablesResult,
+      initialPlacementsResult,
+      elementsResult,
+      presetsResult,
+      eventTemplatesResult,
+    ] = await Promise.all([
       supabase
         .from('tables')
         .select('code, id')
@@ -122,7 +226,7 @@ export const getFloorPlan = createServerFn({ method: 'GET' })
       supabase
         .from('table_placements')
         .select(
-          'floor_plan_version_id, height_cm, id, rotation_deg, table_id, width_cm, x_cm, y_cm',
+          'floor_plan_version_id, height_cm, id, is_locked, rotation_deg, table_id, width_cm, x_cm, y_cm',
         )
         .eq('tenant_id', data.tenantId)
         .in('floor_plan_version_id', versionIds),
@@ -138,13 +242,37 @@ export const getFloorPlan = createServerFn({ method: 'GET' })
         .select('area_id, id, max_seats, name, table_ids')
         .eq('tenant_id', data.tenantId)
         .order('name'),
+      supabase
+        .from('event_layout_templates')
+        .select('active_from, active_to, area_ids, id, layout, name')
+        .eq('tenant_id', data.tenantId)
+        .eq('venue_id', data.venueId)
+        .order('active_from', { ascending: false }),
     ])
+    const eventTemplatesUnavailable =
+      eventTemplatesResult.error?.code === '42P01' || eventTemplatesResult.error?.code === '42703'
+    const eventTemplates = eventTemplatesUnavailable ? [] : (eventTemplatesResult.data ?? [])
+    let placementsResult = initialPlacementsResult
+    if (placementsResult.error?.code === '42703') {
+      const legacy = await supabase
+        .from('table_placements')
+        .select(
+          'floor_plan_version_id, height_cm, id, rotation_deg, table_id, width_cm, x_cm, y_cm',
+        )
+        .eq('tenant_id', data.tenantId)
+        .in('floor_plan_version_id', versionIds)
+      placementsResult = {
+        ...legacy,
+        data: (legacy.data ?? []).map((placement) => ({ ...placement, is_locked: false })),
+      } as typeof placementsResult
+    }
 
     const error = [
       tablesResult.error,
       placementsResult.error,
       elementsResult.error,
       presetsResult.error,
+      eventTemplatesUnavailable ? null : eventTemplatesResult.error,
     ].find(Boolean)
     if (error) throw new Error(`floor_plan_load_failed:${error.code}`)
 
@@ -159,6 +287,14 @@ export const getFloorPlan = createServerFn({ method: 'GET' })
         outdoorOpen: area.outdoor_open,
         spaceType: (area.space_type ?? 'indoor') as FloorPlanData['areas'][number]['spaceType'],
         venueId: area.venue_id,
+      })),
+      eventLayoutTemplates: eventTemplates.map((template) => ({
+        activeFrom: template.active_from,
+        activeTo: template.active_to,
+        areaIds: template.area_ids as string[],
+        id: template.id,
+        layout: template.layout as never,
+        name: template.name,
       })),
       elements: (elementsResult.data ?? []).map((element) => ({
         floorPlanVersionId: element.floor_plan_version_id,
@@ -176,6 +312,7 @@ export const getFloorPlan = createServerFn({ method: 'GET' })
         floorPlanVersionId: placement.floor_plan_version_id,
         heightCm: placement.height_cm,
         id: placement.table_id,
+        isLocked: placement.is_locked,
         rotationDeg: placement.rotation_deg,
         widthCm: placement.width_cm,
         xCm: placement.x_cm,
@@ -337,19 +474,22 @@ export const createFloorPlanTable = createServerFn({ method: 'POST' })
       throw new Response('Invalid placement', { status: 422 })
     }
 
-    const { data: table, error: tableError } = await supabase
-      .from('tables')
-      .insert({
-        area_id: data.areaId,
-        code: data.code,
-        max_seats: data.maxSeats,
-        min_seats: data.minSeats,
-        shape: data.shape,
-        tenant_id: data.tenantId,
-        venue_id: data.venueId,
-      })
-      .select('id')
-      .single()
+    const tablePayload = {
+      area_id: data.areaId,
+      code: data.code,
+      max_seats: data.maxSeats,
+      min_seats: data.minSeats,
+      is_accessible: data.isAccessible,
+      shape: data.shape,
+      tenant_id: data.tenantId,
+      venue_id: data.venueId,
+    }
+    let tableResult = await supabase.from('tables').insert(tablePayload).select('id').single()
+    if (tableResult.error?.code === '42703') {
+      const { is_accessible: _unused, ...legacyPayload } = tablePayload
+      tableResult = await supabase.from('tables').insert(legacyPayload).select('id').single()
+    }
+    const { data: table, error: tableError } = tableResult
     if (tableError || !table)
       throw new Error(`floor_plan_table_create_failed:${tableError?.code ?? 'unknown'}`)
 
@@ -447,6 +587,7 @@ export const saveFloorPlanVersion = createServerFn({ method: 'POST' })
               width_cm: placement.widthCm,
               x_cm: placement.xCm,
               y_cm: placement.yCm,
+              is_locked: placement.isLocked ?? false,
             })),
           ),
       data.elements.length === 0
@@ -465,7 +606,23 @@ export const saveFloorPlanVersion = createServerFn({ method: 'POST' })
             })),
           ),
     ])
-    if (placementsResult.error || elementsResult.error) {
+    let finalPlacementsResult = placementsResult
+    if (placementsResult.error?.code === '42703') {
+      const legacy = await supabase.from('table_placements').insert(
+        data.placements.map((placement) => ({
+          floor_plan_version_id: version.id,
+          height_cm: placement.heightCm,
+          rotation_deg: placement.rotationDeg,
+          table_id: placement.id,
+          tenant_id: data.tenantId,
+          width_cm: placement.widthCm,
+          x_cm: placement.xCm,
+          y_cm: placement.yCm,
+        })),
+      )
+      finalPlacementsResult = legacy
+    }
+    if (finalPlacementsResult.error || elementsResult.error) {
       await supabase.from('floor_plan_versions').delete().eq('id', version.id)
       throw new Error('floor_plan_version_content_create_failed')
     }

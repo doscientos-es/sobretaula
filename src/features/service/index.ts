@@ -4,6 +4,7 @@ export {
   cancelReservation,
   mergeSessions,
   moveSession,
+  splitSession,
   markReservationNoShow,
   seatReservation,
   seatWalkIn,
@@ -13,6 +14,7 @@ export {
   buildServiceTableStates,
   findSeatingConflicts,
   mergeTableIds,
+  planSessionSplit,
   seatingCapacity,
   suggestTableCombination,
 } from './domain/service-board'

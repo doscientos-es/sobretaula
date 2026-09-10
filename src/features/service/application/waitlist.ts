@@ -23,6 +23,16 @@ export const addToWaitlist = createServerFn({ method: 'POST' })
   .handler(async ({ context, data }) => {
     requireWaitlistEditor(context.tenantMembership.role)
     const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    if (data.operationId) {
+      const { data: existing } = await supabase
+        .from('waitlist')
+        .select('id')
+        .eq('operation_id', data.operationId)
+        .eq('tenant_id', data.tenantId)
+        .eq('venue_id', data.venueId)
+        .maybeSingle()
+      if (existing) return { waitlistEntryId: existing.id as string }
+    }
     let guestId: string | null = null
     if (data.guestName || data.guestPhone) {
       const existing = data.guestPhone
@@ -59,6 +69,7 @@ export const addToWaitlist = createServerFn({ method: 'POST' })
         requested_for: new Date().toISOString(),
         tenant_id: data.tenantId,
         venue_id: data.venueId,
+        operation_id: data.operationId ?? null,
       })
       .select('id')
       .single()

@@ -15,6 +15,10 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react'
 
 import {
   createSeatReservationOperation,
+  createCancelReservationOperation,
+  createAddWaitlistOperation,
+  createNoShowReservationOperation,
+  createRemoveWaitlistOperation,
   createSeatWaitlistOperation,
   createServiceOfflineStore,
   enqueueServiceOperation,
@@ -117,6 +121,26 @@ export function ServiceQueue({
 
   function addWaiting(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (!isOnline) {
+      enqueueServiceOperation(
+        offlineStore,
+        createAddWaitlistOperation({
+          estimatedWaitMinutes: estimatedWait ? Number(estimatedWait) : null,
+          ...(guestName ? { guestName } : {}),
+          ...(guestPhone ? { guestPhone } : {}),
+          partySize,
+          tenantId,
+          venueId,
+        }),
+      )
+      feedback.setPending()
+      feedback.setSuccess('Espera guardada. Se añadirá al recuperar la conexión.')
+      setGuestName('')
+      setGuestPhone('')
+      setEstimatedWait('')
+      setPartySize(2)
+      return
+    }
     void run(
       () =>
         addToWaitlist({
@@ -144,6 +168,24 @@ export function ServiceQueue({
     enqueueServiceOperation(offlineStore, operation)
     feedback.setPending()
     feedback.setSuccess('Reserva guardada. Se sentará automáticamente al recuperar la conexión.')
+  }
+  function transitionReservationOffline(kind: 'cancel' | 'no-show', reservationId: string) {
+    enqueueServiceOperation(
+      offlineStore,
+      kind === 'cancel'
+        ? createCancelReservationOperation({ reservationId, tenantId, venueId })
+        : createNoShowReservationOperation({ reservationId, tenantId, venueId }),
+    )
+    feedback.setPending()
+    feedback.setSuccess('Cambio guardado. Se aplicará al recuperar la conexión.')
+  }
+  function removeWaitlistOffline(waitlistEntryId: string) {
+    enqueueServiceOperation(
+      offlineStore,
+      createRemoveWaitlistOperation({ waitlistEntryId, tenantId, venueId }),
+    )
+    feedback.setPending()
+    feedback.setSuccess('Espera guardada. Se quitará al recuperar la conexión.')
   }
 
   function seatWaitlistOffline(waitlistEntryId: string) {
@@ -222,17 +264,19 @@ export function ServiceQueue({
                       disabled={feedback.pending}
                       onClick={() =>
                         isOnline
-                          ? void run(
-                              () =>
-                                seatReservation({
-                                  data: {
-                                    reservationId: reservation.id,
-                                    tenantId,
-                                    venueId,
-                                  },
-                                }),
-                              'No se ha podido sentar la reserva.',
-                            )
+                          ? isOnline
+                            ? void run(
+                                () =>
+                                  seatReservation({
+                                    data: {
+                                      reservationId: reservation.id,
+                                      tenantId,
+                                      venueId,
+                                    },
+                                  }),
+                                'No se ha podido sentar la reserva.',
+                              )
+                            : transitionReservationOffline('no-show', reservation.id)
                           : seatReservationOffline(reservation.id)
                       }
                       type="button"
@@ -243,17 +287,19 @@ export function ServiceQueue({
                       disabled={feedback.pending || !canMarkNoShow(reservation.startsAt, now)}
                       onClick={() =>
                         window.confirm('¿Marcar esta reserva como no presentada?')
-                          ? void run(
-                              () =>
-                                markReservationNoShow({
-                                  data: {
-                                    reservationId: reservation.id,
-                                    tenantId,
-                                    venueId,
-                                  },
-                                }),
-                              'No se ha podido marcar como no presentada.',
-                            )
+                          ? isOnline
+                            ? void run(
+                                () =>
+                                  markReservationNoShow({
+                                    data: {
+                                      reservationId: reservation.id,
+                                      tenantId,
+                                      venueId,
+                                    },
+                                  }),
+                                'No se ha podido marcar como no presentada.',
+                              )
+                            : transitionReservationOffline('cancel', reservation.id)
                           : undefined
                       }
                       type="button"
@@ -336,17 +382,19 @@ export function ServiceQueue({
                     <Button
                       disabled={feedback.pending}
                       onClick={() =>
-                        void run(
-                          () =>
-                            removeFromWaitlist({
-                              data: {
-                                tenantId,
-                                venueId,
-                                waitlistEntryId: entry.id,
-                              },
-                            }),
-                          'No se ha podido quitar de la lista.',
-                        )
+                        isOnline
+                          ? void run(
+                              () =>
+                                removeFromWaitlist({
+                                  data: {
+                                    tenantId,
+                                    venueId,
+                                    waitlistEntryId: entry.id,
+                                  },
+                                }),
+                              'No se ha podido quitar de la lista.',
+                            )
+                          : removeWaitlistOffline(entry.id)
                       }
                       type="button"
                     >

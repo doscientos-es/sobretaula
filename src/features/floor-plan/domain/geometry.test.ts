@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   findPlacementCollisions,
   findBlockedAccesses,
+  findNarrowPassages,
   isPlacementWithinBounds,
   movePlacement,
   placementBoundingBox,
@@ -52,6 +53,15 @@ describe('floor plan geometry', () => {
     const separate = { ...table, id: 'table-3', xCm: 200 }
 
     expect(findPlacementCollisions(table, [table, colliding, separate])).toEqual([colliding])
+  })
+
+  it('detects narrow aisles without flagging a comfortable side gap', () => {
+    expect(
+      findNarrowPassages(
+        [table, { ...table, id: 'table-2', xCm: 150 }, { ...table, id: 'table-3', yCm: 250 }],
+        60,
+      ),
+    ).toEqual([{ clearanceCm: 50, firstPlacementId: 'table-1', secondPlacementId: 'table-2' }])
   })
 
   it('keeps placements within the declared plan bounds', () => {

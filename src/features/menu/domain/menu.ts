@@ -3,6 +3,9 @@ import { localizedText, type LocalizedText } from '@/shared/lib/i18n/localized-t
 
 export { localizedText, type LocalizedText }
 
+export const KITCHEN_STATIONS = ['general', 'hot', 'cold', 'bar', 'dessert'] as const
+export type KitchenStation = (typeof KITCHEN_STATIONS)[number]
+
 export interface MenuCategory {
   id: string
   isActive: boolean
@@ -15,8 +18,10 @@ export interface MenuItem {
   descriptionI18n: LocalizedText
   id: string
   isActive: boolean
+  kitchenStation?: KitchenStation
   nameI18n: LocalizedText
   priceCents: number
+  preparationMinutes?: number
   sku: string | null
   vatRateBps: number
 }

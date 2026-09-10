@@ -22,6 +22,13 @@ export const moveSessionInput = serviceVenueInput.extend({
   tableIds,
 })
 
+export const splitSessionInput = serviceVenueInput.extend({
+  covers: z.number().int().min(1).max(50),
+  operationId,
+  sessionId: z.string().uuid(),
+  tableIds,
+})
+
 export const mergeSessionsInput = serviceVenueInput
   .extend({
     operationId,
@@ -70,6 +77,7 @@ export const createHandoverSnapshotInput = serviceVenueInput.extend({
 })
 
 export const noShowReservationInput = serviceVenueInput.extend({
+  operationId: operationId.optional(),
   reason: z.string().trim().max(500).optional(),
   reservationId: z.string().uuid(),
 })
@@ -79,6 +87,7 @@ export const waitlistEntryInput = serviceVenueInput.extend({
   guestName: z.string().trim().min(1).max(200).optional(),
   guestPhone: z.string().trim().min(3).max(40).optional(),
   partySize: z.number().int().min(1).max(50),
+  operationId: operationId.optional(),
 })
 
 export const waitlistEntryReference = serviceVenueInput.extend({

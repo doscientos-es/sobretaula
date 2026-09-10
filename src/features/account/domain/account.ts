@@ -2,11 +2,15 @@ import { assertMinorUnits, type MinorUnits } from '@/shared/lib/money/money'
 
 export const PAYMENT_METHODS = ['cash', 'card', 'transfer', 'voucher', 'other'] as const
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number]
+export const KITCHEN_STATIONS = ['general', 'hot', 'cold', 'bar', 'dessert'] as const
+export type KitchenStation = (typeof KITCHEN_STATIONS)[number]
 
 /** A line already charged to the table: the menu price was frozen when added. */
 export interface AccountLine {
   id: string
+  kitchenStation?: KitchenStation
   name: string
+  preparationMinutes?: number
   notes: string | null
   quantity: number
   unitPriceCents: MinorUnits

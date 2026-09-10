@@ -4,6 +4,7 @@ import {
   closeSessionInput,
   mergeSessionsInput,
   moveSessionInput,
+  splitSessionInput,
   noShowReservationInput,
   requireServiceEditor,
   requireWaitlistEditor,
@@ -112,6 +113,19 @@ describe('mergeSessionsInput', () => {
         venueId,
       }).success,
     ).toBe(true)
+  })
+})
+
+describe('splitSessionInput', () => {
+  it('requires covers and at least one table', () => {
+    expect(
+      splitSessionInput.safeParse({ covers: 2, sessionId, tableIds: [tableId], tenantId, venueId })
+        .success,
+    ).toBe(true)
+    expect(
+      splitSessionInput.safeParse({ covers: 0, sessionId, tableIds: [], tenantId, venueId })
+        .success,
+    ).toBe(false)
   })
 })
 

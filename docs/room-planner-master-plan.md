@@ -51,13 +51,14 @@ Los estados deben probarse en escritorio, tablet y móvil, con foco visible,
       baño, cocina, salida, ventana, obstáculo y etiqueta.
 - [x] Selección múltiple, duplicado, alineación por los cuatro bordes y distribución
       horizontal/vertical ya disponibles; bloqueo local disponible; agrupación y
-      persistencia de bloqueo siguen pendientes.
+      persistencia de bloqueo ya se guarda en la colocación al publicar una
+      versión; se mantiene además el fallback local durante la migración.
 - [x] Zoom/pan y guías de alineación: zoom accesible, pan con Alt+flechas,
       cuadrícula configurable de 25 cm/50 cm/1 m, snap sincronizado y ejes del
       elemento seleccionado.
 - [x] Propiedades de elemento en panel lateral y numeración automática segura.
-- [x] Validación visual de solapes, límites y salidas bloqueadas; los pasillos
-      quedan para P2.
+- [x] Validación visual de solapes, límites, salidas bloqueadas y pasillos
+      configurables (75 cm, 90 cm o 1,2 m) antes de publicar.
 - [x] Previsualización tablet/móvil en el lienzo (escritorio, tablet y móvil).
 - [x] Publicación programada con inicio y fin opcional de vigencia.
 - [x] Selección, duplicado, eliminación y edición de propiedades.
@@ -68,8 +69,8 @@ Los estados deben probarse en escritorio, tablet y móvil, con foco visible,
 - [x] Estados de mesa con color + icono + texto, nunca solo color.
 - [~] Acciones rápidas: sentar/liberar/cerrar cuenta, walk-in, limpiar y bloquear/reabrir
   mesas disponibles; la
-  nota interna de sesión ya se puede guardar desde el panel. Limpiar,
-  y asignar trabajador quedan para la siguiente iteración. El bloqueo exige
+  nota interna de sesión ya se puede guardar desde el panel. Limpiar y
+  asignar trabajadores por sección ya están disponibles. El bloqueo exige
   motivo, rechaza mesas ocupadas y queda fuera de sugerencias/seating; el
   cierre marca las mesas como pendientes de limpieza hasta confirmación.
 
@@ -82,7 +83,9 @@ confirmación reversible; sin conexión sólo se encolan las transiciones
 seguras y se bloquean las que puedan perder una reserva o cuenta.
 
 - [x] Pisos/zonas filtrables y vista global para encargados.
-- [ ] Combinar/separar mesas preservando reservas y cuentas.
+- [~] Combinar/separar mesas: unir cuentas existentes y separar una selección
+  en una nueva sesión cuando todavía no hay comandas ni pagos; las reservas
+  no se separan silenciosamente y la operación queda auditada por el actor.
 - [x] Combinar/mover sesiones con validación de ocupación y capacidad en servidor.
 - [x] Filtrado por zona/planta y resumen de ocupación.
 - [x] Preflight de capacidad para grupos grandes.
@@ -99,18 +102,35 @@ seguras y se bloquean las que puedan perder una reserva o cuenta.
 
 ### P3 · Inteligencia y casos avanzados
 
-- [ ] Recomendación de mesa por capacidad, zona, accesibilidad y próxima
-      reserva.
-- [ ] Layouts temporales para eventos, temporada y cierre de terraza.
-- [ ] Reglas meteorológicas y traslado terraza ↔ interior.
+- [~] Recomendación de mesa por capacidad, zona y accesibilidad; las mesas
+  reservadas muestran ahora la proximidad de la próxima reserva y el motor
+  protege mesas libres con llegadas dentro del margen configurable. Queda
+  preferencias explícitas del cliente (zona preferida ya pondera empates) y
+  carga de cocina del turno (también pondera empates); la carga de sesiones
+  abiertas por zona ya se usa como desempate cuando no se ha fijado una sección.
+- [~] Layouts temporales: las versiones admiten inicio y fin de vigencia,
+  validan solapes y se pueden programar desde el editor; las plantillas de
+  evento ya tienen contrato y detección de conflictos por área. Queda el CRUD
+  visual y un CTA específico para cerrar una terraza.
+- [~] Reglas meteorológicas y traslado terraza ↔ interior: la política, el
+  contrato de proveedor y el adaptador Open-Meteo ya están aislados; falta
+  aplicar el plan como operación transaccional sobre reservas/sesiones. El
+  cierre de terraza ya bloquea de forma determinista si hay sesiones o reservas.
 - [~] Secciones de camareros: cada área puede tener varios miembros activos
-  asignados y se puede editar desde Servicio; pacing, cronómetros y
-  handover estructurado quedan pendientes. El panel ya muestra el tiempo
-  de sesión, avisa cuando supera 90 minutos y presenta un resumen vivo por
-  sección; la entrega se puede guardar con responsable y fecha y consultar
-  sus diez últimas instantáneas, abrir el detalle de cada sección y ver los
-  cambios frente al estado vivo, con filtro rápido por fecha.
-- [ ] Importación desde imagen/PDF y plantillas reutilizables.
+  asignados y se puede editar desde Servicio; el panel ya muestra pacing,
+  cronómetros y un handover estructurado por sección. La entrega se puede
+  guardar con responsable y fecha y consultar sus diez últimas instantáneas,
+  abrir el detalle de cada sección y ver los cambios frente al estado vivo,
+  con filtro rápido por fecha. El objetivo de pacing ya es configurable por
+  local (15–360 minutos) y el handover muestra una alerta objetiva de cocina
+  basada en comandas recientes. La carta ya conserva la estación de cada línea
+  (`general`, `hot`, `cold`, `bar`, `dessert`) y minutos de preparación
+  configurables desde la carta; el handover ya desglosa la carga de
+  líneas recientes ponderadas por minutos y alerta por estación cuando supera
+  el umbral configurable del local.
+- [~] Importación desde imagen/PDF y plantillas reutilizables: existe formato
+  JSON versionado, validación, exportación y selector/importador visual; queda
+  la extracción asistida desde imagen/PDF.
 
 ## Edge cases obligatorios
 
@@ -144,7 +164,8 @@ el servicio y latencia de sincronización.
 ## Siguiente trabajo ejecutable
 
 1. Extraer el lienzo en componentes accesibles y añadir selección múltiple.
-2. Completar validación visual de pasillos y salidas bloqueadas.
+2. Completar la separación de sesiones con cuenta activa mediante distribución
+   explícita de productos y pagos, preservando reservas y trazabilidad.
 3. Añadir sincronización realtime, reintentos idempotentes y modo degradado.
 4. Cubrir validaciones de layout con pruebas unitarias y de UI.
 5. Ejecutar `pnpm lint`, `pnpm typecheck`, `pnpm test` y `pnpm build`.

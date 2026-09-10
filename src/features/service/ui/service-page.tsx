@@ -24,11 +24,13 @@ import { createBrowserSupabaseClient } from '@/shared/lib/supabase/client'
 import { createHandoverSnapshot } from '../application/table-service'
 import {
   buildServiceHandover,
+  kitchenLoadState,
+  kitchenStationLoadState,
   compareServiceHandover,
   type ServiceBoard,
 } from '../domain/service-board'
 import { ServiceActions } from './service-actions'
-import { describeStatus } from './service-labels'
+import { describeReservationWindow, describeStatus } from './service-labels'
 import { ServicePlan } from './service-plan'
 import { ServiceQueue } from './service-queue'
 
@@ -407,18 +409,25 @@ export function ServicePage({
                   </p>
                 ) : (
                   <ul className="grid gap-2 sm:grid-cols-2">
-                    {visibleTables.map((table) => (
-                      <li key={table.id}>
-                        <Button
-                          aria-pressed={selectedTableIds.includes(table.id)}
-                          className="w-full justify-start"
-                          onClick={() => toggleTable(table.id)}
-                          type="button"
-                        >
-                          {`Mesa ${table.code} · ${describeTableArea(table.code)} · ${describeStatus(table.status)}${table.blockReason ? ` · Motivo: ${table.blockReason}` : ''} · ${table.covers ?? table.maxSeats} pax`}
-                        </Button>
-                      </li>
-                    ))}
+                    {visibleTables.map((table) => {
+                      const reservation = table.reservationId
+                        ? board.reservations.find((item) => item.id === table.reservationId)
+                        : undefined
+                      const preferences = reservation?.preferences?.join(' · ')
+                      return (
+                        <li key={table.id}>
+                          <Button
+                            aria-pressed={selectedTableIds.includes(table.id)}
+                            className="w-full justify-start"
+                            onClick={() => toggleTable(table.id)}
+                            type="button"
+                          >
+                            {`Mesa ${table.code} · ${describeTableArea(table.code)} · ${describeStatus(table.status)}${table.blockReason ? ` · Motivo: ${table.blockReason}` : ''}${table.reservationStartsAt ? ` · ${describeReservationWindow(table.reservationStartsAt)}` : ''}${preferences ? ` · Preferencia: ${preferences}` : ''} · ${table.covers ?? table.maxSeats} pax`}
+                            {table.isAccessible ? ' · Accesible' : ''}
+                          </Button>
+                        </li>
+                      )
+                    })}
                   </ul>
                 )}
               </CardContent>
@@ -431,10 +440,31 @@ export function ServicePage({
               <CardHeader>
                 <CardTitle>Handover de turno</CardTitle>
                 <CardDescription>
-                  Resumen vivo para entregar la sala al siguiente equipo.
+                  Resumen vivo para entregar la sala al siguiente equipo. Pacing objetivo:{' '}
+                  {board.pacingTargetMinutes ?? 90} min.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
+                {kitchenLoadState(board.kitchenLoad ?? 0, board.kitchenAlertOrderCount ?? 12) ===
+                  'attention' && (
+                  <p className="border-warning/40 bg-warning/10 text-warning-foreground rounded-lg border p-3 text-sm">
+                    Cocina: {board.kitchenLoad} comandas abiertas en los últimos 30 minutos.
+                  </p>
+                )}
+                {Object.values(
+                  kitchenStationLoadState(
+                    board.kitchenLoadByStation ?? {},
+                    board.kitchenAlertMinutes ?? 60,
+                  ),
+                ).some((state) => state === 'attention') && (
+                  <p className="border-destructive/40 bg-destructive/10 text-destructive rounded-lg border p-3 text-sm">
+                    Estaciones con carga alta:{' '}
+                    {Object.entries(board.kitchenLoadByStation ?? {})
+                      .filter(([, minutes]) => minutes >= (board.kitchenAlertMinutes ?? 60))
+                      .map(([station, minutes]) => `${station} (${minutes} min)`)
+                      .join(' · ')}
+                  </p>
+                )}
                 {handover.map((section) => {
                   const areaName = plan.areas.find((area) => area.id === section.areaId)?.name
                   const staffNames = section.assignedStaffIds
@@ -555,6 +585,7 @@ export function ServicePage({
                             <p className="text-muted-foreground text-xs">
                               {open} cuentas abiertas
                               {attention > 0 ? ` · ${attention} en pacing` : ''}
+                              {snapshot.createdByName ? ` · ${snapshot.createdByName}` : ''}
                             </p>
                           </button>
                           {expandedSnapshotId === snapshot.id && (
@@ -625,6 +656,7 @@ export function ServicePage({
             tenantId={tenantId}
             venueId={venueId}
             now={clock}
+            {...(selectedAreaId === 'all' ? {} : { areaId: selectedAreaId })}
           />
           <ServiceQueue
             board={board}

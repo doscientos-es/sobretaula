@@ -9,13 +9,19 @@ import {
 } from '@/features/tenancy/application/require-tenant-membership'
 import { createRequestSupabaseClient } from '@/shared/lib/supabase/server/create-server-client'
 
-import { findSeatingConflicts, mergeTableIds, seatingCapacity } from '../domain/service-board'
+import {
+  findSeatingConflicts,
+  mergeTableIds,
+  planSessionSplit,
+  seatingCapacity,
+} from '../domain/service-board'
 import { loadServiceBoard } from '../infrastructure/server/service-board-repository'
 import {
   closeSessionInput,
   cleanTablesInput,
   mergeSessionsInput,
   moveSessionInput,
+  splitSessionInput,
   noShowReservationInput,
   operationId,
   requireServiceEditor,
@@ -255,6 +261,16 @@ export const markReservationNoShow = createServerFn({ method: 'POST' })
   .handler(async ({ context, data }) => {
     requireServiceEditor(context.tenantMembership.role)
     const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    if (data.operationId) {
+      const { data: existing } = await supabase
+        .from('reservations')
+        .select('id')
+        .eq('last_operation_id', data.operationId)
+        .eq('tenant_id', data.tenantId)
+        .eq('venue_id', data.venueId)
+        .maybeSingle()
+      if (existing) return { reservationId: existing.id as string }
+    }
     const { data: reservation, error } = await supabase
       .from('reservations')
       .select('id, starts_at')
@@ -269,7 +285,11 @@ export const markReservationNoShow = createServerFn({ method: 'POST' })
       throw new Response('Too early for no-show', { status: 422 })
     const { error: updateError } = await supabase
       .from('reservations')
-      .update({ last_transition_reason: data.reason ?? null, status: 'no_show' })
+      .update({
+        last_operation_id: data.operationId ?? null,
+        last_transition_reason: data.reason ?? null,
+        status: 'no_show',
+      })
       .eq('id', reservation.id)
       .eq('tenant_id', data.tenantId)
       .eq('venue_id', data.venueId)
@@ -284,9 +304,23 @@ export const cancelReservation = createServerFn({ method: 'POST' })
   .handler(async ({ context, data }) => {
     requireServiceEditor(context.tenantMembership.role)
     const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    if (data.operationId) {
+      const { data: existing } = await supabase
+        .from('reservations')
+        .select('id')
+        .eq('last_operation_id', data.operationId)
+        .eq('tenant_id', data.tenantId)
+        .eq('venue_id', data.venueId)
+        .maybeSingle()
+      if (existing) return { reservationId: existing.id as string }
+    }
     const { data: reservation, error } = await supabase
       .from('reservations')
-      .update({ last_transition_reason: data.reason ?? null, status: 'cancelled' })
+      .update({
+        last_operation_id: data.operationId ?? null,
+        last_transition_reason: data.reason ?? null,
+        status: 'cancelled',
+      })
       .eq('id', data.reservationId)
       .eq('tenant_id', data.tenantId)
       .eq('venue_id', data.venueId)
@@ -386,6 +420,76 @@ export const moveSession = createServerFn({ method: 'POST' })
     if (error) throw new Error(`table_session_move_failed:${error.code}`)
 
     return { sessionId: session.id, tableIds: data.tableIds }
+  })
+
+/** Separates a subset of free-of-account tables into a new session. */
+export const splitSession = createServerFn({ method: 'POST' })
+  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .validator(splitSessionInput)
+  .handler(async ({ context, data }) => {
+    requireServiceEditor(context.tenantMembership.role)
+    const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    if (data.operationId) {
+      const { data: existing } = await supabase
+        .from('table_sessions')
+        .select('id')
+        .eq('operation_id', data.operationId)
+        .eq('tenant_id', data.tenantId)
+        .eq('venue_id', data.venueId)
+        .maybeSingle()
+      if (existing) return { sessionId: existing.id as string }
+    }
+    const source = await requireOpenSession(supabase, {
+      sessionId: data.sessionId,
+      tenantId: data.tenantId,
+      venueId: data.venueId,
+    })
+    if (source.reservationId)
+      throw new Response('Reserved session cannot be split', { status: 409 })
+    const splitPlan = planSessionSplit(source, data.tableIds, data.covers)
+    if (!splitPlan.ok) {
+      const status = splitPlan.reason === 'invalid_covers' ? 422 : 409
+      throw new Response(`Cannot split session: ${splitPlan.reason}`, { status })
+    }
+    const [orders, payments] = await Promise.all([
+      supabase
+        .from('orders')
+        .select('id', { count: 'exact', head: true })
+        .eq('tenant_id', data.tenantId)
+        .eq('session_id', source.id),
+      supabase
+        .from('payments')
+        .select('id', { count: 'exact', head: true })
+        .eq('tenant_id', data.tenantId)
+        .eq('session_id', source.id),
+    ])
+    if (orders.error || payments.error) throw new Error('table_session_split_check_failed')
+    if ((orders.count ?? 0) > 0 || (payments.count ?? 0) > 0)
+      throw new Response('Session with account activity cannot be split', { status: 409 })
+    const { data: created, error } = await supabase
+      .from('table_sessions')
+      .insert({
+        covers: data.covers,
+        opened_by: context.tenantMembership.userId,
+        operation_id: data.operationId ?? null,
+        status: 'open',
+        table_ids: data.tableIds,
+        tenant_id: data.tenantId,
+        venue_id: data.venueId,
+      })
+      .select('id')
+      .single()
+    if (error || !created)
+      throw new Error(`table_session_split_create_failed:${error?.code ?? 'unknown'}`)
+    const { error: updateError } = await supabase
+      .from('table_sessions')
+      .update({ covers: source.covers - data.covers, table_ids: splitPlan.remainingTableIds })
+      .eq('id', source.id)
+    if (updateError) {
+      await supabase.from('table_sessions').delete().eq('id', created.id)
+      throw new Error(`table_session_split_update_failed:${updateError.code}`)
+    }
+    return { sessionId: created.id as string, sourceSessionId: source.id }
   })
 
 /** Joins two seated parties into one account over the union of their tables. */

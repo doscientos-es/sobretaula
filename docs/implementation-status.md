@@ -58,6 +58,8 @@ panel sin recarga manual.
 Las áreas ya admiten asignación de uno o varios miembros activos del equipo
 (owner, manager, host o waiter) desde Servicio. La relación se guarda con RLS
 en `area_staff_assignments` (`20260910000049_area_staff_assignments.sql`).
+Si esa migración aún no está aplicada, Servicio continúa mostrando el tablero
+sin asignaciones y permite operar las mesas normalmente.
 
 El panel muestra un cronómetro de cada cuenta abierta y marca el estado de
 pacing cuando supera los 90 minutos (umbral configurable en el dominio). La
@@ -74,6 +76,9 @@ se puede expandir por sección
 para revisar la fotografía completa del turno y compara sus cifras con el
 estado vivo actual, señalando cambios por área.
 El guardado muestra estado de progreso y error recuperable cuando la red falla.
+La lectura es compatible con despliegues que aún no han aplicado la migración:
+si la tabla no existe, el servicio continúa operativo y oculta temporalmente el
+histórico.
 La comparación también conserva áreas que han desaparecido del tablero actual,
 para hacer visible una sección retirada o desactivada desde la última entrega.
 El historial admite filtrar las últimas entregas por fecha desde la propia vista.
@@ -83,14 +88,42 @@ ahora modo offline: guardan una operación local, la reintentan al recuperar la
 conexión y envían un `operation_id` único. La restricción parcial
 `table_sessions_operation_id_idx` y las comprobaciones previas hacen que los
 reintentos sean idempotentes y no abran una segunda sesión. Movimientos, uniones,
-cancelaciones y altas/bajas de espera siguen bloqueados sin red. Mover, unir y
-cerrar aceptan `operation_id`, guardan la última operación aplicada y ya están
-conectados al mismo encolado del navegador.
+cancelaciones y no-shows también se encolan sin red, con una marca idempotente
+en la reserva (`reservations.last_operation_id`). Mover, unir y cerrar aceptan
+`operation_id`, guardan la última operación aplicada y ya están conectados al
+mismo encolado del navegador; quitar entradas de espera también se encola sin
+red (la operación es idempotente por diseño). Añadir nuevas entradas offline
+también queda cubierto con una operación idempotente y la migración propia de
+`waitlist.operation_id`; al reconectar se recrea el invitado si hace falta.
 
 Las migraciones de reservas públicas (`20260910000024`, `20260910000025` y
 `20260910000026`) están preparadas y revisadas localmente, pero deben aplicarse
 de forma explícita en el proyecto Supabase conectado antes de validar el flujo
 completo con datos reales.
+
+La política de terraza ya está aislada en dominio (`weather-policy.ts`): permite
+decidir de forma determinista si mantener el exterior, trasladar al interior o
+pedir revisión por calor. También calcula un plan de traslado por capacidad y
+ocupación, dejando explícitamente las reservas sin hueco. La integración con
+proveedor meteorológico ya tiene un contrato y normalizador aislados en
+`application/weather-provider.ts`; el adaptador HTTP ya está implementado y la
+aplicación transaccional del plan ya rechaza
+planes con reservas sin capacidad y exige que la transacción confirme todos
+los movimientos. El caso de uso ya devuelve una decisión de
+negocio (`keep_outdoor`, `review` o `move_inside`) sin filtrar detalles del
+proveedor a la UI.
+
+El plano también puede exportarse/importarse como plantilla JSON versionada y
+portable: excluye ids internos de venue y versión, valida formato y versión
+antes de entrar en la capa de aplicación, y deja la extracción desde imagen o
+PDF para una entrega posterior.
+
+Las plantillas de evento ya tienen un contrato de dominio reutilizable sobre
+esas plantillas de plano, con vigencia, áreas afectadas y detección de solapes;
+la persistencia Supabase/RLS y el schema de aplicación ya están preparados;
+el CRUD server completo de listado, creación, edición y borrado ya está
+preparado y el editor permite crear, editar y borrar plantillas desde el layout
+actual.
 
 «Implementado» indica que existe código y pruebas unitarias; no equivale a
 entregable aprobado mientras falten pruebas contra un entorno dedicado.
@@ -137,12 +170,12 @@ hasta que un asesor fiscal valide el reparto de responsabilidad.
 ### Última ejecución local (2026-09-10)
 
 Tras añadir la validación geométrica de la huella rotada de mesas, la suite
-local queda en 47 archivos correctos y 204 pruebas correctas; 1 archivo y 3
+local queda en 62 archivos correctos y 264 pruebas correctas; 1 archivo y 3
 pruebas RLS siguen omitidos por falta de entorno Supabase dedicado.
 
 La verificación posterior de producción (`pnpm build`) también completa
 correctamente y genera el artefacto Nitro/Vercel. La suite global actual queda
-en 57 archivos y 237 pruebas correctas; 1 archivo y 3 pruebas RLS continúan
+en 62 archivos y 264 pruebas correctas; 1 archivo y 3 pruebas RLS continúan
 omitidos por el conector no autorizado.
 
 | Comando                | Resultado                                                                                    |
@@ -150,7 +183,7 @@ omitidos por el conector no autorizado.
 | `pnpm format:check`    | Pendiente por 5 archivos ajenos al alcance actual                                            |
 | `pnpm lint`            | Correcto                                                                                     |
 | `pnpm structure:check` | Correcto localmente; el asset de login vive en `public/` y los módulos usan nombres estándar |
-| `pnpm test`            | 57 archivos y 237 pruebas correctas; 1 archivo y 3 pruebas RLS omitidas                      |
+| `pnpm test`            | 62 archivos y 264 pruebas correctas; 1 archivo y 3 pruebas RLS omitidas                      |
 | `pnpm typecheck`       | Correcto                                                                                     |
 | `pnpm quality`         | Correcto                                                                                     |
 | `pnpm build`           | Correcto; solo avisos de Vite/chunks                                                         |
@@ -179,3 +212,54 @@ evidencia.
   protección frente a versiones temporales inválidas.
 - Presets de combinaciones: guardar desde selección y reaplicar mesas de una
   zona desde la lista de combinaciones guardadas.
+- La sugerencia automática limita ahora la combinación a la zona seleccionada;
+  admite además filtrar mesas accesibles; la proximidad de la siguiente reserva
+  queda como evolución.
+  La lista operativa también muestra la etiqueta `Accesible` para que el equipo
+  pueda verificar la selección sin depender solo del filtro.
+  El editor de plano permite marcar nuevas mesas como accesibles y persiste esa
+  propiedad para el recomendador. Durante un despliegue progresivo, si la columna
+  aún no existe, la creación usa el esquema legado sin bloquear el plano.
+  El tablero operativo aplica el mismo fallback de lectura y considera las mesas
+  existentes como no accesibles hasta completar la migración.
+- El editor valida el ancho mínimo de pasillo entre elementos y bloquea la
+  publicación cuando detecta pasos inferiores a 75 cm, 90 cm o 1,2 m según la
+  configuración elegida.
+- Servicio permite separar una selección de mesas en una nueva sesión con
+  operación idempotente; rechaza reservas, comandas o pagos ya iniciados para
+  no dividir una cuenta sin asignación explícita de sus líneas.
+- Las mesas reservadas exponen en la lista accesible si la reserva es inminente,
+  cuántos minutos faltan o la hora prevista, para priorizar decisiones del jefe
+  de sala sin depender del color del plano.
+- El recomendador conserva la siguiente reserva de cada mesa aunque todavía se
+  vea libre y evita asignarla dentro del margen de protección configurado;
+  si no queda alternativa segura, permite degradar a la mejor opción disponible.
+- Cuando se opera sin una zona fija, las combinaciones con igual capacidad
+  priorizan la sección con menor carga de sesiones abiertas.
+- Las reservas incorporan las notas de cliente clasificadas como `preference`
+  y la vista de Servicio las muestra junto a la mesa asignada, dejando una
+  base estructurada para ordenar por preferencias sin interpretar texto libre.
+- El bloqueo de elementos del editor se persiste ahora en `table_placements`
+  al publicar una versión y se recupera en otros dispositivos; mientras la
+  migración no exista, el lector y el guardado usan el esquema legado sin
+  bloquear el editor.
+- La operación de Servicio ya permite asignar trabajadores por sección y
+  conserva pacing, cronómetros y handover; quedan fuera de este bloque los
+  objetivos configurables por turno y las alertas de carga de cocina.
+- El objetivo de pacing del local se guarda en `venues` (15–360 minutos), se
+  carga con fallback a 90 minutos durante la migración y se aplica tanto al
+  detalle de sesión como al handover.
+- Servicio calcula la carga objetiva de cocina con las comandas abiertas de
+  los últimos 30 minutos y muestra una alerta cuando supera el umbral del
+  local (por defecto, 12); el umbral admite entre 1 y 200 comandas.
+- La carta y sus líneas de cuenta conservan una estación (`general`, `hot`,
+  `cold`, `bar` o `dessert`), con fallback a `general` durante la migración;
+  la cuenta muestra la estación para preparar la futura carga por estación.
+- La carga de cocina ya se desglosa por estación usando las cantidades de línea
+  de los últimos 30 minutos ponderadas por minutos de preparación y muestra
+  avisos independientes cuando una estación supera el umbral configurable del
+  local (por defecto, 60 minutos).
+- Dirección puede editar los minutos de preparación desde la carta al crear o
+  modificar un plato; cada comanda conserva el valor histórico de ese momento.
+- Dirección también puede asignar la estación del plato desde la carta; la
+  selección se congela en la línea de comanda y admite fallback a `general`.

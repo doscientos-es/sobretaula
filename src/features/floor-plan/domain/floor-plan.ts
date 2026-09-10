@@ -1,3 +1,4 @@
+import type { EventLayoutTemplate } from './event-layout-template'
 import type { PlanPlacement } from './geometry'
 
 export interface FloorPlanArea {
@@ -133,6 +134,7 @@ export function findVersionScheduleConflicts(
 export interface FloorPlanTablePlacement extends PlanPlacement {
   code: string
   floorPlanVersionId: string
+  isLocked?: boolean
 }
 
 export type PlanElementKind =
@@ -158,6 +160,7 @@ export interface FloorPlanElement extends PlanPlacement {
 
 export interface FloorPlanData {
   areas: readonly FloorPlanArea[]
+  eventLayoutTemplates?: readonly EventLayoutTemplate[]
   elements: readonly FloorPlanElement[]
   placements: readonly FloorPlanTablePlacement[]
   tableGroupPresets: readonly TableGroupPreset[]

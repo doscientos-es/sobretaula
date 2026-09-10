@@ -1,6 +1,11 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 
-import type { AccountLine, AccountPayment, PaymentMethod } from '../../domain/account'
+import type {
+  AccountLine,
+  AccountPayment,
+  KitchenStation,
+  PaymentMethod,
+} from '../../domain/account'
 
 export interface AccountQuery {
   sessionId: string
@@ -63,14 +68,32 @@ export async function loadAccount(
   }
 
   const orderIds = (ordersResult.data ?? []).map((order) => order.id as string)
-  const itemsResult = await (orderIds.length === 0
+  let itemsResult = await (orderIds.length === 0
     ? Promise.resolve({ data: [], error: null })
     : supabase
         .from('order_items')
-        .select('id, name_snapshot, notes, quantity, unit_price_cents, vat_rate_bps')
+        .select(
+          'id, kitchen_station, name_snapshot, notes, preparation_minutes, quantity, unit_price_cents, vat_rate_bps',
+        )
         .eq('tenant_id', tenantId)
         .in('order_id', orderIds)
         .order('created_at'))
+  if (itemsResult.error?.code === '42703' && orderIds.length > 0) {
+    const legacy = await supabase
+      .from('order_items')
+      .select('id, name_snapshot, notes, quantity, unit_price_cents, vat_rate_bps')
+      .eq('tenant_id', tenantId)
+      .in('order_id', orderIds)
+      .order('created_at')
+    itemsResult = {
+      ...legacy,
+      data: (legacy.data ?? []).map((item) => ({
+        ...item,
+        kitchen_station: 'general',
+        preparation_minutes: 15,
+      })),
+    } as typeof itemsResult
+  }
   if (itemsResult.error) throw new Error('account_load_failed')
 
   const tableCodes = new Map<string, string>(
@@ -80,8 +103,10 @@ export async function loadAccount(
   return {
     lines: (itemsResult.data ?? []).map((item) => ({
       id: item.id as string,
+      kitchenStation: item.kitchen_station as KitchenStation,
       name: item.name_snapshot as string,
       notes: (item.notes as string | null) ?? null,
+      preparationMinutes: item.preparation_minutes as number,
       quantity: item.quantity as number,
       unitPriceCents: item.unit_price_cents as number,
       vatRateBps: item.vat_rate_bps as number,

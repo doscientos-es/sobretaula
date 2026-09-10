@@ -53,6 +53,48 @@ describe('menu schemas', () => {
     expect(() => updateMenuItemInput.parse({ itemId, tenantId })).toThrow()
     expect(() => updateMenuItemInput.parse({ isActive: false, itemId, tenantId })).not.toThrow()
   })
+
+  it('validates preparation minutes for creation and partial updates', () => {
+    expect(
+      createMenuItemInput.safeParse({
+        categoryId,
+        nameEs: 'Arroz',
+        preparationMinutes: 15,
+        priceCents: 100,
+        tenantId,
+        vatRateBps: 1000,
+      }).success,
+    ).toBe(true)
+    expect(
+      createMenuItemInput.safeParse({
+        categoryId,
+        nameEs: 'Arroz',
+        preparationMinutes: 0,
+        priceCents: 100,
+        tenantId,
+        vatRateBps: 1000,
+      }).success,
+    ).toBe(false)
+    expect(
+      updateMenuItemInput.safeParse({ itemId, preparationMinutes: 45, tenantId }).success,
+    ).toBe(true)
+  })
+
+  it('accepts supported kitchen stations and rejects unknown ones', () => {
+    expect(
+      createMenuItemInput.safeParse({
+        categoryId,
+        kitchenStation: 'bar',
+        nameEs: 'Café',
+        priceCents: 100,
+        tenantId,
+        vatRateBps: 1000,
+      }).success,
+    ).toBe(true)
+    expect(
+      updateMenuItemInput.safeParse({ itemId, kitchenStation: 'unknown', tenantId }).success,
+    ).toBe(false)
+  })
 })
 
 describe('requireMenuEditor', () => {

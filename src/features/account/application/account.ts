@@ -64,13 +64,29 @@ export const addOrderItem = createServerFn({ method: 'POST' })
     const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
     const sessionId = await requireOpenSession(supabase, data)
 
-    const { data: menuItem, error: menuError } = await supabase
+    let menuResult = await supabase
       .from('menu_items')
-      .select('id, name_i18n, price_cents, vat_rate_bps')
+      .select('id, kitchen_station, name_i18n, preparation_minutes, price_cents, vat_rate_bps')
       .eq('id', data.menuItemId)
       .eq('tenant_id', data.tenantId)
       .eq('is_active', true)
       .single()
+    if (menuResult.error?.code === '42703') {
+      const legacy = await supabase
+        .from('menu_items')
+        .select('id, name_i18n, price_cents, vat_rate_bps')
+        .eq('id', data.menuItemId)
+        .eq('tenant_id', data.tenantId)
+        .eq('is_active', true)
+        .single()
+      menuResult = {
+        ...legacy,
+        data: legacy.data
+          ? { ...legacy.data, kitchen_station: 'general', preparation_minutes: 15 }
+          : null,
+      } as typeof menuResult
+    }
+    const { data: menuItem, error: menuError } = menuResult
     if (menuError || !menuItem) throw new Response('Not found', { status: 404 })
 
     const { data: order, error: orderError } = await supabase
@@ -89,6 +105,8 @@ export const addOrderItem = createServerFn({ method: 'POST' })
       .from('order_items')
       .insert({
         menu_item_id: menuItem.id,
+        kitchen_station: menuItem.kitchen_station ?? 'general',
+        preparation_minutes: menuItem.preparation_minutes ?? 15,
         name_snapshot: localizedText(menuItem.name_i18n as Record<string, string>, 'es'),
         notes: data.notes ?? null,
         order_id: order.id,

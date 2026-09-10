@@ -12,7 +12,7 @@ import {
   useFormFeedback,
 } from '@doscientos/ui'
 import { Link, useParams } from '@tanstack/react-router'
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useMemo, useState, type FormEvent } from 'react'
 
 import {
   createCloseSessionOperation,
@@ -27,6 +27,7 @@ import {
   cleanTables,
   mergeSessions,
   moveSession,
+  splitSession,
   seatWalkIn,
   updateSessionNote,
   updateTableBlock,
@@ -52,6 +53,7 @@ export function ServiceActions({
   tenantId,
   venueId,
   now,
+  areaId,
 }: {
   board: ServiceBoard
   onDone: () => void
@@ -62,6 +64,7 @@ export function ServiceActions({
   tenantId: string
   venueId: string
   now?: Date
+  areaId?: string
 }) {
   const feedback = useFormFeedback()
   const offlineStore = useMemo(
@@ -70,12 +73,14 @@ export function ServiceActions({
   )
   const params = useParams({ strict: false })
   const [covers, setCovers] = useState(2)
+  const [splitCovers, setSplitCovers] = useState(1)
   const [sessionId, setSessionId] = useState(board.sessions[0]?.id ?? '')
   const [mergeSourceId, setMergeSourceId] = useState(board.sessions[1]?.id ?? '')
   const selectedSession = board.sessions.find((session) => session.id === sessionId)
   const pacingNow = now ?? new Date()
   const [internalNote, setInternalNote] = useState(selectedSession?.internalNote ?? '')
   const [blockReason, setBlockReason] = useState('')
+  const [accessibleOnly, setAccessibleOnly] = useState(false)
   const selectedTables = board.tables.filter((table) => selectedTableIds.includes(table.id))
   const selectedBlocked =
     selectedTables.length > 0 && selectedTables.every((table) => table.status === 'blocked')
@@ -83,18 +88,35 @@ export function ServiceActions({
     selectedTables.length > 0 && selectedTables.every((table) => table.status === 'cleaning')
   const selectedAreaId = selectedTables.length > 0 ? selectedTables[0]?.areaId : undefined
   const selectedAreaConsistent = selectedTables.every((table) => table.areaId === selectedAreaId)
-  const [assignedStaff, setAssignedStaff] = useState<string[]>(
-    selectedAreaId ? [...(board.areaStaffAssignments?.[selectedAreaId] ?? [])] : [],
-  )
-  useEffect(() => {
-    setAssignedStaff(
-      selectedAreaId ? [...(board.areaStaffAssignments?.[selectedAreaId] ?? [])] : [],
-    )
-  }, [board.areaStaffAssignments, selectedAreaId])
+  const [staffDrafts, setStaffDrafts] = useState<Record<string, string[]>>({})
+  const assignedStaff = selectedAreaId
+    ? (staffDrafts[selectedAreaId] ?? [...(board.areaStaffAssignments?.[selectedAreaId] ?? [])])
+    : []
   const selectedCapacity = selectedTables.reduce((total, table) => total + table.maxSeats, 0)
   const selectedMinimum = selectedTables.reduce((total, table) => total + table.minSeats, 0)
+  const areaLoads = board.tables.reduce<Record<string, number>>((loads, table) => {
+    if (!table.areaId || !table.sessionId) return loads
+    loads[table.areaId] = (loads[table.areaId] ?? 0) + 1
+    return loads
+  }, {})
+  const canSplitSelected = Boolean(
+    selectedSession &&
+    selectedTableIds.length > 0 &&
+    selectedTableIds.length < selectedSession.tableIds.length &&
+    selectedTableIds.every((tableId) => selectedSession.tableIds.includes(tableId)),
+  )
   const suggestedIds =
-    selectedTableIds.length === 0 ? suggestTableCombination(board.tables, covers) : undefined
+    selectedTableIds.length === 0
+      ? suggestTableCombination(
+          board.tables,
+          covers,
+          areaId,
+          accessibleOnly,
+          pacingNow,
+          120,
+          areaLoads,
+        )
+      : undefined
   const suggestedCodes = suggestedIds
     ?.map((id) => board.tables.find((table) => table.id === id)?.code)
     .filter(Boolean)
@@ -187,7 +209,13 @@ export function ServiceActions({
                 id="area-staff"
                 multiple
                 onChange={(event) =>
-                  setAssignedStaff([...event.target.selectedOptions].map((option) => option.value))
+                  selectedAreaId &&
+                  setStaffDrafts((current) => ({
+                    ...current,
+                    [selectedAreaId]: [...event.target.selectedOptions].map(
+                      (option) => option.value,
+                    ),
+                  }))
                 }
                 value={assignedStaff}
               >
@@ -262,6 +290,14 @@ export function ServiceActions({
               value={covers}
             />
           </Field>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              checked={accessibleOnly}
+              onChange={(event) => setAccessibleOnly(event.target.checked)}
+              type="checkbox"
+            />
+            Solo mesas accesibles
+          </label>
           <Button
             disabled={
               feedback.pending ||
@@ -343,7 +379,7 @@ export function ServiceActions({
             {sessionId && (
               <output className="text-muted-foreground text-xs">
                 {selectedSession
-                  ? `En mesa desde hace ${sessionElapsedMinutes(selectedSession, pacingNow)} min${sessionPacingState(selectedSession, pacingNow) === 'attention' ? ' · revisar pacing' : ''}`
+                  ? `En mesa desde hace ${sessionElapsedMinutes(selectedSession, pacingNow)} min${sessionPacingState(selectedSession, pacingNow, board.pacingTargetMinutes ?? 90) === 'attention' ? ' · revisar pacing' : ''}`
                   : 'Sesión activa'}
               </output>
             )}
@@ -427,6 +463,33 @@ export function ServiceActions({
                 Mover a la selección
               </Button>
               <Button
+                disabled={
+                  feedback.pending ||
+                  !isOnline ||
+                  !canSplitSelected ||
+                  splitCovers >= (selectedSession?.covers ?? 0)
+                }
+                onClick={() =>
+                  void run(
+                    () =>
+                      splitSession({
+                        data: {
+                          covers: splitCovers,
+                          sessionId,
+                          tableIds: [...selectedTableIds],
+                          tenantId,
+                          venueId,
+                        },
+                      }),
+                    'No se pueden separar esas mesas. La cuenta debe estar sin comandas ni pagos.',
+                  )
+                }
+                type="button"
+                variant="outline"
+              >
+                Separar selección
+              </Button>
+              <Button
                 disabled={feedback.pending || !sessionId}
                 onClick={() =>
                   window.confirm('¿Cerrar esta cuenta y liberar sus mesas?')
@@ -447,6 +510,19 @@ export function ServiceActions({
                 Cerrar cuenta
               </Button>
             </div>
+            {canSplitSelected && (
+              <Field className="max-w-xs">
+                <FieldLabel htmlFor="split-covers">Comensales que pasan a la nueva mesa</FieldLabel>
+                <Input
+                  id="split-covers"
+                  max={Math.max(1, (selectedSession?.covers ?? 2) - 1)}
+                  min={1}
+                  onChange={(event) => setSplitCovers(Number(event.target.value))}
+                  type="number"
+                  value={splitCovers}
+                />
+              </Field>
+            )}
             {board.sessions.length > 1 && (
               <div className="space-y-2">
                 <Field>

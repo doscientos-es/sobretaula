@@ -19,7 +19,15 @@ import type { Locale } from '@/shared/lib/i18n/locale'
 import { formatMoney } from '@/shared/lib/money/money'
 
 import { removeOrderItem } from '../application/account'
-import { lineGrossCents, type AccountLine } from '../domain/account'
+import { lineGrossCents, type AccountLine, type KitchenStation } from '../domain/account'
+
+const STATION_LABEL: Record<KitchenStation, string> = {
+  bar: 'Barra',
+  cold: 'Frío',
+  dessert: 'Postres',
+  general: 'General',
+  hot: 'Caliente',
+}
 
 /** Lines already charged to the table, with removal while nothing is paid. */
 export function AccountLines({
@@ -80,6 +88,9 @@ export function AccountLines({
                   <TableCell>{line.quantity}</TableCell>
                   <TableCell>
                     <span className="whitespace-normal">{line.name}</span>
+                    <span className="text-muted-foreground ml-2 text-xs">
+                      · {STATION_LABEL[line.kitchenStation ?? 'general']}
+                    </span>
                     {line.notes && (
                       <span className="text-muted-foreground block text-xs whitespace-normal">
                         {line.notes}

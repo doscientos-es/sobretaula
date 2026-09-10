@@ -84,6 +84,8 @@ export function MenuPage({
                           <TableHead>Plato</TableHead>
                           <TableHead>Precio</TableHead>
                           <TableHead>IVA</TableHead>
+                          <TableHead>Preparación</TableHead>
+                          <TableHead>Estación</TableHead>
                           <TableHead>
                             <span className="sr-only">Acciones</span>
                           </TableHead>

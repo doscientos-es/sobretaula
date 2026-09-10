@@ -35,3 +35,16 @@ export function describeTime(isoDate: string): string {
     ? '—'
     : date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
 }
+
+export function describeReservationWindow(
+  startsAt: string | undefined,
+  now = new Date(),
+): string | undefined {
+  if (!startsAt) return undefined
+  const timestamp = new Date(startsAt).getTime()
+  if (!Number.isFinite(timestamp)) return undefined
+  const minutes = Math.round((timestamp - now.getTime()) / 60_000)
+  if (minutes <= 0) return 'Reserva inminente'
+  if (minutes < 60) return `Reserva en ${minutes} min`
+  return `Reserva a las ${describeTime(startsAt)}`
+}

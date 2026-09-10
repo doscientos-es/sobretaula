@@ -2,15 +2,20 @@ import { describe, expect, it } from 'vitest'
 
 import {
   inspectServiceTableGroupPreset,
+  kitchenLoadState,
+  kitchenStationLoadState,
   compareServiceHandover,
+  buildServiceHandover,
   buildServiceTableStates,
   findSeatingConflicts,
   mergeTableIds,
+  planSessionSplit,
   seatingCapacity,
   sessionElapsedMinutes,
   sessionPacingState,
   suggestTableCombination,
   type ServiceReservation,
+  type ServiceBoard,
   type ServiceSession,
   type ServiceTable,
 } from './service-board'
@@ -64,6 +69,50 @@ describe('service board', () => {
     expect(states.every((state) => state.status === 'free')).toBe(true)
   })
 
+  it('protects a free-looking table when its next reservation is inside the buffer', () => {
+    const states = buildServiceTableStates({
+      now,
+      reservations: [{ ...soonReservation, startsAt: '2026-09-09T22:00:00.000Z' }],
+      sessions: [],
+      tables,
+    })
+    expect(states.find((state) => state.id === 'table-2')).toMatchObject({
+      nextReservationStartsAt: '2026-09-09T22:00:00.000Z',
+      status: 'free',
+    })
+    expect(suggestTableCombination(states, 2, undefined, false, now, 240)).toEqual(['table-1'])
+  })
+
+  it('prefers a less loaded area when capacity and table count tie', () => {
+    const candidates = [
+      {
+        code: '1',
+        id: 'table-1',
+        areaId: 'busy',
+        maxSeats: 2,
+        minSeats: 1,
+        status: 'free' as const,
+        covers: null,
+        sessionId: null,
+        reservationId: null,
+      },
+      {
+        code: '2',
+        id: 'table-2',
+        areaId: 'quiet',
+        maxSeats: 2,
+        minSeats: 1,
+        status: 'free' as const,
+        covers: null,
+        sessionId: null,
+        reservationId: null,
+      },
+    ]
+    expect(
+      suggestTableCombination(candidates, 2, undefined, false, now, 0, { busy: 4, quiet: 0 }),
+    ).toEqual(['table-2'])
+  })
+
   it('marks blocked tables and excludes them from suggestions', () => {
     const states = buildServiceTableStates({
       now,
@@ -105,6 +154,43 @@ describe('service board', () => {
     expect(sessionPacingState(session, current, 130)).toBe('on_track')
   })
 
+  it('uses the board pacing target in handover summaries', () => {
+    const board: ServiceBoard = {
+      pacingTargetMinutes: 60,
+      reservations: [],
+      sessions: [session],
+      tables: [
+        {
+          areaId: 'area-1',
+          code: '1',
+          covers: 3,
+          id: 'table-1',
+          maxSeats: 4,
+          minSeats: 2,
+          reservationId: null,
+          sessionId: session.id,
+          status: 'occupied',
+        },
+      ],
+      waitlist: [],
+    }
+    expect(
+      buildServiceHandover(board, new Date('2026-09-09T20:00:00.000Z'))[0]?.attentionSessions,
+    ).toBe(1)
+  })
+
+  it('flags kitchen load only at the configured order threshold', () => {
+    expect(kitchenLoadState(11, 12)).toBe('normal')
+    expect(kitchenLoadState(12, 12)).toBe('attention')
+  })
+
+  it('flags individual kitchen stations independently', () => {
+    expect(kitchenStationLoadState({ hot: 60, cold: 20 }, 60)).toEqual({
+      cold: 'normal',
+      hot: 'attention',
+    })
+  })
+
   it('compares a saved handover with the current state by area', () => {
     const saved = [
       {
@@ -133,6 +219,58 @@ describe('service board', () => {
     expect(compareServiceHandover(saved, []).at(0)).toMatchObject({
       activeSessionsDelta: -1,
       blockedTablesDelta: -1,
+    })
+  })
+
+  it('builds a handover summary with live operational alerts', () => {
+    const board: ServiceBoard = {
+      areaStaffAssignments: { 'area-1': ['user-1'] },
+      reservations: [],
+      sessions: [session],
+      staff: [],
+      tables: [
+        {
+          areaId: 'area-1',
+          code: '1',
+          covers: 3,
+          id: 'table-1',
+          maxSeats: 4,
+          minSeats: 2,
+          reservationId: null,
+          sessionId: session.id,
+          status: 'occupied',
+        },
+        {
+          areaId: 'area-1',
+          code: '2',
+          covers: null,
+          id: 'table-2',
+          maxSeats: 2,
+          minSeats: 1,
+          reservationId: null,
+          sessionId: null,
+          status: 'cleaning',
+        },
+        {
+          areaId: 'area-1',
+          code: '3',
+          covers: null,
+          id: 'table-3',
+          maxSeats: 6,
+          minSeats: 4,
+          reservationId: null,
+          sessionId: null,
+          status: 'blocked',
+        },
+      ],
+      waitlist: [],
+    }
+    expect(buildServiceHandover(board, new Date('2026-09-09T20:45:00.000Z'))[0]).toMatchObject({
+      activeSessions: 1,
+      attentionSessions: 1,
+      assignedStaffIds: ['user-1'],
+      blockedTables: 1,
+      cleaningTables: 1,
     })
   })
 
@@ -189,6 +327,46 @@ describe('service board', () => {
     expect(suggestTableCombination([first, busy, third], 10)).toEqual(['table-1', 'table-3'])
   })
 
+  it('does not combine tables across areas', () => {
+    const first = {
+      areaId: 'area-1',
+      code: '1',
+      covers: null,
+      id: 'table-1',
+      maxSeats: 4,
+      minSeats: 2,
+      reservationId: null,
+      sessionId: null,
+      status: 'free' as const,
+    }
+    const second = {
+      ...first,
+      areaId: 'area-2',
+      code: '2',
+      id: 'table-2',
+      maxSeats: 2,
+      minSeats: 1,
+    }
+    expect(suggestTableCombination([first, second], 5, 'area-1')).toBeUndefined()
+    expect(suggestTableCombination([first, second], 4, 'area-1', true)).toBeUndefined()
+    expect(
+      suggestTableCombination([{ ...first, isAccessible: true }, second], 4, 'area-1', true),
+    ).toEqual(['table-1'])
+  })
+
+  it('plans a safe session split in pure domain code', () => {
+    const session = { covers: 4, tableIds: ['table-1', 'table-2'] }
+    expect(planSessionSplit(session, ['table-1'], 2)).toEqual({
+      ok: true,
+      remainingTableIds: ['table-2'],
+    })
+    expect(planSessionSplit(session, ['gone'], 2)).toEqual({ ok: false, reason: 'unknown_table' })
+    expect(planSessionSplit(session, ['table-1', 'table-2'], 2)).toEqual({
+      ok: false,
+      reason: 'all_tables',
+    })
+  })
+
   it('returns no suggestion for invalid or impossible groups', () => {
     const states = buildServiceTableStates({ now, reservations: [], sessions: [], tables })
     expect(suggestTableCombination(states, 0)).toBeUndefined()
@@ -203,6 +381,49 @@ describe('service board', () => {
     const pairA = { ...second, maxSeats: 3 }
     const pairB = { ...third, maxSeats: 3 }
     expect(suggestTableCombination([compact, pairA, pairB], 6)).toEqual(['table-1'])
+  })
+
+  it('uses explicit preferred areas as a tie-breaker', () => {
+    const states = buildServiceTableStates({ now, reservations: [], sessions: [], tables })
+    const [first, second] = states
+    if (!first || !second) throw new Error('test fixture incomplete')
+    expect(
+      suggestTableCombination(
+        [
+          { ...first, maxSeats: 4, areaId: 'salon' },
+          { ...second, maxSeats: 4, areaId: 'terraza' },
+        ],
+        4,
+        undefined,
+        false,
+        now,
+        120,
+        {},
+        ['area:terraza'],
+      ),
+    ).toEqual([second.id])
+  })
+
+  it('prefers the less-loaded kitchen zone after preferences tie', () => {
+    const states = buildServiceTableStates({ now, reservations: [], sessions: [], tables })
+    const [first, second] = states
+    if (!first || !second) throw new Error('test fixture incomplete')
+    expect(
+      suggestTableCombination(
+        [
+          { ...first, maxSeats: 4, areaId: 'salon' },
+          { ...second, maxSeats: 4, areaId: 'terraza' },
+        ],
+        4,
+        undefined,
+        false,
+        now,
+        120,
+        {},
+        [],
+        { salon: 10, terraza: 2 },
+      ),
+    ).toEqual([second.id])
   })
 
   it('explains why a saved table combination cannot be applied', () => {

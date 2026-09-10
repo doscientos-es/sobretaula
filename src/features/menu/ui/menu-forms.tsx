@@ -17,7 +17,12 @@ import type { Locale } from '@/shared/lib/i18n/locale'
 import { parsePriceToCents } from '@/shared/lib/money/money'
 
 import { createMenuCategory, createMenuItem } from '../application/menu'
-import { formatVatRate, localizedText, type MenuCategory } from '../domain/menu'
+import {
+  formatVatRate,
+  localizedText,
+  type KitchenStation,
+  type MenuCategory,
+} from '../domain/menu'
 
 const VAT_RATE_OPTIONS = [1000, 2100, 400, 0] as const
 
@@ -41,6 +46,8 @@ export function MenuForms({
   const [itemNameCa, setItemNameCa] = useState('')
   const [itemPrice, setItemPrice] = useState('')
   const [itemVatRate, setItemVatRate] = useState<number>(1000)
+  const [itemPreparationMinutes, setItemPreparationMinutes] = useState(15)
+  const [itemKitchenStation, setItemKitchenStation] = useState<KitchenStation>('general')
   const [itemSku, setItemSku] = useState('')
 
   async function run(action: () => Promise<unknown>, message: string) {
@@ -89,6 +96,8 @@ export function MenuForms({
             ...(itemNameCa ? { nameCa: itemNameCa } : {}),
             nameEs: itemName,
             priceCents,
+            preparationMinutes: itemPreparationMinutes,
+            kitchenStation: itemKitchenStation,
             ...(itemSku ? { sku: itemSku } : {}),
             tenantId,
             vatRateBps: itemVatRate,
@@ -192,6 +201,31 @@ export function MenuForms({
                       {formatVatRate(bps, locale)}
                     </option>
                   ))}
+                </select>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="item-preparation">Preparación (minutos)</FieldLabel>
+                <Input
+                  id="item-preparation"
+                  max={240}
+                  min={1}
+                  onChange={(event) => setItemPreparationMinutes(Number(event.target.value))}
+                  type="number"
+                  value={itemPreparationMinutes}
+                />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="item-station">Estación</FieldLabel>
+                <select
+                  id="item-station"
+                  onChange={(event) => setItemKitchenStation(event.target.value as KitchenStation)}
+                  value={itemKitchenStation}
+                >
+                  <option value="general">General</option>
+                  <option value="hot">Caliente</option>
+                  <option value="cold">Frío</option>
+                  <option value="bar">Barra</option>
+                  <option value="dessert">Postres</option>
                 </select>
               </Field>
               <Field>
