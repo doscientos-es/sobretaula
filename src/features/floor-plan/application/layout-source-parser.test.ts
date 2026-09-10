@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
-import { detectLayoutSourceKind, ManualReviewLayoutSourceParser } from './layout-source-parser'
+import {
+  detectLayoutSourceKind,
+  JsonLayoutSourceParser,
+  ManualReviewLayoutSourceParser,
+} from './layout-source-parser'
 
 describe('layout source parser boundary', () => {
   it('detects JSON, PDF and image sources by mime or extension', () => {
@@ -19,5 +23,25 @@ describe('layout source parser boundary', () => {
     })
     expect(result).toMatchObject({ confidence: 0, needsReview: true })
     expect(result.template).toBeUndefined()
+  })
+
+  it('parses JSON through the shared template validation', async () => {
+    const result = await new JsonLayoutSourceParser().parse({
+      kind: 'json',
+      name: 'sala.json',
+      bytes: new TextEncoder().encode(
+        JSON.stringify({
+          format: 'sobretaula-floor-plan-template',
+          version: 1,
+          widthCm: 100,
+          heightCm: 100,
+          tables: [],
+          elements: [],
+        }),
+      ),
+      mimeType: 'application/json',
+    })
+    expect(result).toMatchObject({ confidence: 1, needsReview: false })
+    expect(result.template?.widthCm).toBe(100)
   })
 })

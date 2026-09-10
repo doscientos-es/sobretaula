@@ -36,8 +36,11 @@ function requiredEnv(name: string): string {
 const supabase = createClient(requiredEnv('SUPABASE_URL'), requiredEnv('SUPABASE_SERVICE_ROLE_KEY'))
 
 function escapeHtml(value: string): string {
-  return value.replace(/[&<>'"]/g, (character) =>
-    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[character] ?? character,
+  return value.replace(
+    /[&<>'"]/g,
+    (character) =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[character] ??
+      character,
   )
 }
 
@@ -76,24 +79,37 @@ function emailHtml({
 }
 
 async function deliverEmail(job: Job): Promise<void> {
-  if (!job.reservation_id || !job.guest_id) throw new Error('email_payload_missing_reservation_or_guest')
+  if (!job.reservation_id || !job.guest_id)
+    throw new Error('email_payload_missing_reservation_or_guest')
   const { data: reservation, error: reservationError } = await supabase
     .from('reservations')
     .select('ends_at, guest_id, party_size, starts_at, tenant_id, venue_id')
     .eq('id', job.reservation_id)
     .maybeSingle<Reservation>()
   if (reservationError || !reservation) throw new Error('reservation_not_found')
-  const [{ data: guest, error: guestError }, { data: venue, error: venueError }, { data: tenant, error: tenantError }, { data: branding }]
-    = await Promise.all([
-      supabase.from('guests').select('email, full_name, locale').eq('id', reservation.guest_id).maybeSingle<Guest>(),
-      supabase.from('venues').select('name').eq('id', reservation.venue_id).maybeSingle<Venue>(),
-      supabase.from('tenants').select('name, timezone').eq('id', reservation.tenant_id).maybeSingle<Tenant>(),
-      supabase
-        .from('tenant_email_branding')
-        .select('email_from_name, logo_url, primary_color, reply_to_email')
-        .eq('tenant_id', reservation.tenant_id)
-        .maybeSingle<Branding>(),
-    ])
+  const [
+    { data: guest, error: guestError },
+    { data: venue, error: venueError },
+    { data: tenant, error: tenantError },
+    { data: branding },
+  ] = await Promise.all([
+    supabase
+      .from('guests')
+      .select('email, full_name, locale')
+      .eq('id', reservation.guest_id)
+      .maybeSingle<Guest>(),
+    supabase.from('venues').select('name').eq('id', reservation.venue_id).maybeSingle<Venue>(),
+    supabase
+      .from('tenants')
+      .select('name, timezone')
+      .eq('id', reservation.tenant_id)
+      .maybeSingle<Tenant>(),
+    supabase
+      .from('tenant_email_branding')
+      .select('email_from_name, logo_url, primary_color, reply_to_email')
+      .eq('tenant_id', reservation.tenant_id)
+      .maybeSingle<Branding>(),
+  ])
   if (guestError || !guest?.email || venueError || !venue || tenantError || !tenant)
     throw new Error('email_payload_not_available')
 

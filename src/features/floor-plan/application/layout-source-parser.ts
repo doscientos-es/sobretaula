@@ -1,4 +1,4 @@
-import type { LayoutTemplate } from '../domain/layout-template'
+import { parseLayoutTemplate, type LayoutTemplate } from '../domain/layout-template'
 
 export type LayoutSourceKind = 'json' | 'image' | 'pdf'
 
@@ -46,5 +46,16 @@ export class ManualReviewLayoutSourceParser implements LayoutSourceParser {
       needsReview: true,
       notes: [`La fuente ${source.name} requiere extracción asistida antes de publicar.`],
     }
+  }
+}
+
+export class JsonLayoutSourceParser implements LayoutSourceParser {
+  supports(kind: LayoutSourceKind): boolean {
+    return kind === 'json'
+  }
+
+  async parse(source: LayoutSource): Promise<LayoutParseResult> {
+    const template = parseLayoutTemplate(new TextDecoder().decode(source.bytes))
+    return { confidence: 1, needsReview: false, template, notes: [] }
   }
 }

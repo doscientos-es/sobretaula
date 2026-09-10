@@ -1,6 +1,7 @@
 import { createFileRoute, notFound } from '@tanstack/react-router'
 
-import { EmailBrandingPage, getEmailBranding } from '@/features/communications'
+import { getEmailBranding } from '@/features/communications/application/email-branding'
+import { EmailBrandingPage } from '@/features/communications/ui/email-branding-page'
 import { requireTenantRouteAccess, tenantBySlugQuery } from '@/features/tenancy'
 
 export const Route = createFileRoute('/t/$slug/comunicaciones')({

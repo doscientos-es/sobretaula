@@ -16,8 +16,7 @@ import {
 } from '@doscientos/ui'
 import { useState, type FormEvent } from 'react'
 
-import type { EmailBranding } from '../application/email-branding'
-import { saveEmailBranding } from '../application/email-branding'
+import { saveEmailBranding, type EmailBranding } from '../application/email-branding'
 
 export function EmailBrandingPage({
   branding,
@@ -60,7 +59,8 @@ export function EmailBrandingPage({
         <CardHeader>
           <CardTitle>Identidad de los correos</CardTitle>
           <CardDescription>
-            El nombre se muestra como remitente. El envío sale desde el dominio seguro de SobreTaula.
+            El nombre se muestra como remitente. El envío sale desde el dominio seguro de
+            SobreTaula.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -130,7 +130,9 @@ export function EmailBrandingPage({
               <p className="font-semibold" style={{ color: primaryColor }}>
                 {emailFromName || defaultName}
               </p>
-              <p className="text-muted-foreground mt-1 text-xs">Vista previa del encabezado del correo.</p>
+              <p className="text-muted-foreground mt-1 text-xs">
+                Vista previa del encabezado del correo.
+              </p>
             </div>
             {canManage ? (
               <div className="sm:col-span-2">
