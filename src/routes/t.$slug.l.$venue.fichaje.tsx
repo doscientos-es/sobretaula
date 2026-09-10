@@ -17,13 +17,14 @@ export const Route = createFileRoute('/t/$slug/l/$venue/fichaje')({
   component: TimekeepingRoute,
 })
 function TimekeepingRoute() {
-  const { tenant, venue } = Route.useRouteContext()
+  const { tenant, tenantMembership, venue } = Route.useRouteContext()
   const { management, summary } = Route.useLoaderData()
   const reload = useLoaderReload()
   return (
     <TimekeepingPage
       summary={summary}
       management={management}
+      employeeId={tenantMembership.userId}
       tenantId={tenant.id}
       venueId={venue.id}
       onDone={reload}

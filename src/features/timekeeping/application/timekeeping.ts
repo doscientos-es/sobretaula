@@ -17,12 +17,14 @@ import {
 } from '../domain/timekeeping'
 import {
   recordTimeEventInput,
+  recordOfflineTimeEventInput,
   setPinInput,
   terminalTimeEventInput,
   timekeepingHolidayInput,
   timekeepingInput,
   timekeepingReportInput,
   timekeepingTermInput,
+  timekeepingVenueAssignmentInput,
 } from './timekeeping-schema'
 const middleware = [
   authMiddleware,
@@ -122,6 +124,30 @@ export const recordTimeEvent = createServerFn({ method: 'POST' })
     if (result[0].result !== 'recorded')
       throw new Response('Invalid timekeeping transition', { status: 409 })
     return { eventId: result[0].event_id as string, eventType: data.eventType }
+  })
+
+export const recordOfflineTimeEvent = createServerFn({ method: 'POST' })
+  .middleware(middleware)
+  .validator(recordOfflineTimeEventInput)
+  .handler(async ({ context, data }) => {
+    if (data.employeeId !== context.tenantMembership.userId)
+      throw new Response('Forbidden', { status: 403 })
+    const { data: result, error } = await createRequestSupabaseClient(
+      context.tenantMembership.accessToken,
+    ).rpc('record_timekeeping_event_offline', {
+      p_client_occurred_at: data.clientOccurredAt,
+      p_event_type: data.eventType,
+      p_operation_id: data.operationId,
+      p_tenant_id: data.tenantId,
+      p_venue_id: data.venueId,
+    })
+    if (error || !result?.[0])
+      throw new Error(`offline_timekeeping_event_failed:${error?.code ?? 'unknown'}`)
+    return {
+      eventId: (result[0].event_id as string | null) ?? null,
+      eventType: data.eventType,
+      result: result[0].result as string,
+    }
   })
 
 export const exportTimekeepingCsv = createServerFn({ method: 'GET' })
@@ -253,10 +279,17 @@ export const getTimekeepingConfiguration = createServerFn({ method: 'GET' })
   .handler(async ({ context, data }) => {
     requireTimekeepingManager(context.tenantMembership.role)
     const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
-    const [membersResult, profilesResult, termsResult, holidaysResult] = await Promise.all([
+    const [
+      membersResult,
+      profilesResult,
+      termsResult,
+      holidaysResult,
+      assignmentsResult,
+      venuesResult,
+    ] = await Promise.all([
       supabase
         .from('memberships')
-        .select('user_id, role')
+        .select('id, user_id, role')
         .eq('tenant_id', data.tenantId)
         .eq('status', 'active')
         .order('created_at'),
@@ -274,8 +307,21 @@ export const getTimekeepingConfiguration = createServerFn({ method: 'GET' })
         .eq('tenant_id', data.tenantId)
         .eq('venue_id', data.venueId)
         .order('holiday_date'),
+      supabase.from('membership_venues').select('membership_id, venue_id'),
+      supabase
+        .from('venues')
+        .select('id, name')
+        .eq('tenant_id', data.tenantId)
+        .eq('is_active', true),
     ])
-    if (membersResult.error || profilesResult.error || termsResult.error || holidaysResult.error)
+    if (
+      membersResult.error ||
+      profilesResult.error ||
+      termsResult.error ||
+      holidaysResult.error ||
+      assignmentsResult.error ||
+      venuesResult.error
+    )
       throw new Error('timekeeping_configuration_load_failed')
     const names = new Map(
       (profilesResult.data ?? []).map((profile) => [profile.user_id, profile.display_name]),
@@ -290,6 +336,16 @@ export const getTimekeepingConfiguration = createServerFn({ method: 'GET' })
         date: holiday.holiday_date as string,
         label: holiday.label as string,
       })),
+      assignments: (membersResult.data ?? []).map((member) => ({
+        employeeId: member.user_id as string,
+        venueIds: (assignmentsResult.data ?? [])
+          .filter((assignment) => assignment.membership_id === member.id)
+          .map((assignment) => assignment.venue_id as string),
+      })),
+      venues: (venuesResult.data ?? []).map((venue) => ({
+        id: venue.id as string,
+        name: venue.name as string,
+      })),
       terms: (termsResult.data ?? []).map((term) => ({
         dailyTargetMinutes: term.daily_target_minutes as number,
         effectiveFrom: term.effective_from as string,
@@ -300,6 +356,127 @@ export const getTimekeepingConfiguration = createServerFn({ method: 'GET' })
         nightEndsAt: normalizeClock(term.night_ends_at as string, '06:00'),
         nightStartsAt: normalizeClock(term.night_starts_at as string, '22:00'),
       })),
+    }
+  })
+
+export interface TimekeepingAdvancedReport {
+  from: string
+  rows: Array<{
+    breakViolationCount: number
+    complementaryMinutes: number
+    days: ReturnType<typeof summarizeLaborTime>['days']
+    displayName: string
+    employeeId: string
+    holidayMinutes: number
+    nightMinutes: number
+    overtimeMinutes: number
+    restViolationCount: number
+    role: string
+    splitShiftDays: number
+    workedMinutes: number
+  }>
+  to: string
+  totalWorkedMinutes: number
+  venueId: string
+}
+
+export const getTimekeepingAdvancedReport = createServerFn({ method: 'GET' })
+  .middleware(middleware)
+  .validator(timekeepingReportInput)
+  .handler(async ({ context, data }): Promise<TimekeepingAdvancedReport> => {
+    requireTimekeepingManager(context.tenantMembership.role)
+    const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    const [membersResult, profilesResult, eventsResult, termsResult, holidaysResult, tenantResult] =
+      await Promise.all([
+        supabase
+          .from('memberships')
+          .select('user_id, role')
+          .eq('tenant_id', data.tenantId)
+          .eq('status', 'active'),
+        supabase.from('profiles').select('user_id, display_name'),
+        supabase
+          .from('timekeeping_events')
+          .select('employee_id, event_type, occurred_at, client_occurred_at')
+          .eq('tenant_id', data.tenantId)
+          .eq('venue_id', data.venueId)
+          .gte('occurred_at', data.from)
+          .lt('occurred_at', data.to)
+          .order('occurred_at'),
+        supabase
+          .from('timekeeping_employee_terms')
+          .select(
+            'daily_target_minutes, effective_from, employee_id, employment_type, minimum_break_minutes, minimum_daily_rest_minutes, night_ends_at, night_starts_at',
+          )
+          .eq('tenant_id', data.tenantId)
+          .lte('effective_from', data.to.slice(0, 10))
+          .order('effective_from', { ascending: false }),
+        supabase
+          .from('timekeeping_holidays')
+          .select('holiday_date')
+          .eq('tenant_id', data.tenantId)
+          .eq('venue_id', data.venueId),
+        supabase.from('tenants').select('timezone').eq('id', data.tenantId).single(),
+      ])
+    if (
+      membersResult.error ||
+      profilesResult.error ||
+      eventsResult.error ||
+      termsResult.error ||
+      holidaysResult.error ||
+      tenantResult.error
+    )
+      throw new Error('timekeeping_advanced_report_failed')
+    const names = new Map(
+      (profilesResult.data ?? []).map((profile) => [profile.user_id, profile.display_name]),
+    )
+    const eventsByEmployee = new Map<
+      string,
+      Array<{ eventType: TimeEventType; occurredAt: string }>
+    >()
+    for (const event of eventsResult.data ?? []) {
+      const occurredAt = (event.client_occurred_at ?? event.occurred_at) as string
+      const current = eventsByEmployee.get(event.employee_id as string) ?? []
+      current.push({ eventType: event.event_type as TimeEventType, occurredAt })
+      eventsByEmployee.set(event.employee_id as string, current)
+    }
+    const timeZone = (tenantResult.data?.timezone as string | null) ?? 'Europe/Madrid'
+    const holidayDates = (holidaysResult.data ?? []).map(
+      (holiday) => holiday.holiday_date as string,
+    )
+    const rows = (membersResult.data ?? []).map((member) => {
+      const term = (termsResult.data ?? []).find(
+        (candidate) => candidate.employee_id === member.user_id,
+      )
+      const rules: TimekeepingLaborRules = term
+        ? {
+            dailyTargetMinutes: term.daily_target_minutes as number,
+            minimumBreakMinutes: term.minimum_break_minutes as number,
+            minimumDailyRestMinutes: term.minimum_daily_rest_minutes as number,
+            nightEndsAt: normalizeClock(term.night_ends_at as string, '06:00'),
+            nightStartsAt: normalizeClock(term.night_starts_at as string, '22:00'),
+          }
+        : DEFAULT_TIMEKEEPING_LABOR_RULES
+      const summary = summarizeLaborTime({
+        employmentType: (term?.employment_type as EmploymentType | undefined) ?? 'full_time',
+        events: eventsByEmployee.get(member.user_id as string) ?? [],
+        holidayDates,
+        now: new Date(data.to),
+        rules,
+        timeZone,
+      })
+      return {
+        ...summary,
+        displayName: names.get(member.user_id) ?? 'Empleado',
+        employeeId: member.user_id as string,
+        role: member.role as string,
+      }
+    })
+    return {
+      from: data.from,
+      rows,
+      to: data.to,
+      totalWorkedMinutes: rows.reduce((total, row) => total + row.workedMinutes, 0),
+      venueId: data.venueId,
     }
   })
 
@@ -341,5 +518,23 @@ export const saveTimekeepingHoliday = createServerFn({ method: 'POST' })
         venue_id: data.venueId,
       })
     if (error) throw new Error(`timekeeping_holiday_save_failed:${error.code}`)
+    return { saved: true }
+  })
+
+export const saveTimekeepingVenueAssignments = createServerFn({ method: 'POST' })
+  .middleware(middleware)
+  .validator(timekeepingVenueAssignmentInput)
+  .handler(async ({ context, data }) => {
+    requireTimekeepingManager(context.tenantMembership.role)
+    const { error } = await createRequestSupabaseClient(context.tenantMembership.accessToken).rpc(
+      'set_timekeeping_employee_venues',
+      {
+        p_effective_from: data.effectiveFrom,
+        p_employee_id: data.employeeId,
+        p_tenant_id: data.tenantId,
+        p_venue_ids: data.venueIds,
+      },
+    )
+    if (error) throw new Error(`timekeeping_venue_assignment_save_failed:${error.code}`)
     return { saved: true }
   })

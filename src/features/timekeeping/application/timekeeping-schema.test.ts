@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  recordOfflineTimeEventInput,
   terminalTimeEventInput,
   timekeepingHolidayInput,
   timekeepingTermInput,
@@ -20,6 +21,31 @@ describe('terminalTimeEventInput', () => {
     expect(
       terminalTimeEventInput.safeParse({ ...event, terminalId: 'front-counter-1' }).success,
     ).toBe(true)
+  })
+})
+
+describe('recordOfflineTimeEventInput', () => {
+  it('requires a UUID operation and an ISO client timestamp', () => {
+    expect(
+      recordOfflineTimeEventInput.safeParse({
+        clientOccurredAt: '2026-01-01T10:00:00.000Z',
+        employeeId: event.employeeId,
+        eventType: 'clock_in',
+        operationId: '00000000-0000-4000-8000-000000000004',
+        tenantId: event.tenantId,
+        venueId: event.venueId,
+      }).success,
+    ).toBe(true)
+    expect(
+      recordOfflineTimeEventInput.safeParse({
+        clientOccurredAt: 'not-a-date',
+        employeeId: event.employeeId,
+        eventType: 'clock_in',
+        operationId: 'not-a-uuid',
+        tenantId: event.tenantId,
+        venueId: event.venueId,
+      }).success,
+    ).toBe(false)
   })
 })
 

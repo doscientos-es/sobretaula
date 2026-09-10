@@ -13,16 +13,24 @@ import {
   FormFeedback,
   Input,
 } from '@doscientos/ui'
-import { useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 
 import {
+  getTimekeepingAdvancedReport,
   recordTimeEvent,
   saveTimekeepingHoliday,
   saveTimekeepingTerm,
+  saveTimekeepingVenueAssignments,
   setMyTimekeepingPin,
   type getTimekeepingConfiguration,
   type getMyTimekeeping,
 } from '../application/timekeeping'
+import {
+  createTimekeepingOfflineOperation,
+  createTimekeepingOfflineStore,
+  enqueueTimekeepingOperation,
+  flushTimekeepingOperations,
+} from '../application/timekeeping-offline-operations'
 import { allowedNextEvent, type TimeEventType } from '../domain/timekeeping'
 
 const labels: Record<TimeEventType, string> = {
@@ -39,6 +47,7 @@ function formText(values: FormData, name: string): string {
 
 export function TimekeepingPage({
   summary,
+  employeeId,
   tenantId,
   venueId,
   management,
@@ -46,14 +55,60 @@ export function TimekeepingPage({
 }: {
   management: Awaited<ReturnType<typeof getTimekeepingConfiguration>> | null
   summary: Awaited<ReturnType<typeof getMyTimekeeping>>
+  employeeId: string
   tenantId: string
   venueId: string
   onDone: () => void
 }) {
   const feedback = useFormFeedback()
   const [pin, setPin] = useState('')
-  const last = summary.events.at(-1)?.eventType ?? null
+  const [isOnline, setIsOnline] = useState(() =>
+    typeof navigator === 'undefined' ? true : navigator.onLine,
+  )
+  const offlineStore = useMemo(
+    () => createTimekeepingOfflineStore(tenantId, venueId),
+    [tenantId, venueId],
+  )
+  const [pendingOffline, setPendingOffline] = useState(() => offlineStore.read().length)
+  const queuedEvents = offlineStore
+    .read()
+    .sort((left, right) => left.createdAt.localeCompare(right.createdAt))
+  const last = queuedEvents.at(-1)?.payload.eventType ?? summary.events.at(-1)?.eventType ?? null
   const next = allowedNextEvent(last)
+
+  useEffect(() => {
+    const flush = () => {
+      setIsOnline(true)
+      void flushTimekeepingOperations(offlineStore).then((result) => {
+        setPendingOffline(offlineStore.read().length)
+        if (result.completed > 0) onDone()
+      })
+    }
+    const offline = () => setIsOnline(false)
+    if (isOnline) flush()
+    window.addEventListener('online', flush)
+    window.addEventListener('offline', offline)
+    return () => {
+      window.removeEventListener('online', flush)
+      window.removeEventListener('offline', offline)
+    }
+  }, [isOnline, offlineStore, onDone])
+
+  function queueEvent(eventType: TimeEventType) {
+    const operation = createTimekeepingOfflineOperation({
+      clientOccurredAt: new Date().toISOString(),
+      employeeId,
+      eventType,
+      operationId: crypto.randomUUID(),
+      tenantId,
+      venueId,
+    })
+    enqueueTimekeepingOperation(offlineStore, operation)
+    setPendingOffline(offlineStore.read().length)
+    feedback.setSuccess(
+      'Fichaje guardado en este dispositivo. Se sincronizará al recuperar la conexión.',
+    )
+  }
 
   async function savePin() {
     feedback.setPending()
@@ -104,6 +159,10 @@ export function TimekeepingPage({
                 disabled={feedback.pending}
                 onClick={() => {
                   feedback.setPending()
+                  if (!isOnline) {
+                    queueEvent(eventType)
+                    return
+                  }
                   void recordTimeEvent({ data: { tenantId, venueId, eventType } })
                     .then(() => {
                       feedback.setSuccess('Fichaje guardado.')
@@ -117,6 +176,21 @@ export function TimekeepingPage({
               </Button>
             ))}
           </div>
+          {!isOnline && (
+            <p
+              className="text-warning-foreground bg-warning/10 rounded-md p-3 text-sm"
+              role="status"
+            >
+              Sin conexión. El fichaje personal se guardará localmente y se sincronizará al volver
+              la red. Pendientes: {pendingOffline}.
+            </p>
+          )}
+          {isOnline && pendingOffline > 0 && (
+            <p className="text-muted-foreground text-sm" role="status">
+              Sincronizando {pendingOffline} fichaje{pendingOffline === 1 ? '' : 's'} pendiente
+              {pendingOffline === 1 ? '' : 's'}…
+            </p>
+          )}
           <div className="border-border/70 space-y-3 border-t pt-4">
             <p className="font-medium">PIN de terminal</p>
             <p className="text-muted-foreground text-sm">
@@ -182,8 +256,25 @@ function TimekeepingManagement({
   venueId: string
 }) {
   const [employeeId, setEmployeeId] = useState(management.employees[0]?.userId ?? '')
+  const [assignmentVenueIds, setAssignmentVenueIds] = useState<string[]>([])
+  const [report, setReport] = useState<Awaited<
+    ReturnType<typeof getTimekeepingAdvancedReport>
+  > | null>(null)
+  const [reportFrom, setReportFrom] = useState(() => {
+    const date = new Date()
+    date.setDate(1)
+    return date.toISOString().slice(0, 10)
+  })
+  const [reportTo, setReportTo] = useState(() => new Date().toISOString().slice(0, 10))
   const currentTerm = management.terms.find((term) => term.employeeId === employeeId)
+  const currentAssignment = management.assignments.find(
+    (assignment) => assignment.employeeId === employeeId,
+  )
   const today = new Date().toISOString().slice(0, 10)
+
+  useEffect(() => {
+    setAssignmentVenueIds(currentAssignment?.venueIds ?? [])
+  }, [currentAssignment])
 
   async function saveTerm(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -229,6 +320,44 @@ function TimekeepingManagement({
       onSaved()
     } catch {
       feedback.setError('No se ha podido guardar el festivo.')
+    }
+  }
+
+  async function saveAssignments() {
+    feedback.setPending()
+    try {
+      await saveTimekeepingVenueAssignments({
+        data: {
+          effectiveFrom: today,
+          employeeId,
+          tenantId,
+          venueId,
+          venueIds: assignmentVenueIds,
+        },
+      })
+      feedback.setSuccess('Centros del empleado actualizados y guardados en el histórico.')
+      onSaved()
+    } catch {
+      feedback.setError('No se han podido actualizar los centros del empleado.')
+    }
+  }
+
+  async function loadReport(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    feedback.setPending()
+    try {
+      const value = await getTimekeepingAdvancedReport({
+        data: {
+          from: new Date(`${reportFrom}T00:00:00.000Z`).toISOString(),
+          tenantId,
+          to: new Date(`${reportTo}T23:59:59.999Z`).toISOString(),
+          venueId,
+        },
+      })
+      setReport(value)
+      feedback.setSuccess('Informe laboral generado.')
+    } catch {
+      feedback.setError('No se ha podido generar el informe laboral.')
     }
   }
 
@@ -340,6 +469,42 @@ function TimekeepingManagement({
         ) : (
           <p className="text-muted-foreground text-sm">No hay empleados activos configurables.</p>
         )}
+        {management.employees.length > 0 && (
+          <div className="space-y-3 border-t pt-5">
+            <div>
+              <p className="font-medium">Centros del empleado</p>
+              <p className="text-muted-foreground text-sm">
+                Sin seleccionar ningún local conserva el acceso a todos los locales. Cada cambio se
+                conserva con fecha para revisión.
+              </p>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {management.venues.map((venue) => (
+                <label className="flex items-center gap-2 text-sm" key={venue.id}>
+                  <input
+                    checked={assignmentVenueIds.includes(venue.id)}
+                    onChange={(event) =>
+                      setAssignmentVenueIds((current) =>
+                        event.target.checked
+                          ? [...current, venue.id]
+                          : current.filter((id) => id !== venue.id),
+                      )
+                    }
+                    type="checkbox"
+                  />
+                  {venue.name}
+                </label>
+              ))}
+            </div>
+            <Button
+              disabled={feedback.pending}
+              onClick={() => void saveAssignments()}
+              type="button"
+            >
+              Guardar centros
+            </Button>
+          </div>
+        )}
         <form
           className="grid gap-4 border-t pt-5 md:grid-cols-[auto_1fr_auto]"
           onSubmit={(event) => void saveHoliday(event)}
@@ -364,6 +529,72 @@ function TimekeepingManagement({
             ))}
           </ul>
         )}
+        <div className="space-y-4 border-t pt-5">
+          <div>
+            <p className="font-medium">Informe laboral avanzado</p>
+            <p className="text-muted-foreground text-sm">
+              Resumen por empleado y local con minutos, nocturnidad, festivos, excesos e
+              incidencias. Es orientativo y debe revisarlo la asesoría.
+            </p>
+          </div>
+          <form className="grid gap-3 sm:grid-cols-3" onSubmit={(event) => void loadReport(event)}>
+            <Input
+              aria-label="Desde el informe laboral"
+              onChange={(event) => setReportFrom(event.target.value)}
+              required
+              type="date"
+              value={reportFrom}
+            />
+            <Input
+              aria-label="Hasta el informe laboral"
+              onChange={(event) => setReportTo(event.target.value)}
+              required
+              type="date"
+              value={reportTo}
+            />
+            <Button disabled={feedback.pending} type="submit" variant="outline">
+              Generar informe
+            </Button>
+          </form>
+          {report && (
+            <div className="space-y-2" role="region" aria-label="Resultado del informe laboral">
+              <p className="text-sm font-medium">
+                Total: {report.totalWorkedMinutes} min trabajados
+              </p>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="p-2">Empleado</th>
+                      <th className="p-2">Trabajado</th>
+                      <th className="p-2">Noche/festivo</th>
+                      <th className="p-2">Exceso</th>
+                      <th className="p-2">Incidencias</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {report.rows.map((row) => (
+                      <tr className="border-b" key={row.employeeId}>
+                        <td className="p-2">{row.displayName}</td>
+                        <td className="p-2">{row.workedMinutes} min</td>
+                        <td className="p-2">
+                          {row.nightMinutes}/{row.holidayMinutes} min
+                        </td>
+                        <td className="p-2">
+                          {row.overtimeMinutes + row.complementaryMinutes} min
+                        </td>
+                        <td className="p-2">
+                          {row.breakViolationCount + row.restViolationCount} · {row.splitShiftDays}{' '}
+                          partidas
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
         <FormFeedback pendingLabel="Guardando configuración…" state={feedback.state} />
       </CardContent>
     </Card>

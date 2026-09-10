@@ -9,6 +9,12 @@ export const recordTimeEventInput = timekeepingInput.extend({
   eventType: z.enum(TIME_EVENT_TYPES),
   terminalId: z.string().trim().max(100).optional(),
 })
+export const recordOfflineTimeEventInput = timekeepingInput.extend({
+  clientOccurredAt: z.string().datetime(),
+  employeeId: z.string().uuid(),
+  eventType: z.enum(TIME_EVENT_TYPES),
+  operationId: z.string().uuid(),
+})
 export const timekeepingReportInput = timekeepingInput.extend({
   from: z.string().datetime(),
   to: z.string().datetime(),
@@ -35,4 +41,9 @@ export const timekeepingTermInput = timekeepingInput.extend({
 export const timekeepingHolidayInput = timekeepingInput.extend({
   holidayDate: z.string().date(),
   label: z.string().trim().min(1).max(120),
+})
+export const timekeepingVenueAssignmentInput = timekeepingInput.extend({
+  effectiveFrom: z.string().date(),
+  employeeId: z.string().uuid(),
+  venueIds: z.array(z.string().uuid()).max(50),
 })

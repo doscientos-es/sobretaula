@@ -40,7 +40,7 @@ Esta sección prevalece sobre las dependencias históricas de este backlog.
   facturación en modo test; outbox de correo y depósitos modelados.
 - Brechas de producto: el TPV unificado cubre cuenta, comandas, cola, cobro
   manual y mixto, caja, conciliación, informe financiero y reimpresión web;
-  siguen pendientes sincronización offline del fichaje e inventario/escandallos
+  quedan validación formal del fichaje e inventario/escandallos de punta a punta
   de punta a punta. Hardware queda explícitamente fuera de esta fase.
 - Brechas de fiabilidad: las tres pruebas RLS están omitidas porque no se
   conectan pruebas al único proyecto con datos reales; tampoco hay humo E2E ni
@@ -227,15 +227,17 @@ ventas sin intervención técnica.
 
 ### E10 — Control horario integrado (P3)
 
-- [ ] **E10.1 · Modelo legal.** Cerrar G5 y migrar empleados, centros y eventos
-      append-only con encadenado de integridad.
-- [ ] **E10.2 · Fichaje PIN.** Entrada, pausa, regreso y salida; límites contra
-      intentos y terminal ya están implementados. Queda sincronización offline
-      idempotente.
-- [ ] **E10.3 · Jornada/exportación.** Tramos partidos, cruce de medianoche,
-      nocturnidad, festivos, portal y exportación ya están implementados de forma
-      indicativa. Quedan informes avanzados, cambios de centro y validación para
-      inspección/nóminas.
+- [x] **E10.1 · Modelo legal.** Empleados, centros y eventos append-only con
+      encadenado de integridad están implementados; la asesoría debe confirmar el
+      convenio, la conservación y el formato de inspección.
+- [x] **E10.2 · Fichaje PIN y offline personal.** Entrada, pausa, regreso y salida,
+      límites contra intentos y terminal online están implementados. El portal
+      personal encola operaciones con UUID, fecha de cliente y RPC idempotente;
+      el terminal compartido sigue requiriendo red para no conservar PIN.
+- [x] **E10.3 · Jornada/exportación.** Tramos partidos, cruce de medianoche,
+      nocturnidad, festivos, portal, cambios de centro, informe avanzado por
+      empleado/local y exportación están implementados de forma indicativa. La
+      validación para inspección/nóminas queda como gate externo G5.
 
 ### E11 — Certificación de entrega (P0 transversal)
 

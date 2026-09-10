@@ -33,7 +33,7 @@ reproducible (comando ejecutado y su resultado).
 | F6 · Facturación       | Ajustes fiscales, series, ledger/outbox, PDF, modo test                     | Implementado en modo test; la emisión `prod` permanece bloqueada hasta completar la checklist VERI*FACTU y el adaptador AEAT                                                                                                                                                                                            |
 | F7 · TPV ampliado      | Catálogo, comandas, cocina/barra, cobros, caja y arqueo                     | Implementado en navegador/tablet; incluye modificadores, disponibilidad/precio local-canal, edición rápida, pagos mixtos atómicos e idempotentes, histórico financiero, conciliación avanzada, caja e impresión web; hardware queda fuera de esta fase                                                                  |
 | F8 · Reservas públicas | Reserva sin cuenta, gestión, avisos, espera y ficha de cliente              | Parcial; reserva, disponibilidad, gestión por token, confirmación por email y recordatorio 24 h activos; rate limiting por contacto, condiciones versionadas, espera futura, historial ampliado, etiquetas, alergias y preferencias ya están implementados; faltan validación operativa y retención/privacidad avanzada |
-| F9 · Control horario   | PIN, pausas, jornadas, auditoría y exportación                              | Parcial; portal personal, terminal compartido, PIN bcrypt, límites de intentos, eventos inmutables, exportación CSV y motor laboral español indicativo implementados; persisten condiciones/calendario y se explotan en el portal, pero faltan informes laborales avanzados y sincronización offline                    |
+| F9 · Control horario   | PIN, pausas, jornadas, auditoría y exportación                              | Implementado en navegador; portal personal, terminal compartido online, PIN bcrypt, límites de intentos, eventos inmutables, cola offline personal idempotente, cambios de centro con histórico, informe avanzado por empleado/local y exportación CSV; la validación legal formal sigue siendo externa                 |
 | F10 · Producto         | Inventario, escandallos, alérgenos, precios por canal y carta               | Parcial; ingredientes, recetas, escandallo, inventario, UI, canales y carta pública enriquecida implementados; faltan versionado y validación visual final                                                                                                                                                              |
 | F11 · Entrega          | Documentación operativa, smoke, despliegue autorizado                       | Parcial                                                                                                                                                                                                                                                                                                                 |
 
@@ -175,6 +175,27 @@ del local. Las condiciones se guardan por fecha de vigencia y los festivos por
 local; la pantalla usa formularios etiquetados, estados de guardado y
 revalidación del loader sin recarga completa. No se automatizan decisiones de
 nómina ni se insertaron datos reales durante la verificación.
+
+### Control horario avanzado (D5.3)
+
+El portal personal puede encolar fichajes sin conexión en el navegador del usuario.
+Cada operación lleva un UUID, fecha del dispositivo y se reintenta al recuperar la
+red; la RPC protegida conserva la fecha del evento, encadena el hash y evita
+duplicados mediante `timekeeping_sync_operations`. El terminal compartido con PIN
+no funciona offline deliberadamente: no se guarda ningún PIN ni se intenta validar
+identidad localmente.
+
+Owner y manager pueden restringir un empleado a uno o varios locales desde Fichaje.
+La ausencia de filas mantiene la semántica existente de acceso a todos los locales;
+cada cambio efectivo se copia en `timekeeping_venue_changes` sin permitir edición ni
+borrado. El informe avanzado agrupa por empleado el rango y local seleccionados,
+mostrando minutos trabajados, nocturnidad, festivos, exceso, pausas, descansos y
+jornadas partidas. Es una extracción operativa orientativa, no una liquidación.
+
+La validación formal queda abierta con asesoría: confirmar convenio aplicable,
+calendarios, redondeos, incidencias, conservación/exportación, corrección de reloj
+del dispositivo y formato aceptado para inspección/nómina. La migración avanzada no
+crea fixtures ni modifica eventos reales durante las comprobaciones.
 
 La política de terraza ya está aislada en dominio (`weather-policy.ts`): permite
 decidir de forma determinista si mantener el exterior, trasladar al interior o
