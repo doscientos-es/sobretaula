@@ -54,6 +54,8 @@ export function ServicePage({
     typeof navigator === 'undefined' ? true : navigator.onLine,
   )
   const [handoverSaved, setHandoverSaved] = useState(false)
+  const [handoverSaving, setHandoverSaving] = useState(false)
+  const [handoverError, setHandoverError] = useState(false)
   const [expandedSnapshotId, setExpandedSnapshotId] = useState<string | null>(null)
   const [handoverDate, setHandoverDate] = useState('')
   const reload = useLoaderReload()
@@ -464,8 +466,10 @@ export function ServicePage({
                   )
                 })}
                 <Button
-                  disabled={!isOnline}
+                  disabled={!isOnline || handoverSaving}
                   onClick={() => {
+                    setHandoverSaving(true)
+                    setHandoverError(false)
                     void createHandoverSnapshot({
                       data: {
                         summary: handover.map((section) => ({
@@ -475,16 +479,24 @@ export function ServicePage({
                         tenantId,
                         venueId,
                       },
-                    }).then(() => setHandoverSaved(true))
+                    })
+                      .then(() => setHandoverSaved(true))
+                      .catch(() => setHandoverError(true))
+                      .finally(() => setHandoverSaving(false))
                   }}
                   type="button"
                   variant="outline"
                 >
-                  Guardar entrega de turno
+                  {handoverSaving ? 'Guardando…' : 'Guardar entrega de turno'}
                 </Button>
                 {handoverSaved && (
                   <output className="text-success text-xs">
                     Entrega guardada con fecha y responsable.
+                  </output>
+                )}
+                {handoverError && (
+                  <output className="text-destructive text-xs">
+                    No se ha podido guardar. Comprueba la conexión y vuelve a intentarlo.
                   </output>
                 )}
               </CardContent>

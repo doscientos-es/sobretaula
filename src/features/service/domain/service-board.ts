@@ -148,8 +148,18 @@ export function compareServiceHandover(
   saved: readonly ServiceHandoverSection[],
   current: readonly ServiceHandoverSection[],
 ): ServiceHandoverDelta[] {
-  return current.map((section) => {
-    const previous = saved.find((candidate) => candidate.areaId === section.areaId)
+  const currentByArea = new Map(current.map((section) => [section.areaId, section]))
+  const areaIds = new Set([...saved.map((section) => section.areaId), ...currentByArea.keys()])
+  return [...areaIds].map((areaId) => {
+    const section = currentByArea.get(areaId) ?? {
+      activeSessions: 0,
+      assignedStaffIds: [],
+      attentionSessions: 0,
+      areaId,
+      blockedTables: 0,
+      cleaningTables: 0,
+    }
+    const previous = saved.find((candidate) => candidate.areaId === areaId)
     return {
       ...section,
       activeSessionsDelta: section.activeSessions - (previous?.activeSessions ?? 0),

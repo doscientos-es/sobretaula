@@ -130,6 +130,10 @@ describe('service board', () => {
       activeSessionsDelta: 1,
       blockedTablesDelta: -1,
     })
+    expect(compareServiceHandover(saved, []).at(0)).toMatchObject({
+      activeSessionsDelta: -1,
+      blockedTablesDelta: -1,
+    })
   })
 
   it('keeps the earliest reservation when two share a table', () => {
