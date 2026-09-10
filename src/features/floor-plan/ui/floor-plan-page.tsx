@@ -256,6 +256,7 @@ export function FloorPlanPage({
     setSelectedAreaId(areaId)
     setSelectedId(undefined)
     setSelectedIds([])
+    setLockedIds([])
     setHistory(
       createEditorHistory({
         elements: data.elements.filter((element) => element.floorPlanVersionId === version?.id),
@@ -270,7 +271,9 @@ export function FloorPlanPage({
     if (lockedIds.includes(id)) return
     const distance = event.shiftKey ? 5 : gridSize
     const current = placements.find((placement) => placement.id === id)
-    if (!current) return
+    const currentElement = elements.find((element) => element.id === id)
+    const movable = current ?? currentElement
+    if (!movable || lockedIds.includes(id)) return
     const displacement = {
       ArrowDown: { x: 0, y: distance },
       ArrowLeft: { x: -distance, y: 0 },
@@ -279,7 +282,8 @@ export function FloorPlanPage({
     }[event.key]
     if (!displacement) return
     event.preventDefault()
-    changePlacement(id, current.xCm + displacement.x, current.yCm + displacement.y)
+    if (current) changePlacement(id, current.xCm + displacement.x, current.yCm + displacement.y)
+    else updateSelected({ xCm: movable.xCm + displacement.x, yCm: movable.yCm + displacement.y })
   }
 
   function finishDrag(event: PointerEvent<SVGSVGElement>) {
@@ -341,6 +345,10 @@ export function FloorPlanPage({
 
   function duplicateSelected() {
     if (!selectedId || !activeVersion) return
+    if (lockedIds.includes(selectedId)) {
+      feedback.setError('Desbloquea el elemento antes de duplicarlo.')
+      return
+    }
     const table = placements.find((item) => item.id === selectedId)
     if (table) {
       const copyId = crypto.randomUUID()
@@ -813,6 +821,14 @@ export function FloorPlanPage({
                       event.preventDefault()
                       duplicateSelected()
                     }
+                  } else if (!event.ctrlKey && !event.metaKey && event.key.toLowerCase() === 'r') {
+                    const selected =
+                      placements.find((item) => item.id === selectedId) ??
+                      elements.find((item) => item.id === selectedId)
+                    if (selected) {
+                      event.preventDefault()
+                      updateSelected({ rotationDeg: (selected.rotationDeg + 90) % 360 })
+                    }
                   } else if (event.key === '+' || event.key === '=') {
                     event.preventDefault()
                     setZoom((current) => Math.min(3, current + 0.25))
@@ -964,7 +980,7 @@ export function FloorPlanPage({
                 {elements.map((element) => (
                   <g
                     key={element.id}
-                    aria-label={element.label ?? `Elemento ${element.kind}`}
+                    aria-label={`${element.label ?? `Elemento ${element.kind}`}${lockedIds.includes(element.id) ? ' (bloqueado)' : ''}`}
                     className="cursor-pointer"
                     onClick={(event) => selectItem(element.id, event.ctrlKey || event.metaKey)}
                     onKeyDown={(event) => {
@@ -1000,7 +1016,7 @@ export function FloorPlanPage({
                 {placements.map((placement) => (
                   <g
                     key={placement.id}
-                    aria-label={`Mesa ${placement.code}`}
+                    aria-label={`Mesa ${placement.code}${lockedIds.includes(placement.id) ? ' (bloqueada)' : ''}`}
                     className="cursor-pointer"
                     onClick={(event) => selectItem(placement.id, event.ctrlKey || event.metaKey)}
                     onKeyDown={(event) => {

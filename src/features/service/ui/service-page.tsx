@@ -398,6 +398,7 @@ export function ServicePage({
             board={board}
             onDone={reload}
             onSuggest={setSelectedTableIds}
+            isOnline={isOnline}
             selectedTableIds={selectedTableIds}
             tenantId={tenantId}
             venueId={venueId}
@@ -406,6 +407,7 @@ export function ServicePage({
             board={board}
             onDone={reload}
             selectedTableIds={selectedTableIds}
+            isOnline={isOnline}
             tenantId={tenantId}
             venueId={venueId}
           />

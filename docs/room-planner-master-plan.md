@@ -54,8 +54,10 @@ del diseñador y su uso diario.
 - [x] Preflight de capacidad para grupos grandes.
 - [x] Sugerencia automática de combinación libre más ajustada por capacidad.
 - [x] Acción para seleccionar la combinación sugerida desde el panel operativo.
-- [x] Realtime para reservas, asignaciones y sesiones y aviso de modo degradado
-      sin conexión; la cola de reintentos idempotentes queda pendiente.
+- [x] Realtime para reservas, asignaciones y sesiones, aviso de modo degradado
+      y bloqueo de mutaciones sin conexión.
+- [ ] Conectar la cola persistente local (modelo, backoff y almacenamiento ya
+      preparados) a las mutaciones con reintentos idempotentes.
 
 ### P3 · Inteligencia y casos avanzados
 

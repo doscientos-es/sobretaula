@@ -47,12 +47,14 @@ export function ServiceQueue({
   board,
   onDone,
   selectedTableIds,
+  isOnline = true,
   tenantId,
   venueId,
 }: {
   board: ServiceBoard
   onDone: () => void
   selectedTableIds: readonly string[]
+  isOnline?: boolean
   tenantId: string
   venueId: string
 }) {
@@ -75,6 +77,10 @@ export function ServiceQueue({
 
   async function run(action: () => Promise<unknown>, message: string, onSuccess?: () => void) {
     if (feedback.pending) return
+    if (!isOnline) {
+      feedback.setError('Sin conexión: recupera la red antes de modificar la sala.')
+      return
+    }
     feedback.setPending()
     try {
       await action()

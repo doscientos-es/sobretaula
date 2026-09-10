@@ -25,6 +25,7 @@ export function ServiceActions({
   selectedTableIds,
   onSuggest,
   areaOpen = true,
+  isOnline = true,
   tenantId,
   venueId,
 }: {
@@ -33,6 +34,7 @@ export function ServiceActions({
   selectedTableIds: readonly string[]
   onSuggest: (tableIds: readonly string[]) => void
   areaOpen?: boolean
+  isOnline?: boolean
   tenantId: string
   venueId: string
 }) {
@@ -52,6 +54,10 @@ export function ServiceActions({
 
   async function run(action: () => Promise<unknown>, message: string) {
     if (feedback.pending) return
+    if (!isOnline) {
+      feedback.setError('Sin conexión: recupera la red antes de modificar la sala.')
+      return
+    }
     feedback.setPending()
     try {
       await action()
