@@ -58,7 +58,13 @@ describe('inspectTableGroupPresetAvailability', () => {
   })
 
   it('rejects stale or over-capacity combinations', () => {
-    const preset = normalizeTableGroupPreset({ name: 'Terraza', tableIds: ['a', 'gone'], maxSeats: 6 })!
-    expect(inspectTableGroupPresetAvailability(preset, new Map([['a', 8]])).fitsCapacity).toBe(false)
+    const preset = normalizeTableGroupPreset({
+      name: 'Terraza',
+      tableIds: ['a', 'gone'],
+      maxSeats: 6,
+    })!
+    expect(inspectTableGroupPresetAvailability(preset, new Map([['a', 8]])).fitsCapacity).toBe(
+      false,
+    )
   })
 })
