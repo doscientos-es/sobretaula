@@ -57,6 +57,28 @@ export function selectFloorPlanVersion(
     .sort((a, b) => (b.activeFrom ?? '').localeCompare(a.activeFrom ?? ''))[0]
 }
 
+export function findVersionScheduleConflicts(
+  versions: readonly FloorPlanVersion[],
+): Array<{ areaId: string; firstVersionId: string; secondVersionId: string }> {
+  const conflicts: Array<{ areaId: string; firstVersionId: string; secondVersionId: string }> = []
+  const byArea = new Map<string, FloorPlanVersion[]>()
+  for (const version of versions) byArea.set(version.areaId, [...(byArea.get(version.areaId) ?? []), version])
+  for (const [areaId, areaVersions] of byArea) {
+    for (let index = 0; index < areaVersions.length; index += 1) {
+      const first = areaVersions[index]
+      if (!first) continue
+      const firstFrom = first.activeFrom ? new Date(first.activeFrom).getTime() : Number.NEGATIVE_INFINITY
+      const firstTo = first.activeTo ? new Date(first.activeTo).getTime() : Number.POSITIVE_INFINITY
+      for (const second of areaVersions.slice(index + 1)) {
+        const secondFrom = second.activeFrom ? new Date(second.activeFrom).getTime() : Number.NEGATIVE_INFINITY
+        const secondTo = second.activeTo ? new Date(second.activeTo).getTime() : Number.POSITIVE_INFINITY
+        if (firstFrom < secondTo && secondFrom < firstTo) conflicts.push({ areaId, firstVersionId: first.id, secondVersionId: second.id })
+      }
+    }
+  }
+  return conflicts
+}
+
 export interface FloorPlanTablePlacement extends PlanPlacement {
   code: string
   floorPlanVersionId: string

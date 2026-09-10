@@ -41,16 +41,16 @@ reserva → sesión → pagos permite obtener visitas y gasto sin duplicar impor
 7. **No copiar el cobro SaaS.** Los depósitos pertenecen al restaurante, usan un
    proveedor/merchant separado y no almacenan tarjeta, PAN ni CVV.
 
-## Siguiente PR: agenda operativa por fecha
+## Siguiente PR: historial operativo de reservas
 
-Antes de ampliar horarios, vacaciones o excepciones complejas, la siguiente
-entrega debe permitir consultar una fecha concreta desde Reservas: selector de
-día en la zona horaria del local, listado ordenado por hora con nombre, teléfono,
-comensales, mesa y estado, refresco explícito y cancelación. El loader debe
-filtrar en servidor por `venue_id` y rango diario, mantener Servicio como vista
-operativa en tiempo real y cubrir con pruebas el aislamiento por tenant, los
-límites del rango y la cancelación idempotente. La agenda ya muestra etiquetas
-operativas en español y ofrece no-show tras la tolerancia de 15 minutos.
+La agenda por fecha, cancelación, no-show y reprogramación ya están operativos.
+La siguiente entrega añade una fuente única de verdad para explicar qué ocurrió
+con cada reserva: la migración `20260910000028` crea `reservation_events`, un
+registro append-only que captura altas, cambios de estado, hora, duración y
+comensales tanto en flujos internos como públicos. El trigger evita depender de
+que cada pantalla recuerde escribir auditoría y RLS limita la lectura al tenant.
+El siguiente paso de producto es exponer esta línea temporal en el detalle de
+reserva, con actor, fecha, cambio resumido y motivo cuando exista.
 
 ## 3. Decisiones necesarias antes de R1
 

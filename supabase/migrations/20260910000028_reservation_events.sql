@@ -4,7 +4,7 @@ create table public.reservation_events (
   id uuid primary key default gen_random_uuid(),
   tenant_id uuid not null references public.tenants (id) on delete cascade,
   venue_id uuid not null references public.venues (id) on delete cascade,
-  reservation_id uuid not null references public.reservations (id) on delete cascade,
+  reservation_id uuid references public.reservations (id) on delete set null,
   actor_user_id uuid references auth.users (id) on delete set null,
   actor_kind text not null check (actor_kind in ('staff', 'public', 'system')),
   event_type text not null check (event_type in ('created', 'updated', 'status_changed', 'rescheduled', 'cancelled', 'deleted')),
