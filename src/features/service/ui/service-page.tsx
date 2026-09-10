@@ -88,7 +88,12 @@ export function ServicePage({
       )
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'service_sessions' },
+        { event: '*', schema: 'public', table: 'table_sessions' },
+        refreshFromRealtime,
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'tables' },
         refreshFromRealtime,
       )
       .subscribe((status) => {
