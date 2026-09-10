@@ -60,6 +60,7 @@ export interface ReservationAgendaItem {
   startsAt: string
   status: string
   tableIds: string[]
+  deposit: { amountCents: number; status: string } | null
 }
 
 export interface ReservationEvent {
@@ -143,7 +144,7 @@ export const getReservationsForDate = createServerFn({ method: 'GET' })
     const rows = reservations ?? []
     const ids = rows.map((row) => row.id)
     const guestIds = rows.flatMap((row) => (row.guest_id ? [row.guest_id] : []))
-    const [guestsResult, assignmentsResult] = await Promise.all([
+    const [guestsResult, assignmentsResult, depositsResult] = await Promise.all([
       guestIds.length === 0
         ? Promise.resolve({ data: [], error: null })
         : supabase
@@ -158,11 +159,21 @@ export const getReservationsForDate = createServerFn({ method: 'GET' })
             .select('reservation_id, table_id')
             .eq('tenant_id', data.tenantId)
             .in('reservation_id', ids),
+      ids.length === 0
+        ? Promise.resolve({ data: [], error: null })
+        : supabase
+            .from('reservation_deposits')
+            .select('amount_cents, reservation_id, status')
+            .eq('tenant_id', data.tenantId)
+            .in('reservation_id', ids),
     ])
-    if (guestsResult.error || assignmentsResult.error)
+    if (guestsResult.error || assignmentsResult.error || depositsResult.error)
       throw new Error('reservation_agenda_load_failed')
     const guests = new Map((guestsResult.data ?? []).map((guest) => [guest.id, guest]))
     const tables = new Map<string, string[]>()
+    const deposits = new Map(
+      (depositsResult.data ?? []).map((deposit) => [deposit.reservation_id, deposit]),
+    )
     for (const assignment of assignmentsResult.data ?? []) {
       tables.set(assignment.reservation_id, [
         ...(tables.get(assignment.reservation_id) ?? []),
@@ -177,6 +188,12 @@ export const getReservationsForDate = createServerFn({ method: 'GET' })
       startsAt: row.starts_at,
       status: row.status,
       tableIds: tables.get(row.id) ?? [],
+      deposit: deposits.has(row.id)
+        ? {
+            amountCents: deposits.get(row.id)?.amount_cents ?? 0,
+            status: deposits.get(row.id)?.status ?? 'pending',
+          }
+        : null,
     }))
   })
 

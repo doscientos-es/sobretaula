@@ -24,13 +24,13 @@ del diseñador y su uso diario.
 - [x] Validar dimensiones, límites y solapes antes de publicar.
 - [x] Detectar conflictos entre layouts temporales.
 - [ ] Añadir pisos, zonas y tipo de espacio (interior, terraza cubierta,
-  terraza exterior).
+      terraza exterior).
 - [ ] Documentar estados de carga, error, vacío, permisos y red inestable.
 
 ### P1 · Diseñador visual v1
 
 - [ ] Biblioteca de elementos: mesa, pared, puerta, barra, pilar, escalera,
-  baño, cocina, salida, obstáculo y zona.
+      baño, cocina, salida, obstáculo y zona.
 - [ ] Selección múltiple, duplicar, agrupar, bloquear, alinear y distribuir.
 - [ ] Zoom/pan, cuadrícula configurable, snap y guías de alineación.
 - [ ] Propiedades de elemento en panel lateral y numeración automática segura.
@@ -55,7 +55,7 @@ del diseñador y su uso diario.
 ### P3 · Inteligencia y casos avanzados
 
 - [ ] Recomendación de mesa por capacidad, zona, accesibilidad y próxima
-  reserva.
+      reserva.
 - [ ] Layouts temporales para eventos, temporada y cierre de terraza.
 - [ ] Reglas meteorológicas y traslado terraza ↔ interior.
 - [ ] Pacing, cronómetros, secciones de camareros y handover de turno.
@@ -88,5 +88,5 @@ el servicio y latencia de sincronización.
 3. Extraer el lienzo en componentes accesibles y añadir selección múltiple.
 4. Cubrir validaciones de layout con pruebas unitarias y de UI.
 5. Ejecutar `pnpm lint`, `pnpm typecheck`, `pnpm test` y `pnpm build`.
-La decisión de persistencia de pisos y terrazas está documentada en
-[`adr/0008-pisos-y-terrazas.md`](./adr/0008-pisos-y-terrazas.md).
+   La decisión de persistencia de pisos y terrazas está documentada en
+   [`adr/0008-pisos-y-terrazas.md`](./adr/0008-pisos-y-terrazas.md).

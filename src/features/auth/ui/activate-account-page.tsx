@@ -40,7 +40,9 @@ export function ActivateAccountPage({
 
   function requestLoginToContinue() {
     setRequiresLogin(true)
-    feedback.setError('La contraseña se ha guardado. Inicia sesión para terminar de aceptar la invitación.')
+    feedback.setError(
+      'La contraseña se ha guardado. Inicia sesión para terminar de aceptar la invitación.',
+    )
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {

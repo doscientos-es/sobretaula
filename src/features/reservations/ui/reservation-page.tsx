@@ -94,9 +94,19 @@ export function ReservationPage({
   const [expandedReservationId, setExpandedReservationId] = useState<string | null>(null)
   const [agendaLoading, setAgendaLoading] = useState(false)
   const [agendaRefresh, setAgendaRefresh] = useState(0)
+  const [depositFilter, setDepositFilter] = useState<'all' | 'pending' | 'paid' | 'attention'>(
+    'all',
+  )
   const [editingReservationId, setEditingReservationId] = useState<string | null>(null)
   const [editingStartsAt, setEditingStartsAt] = useState('')
   const [editingPartySize, setEditingPartySize] = useState(1)
+  const visibleAgenda = agenda.filter((item) => {
+    if (depositFilter === 'all') return true
+    if (!item.deposit) return false
+    if (depositFilter === 'pending') return item.deposit.status === 'pending'
+    if (depositFilter === 'paid') return item.deposit.status === 'paid'
+    return ['failed', 'partially_refunded'].includes(item.deposit.status)
+  })
 
   async function configureService(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -433,11 +443,25 @@ export function ReservationPage({
               <output aria-live="polite" className="text-muted-foreground text-sm">
                 {agendaLoading
                   ? 'Cargando agenda…'
-                  : `${agenda.length} reserva${agenda.length === 1 ? '' : 's'}`}
+                  : `${visibleAgenda.length} reserva${visibleAgenda.length === 1 ? '' : 's'}`}
               </output>
-              {agenda.length > 0 ? (
+              <label className="text-muted-foreground flex items-center gap-2 text-sm">
+                Depósito{' '}
+                <select
+                  aria-label="Filtrar por depósito"
+                  className="border-border rounded-md border bg-transparent px-2 py-1"
+                  onChange={(event) => setDepositFilter(event.target.value as typeof depositFilter)}
+                  value={depositFilter}
+                >
+                  <option value="all">Todos</option>
+                  <option value="pending">Pendientes</option>
+                  <option value="paid">Pagados</option>
+                  <option value="attention">Requieren atención</option>
+                </select>
+              </label>
+              {visibleAgenda.length > 0 ? (
                 <ul className="grid gap-2">
-                  {agenda.map((item) => (
+                  {visibleAgenda.map((item) => (
                     <li
                       className="border-border flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3"
                       key={item.id}
@@ -466,6 +490,14 @@ export function ReservationPage({
                         <div>
                           {item.tableIds.length ? `Mesa ${item.tableIds.join(', ')}` : 'Sin mesa'}
                         </div>
+                        {item.deposit ? (
+                          <div
+                            className={`mt-1 text-xs ${['failed', 'partially_refunded'].includes(item.deposit.status) ? 'text-destructive font-medium' : ''}`}
+                          >
+                            Depósito: {(item.deposit.amountCents / 100).toFixed(2)} € ·{' '}
+                            {item.deposit.status}
+                          </div>
+                        ) : null}
                         <Button
                           className="mt-2"
                           onClick={() => void toggleReservationHistory(item)}

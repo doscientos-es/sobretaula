@@ -35,7 +35,12 @@ export function groupAreasByFloor(areas: readonly FloorPlanArea[]): FloorAreaGro
     .map(([floorNumber, grouped]) => ({
       areas: grouped,
       floorNumber,
-      label: floorNumber === null ? 'Sin planta asignada' : floorNumber === 0 ? 'Planta baja' : `Planta ${floorNumber}`,
+      label:
+        floorNumber === null
+          ? 'Sin planta asignada'
+          : floorNumber === 0
+            ? 'Planta baja'
+            : `Planta ${floorNumber}`,
     }))
 }
 
@@ -58,7 +63,9 @@ export function selectFloorPlanVersion(
   return versions
     .filter((version) => version.areaId === areaId)
     .filter((version) => {
-      const from = version.activeFrom ? new Date(version.activeFrom).getTime() : Number.NEGATIVE_INFINITY
+      const from = version.activeFrom
+        ? new Date(version.activeFrom).getTime()
+        : Number.NEGATIVE_INFINITY
       const to = version.activeTo ? new Date(version.activeTo).getTime() : Number.POSITIVE_INFINITY
       return !Number.isNaN(from) && !Number.isNaN(to) && from <= timestamp && timestamp < to
     })
@@ -72,7 +79,9 @@ export function selectActiveFloorPlanVersion(
   const timestamp = at.getTime()
   return versions
     .filter((version) => {
-      const from = version.activeFrom ? new Date(version.activeFrom).getTime() : Number.NEGATIVE_INFINITY
+      const from = version.activeFrom
+        ? new Date(version.activeFrom).getTime()
+        : Number.NEGATIVE_INFINITY
       const to = version.activeTo ? new Date(version.activeTo).getTime() : Number.POSITIVE_INFINITY
       return from <= timestamp && timestamp < to
     })
@@ -84,17 +93,25 @@ export function findVersionScheduleConflicts(
 ): Array<{ areaId: string; firstVersionId: string; secondVersionId: string }> {
   const conflicts: Array<{ areaId: string; firstVersionId: string; secondVersionId: string }> = []
   const byArea = new Map<string, FloorPlanVersion[]>()
-  for (const version of versions) byArea.set(version.areaId, [...(byArea.get(version.areaId) ?? []), version])
+  for (const version of versions)
+    byArea.set(version.areaId, [...(byArea.get(version.areaId) ?? []), version])
   for (const [areaId, areaVersions] of byArea) {
     for (let index = 0; index < areaVersions.length; index += 1) {
       const first = areaVersions[index]
       if (!first) continue
-      const firstFrom = first.activeFrom ? new Date(first.activeFrom).getTime() : Number.NEGATIVE_INFINITY
+      const firstFrom = first.activeFrom
+        ? new Date(first.activeFrom).getTime()
+        : Number.NEGATIVE_INFINITY
       const firstTo = first.activeTo ? new Date(first.activeTo).getTime() : Number.POSITIVE_INFINITY
       for (const second of areaVersions.slice(index + 1)) {
-        const secondFrom = second.activeFrom ? new Date(second.activeFrom).getTime() : Number.NEGATIVE_INFINITY
-        const secondTo = second.activeTo ? new Date(second.activeTo).getTime() : Number.POSITIVE_INFINITY
-        if (firstFrom < secondTo && secondFrom < firstTo) conflicts.push({ areaId, firstVersionId: first.id, secondVersionId: second.id })
+        const secondFrom = second.activeFrom
+          ? new Date(second.activeFrom).getTime()
+          : Number.NEGATIVE_INFINITY
+        const secondTo = second.activeTo
+          ? new Date(second.activeTo).getTime()
+          : Number.POSITIVE_INFINITY
+        if (firstFrom < secondTo && secondFrom < firstTo)
+          conflicts.push({ areaId, firstVersionId: first.id, secondVersionId: second.id })
       }
     }
   }

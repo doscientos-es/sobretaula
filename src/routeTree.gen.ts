@@ -43,6 +43,7 @@ import { Route as TSlugLVenueRouteImport } from './routes/t.$slug.l.$venue'
 import { Route as TSlugLNuevoRouteImport } from './routes/t.$slug.l.nuevo'
 import { Route as TSlugSuscripcionFacturasRouteImport } from './routes/t.$slug.suscripcion.facturas'
 import { Route as TSlugLVenueIndexRouteImport } from './routes/t.$slug.l.$venue.index'
+import { Route as TSlugLVenueBloquesRouteImport } from './routes/t.$slug.l.$venue.bloques'
 import { Route as TSlugLVenueClientesRouteImport } from './routes/t.$slug.l.$venue.clientes'
 import { Route as TSlugLVenueComunicacionesRouteImport } from './routes/t.$slug.l.$venue.comunicaciones'
 import { Route as TSlugLVenuePlanoRouteImport } from './routes/t.$slug.l.$venue.plano'
@@ -223,6 +224,11 @@ const TSlugLVenueIndexRoute = TSlugLVenueIndexRouteImport.update({
   path: '/',
   getParentRoute: () => TSlugLVenueRoute,
 } as any)
+const TSlugLVenueBloquesRoute = TSlugLVenueBloquesRouteImport.update({
+  id: '/bloques',
+  path: '/bloques',
+  getParentRoute: () => TSlugLVenueRoute,
+} as any)
 const TSlugLVenueClientesRoute = TSlugLVenueClientesRouteImport.update({
   id: '/clientes',
   path: '/clientes',
@@ -290,6 +296,7 @@ export interface FileRoutesByFullPath {
   '/t/$slug/l/$venue': typeof TSlugLVenueRouteWithChildren
   '/t/$slug/l/nuevo': typeof TSlugLNuevoRoute
   '/t/$slug/suscripcion/facturas': typeof TSlugSuscripcionFacturasRoute
+  '/t/$slug/l/$venue/bloques': typeof TSlugLVenueBloquesRoute
   '/t/$slug/l/$venue/clientes': typeof TSlugLVenueClientesRoute
   '/t/$slug/l/$venue/comunicaciones': typeof TSlugLVenueComunicacionesRoute
   '/t/$slug/l/$venue/plano': typeof TSlugLVenuePlanoRoute
@@ -329,6 +336,7 @@ export interface FileRoutesByTo {
   '/api/t/$tenantId/verifactu-certificate': typeof ApiTTenantIdVerifactuCertificateRoute
   '/t/$slug/l/nuevo': typeof TSlugLNuevoRoute
   '/t/$slug/suscripcion/facturas': typeof TSlugSuscripcionFacturasRoute
+  '/t/$slug/l/$venue/bloques': typeof TSlugLVenueBloquesRoute
   '/t/$slug/l/$venue/clientes': typeof TSlugLVenueClientesRoute
   '/t/$slug/l/$venue/comunicaciones': typeof TSlugLVenueComunicacionesRoute
   '/t/$slug/l/$venue/plano': typeof TSlugLVenuePlanoRoute
@@ -372,6 +380,7 @@ export interface FileRoutesById {
   '/t/$slug/l/$venue': typeof TSlugLVenueRouteWithChildren
   '/t/$slug/l/nuevo': typeof TSlugLNuevoRoute
   '/t/$slug/suscripcion/facturas': typeof TSlugSuscripcionFacturasRoute
+  '/t/$slug/l/$venue/bloques': typeof TSlugLVenueBloquesRoute
   '/t/$slug/l/$venue/clientes': typeof TSlugLVenueClientesRoute
   '/t/$slug/l/$venue/comunicaciones': typeof TSlugLVenueComunicacionesRoute
   '/t/$slug/l/$venue/plano': typeof TSlugLVenuePlanoRoute
@@ -416,6 +425,7 @@ export interface FileRouteTypes {
     | '/t/$slug/l/$venue'
     | '/t/$slug/l/nuevo'
     | '/t/$slug/suscripcion/facturas'
+    | '/t/$slug/l/$venue/bloques'
     | '/t/$slug/l/$venue/clientes'
     | '/t/$slug/l/$venue/comunicaciones'
     | '/t/$slug/l/$venue/plano'
@@ -455,6 +465,7 @@ export interface FileRouteTypes {
     | '/api/t/$tenantId/verifactu-certificate'
     | '/t/$slug/l/nuevo'
     | '/t/$slug/suscripcion/facturas'
+    | '/t/$slug/l/$venue/bloques'
     | '/t/$slug/l/$venue/clientes'
     | '/t/$slug/l/$venue/comunicaciones'
     | '/t/$slug/l/$venue/plano'
@@ -497,6 +508,7 @@ export interface FileRouteTypes {
     | '/t/$slug/l/$venue'
     | '/t/$slug/l/nuevo'
     | '/t/$slug/suscripcion/facturas'
+    | '/t/$slug/l/$venue/bloques'
     | '/t/$slug/l/$venue/clientes'
     | '/t/$slug/l/$venue/comunicaciones'
     | '/t/$slug/l/$venue/plano'
@@ -765,6 +777,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TSlugLVenueIndexRouteImport
       parentRoute: typeof TSlugLVenueRoute
     }
+    '/t/$slug/l/$venue/bloques': {
+      id: '/t/$slug/l/$venue/bloques'
+      path: '/bloques'
+      fullPath: '/t/$slug/l/$venue/bloques'
+      preLoaderRoute: typeof TSlugLVenueBloquesRouteImport
+      parentRoute: typeof TSlugLVenueRoute
+    }
     '/t/$slug/l/$venue/clientes': {
       id: '/t/$slug/l/$venue/clientes'
       path: '/clientes'
@@ -837,6 +856,7 @@ const AdminRouteChildren: AdminRouteChildren = {
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface TSlugLVenueRouteChildren {
+  TSlugLVenueBloquesRoute: typeof TSlugLVenueBloquesRoute
   TSlugLVenueClientesRoute: typeof TSlugLVenueClientesRoute
   TSlugLVenueComunicacionesRoute: typeof TSlugLVenueComunicacionesRoute
   TSlugLVenuePlanoRoute: typeof TSlugLVenuePlanoRoute
@@ -847,6 +867,7 @@ interface TSlugLVenueRouteChildren {
 }
 
 const TSlugLVenueRouteChildren: TSlugLVenueRouteChildren = {
+  TSlugLVenueBloquesRoute: TSlugLVenueBloquesRoute,
   TSlugLVenueClientesRoute: TSlugLVenueClientesRoute,
   TSlugLVenueComunicacionesRoute: TSlugLVenueComunicacionesRoute,
   TSlugLVenuePlanoRoute: TSlugLVenuePlanoRoute,

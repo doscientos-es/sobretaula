@@ -98,9 +98,7 @@ function NotFound() {
   return (
     <main className="flex min-h-svh items-center justify-center p-6">
       <section className="bg-card w-full max-w-md rounded-2xl border p-6 text-center shadow-[var(--ui-shadow-surface)]">
-        <h1 className="text-2xl font-semibold tracking-[-0.04em]">
-          {t('notFound.title')}
-        </h1>
+        <h1 className="text-2xl font-semibold tracking-[-0.04em]">{t('notFound.title')}</h1>
         <p className="text-muted-foreground mt-3 leading-6">{t('notFound.description')}</p>
         <div className="mt-6">
           <Link to="/" className="text-sm underline">

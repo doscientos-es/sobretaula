@@ -7,15 +7,15 @@ reservas solicitadas. No declara ninguna de ellas como terminada.
 
 ## 1. Base existente y brechas
 
-| Capacidad       | Existe                                                                                                   | Falta para el alcance final                           |
-| --------------- | -------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
-| Turnos y reglas | `services`, `availability_rules`, duración y pacing                                                      | Edición, máximo de grupo y regla/horario por área     |
-| Disponibilidad  | Cierres, best-fit y `EXCLUDE` de mesas                                                                   | Transacción única para crear, editar y cancelar       |
-| Reserva interna | Alta con asignación automática, teléfono, deduplicación, agenda por fecha y reprogramación               | Detalle e historial                                   |
-| Operación       | Sentar lleva a `seated`; cerrar sesión a `completed`; cancelación, no-show y reprogramación desde agenda | Historial y eventos                                   |
+| Capacidad       | Existe                                                                                                   | Falta para el alcance final                                                                 |
+| --------------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| Turnos y reglas | `services`, `availability_rules`, duración y pacing                                                      | Edición, máximo de grupo y regla/horario por área                                           |
+| Disponibilidad  | Cierres, best-fit y `EXCLUDE` de mesas                                                                   | Transacción única para crear, editar y cancelar                                             |
+| Reserva interna | Alta con asignación automática, teléfono, deduplicación, agenda por fecha y reprogramación               | Detalle e historial                                                                         |
+| Operación       | Sentar lleva a `seated`; cerrar sesión a `completed`; cancelación, no-show y reprogramación desde agenda | Historial y eventos                                                                         |
 | Clientes        | Nombre, contacto, idioma, notas y alergias                                                               | Etiquetas y notas históricas creadas en `20260910000029`; falta ficha UI, búsqueda y fusión |
-| Espera          | Cola presencial en Servicio con nombre, teléfono, deduplicación, espera estimada y asignación manual     | Espera de fecha futura, oferta, aviso y caducidad     |
-| Cobro           | Sesión enlazada a reserva y pagos                                                                        | Condiciones, depósitos, webhook y reembolsos          |
+| Espera          | Cola presencial en Servicio con nombre, teléfono, deduplicación, espera estimada y asignación manual     | Espera de fecha futura, oferta, aviso y caducidad                                           |
+| Cobro           | Sesión enlazada a reserva y pagos                                                                        | Condiciones, depósitos, webhook y reembolsos                                                |
 
 Las piezas base están en `src/features/reservations`, `src/features/service` y
 las migraciones `20260908000007`, `00008` y `00016`. La cadena
@@ -84,7 +84,9 @@ probada contra un proyecto de Supabase dedicado.
 4. Migrar las filas actuales de `closures`; mantener una lectura compatible hasta
    retirar esa tabla en una entrega posterior. No eliminar datos históricos.
 5. Añadir índices compuestos por tenant/local/fecha y por periodo de bloque según
-   los planes de consulta reales.
+   los planes de consulta reales. **Reglas y bloques base añadidos en
+   `20260910000034`; el editor de bloques ya está disponible en `/bloques` y
+   queda pendiente incorporar estos bloqueos al cálculo de disponibilidad.**
 
 ### R1 · Operación atómica y auditoría
 
@@ -149,7 +151,8 @@ sesiones sin reserva. Estas reglas están cubiertas por
    `DepositProvider` cuando se configure el merchant del restaurante.
    El endpoint `/api/webhooks/deposits` valida un secreto del proveedor y delega
    en `process_reservation_deposit_event`, que es idempotente y solo admite
-   estados de pago conocidos.
+   estados de pago conocidos. La firma HMAC-SHA256 del cuerpo se valida antes
+   de parsear el evento mediante `verifyDepositWebhookSignature`.
 
 ## 5. Casos de uso y permisos
 

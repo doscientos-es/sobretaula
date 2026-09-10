@@ -4,12 +4,12 @@ import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 
 import { authMiddleware } from '@/features/auth/infrastructure/server/auth-middleware'
+import { isAuthEmailRateLimited } from '@/shared/lib/supabase/auth-email-rate-limit'
+import { indexProfilesByUserId } from '@/shared/lib/supabase/profile-index'
 import {
   createRequestSupabaseClient,
   createServiceSupabaseClient,
 } from '@/shared/lib/supabase/server/create-server-client'
-import { isAuthEmailRateLimited } from '@/shared/lib/supabase/auth-email-rate-limit'
-import { indexProfilesByUserId } from '@/shared/lib/supabase/profile-index'
 
 import { ASSIGNABLE_TENANT_ROLES, canAssignTeamRole } from '../domain/team'
 import { TENANT_ROLES } from '../domain/tenant'

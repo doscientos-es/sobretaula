@@ -77,7 +77,7 @@ export function PlatformTenantProvisioningForm() {
           ? 'Esta dirección de restaurante ya está en uso.'
           : isInvitationEmailRateLimited(error)
             ? `El tenant se ha creado, pero no se ha enviado la invitación al propietario. ${invitationEmailRateLimitMessage}`
-          : 'No se ha podido crear el tenant. Revisa los datos e inténtalo de nuevo.',
+            : 'No se ha podido crear el tenant. Revisa los datos e inténtalo de nuevo.',
       )
     }
   }

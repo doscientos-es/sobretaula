@@ -12,7 +12,13 @@ import {
 import { RefreshCw } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
-import { describeSpaceType, groupAreasByFloor, selectActiveFloorPlanVersion, selectFloorPlanVersion, type FloorPlanData } from '@/features/floor-plan'
+import {
+  describeSpaceType,
+  groupAreasByFloor,
+  selectActiveFloorPlanVersion,
+  selectFloorPlanVersion,
+  type FloorPlanData,
+} from '@/features/floor-plan'
 import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
 
 import type { ServiceBoard } from '../domain/service-board'
@@ -45,7 +51,9 @@ export function ServicePage({
     }
   }, [reload])
   const activeVersion =
-    (selectedAreaId === 'all' ? selectActiveFloorPlanVersion(plan.versions) : selectFloorPlanVersion(plan.versions, selectedAreaId)) ??
+    (selectedAreaId === 'all'
+      ? selectActiveFloorPlanVersion(plan.versions)
+      : selectFloorPlanVersion(plan.versions, selectedAreaId)) ??
     (selectedAreaId === 'all' ? plan.versions[0] : undefined)
   const placements = activeVersion
     ? plan.placements.filter((placement) => placement.floorPlanVersionId === activeVersion.id)
@@ -65,8 +73,14 @@ export function ServicePage({
     setSelectedAreaId(areaId)
     if (areaId === 'all') return
     const version = selectFloorPlanVersion(plan.versions, areaId)
-    const codes = new Set(plan.placements.filter((placement) => placement.floorPlanVersionId === version?.id).map((placement) => placement.code))
-    const allowed = new Set(board.tables.filter((table) => codes.has(table.code)).map((table) => table.id))
+    const codes = new Set(
+      plan.placements
+        .filter((placement) => placement.floorPlanVersionId === version?.id)
+        .map((placement) => placement.code),
+    )
+    const allowed = new Set(
+      board.tables.filter((table) => codes.has(table.code)).map((table) => table.id),
+    )
     setSelectedTableIds((current) => current.filter((id) => allowed.has(id)))
   }
 
@@ -105,17 +119,41 @@ export function ServicePage({
                 <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                   {plan.areas.map((area) => {
                     const areaVersion = plan.versions.find((version) => version.areaId === area.id)
-                    const codes = new Set(plan.placements.filter((placement) => placement.floorPlanVersionId === areaVersion?.id).map((placement) => placement.code))
+                    const codes = new Set(
+                      plan.placements
+                        .filter((placement) => placement.floorPlanVersionId === areaVersion?.id)
+                        .map((placement) => placement.code),
+                    )
                     const areaTables = board.tables.filter((table) => codes.has(table.code))
-                    const occupied = areaTables.filter((table) => table.status === 'occupied').length
+                    const occupied = areaTables.filter(
+                      (table) => table.status === 'occupied',
+                    ).length
                     return (
-                      <button className="border-border hover:bg-muted/60 rounded-lg border p-3 text-left transition-colors" key={area.id} onClick={() => selectArea(area.id)} type="button">
-                        <span className="text-muted-foreground block text-xs">{area.floorNumber === 0 ? 'Planta baja' : area.floorNumber ? `Planta ${area.floorNumber}` : 'Sin planta'} · {describeSpaceType(area.spaceType)}</span>
+                      <button
+                        className="border-border hover:bg-muted/60 rounded-lg border p-3 text-left transition-colors"
+                        key={area.id}
+                        onClick={() => selectArea(area.id)}
+                        type="button"
+                      >
+                        <span className="text-muted-foreground block text-xs">
+                          {area.floorNumber === 0
+                            ? 'Planta baja'
+                            : area.floorNumber
+                              ? `Planta ${area.floorNumber}`
+                              : 'Sin planta'}{' '}
+                          · {describeSpaceType(area.spaceType)}
+                        </span>
                         <span className="mt-1 block font-medium">{area.name}</span>
-                        <span className="text-muted-foreground mt-1 block text-sm">{occupied}/{areaTables.length} ocupadas</span>
-                        {area.spaceType && area.spaceType !== 'indoor' && area.outdoorOpen === false && (
-                          <span className="text-destructive mt-1 block text-xs font-medium">Cerrada temporalmente</span>
-                        )}
+                        <span className="text-muted-foreground mt-1 block text-sm">
+                          {occupied}/{areaTables.length} ocupadas
+                        </span>
+                        {area.spaceType &&
+                          area.spaceType !== 'indoor' &&
+                          area.outdoorOpen === false && (
+                            <span className="text-destructive mt-1 block text-xs font-medium">
+                              Cerrada temporalmente
+                            </span>
+                          )}
                       </button>
                     )
                   })}
@@ -133,11 +171,15 @@ export function ServicePage({
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {selectedAreaId !== 'all' && plan.areas.find((area) => area.id === selectedAreaId)?.outdoorOpen === false && (
-                  <div className="border-destructive/40 bg-destructive/10 text-destructive mb-4 rounded-lg border p-3 text-sm" role="alert">
-                    Esta zona exterior está cerrada temporalmente. No asignes nuevas mesas aquí.
-                  </div>
-                )}
+                {selectedAreaId !== 'all' &&
+                  plan.areas.find((area) => area.id === selectedAreaId)?.outdoorOpen === false && (
+                    <div
+                      className="border-destructive/40 bg-destructive/10 text-destructive mb-4 rounded-lg border p-3 text-sm"
+                      role="alert"
+                    >
+                      Esta zona exterior está cerrada temporalmente. No asignes nuevas mesas aquí.
+                    </div>
+                  )}
                 {plan.areas.length > 1 && (
                   <div className="mb-4 space-y-2" aria-label="Filtrar por zona">
                     <Button
@@ -149,9 +191,16 @@ export function ServicePage({
                     </Button>
                     {areaGroups.map((group) => (
                       <div key={group.label} className="flex flex-wrap items-center gap-2">
-                        <span className="text-muted-foreground w-28 text-xs font-medium">{group.label}</span>
+                        <span className="text-muted-foreground w-28 text-xs font-medium">
+                          {group.label}
+                        </span>
                         {group.areas.map((area) => (
-                          <Button key={area.id} onClick={() => selectArea(area.id)} type="button" variant={selectedAreaId === area.id ? 'default' : 'outline'}>
+                          <Button
+                            key={area.id}
+                            onClick={() => selectArea(area.id)}
+                            type="button"
+                            variant={selectedAreaId === area.id ? 'default' : 'outline'}
+                          >
                             {area.name}
                           </Button>
                         ))}
@@ -222,7 +271,10 @@ export function ServicePage({
         </div>
         <aside className="space-y-6 lg:sticky lg:top-6 lg:self-start">
           <ServiceActions
-            areaOpen={selectedAreaId === 'all' || plan.areas.find((area) => area.id === selectedAreaId)?.outdoorOpen !== false}
+            areaOpen={
+              selectedAreaId === 'all' ||
+              plan.areas.find((area) => area.id === selectedAreaId)?.outdoorOpen !== false
+            }
             board={board}
             onDone={reload}
             onSuggest={setSelectedTableIds}
