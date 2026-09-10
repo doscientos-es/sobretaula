@@ -77,6 +77,10 @@ estáticos: el servidor Node es parte del producto (fiscalidad, PDF, webhooks).
    Configurar también los secretos `APP_URL` y `NOTIFICATION_CRON_SECRET` en
    GitHub Actions: el workflow `process-notifications.yml` activa el worker de
    notificaciones cada cinco minutos.
+   En la Edge Function `process-notification-jobs`, configurar los secretos
+   `RESEND_API_KEY` y `RESEND_FROM_EMAIL` (un buzón de un dominio verificado en
+   Resend). El nombre visible, logo, color y correo de respuesta se gestionan
+   por restaurante desde Comunicaciones.
 6. `pnpm quality` y `pnpm build` en verde.
 7. Post-despliegue: revisar advisors de Supabase y logs del servidor.
 

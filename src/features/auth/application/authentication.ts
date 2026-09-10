@@ -2,6 +2,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { useSession } from '@tanstack/react-start/server'
 import { z } from 'zod'
 
+import { isAuthEmailRateLimited } from '@/shared/lib/supabase/auth-email-rate-limit'
 import {
   createAnonSupabaseClient,
   createRequestSupabaseClient,
@@ -36,6 +37,29 @@ export const logout = createServerFn({ method: 'POST' })
       await createRequestSupabaseClient(session.data.accessToken).auth.signOut({ scope: 'local' })
     }
     await session.clear()
+    return { ok: true as const }
+  })
+
+function passwordResetRedirect(): string {
+  const appUrl = process.env.APP_URL
+  if (!appUrl) throw new Error('app_url_not_configured')
+  return new URL('/restablecer-contrasena', appUrl).toString()
+}
+
+export const requestPasswordResetInput = z.object({
+  email: z.string().trim().toLowerCase().email().max(254),
+})
+
+/** Always reports success so the response never reveals whether the email has an account. */
+export const requestPasswordReset = createServerFn({ method: 'POST' })
+  .validator(requestPasswordResetInput)
+  .handler(async ({ data }) => {
+    const { error } = await createAnonSupabaseClient().auth.resetPasswordForEmail(data.email, {
+      redirectTo: passwordResetRedirect(),
+    })
+    if (isAuthEmailRateLimited(error)) {
+      throw new Response('Password reset email rate limited', { status: 429 })
+    }
     return { ok: true as const }
   })
 

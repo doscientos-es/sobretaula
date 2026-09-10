@@ -105,7 +105,15 @@ export function LoginPage({ redirectTo }: { redirectTo?: string }) {
                 <FieldDescription>El correo con el que creaste tu cuenta.</FieldDescription>
               </Field>
               <Field>
-                <FieldLabel htmlFor="password">Contraseña</FieldLabel>
+                <div className="flex items-center justify-between">
+                  <FieldLabel htmlFor="password">Contraseña</FieldLabel>
+                  <Link
+                    className="text-primary text-sm font-medium underline underline-offset-4"
+                    to="/recuperar-contrasena"
+                  >
+                    ¿Olvidaste tu contraseña?
+                  </Link>
+                </div>
                 <InputGroup>
                   <InputGroupInput
                     autoComplete="current-password"

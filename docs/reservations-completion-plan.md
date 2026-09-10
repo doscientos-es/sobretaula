@@ -150,7 +150,8 @@ sesiones sin reserva. Estas reglas están cubiertas por
    atómicas están disponibles mediante `claim_reservation_notification_jobs` y
    `finish_reservation_notification_job`, con backoff exponencial y máximo de
    cinco intentos. La Edge Function `process-notification-jobs` ejecuta ese
-   ciclo y delega el envío en endpoints configurables por canal.**
+   ciclo: las confirmaciones por correo se envían mediante Resend y adoptan la
+   identidad configurada para cada restaurante.**
    GitHub Actions ejecuta `/api/cron/notifications` cada cinco minutos; el
    endpoint exige `NOTIFICATION_CRON_SECRET` y reenvía con el token de worker.
    El repositorio debe definir los secretos `APP_URL` y

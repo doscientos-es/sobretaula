@@ -65,6 +65,7 @@ import {
   serializeLayoutTemplate,
 } from '../domain/layout-template'
 import { inspectTableGroupPresetAvailability } from '../domain/table-group-presets'
+import { detectLayoutSourceKind } from '../application/layout-source-parser'
 
 function readLockedIds(lockStorageKey: string | undefined): string[] {
   if (!lockStorageKey || typeof window === 'undefined') return []
@@ -185,6 +186,15 @@ export function FloorPlanPage({
     const file = event.target.files?.[0]
     event.target.value = ''
     if (!file || !activeVersion) return
+    const sourceKind = detectLayoutSourceKind(file.type, file.name)
+    if (sourceKind && sourceKind !== 'json') {
+      feedback.setError('Las imágenes y PDFs requieren extracción asistida antes de publicarse.')
+      return
+    }
+    if (!sourceKind) {
+      feedback.setError('Formato no compatible. Usa JSON, imagen o PDF.')
+      return
+    }
     void file.text().then((value) => {
       try {
         const template = parseLayoutTemplate(value)
@@ -1674,7 +1684,7 @@ export function FloorPlanPage({
                     Importar plantilla
                   </Button>
                   <input
-                    accept="application/json,.json"
+                    accept="application/json,.json,image/*,application/pdf"
                     className="hidden"
                     onChange={importTemplate}
                     ref={templateInputRef}
