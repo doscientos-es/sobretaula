@@ -27,6 +27,24 @@ del diseñador y su uso diario.
       terraza exterior), incluyendo el estado operativo de terrazas.
 - [ ] Documentar estados de carga, error, vacío, permisos y red inestable.
 
+#### Contrato de estados del diseñador y la vista operativa
+
+Estos estados son parte del producto, no mensajes genéricos de infraestructura.
+Cada uno debe conservar el contexto (piso/zona seleccionados), explicar la
+acción siguiente y evitar mutaciones ambiguas:
+
+| Estado | Comportamiento exigido | Criterio de aceptación |
+| --- | --- | --- |
+| Cargando | Esqueleto del lienzo/panel, sin controles que parezcan editables; anunciarlo a lectores de pantalla. | Nunca aparece un lienzo vacío durante una carga válida ni se pierde el filtro activo. |
+| Vacío | CTA contextual para crear el primer piso/zona o importar una plantilla; explicar que aún no hay mesas. | Un admin puede llegar al primer elemento en un paso y un trabajador ve claramente “sin servicio configurado”. |
+| Error recuperable | Mantener la última instantánea válida en modo lectura, mostrar causa y botón Reintentar; no borrar borradores locales. | Un fallo de red/API no destruye cambios ni deja botones de publicar habilitados. |
+| Sin permisos | Ocultar mutaciones (crear, mover, publicar, bloquear) y explicar el rol requerido; permitir lectura si la política lo permite. | Teclado, menú contextual y atajos tampoco pueden mutar el plano. |
+| Red inestable/offline | Banner persistente con hora de última sincronización, cola pendiente y estado degradado; acciones no soportadas quedan deshabilitadas. | Al reconectar se reintenta de forma idempotente y el usuario puede revisar conflictos antes de publicar. |
+| Conflicto concurrente | Congelar la publicación, comparar versión local/remota y ofrecer recargar, duplicar como borrador o resolver. | Nunca se sobreescribe silenciosamente un plano publicado por otra persona. |
+
+Los estados deben probarse en escritorio, tablet y móvil, con foco visible,
+`aria-live` para cambios de red/error y contraste WCAG 2.2 AA.
+
 ### P1 · Diseñador visual v1
 
 - [x] Biblioteca de elementos: mesa, pared, puerta, barra, pilar, escalera,

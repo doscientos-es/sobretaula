@@ -68,6 +68,22 @@ function statusBadgeClass(status: string): string {
   return 'bg-muted text-muted-foreground'
 }
 
+function describeEventChanges(changes: string): string | null {
+  try {
+    const parsed = JSON.parse(changes) as Record<string, unknown>
+    const entries = Object.entries(parsed).filter(([, value]) => value !== undefined)
+    if (entries.length === 0) return null
+    return entries
+      .map(
+        ([key, value]) =>
+          `${key}: ${typeof value === 'object' ? JSON.stringify(value) : String(value)}`,
+      )
+      .join(' · ')
+  } catch {
+    return null
+  }
+}
+
 export function ReservationPage({
   services,
   tenantId,
@@ -95,6 +111,7 @@ export function ReservationPage({
     Record<string, ReservationEvent[]>
   >({})
   const [expandedReservationId, setExpandedReservationId] = useState<string | null>(null)
+  const [historyEventFilter, setHistoryEventFilter] = useState('all')
   const [agendaLoading, setAgendaLoading] = useState(false)
   const [agendaRefresh, setAgendaRefresh] = useState(0)
   const [depositFilter, setDepositFilter] = useState<'all' | 'pending' | 'paid' | 'attention'>(
@@ -513,20 +530,58 @@ export function ReservationPage({
                             : 'Ver historial'}
                         </Button>
                         {expandedReservationId === item.id ? (
-                          <ol className="border-border mt-2 grid gap-1 border-l pl-3 text-left text-xs">
-                            {(eventsByReservation[item.id] ?? []).map((event) => (
-                              <li key={`${event.createdAt}-${event.eventType}`}>
-                                <span className="font-medium">{event.eventType}</span>{' '}
-                                <span className="text-muted-foreground">
-                                  · {new Date(event.createdAt).toLocaleString(locale)} ·{' '}
-                                  {event.actorKind}
-                                </span>
-                              </li>
-                            ))}
-                            {!eventsByReservation[item.id]?.length ? (
-                              <li>Cargando historial…</li>
-                            ) : null}
-                          </ol>
+                          <div className="mt-2 space-y-2 text-left text-xs">
+                            <label className="text-muted-foreground flex items-center gap-2">
+                              Tipo
+                              <select
+                                className="border-border text-foreground rounded-md border px-2 py-1"
+                                onChange={(event) => setHistoryEventFilter(event.target.value)}
+                                value={historyEventFilter}
+                              >
+                                <option value="all">Todos</option>
+                                {[
+                                  ...new Set(
+                                    (eventsByReservation[item.id] ?? []).map(
+                                      (event) => event.eventType,
+                                    ),
+                                  ),
+                                ].map((eventType) => (
+                                  <option key={eventType} value={eventType}>
+                                    {eventType}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                            <ol className="border-border grid gap-1 border-l pl-3">
+                              {(eventsByReservation[item.id] ?? [])
+                                .filter(
+                                  (event) =>
+                                    historyEventFilter === 'all' ||
+                                    event.eventType === historyEventFilter,
+                                )
+                                .map((event) => (
+                                  <li key={`${event.createdAt}-${event.eventType}`}>
+                                    <span className="font-medium">{event.eventType}</span>{' '}
+                                    <span className="text-muted-foreground">
+                                      · {new Date(event.createdAt).toLocaleString(locale)} ·{' '}
+                                      {event.actorKind}
+                                    </span>
+                                    {describeEventChanges(event.changes) ? (
+                                      <span className="text-muted-foreground block">
+                                        {describeEventChanges(event.changes)}
+                                      </span>
+                                    ) : null}
+                                  </li>
+                                ))}
+                              {!eventsByReservation[item.id]?.filter(
+                                (event) =>
+                                  historyEventFilter === 'all' ||
+                                  event.eventType === historyEventFilter,
+                              ).length ? (
+                                <li>Cargando historial…</li>
+                              ) : null}
+                            </ol>
+                          </div>
                         ) : null}
                         {['pending', 'confirmed'].includes(item.status) ? (
                           <span className="mt-2 flex flex-wrap justify-end gap-2">
