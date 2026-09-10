@@ -69,7 +69,8 @@ abiertas, mesas por limpiar, bloqueos y sesiones que requieren atención.
 El responsable puede guardar esa fotografía como entrega inmutable en
 `service_handover_snapshots`, con usuario y fecha (`20260910000050_service_handover_snapshots.sql`).
 Servicio carga y muestra las diez últimas entregas del local para consultar el
-histórico sin salir de la operativa. Cada entrega se puede expandir por sección
+histórico sin salir de la operativa. Se cargan las últimas 50 entregas; cada una
+se puede expandir por sección
 para revisar la fotografía completa del turno y compara sus cifras con el
 estado vivo actual, señalando cambios por área.
 El guardado muestra estado de progreso y error recuperable cuando la red falla.

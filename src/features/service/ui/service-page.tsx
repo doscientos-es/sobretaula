@@ -506,7 +506,7 @@ export function ServicePage({
             <Card>
               <CardHeader>
                 <CardTitle>Entregas anteriores</CardTitle>
-                <CardDescription>Últimas instantáneas guardadas de este local.</CardDescription>
+                <CardDescription>Últimas 50 instantáneas guardadas de este local.</CardDescription>
                 <label className="text-muted-foreground grid gap-1 text-xs" htmlFor="handover-date">
                   Filtrar por fecha
                   <input

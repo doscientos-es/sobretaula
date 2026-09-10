@@ -77,7 +77,7 @@ export async function loadServiceBoard(
     .eq('tenant_id', tenantId)
     .eq('venue_id', venueId)
     .order('created_at', { ascending: false })
-    .limit(10)
+    .limit(50)
   if (snapshotsResult.error)
     throw new Error(`service_handover_snapshots_load_failed:${snapshotsResult.error.code}`)
 
