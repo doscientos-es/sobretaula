@@ -495,7 +495,9 @@ export function PlatformTenantDetailsPage({
                 <div>
                   <Button
                     className="border-destructive/40 text-destructive hover:bg-destructive/10"
-                    disabled={deletionFeedback.pending || deletionConfirmation !== tenant.tenantSlug}
+                    disabled={
+                      deletionFeedback.pending || deletionConfirmation !== tenant.tenantSlug
+                    }
                     type="submit"
                     variant="outline"
                   >
