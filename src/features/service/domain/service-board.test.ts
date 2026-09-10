@@ -83,6 +83,18 @@ describe('service board', () => {
     expect(suggestTableCombination(states, 2)).toEqual(['table-2'])
   })
 
+  it('marks tables pending cleaning as unavailable', () => {
+    const states = buildServiceTableStates({
+      now,
+      reservations: [],
+      sessions: [],
+      tables: [{ code: '1', id: 'table-1', isPendingCleaning: true, maxSeats: 4, minSeats: 2 }],
+    })
+
+    expect(states[0]).toMatchObject({ status: 'cleaning' })
+    expect(suggestTableCombination(states, 2)).toBeUndefined()
+  })
+
   it('keeps the earliest reservation when two share a table', () => {
     const later = { ...soonReservation, id: 'reservation-3', startsAt: '2026-09-09T20:30:00.000Z' }
     const states = buildServiceTableStates({
