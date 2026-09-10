@@ -399,7 +399,7 @@ export function ServicePage({
                           onClick={() => toggleTable(table.id)}
                           type="button"
                         >
-                          {`Mesa ${table.code} · ${describeTableArea(table.code)} · ${describeStatus(table.status)} · ${table.covers ?? table.maxSeats} pax`}
+                          {`Mesa ${table.code} · ${describeTableArea(table.code)} · ${describeStatus(table.status)}${table.blockReason ? ` · Motivo: ${table.blockReason}` : ''} · ${table.covers ?? table.maxSeats} pax`}
                         </Button>
                       </li>
                     ))}

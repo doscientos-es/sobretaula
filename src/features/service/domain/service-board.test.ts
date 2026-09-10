@@ -66,7 +66,10 @@ describe('service board', () => {
       now,
       reservations: [],
       sessions: [],
-      tables: [{ ...tables[0], isBlocked: true, blockReason: 'Mantenimiento' }, tables[1]],
+      tables: [
+        { ...tables[0]!, isBlocked: true, blockReason: 'Mantenimiento' },
+        tables[1]!,
+      ],
     })
 
     expect(states[0]).toMatchObject({ blockReason: 'Mantenimiento', status: 'blocked' })
