@@ -160,5 +160,14 @@ export interface FloorPlanData {
   areas: readonly FloorPlanArea[]
   elements: readonly FloorPlanElement[]
   placements: readonly FloorPlanTablePlacement[]
+  tableGroupPresets: readonly TableGroupPreset[]
   versions: readonly FloorPlanVersion[]
+}
+
+export interface TableGroupPreset {
+  areaId: string
+  id: string
+  maxSeats: number
+  name: string
+  tableIds: string[]
 }

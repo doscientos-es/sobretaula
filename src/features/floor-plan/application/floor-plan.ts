@@ -10,6 +10,7 @@ import { createRequestSupabaseClient } from '@/shared/lib/supabase/server/create
 
 import type { FloorPlanData } from '../domain/floor-plan'
 import { findPlacementCollisions, isPlacementWithinBounds } from '../domain/geometry'
+import { normalizeTableGroupPreset } from '../domain/table-group-presets'
 
 const tenantInput = z.object({ tenantId: z.string().uuid() })
 const venueInput = tenantInput.extend({ venueId: z.string().uuid() })
@@ -78,6 +79,12 @@ const saveFloorPlanVersionInput = venueInput.extend({
   placements: z.array(placementInput).max(150),
   sourceVersionId: z.string().uuid(),
 })
+const tableGroupPresetInput = venueInput.extend({
+  areaId: z.string().uuid(),
+  maxSeats: z.number().int().positive(),
+  name: z.string().trim().min(1).max(100),
+  tableIds: z.array(z.string().uuid()).min(2).max(12),
+})
 
 function requireManager(role: string): void {
   if (role !== 'owner' && role !== 'manager') throw new Response('Forbidden', { status: 403 })
@@ -106,7 +113,7 @@ export const getFloorPlan = createServerFn({ method: 'GET' })
     if (versionsResult.error) throw new Error(`floor_plan_load_failed:${versionsResult.error.code}`)
     const versionIds = (versionsResult.data ?? []).map((version) => version.id)
 
-    const [tablesResult, placementsResult, elementsResult] = await Promise.all([
+    const [tablesResult, placementsResult, elementsResult, presetsResult] = await Promise.all([
       supabase
         .from('tables')
         .select('code, id')
@@ -126,9 +133,19 @@ export const getFloorPlan = createServerFn({ method: 'GET' })
         )
         .eq('tenant_id', data.tenantId)
         .in('floor_plan_version_id', versionIds),
+      supabase
+        .from('table_group_presets')
+        .select('area_id, id, max_seats, name, table_ids')
+        .eq('tenant_id', data.tenantId)
+        .order('name'),
     ])
 
-    const error = [tablesResult.error, placementsResult.error, elementsResult.error].find(Boolean)
+    const error = [
+      tablesResult.error,
+      placementsResult.error,
+      elementsResult.error,
+      presetsResult.error,
+    ].find(Boolean)
     if (error) throw new Error(`floor_plan_load_failed:${error.code}`)
 
     const tableCodes = new Map((tablesResult.data ?? []).map((table) => [table.id, table.code]))
@@ -164,6 +181,13 @@ export const getFloorPlan = createServerFn({ method: 'GET' })
         xCm: placement.x_cm,
         yCm: placement.y_cm,
       })),
+      tableGroupPresets: (presetsResult.data ?? []).map((preset) => ({
+        areaId: preset.area_id,
+        id: preset.id,
+        maxSeats: preset.max_seats,
+        name: preset.name,
+        tableIds: preset.table_ids as string[],
+      })),
       versions: (versionsResult.data ?? []).map((version) => ({
         activeFrom: version.active_from,
         activeTo: version.active_to,
@@ -174,6 +198,38 @@ export const getFloorPlan = createServerFn({ method: 'GET' })
         widthCm: version.width_cm,
       })),
     }
+  })
+
+export const createTableGroupPreset = createServerFn({ method: 'POST' })
+  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .validator(tableGroupPresetInput)
+  .handler(async ({ context, data }) => {
+    requireManager(context.tenantMembership.role)
+    const normalized = normalizeTableGroupPreset(data)
+    if (!normalized) throw new Response('Invalid table group preset', { status: 422 })
+    const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    const { data: area, error: areaError } = await supabase
+      .from('areas')
+      .select('id')
+      .eq('id', data.areaId)
+      .eq('tenant_id', data.tenantId)
+      .eq('venue_id', data.venueId)
+      .single()
+    if (areaError || !area) throw new Response('Not found', { status: 404 })
+    const { data: preset, error } = await supabase
+      .from('table_group_presets')
+      .insert({
+        area_id: data.areaId,
+        max_seats: normalized.maxSeats,
+        name: normalized.name,
+        table_ids: normalized.tableIds,
+        tenant_id: data.tenantId,
+      })
+      .select('id')
+      .single()
+    if (error || !preset)
+      throw new Error(`table_group_preset_create_failed:${error?.code ?? 'unknown'}`)
+    return { presetId: preset.id as string }
   })
 
 export const createInitialFloorPlan = createServerFn({ method: 'POST' })

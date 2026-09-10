@@ -39,7 +39,8 @@ describe('inspectTableGroupPresetAvailability', () => {
       name: 'Familia',
       tableIds: ['a', 'b'],
       maxSeats: 8,
-    })!
+    })
+    if (!preset) throw new Error('expected valid preset')
     expect(
       inspectTableGroupPresetAvailability(
         preset,
@@ -62,7 +63,8 @@ describe('inspectTableGroupPresetAvailability', () => {
       name: 'Terraza',
       tableIds: ['a', 'gone'],
       maxSeats: 6,
-    })!
+    })
+    if (!preset) throw new Error('expected valid preset')
     expect(inspectTableGroupPresetAvailability(preset, new Map([['a', 8]])).fitsCapacity).toBe(
       false,
     )

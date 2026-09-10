@@ -16,6 +16,7 @@ export {
 export {
   createFloorPlanTable,
   createInitialFloorPlan,
+  createTableGroupPreset,
   getFloorPlan,
   saveFloorPlanVersion,
 } from './application/floor-plan'
@@ -27,6 +28,7 @@ export type {
   FloorPlanElement,
   FloorPlanTablePlacement,
   FloorPlanVersion,
+  TableGroupPreset,
   PlanElementKind,
 } from './domain/floor-plan'
 export {

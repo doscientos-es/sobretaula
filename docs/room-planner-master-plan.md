@@ -33,14 +33,14 @@ Estos estados son parte del producto, no mensajes genéricos de infraestructura.
 Cada uno debe conservar el contexto (piso/zona seleccionados), explicar la
 acción siguiente y evitar mutaciones ambiguas:
 
-| Estado | Comportamiento exigido | Criterio de aceptación |
-| --- | --- | --- |
-| Cargando | Esqueleto del lienzo/panel, sin controles que parezcan editables; anunciarlo a lectores de pantalla. | Nunca aparece un lienzo vacío durante una carga válida ni se pierde el filtro activo. |
-| Vacío | CTA contextual para crear el primer piso/zona o importar una plantilla; explicar que aún no hay mesas. | Un admin puede llegar al primer elemento en un paso y un trabajador ve claramente “sin servicio configurado”. |
-| Error recuperable | Mantener la última instantánea válida en modo lectura, mostrar causa y botón Reintentar; no borrar borradores locales. | Un fallo de red/API no destruye cambios ni deja botones de publicar habilitados. |
-| Sin permisos | Ocultar mutaciones (crear, mover, publicar, bloquear) y explicar el rol requerido; permitir lectura si la política lo permite. | Teclado, menú contextual y atajos tampoco pueden mutar el plano. |
-| Red inestable/offline | Banner persistente con hora de última sincronización, cola pendiente y estado degradado; acciones no soportadas quedan deshabilitadas. | Al reconectar se reintenta de forma idempotente y el usuario puede revisar conflictos antes de publicar. |
-| Conflicto concurrente | Congelar la publicación, comparar versión local/remota y ofrecer recargar, duplicar como borrador o resolver. | Nunca se sobreescribe silenciosamente un plano publicado por otra persona. |
+| Estado                | Comportamiento exigido                                                                                                                 | Criterio de aceptación                                                                                        |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Cargando              | Esqueleto del lienzo/panel, sin controles que parezcan editables; anunciarlo a lectores de pantalla.                                   | Nunca aparece un lienzo vacío durante una carga válida ni se pierde el filtro activo.                         |
+| Vacío                 | CTA contextual para crear el primer piso/zona o importar una plantilla; explicar que aún no hay mesas.                                 | Un admin puede llegar al primer elemento en un paso y un trabajador ve claramente “sin servicio configurado”. |
+| Error recuperable     | Mantener la última instantánea válida en modo lectura, mostrar causa y botón Reintentar; no borrar borradores locales.                 | Un fallo de red/API no destruye cambios ni deja botones de publicar habilitados.                              |
+| Sin permisos          | Ocultar mutaciones (crear, mover, publicar, bloquear) y explicar el rol requerido; permitir lectura si la política lo permite.         | Teclado, menú contextual y atajos tampoco pueden mutar el plano.                                              |
+| Red inestable/offline | Banner persistente con hora de última sincronización, cola pendiente y estado degradado; acciones no soportadas quedan deshabilitadas. | Al reconectar se reintenta de forma idempotente y el usuario puede revisar conflictos antes de publicar.      |
+| Conflicto concurrente | Congelar la publicación, comparar versión local/remota y ofrecer recargar, duplicar como borrador o resolver.                          | Nunca se sobreescribe silenciosamente un plano publicado por otra persona.                                    |
 
 Los estados deben probarse en escritorio, tablet y móvil, con foco visible,
 `aria-live` para cambios de red/error y contraste WCAG 2.2 AA.
@@ -58,7 +58,7 @@ Los estados deben probarse en escritorio, tablet y móvil, con foco visible,
 - [x] Propiedades de elemento en panel lateral y numeración automática segura.
 - [x] Validación visual de solapes, límites y salidas bloqueadas; los pasillos
       quedan para P2.
-- [ ] Previsualización tablet/móvil.
+- [x] Previsualización tablet/móvil en el lienzo (escritorio, tablet y móvil).
 - [x] Publicación programada con inicio y fin opcional de vigencia.
 - [x] Selección, duplicado, eliminación y edición de propiedades.
 
@@ -119,9 +119,10 @@ el servicio y latencia de sincronización.
 3. Añadir sincronización realtime, reintentos idempotentes y modo degradado.
 4. Cubrir validaciones de layout con pruebas unitarias y de UI.
 5. Ejecutar `pnpm lint`, `pnpm typecheck`, `pnpm test` y `pnpm build`.
-6. Conectar `table_group_presets` con el diseñador y servicio: guardar, aplicar y
-   separar combinaciones con preflight de reservas, cuentas y capacidad.
-   La normalización local de nombres, IDs y capacidad ya está cubierta por
-   pruebas de dominio.
+6. Conectar `table_group_presets` con el diseñador y servicio: el loader del
+   plano ya devuelve presets y existe la acción validada para guardarlos;
+   quedan la UI de aplicar/separar y el preflight de reservas, cuentas y
+   capacidad. La normalización local de nombres, IDs y capacidad ya está
+   cubierta por pruebas de dominio.
    La decisión de persistencia de pisos y terrazas está documentada en
    [`adr/0008-pisos-y-terrazas.md`](./adr/0008-pisos-y-terrazas.md).

@@ -28,6 +28,7 @@ import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
 import {
   createFloorPlanTable,
   createInitialFloorPlan,
+  createTableGroupPreset,
   saveFloorPlanVersion,
 } from '../application/floor-plan'
 import {
@@ -76,9 +77,12 @@ export function FloorPlanPage({
   const [tableSeats, setTableSeats] = useState(4)
   const [tableXCm, setTableXCm] = useState(50)
   const [tableYCm, setTableYCm] = useState(50)
+  const [presetName, setPresetName] = useState('Combinación')
+  const [presetMaxSeats, setPresetMaxSeats] = useState(8)
   const [versionName, setVersionName] = useState('Nueva versión')
   const [versionActivation, setVersionActivation] = useState('')
   const [versionDeactivation, setVersionDeactivation] = useState('')
+  const [previewDevice, setPreviewDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop')
   const [draggingTableId, setDraggingTableId] = useState<string>()
   const [selectedId, setSelectedId] = useState<string>()
   const [selectedIds, setSelectedIds] = useState<string[]>([])
@@ -93,6 +97,7 @@ export function FloorPlanPage({
     setSelectedAreaId(data.areas[0]?.id)
   }, [data.areas, selectedAreaId])
   const activeArea = data.areas.find((area) => area.id === selectedAreaId) ?? data.areas[0]
+  const activePresets = data.tableGroupPresets.filter((preset) => preset.areaId === activeArea?.id)
   const activeVersion = activeArea
     ? (selectFloorPlanVersion(data.versions, activeArea.id) ??
       data.versions.find((version) => version.areaId === activeArea.id))
@@ -695,6 +700,24 @@ export function FloorPlanPage({
                   Crear plano
                 </Button>
               </div>
+              <div
+                className="flex flex-wrap items-center gap-2 pt-2"
+                aria-label="Previsualización responsive"
+              >
+                <span className="text-muted-foreground text-sm">Previsualizar:</span>
+                {(['desktop', 'tablet', 'mobile'] as const).map((device) => (
+                  <Button
+                    key={device}
+                    aria-pressed={previewDevice === device}
+                    onClick={() => setPreviewDevice(device)}
+                    size="sm"
+                    type="button"
+                    variant={previewDevice === device ? 'default' : 'outline'}
+                  >
+                    {device === 'desktop' ? 'Escritorio' : device === 'tablet' ? 'Tablet' : 'Móvil'}
+                  </Button>
+                ))}
+              </div>
             </form>
           </CardContent>
         </Card>
@@ -828,273 +851,288 @@ export function FloorPlanPage({
                   </ul>
                 </div>
               )}
-              <svg
-                aria-label={`Plano ${activeVersion.name}`}
-                className="border-border bg-muted/30 h-auto w-full rounded-xl border shadow-inner"
-                onClick={(event) => {
-                  if (event.target === event.currentTarget) {
-                    setSelectedId(undefined)
-                    setSelectedIds([])
-                  }
-                }}
-                onKeyDown={(event) => {
-                  if (event.key === 'Escape') {
-                    event.preventDefault()
-                    setSelectedId(undefined)
-                    setSelectedIds([])
-                  } else if (event.key === 'Delete' || event.key === 'Backspace') {
-                    if (selectedId) {
-                      event.preventDefault()
-                      removeSelected()
+              <div
+                className={`mx-auto transition-[max-width] ${previewDevice === 'mobile' ? 'max-w-[390px]' : previewDevice === 'tablet' ? 'max-w-[768px]' : 'max-w-none'}`}
+              >
+                <svg
+                  aria-label={`Plano ${activeVersion.name}`}
+                  className="border-border bg-muted/30 h-auto w-full rounded-xl border shadow-inner"
+                  onClick={(event) => {
+                    if (event.target === event.currentTarget) {
+                      setSelectedId(undefined)
+                      setSelectedIds([])
                     }
-                  } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a') {
-                    event.preventDefault()
-                    const ids = [...elements, ...placements].map((item) => item.id)
-                    setSelectedIds(ids)
-                    setSelectedId(ids[0])
-                  } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'd') {
-                    if (selectedId) {
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Escape') {
                       event.preventDefault()
-                      duplicateSelected()
+                      setSelectedId(undefined)
+                      setSelectedIds([])
+                    } else if (event.key === 'Delete' || event.key === 'Backspace') {
+                      if (selectedId) {
+                        event.preventDefault()
+                        removeSelected()
+                      }
+                    } else if (
+                      (event.ctrlKey || event.metaKey) &&
+                      event.key.toLowerCase() === 'a'
+                    ) {
+                      event.preventDefault()
+                      const ids = [...elements, ...placements].map((item) => item.id)
+                      setSelectedIds(ids)
+                      setSelectedId(ids[0])
+                    } else if (
+                      (event.ctrlKey || event.metaKey) &&
+                      event.key.toLowerCase() === 'd'
+                    ) {
+                      if (selectedId) {
+                        event.preventDefault()
+                        duplicateSelected()
+                      }
+                    } else if (
+                      !event.ctrlKey &&
+                      !event.metaKey &&
+                      event.key.toLowerCase() === 'r'
+                    ) {
+                      const selected =
+                        placements.find((item) => item.id === selectedId) ??
+                        elements.find((item) => item.id === selectedId)
+                      if (selected) {
+                        event.preventDefault()
+                        updateSelected({ rotationDeg: (selected.rotationDeg + 90) % 360 })
+                      }
+                    } else if (event.key === '+' || event.key === '=') {
+                      event.preventDefault()
+                      setZoom((current) => Math.min(3, current + 0.25))
+                    } else if (event.key === '-') {
+                      event.preventDefault()
+                      setZoom((current) => Math.max(1, current - 0.25))
+                    } else if (event.key === '0') {
+                      event.preventDefault()
+                      setZoom(1)
+                      setPan({ x: 0, y: 0 })
+                    } else if (
+                      event.altKey &&
+                      ['ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowUp'].includes(event.key)
+                    ) {
+                      event.preventDefault()
+                      const distance = 100 / zoom
+                      setPan((current) => ({
+                        x:
+                          current.x +
+                          (event.key === 'ArrowRight'
+                            ? distance
+                            : event.key === 'ArrowLeft'
+                              ? -distance
+                              : 0),
+                        y:
+                          current.y +
+                          (event.key === 'ArrowDown'
+                            ? distance
+                            : event.key === 'ArrowUp'
+                              ? -distance
+                              : 0),
+                      }))
                     }
-                  } else if (!event.ctrlKey && !event.metaKey && event.key.toLowerCase() === 'r') {
+                  }}
+                  onPointerDown={(event) => {
+                    if (event.button !== 1 && !event.altKey) return
+                    event.preventDefault()
+                    panPointer.current = { id: event.pointerId, x: event.clientX, y: event.clientY }
+                    event.currentTarget.setPointerCapture(event.pointerId)
+                  }}
+                  onPointerMove={(event) => {
+                    const start = panPointer.current
+                    if (!start || start.id !== event.pointerId) return
+                    const bounds = event.currentTarget.getBoundingClientRect()
+                    setPan((current) => ({
+                      x:
+                        current.x -
+                        ((event.clientX - start.x) / bounds.width) * (activeVersion.widthCm / zoom),
+                      y:
+                        current.y -
+                        ((event.clientY - start.y) / bounds.height) *
+                          (activeVersion.heightCm / zoom),
+                    }))
+                    panPointer.current = { ...start, x: event.clientX, y: event.clientY }
+                  }}
+                  onPointerCancel={() => {
+                    panPointer.current = undefined
+                    setDraggingTableId(undefined)
+                  }}
+                  onPointerUp={(event) => {
+                    if (panPointer.current?.id === event.pointerId) {
+                      panPointer.current = undefined
+                      event.currentTarget.releasePointerCapture?.(event.pointerId)
+                    }
+                    finishDrag(event)
+                  }}
+                  onWheel={(event) => {
+                    event.preventDefault()
+                    setZoom((current) =>
+                      Math.min(3, Math.max(1, current + (event.deltaY < 0 ? 0.25 : -0.25))),
+                    )
+                  }}
+                  role="application"
+                  tabIndex={0}
+                  viewBox={viewBox}
+                >
+                  <defs>
+                    <pattern
+                      height={gridSize}
+                      id="floor-plan-grid"
+                      patternUnits="userSpaceOnUse"
+                      width={gridSize}
+                    >
+                      <path
+                        d={`M ${gridSize} 0 L 0 0 0 ${gridSize}`}
+                        fill="none"
+                        stroke="var(--border)"
+                        strokeWidth="2"
+                      />
+                    </pattern>
+                  </defs>
+                  <rect
+                    fill="url(#floor-plan-grid)"
+                    height={activeVersion.heightCm}
+                    width={activeVersion.widthCm}
+                  />
+                  {(() => {
                     const selected =
                       placements.find((item) => item.id === selectedId) ??
                       elements.find((item) => item.id === selectedId)
-                    if (selected) {
-                      event.preventDefault()
-                      updateSelected({ rotationDeg: (selected.rotationDeg + 90) % 360 })
-                    }
-                  } else if (event.key === '+' || event.key === '=') {
-                    event.preventDefault()
-                    setZoom((current) => Math.min(3, current + 0.25))
-                  } else if (event.key === '-') {
-                    event.preventDefault()
-                    setZoom((current) => Math.max(1, current - 0.25))
-                  } else if (event.key === '0') {
-                    event.preventDefault()
-                    setZoom(1)
-                    setPan({ x: 0, y: 0 })
-                  } else if (
-                    event.altKey &&
-                    ['ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowUp'].includes(event.key)
-                  ) {
-                    event.preventDefault()
-                    const distance = 100 / zoom
-                    setPan((current) => ({
-                      x:
-                        current.x +
-                        (event.key === 'ArrowRight'
-                          ? distance
-                          : event.key === 'ArrowLeft'
-                            ? -distance
-                            : 0),
-                      y:
-                        current.y +
-                        (event.key === 'ArrowDown'
-                          ? distance
-                          : event.key === 'ArrowUp'
-                            ? -distance
-                            : 0),
-                    }))
-                  }
-                }}
-                onPointerDown={(event) => {
-                  if (event.button !== 1 && !event.altKey) return
-                  event.preventDefault()
-                  panPointer.current = { id: event.pointerId, x: event.clientX, y: event.clientY }
-                  event.currentTarget.setPointerCapture(event.pointerId)
-                }}
-                onPointerMove={(event) => {
-                  const start = panPointer.current
-                  if (!start || start.id !== event.pointerId) return
-                  const bounds = event.currentTarget.getBoundingClientRect()
-                  setPan((current) => ({
-                    x:
-                      current.x -
-                      ((event.clientX - start.x) / bounds.width) * (activeVersion.widthCm / zoom),
-                    y:
-                      current.y -
-                      ((event.clientY - start.y) / bounds.height) * (activeVersion.heightCm / zoom),
-                  }))
-                  panPointer.current = { ...start, x: event.clientX, y: event.clientY }
-                }}
-                onPointerCancel={() => {
-                  panPointer.current = undefined
-                  setDraggingTableId(undefined)
-                }}
-                onPointerUp={(event) => {
-                  if (panPointer.current?.id === event.pointerId) {
-                    panPointer.current = undefined
-                    event.currentTarget.releasePointerCapture?.(event.pointerId)
-                  }
-                  finishDrag(event)
-                }}
-                onWheel={(event) => {
-                  event.preventDefault()
-                  setZoom((current) =>
-                    Math.min(3, Math.max(1, current + (event.deltaY < 0 ? 0.25 : -0.25))),
-                  )
-                }}
-                role="application"
-                tabIndex={0}
-                viewBox={viewBox}
-              >
-                <defs>
-                  <pattern
-                    height={gridSize}
-                    id="floor-plan-grid"
-                    patternUnits="userSpaceOnUse"
-                    width={gridSize}
-                  >
-                    <path
-                      d={`M ${gridSize} 0 L 0 0 0 ${gridSize}`}
-                      fill="none"
-                      stroke="var(--border)"
-                      strokeWidth="2"
-                    />
-                  </pattern>
-                </defs>
-                <rect
-                  fill="url(#floor-plan-grid)"
-                  height={activeVersion.heightCm}
-                  width={activeVersion.widthCm}
-                />
-                {(() => {
-                  const selected =
-                    placements.find((item) => item.id === selectedId) ??
-                    elements.find((item) => item.id === selectedId)
-                  if (!selected) return null
-                  return (
-                    <g
-                      aria-hidden="true"
-                      pointerEvents="none"
-                      stroke="var(--ring)"
-                      strokeDasharray="12 10"
-                      strokeWidth="3"
-                    >
+                    if (!selected) return null
+                    return (
+                      <g
+                        aria-hidden="true"
+                        pointerEvents="none"
+                        stroke="var(--ring)"
+                        strokeDasharray="12 10"
+                        strokeWidth="3"
+                      >
+                        <line
+                          x1={selected.xCm + selected.widthCm / 2}
+                          x2={selected.xCm + selected.widthCm / 2}
+                          y1={0}
+                          y2={activeVersion.heightCm}
+                        />
+                        <line
+                          x1={0}
+                          x2={activeVersion.widthCm}
+                          y1={selected.yCm + selected.heightCm / 2}
+                          y2={selected.yCm + selected.heightCm / 2}
+                        />
+                      </g>
+                    )
+                  })()}
+                  {alignmentGuides.map((guide, index) =>
+                    guide.axis === 'x' ? (
                       <line
-                        x1={selected.xCm + selected.widthCm / 2}
-                        x2={selected.xCm + selected.widthCm / 2}
+                        key={`guide-${index}`}
+                        stroke="var(--destructive)"
+                        strokeDasharray="8 8"
+                        strokeWidth="2"
+                        x1={guide.value}
+                        x2={guide.value}
                         y1={0}
                         y2={activeVersion.heightCm}
                       />
+                    ) : (
                       <line
+                        key={`guide-${index}`}
+                        stroke="var(--destructive)"
+                        strokeDasharray="8 8"
+                        strokeWidth="2"
                         x1={0}
                         x2={activeVersion.widthCm}
-                        y1={selected.yCm + selected.heightCm / 2}
-                        y2={selected.yCm + selected.heightCm / 2}
+                        y1={guide.value}
+                        y2={guide.value}
                       />
-                    </g>
-                  )
-                })()}
-                {alignmentGuides.map((guide, index) =>
-                  guide.axis === 'x' ? (
-                    <line
-                      key={`guide-${index}`}
-                      stroke="var(--destructive)"
-                      strokeDasharray="8 8"
-                      strokeWidth="2"
-                      x1={guide.value}
-                      x2={guide.value}
-                      y1={0}
-                      y2={activeVersion.heightCm}
-                    />
-                  ) : (
-                    <line
-                      key={`guide-${index}`}
-                      stroke="var(--destructive)"
-                      strokeDasharray="8 8"
-                      strokeWidth="2"
-                      x1={0}
-                      x2={activeVersion.widthCm}
-                      y1={guide.value}
-                      y2={guide.value}
-                    />
-                  ),
-                )}
-                {elements.map((element) => (
-                  <g
-                    key={element.id}
-                    aria-label={`${element.label ?? `Elemento ${element.kind}`}${lockedIds.includes(element.id) ? ' (bloqueado)' : ''}`}
-                    className="cursor-pointer"
-                    onClick={(event) => selectItem(element.id, event.ctrlKey || event.metaKey)}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter' || event.key === ' ') {
-                        event.preventDefault()
-                        selectItem(element.id, event.ctrlKey || event.metaKey)
-                      }
-                    }}
-                    role="button"
-                    tabIndex={0}
-                  >
-                    <rect
-                      fill={
-                        element.kind === 'wall' ? 'var(--foreground)' : 'var(--muted-foreground)'
-                      }
-                      height={element.heightCm}
-                      opacity={lockedIds.includes(element.id) ? 0.48 : 0.65}
-                      rx="8"
-                      stroke={selectedIds.includes(element.id) ? 'var(--ring)' : 'transparent'}
-                      strokeWidth={selectedIds.includes(element.id) ? 8 : 0}
-                      transform={`rotate(${element.rotationDeg} ${element.xCm + element.widthCm / 2} ${element.yCm + element.heightCm / 2})`}
-                      width={element.widthCm}
-                      x={element.xCm}
-                      y={element.yCm}
-                    />
-                    {element.label && (
-                      <text fontSize="20" x={element.xCm + 8} y={element.yCm + 28}>
-                        {element.label}
-                      </text>
-                    )}
-                  </g>
-                ))}
-                {placements.map((placement) => (
-                  <g
-                    key={placement.id}
-                    aria-label={`Mesa ${placement.code}${lockedIds.includes(placement.id) ? ' (bloqueada)' : ''}`}
-                    className="cursor-pointer"
-                    onClick={(event) => selectItem(placement.id, event.ctrlKey || event.metaKey)}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter' || event.key === ' ') {
-                        event.preventDefault()
-                        selectItem(placement.id, event.ctrlKey || event.metaKey)
-                      }
-                    }}
-                    role="button"
-                    tabIndex={0}
-                  >
-                    <rect
-                      fill={
-                        layoutIssues.some((issue) => issue.placementId === placement.id)
-                          ? 'var(--destructive)'
-                          : 'var(--primary)'
-                      }
-                      height={placement.heightCm}
-                      onPointerDown={() => {
-                        if (!lockedIds.includes(placement.id)) setDraggingTableId(placement.id)
+                    ),
+                  )}
+                  {elements.map((element) => (
+                    <g
+                      key={element.id}
+                      aria-label={`${element.label ?? `Elemento ${element.kind}`}${lockedIds.includes(element.id) ? ' (bloqueado)' : ''}`}
+                      className="cursor-pointer"
+                      onClick={(event) => selectItem(element.id, event.ctrlKey || event.metaKey)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault()
+                          selectItem(element.id, event.ctrlKey || event.metaKey)
+                        }
                       }}
-                      opacity={lockedIds.includes(placement.id) ? 0.62 : 0.85}
-                      rx="12"
-                      stroke={selectedIds.includes(placement.id) ? 'var(--ring)' : 'transparent'}
-                      strokeWidth={selectedIds.includes(placement.id) ? 8 : 0}
-                      transform={`rotate(${placement.rotationDeg} ${placement.xCm + placement.widthCm / 2} ${placement.yCm + placement.heightCm / 2})`}
-                      width={placement.widthCm}
-                      x={placement.xCm}
-                      y={placement.yCm}
-                    />
-                    <text
-                      fill="var(--primary-foreground)"
-                      fontSize="32"
-                      textAnchor="middle"
-                      x={placement.xCm + placement.widthCm / 2}
-                      y={placement.yCm + placement.heightCm / 2}
+                      role="button"
+                      tabIndex={0}
                     >
-                      {placement.code}
-                    </text>
-                  </g>
-                ))}
-              </svg>
+                      <rect
+                        fill={
+                          element.kind === 'wall' ? 'var(--foreground)' : 'var(--muted-foreground)'
+                        }
+                        height={element.heightCm}
+                        opacity={lockedIds.includes(element.id) ? 0.48 : 0.65}
+                        rx="8"
+                        stroke={selectedIds.includes(element.id) ? 'var(--ring)' : 'transparent'}
+                        strokeWidth={selectedIds.includes(element.id) ? 8 : 0}
+                        transform={`rotate(${element.rotationDeg} ${element.xCm + element.widthCm / 2} ${element.yCm + element.heightCm / 2})`}
+                        width={element.widthCm}
+                        x={element.xCm}
+                        y={element.yCm}
+                      />
+                      {element.label && (
+                        <text fontSize="20" x={element.xCm + 8} y={element.yCm + 28}>
+                          {element.label}
+                        </text>
+                      )}
+                    </g>
+                  ))}
+                  {placements.map((placement) => (
+                    <g
+                      key={placement.id}
+                      aria-label={`Mesa ${placement.code}${lockedIds.includes(placement.id) ? ' (bloqueada)' : ''}`}
+                      className="cursor-pointer"
+                      onClick={(event) => selectItem(placement.id, event.ctrlKey || event.metaKey)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault()
+                          selectItem(placement.id, event.ctrlKey || event.metaKey)
+                        }
+                      }}
+                      role="button"
+                      tabIndex={0}
+                    >
+                      <rect
+                        fill={
+                          layoutIssues.some((issue) => issue.placementId === placement.id)
+                            ? 'var(--destructive)'
+                            : 'var(--primary)'
+                        }
+                        height={placement.heightCm}
+                        onPointerDown={() => {
+                          if (!lockedIds.includes(placement.id)) setDraggingTableId(placement.id)
+                        }}
+                        opacity={lockedIds.includes(placement.id) ? 0.62 : 0.85}
+                        rx="12"
+                        stroke={selectedIds.includes(placement.id) ? 'var(--ring)' : 'transparent'}
+                        strokeWidth={selectedIds.includes(placement.id) ? 8 : 0}
+                        transform={`rotate(${placement.rotationDeg} ${placement.xCm + placement.widthCm / 2} ${placement.yCm + placement.heightCm / 2})`}
+                        width={placement.widthCm}
+                        x={placement.xCm}
+                        y={placement.yCm}
+                      />
+                      <text
+                        fill="var(--primary-foreground)"
+                        fontSize="32"
+                        textAnchor="middle"
+                        x={placement.xCm + placement.widthCm / 2}
+                        y={placement.yCm + placement.heightCm / 2}
+                      >
+                        {placement.code}
+                      </text>
+                    </g>
+                  ))}
+                </svg>
+              </div>
             </CardContent>
           </Card>
           <Card>
