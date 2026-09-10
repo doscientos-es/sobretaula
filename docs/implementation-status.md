@@ -72,6 +72,7 @@ Servicio carga y muestra las diez últimas entregas del local para consultar el
 histórico sin salir de la operativa. Cada entrega se puede expandir por sección
 para revisar la fotografía completa del turno y compara sus cifras con el
 estado vivo actual, señalando cambios por área.
+El historial admite filtrar las últimas entregas por fecha desde la propia vista.
 
 Las acciones de sentar una reserva, abrir un walk-in y sentar una espera soportan
 ahora modo offline: guardan una operación local, la reintentan al recuperar la
