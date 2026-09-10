@@ -221,6 +221,16 @@ receta. La función de carta pública se desplegó después de la tabla de preci
 por canal, su dependencia real. No se usaron fixtures ni se ejecutaron pruebas
 de carga, concurrencia o humo contra datos de producción.
 
+### Primer módulo TPV unificado (D1)
+
+La ruta `/t/:slug/l/:venue/tpv` es ahora la entrada predeterminada de cada
+local. Reutiliza el tablero de servicio autorizado para presentar el estado de
+mesas, cuentas abiertas y cocina sin crear una segunda fuente de verdad, y
+conserva el acceso compatible a sala, reservas, caja y cuentas existentes. La
+integración embebida de comanda, cobro y cocina queda como siguientes entregas
+del módulo. El resumen operativo tiene prueba unitaria; `typecheck` y la
+compilación de Vite terminaron correctamente.
+
 ### Últimos avances del editor de sala
 
 - Navegación del lienzo con zoom, pan y restablecimiento completo de vista.

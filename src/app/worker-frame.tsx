@@ -55,6 +55,9 @@ export function WorkerFrame({
         >
           {venueParams && (
             <>
+              <Link params={venueParams} to="/t/$slug/l/$venue/tpv">
+                TPV
+              </Link>
               <Link params={venueParams} to="/t/$slug/l/$venue/plano">
                 Plano
               </Link>
@@ -83,6 +86,14 @@ export function WorkerFrame({
           <nav aria-label="Operación del restaurante" className="mt-3 space-y-0.5">
             {venueParams && (
               <>
+                <Link
+                  activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
+                  className={navLinkClass}
+                  params={venueParams}
+                  to="/t/$slug/l/$venue/tpv"
+                >
+                  <Utensils className="size-3" /> TPV
+                </Link>
                 <Link
                   activeOptions={{ exact: true }}
                   activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}

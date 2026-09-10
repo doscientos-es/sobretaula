@@ -82,6 +82,15 @@ export function TenantAdminFrame({
             <p className="st-saas-section-label px-1.5">Operativa del local</p>
             <nav aria-label="Operativa del local" className="mt-2 space-y-0.5">
               <Link
+                to="/t/$slug/l/$venue/tpv"
+                params={{ slug, venue: activeVenue.slug }}
+                activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
+                className={navLinkClass}
+              >
+                <Utensils className="size-3" />
+                TPV
+              </Link>
+              <Link
                 to="/t/$slug/l/$venue/plano"
                 params={{ slug, venue: activeVenue.slug }}
                 activeOptions={{ exact: true }}
