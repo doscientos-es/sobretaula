@@ -3,12 +3,41 @@ import { Link } from '@tanstack/react-router'
 import { CalendarCheck2, CircleAlert, MapPin } from 'lucide-react'
 import { useState } from 'react'
 
-import { cancelPublicReservation, type PublicReservation } from '../application/public-reservations'
+import {
+  cancelPublicReservation,
+  reschedulePublicReservation,
+  type PublicReservation,
+} from '../application/public-reservations'
+import { zonedLocalToIso } from '../domain/zoned-time'
 
-function formatDateTime(value: string): string {
-  return new Intl.DateTimeFormat('es-ES', { dateStyle: 'full', timeStyle: 'short' }).format(
-    new Date(value),
-  )
+function formatDateTime(value: string, timezone: string): string {
+  return new Intl.DateTimeFormat('es-ES', {
+    dateStyle: 'full',
+    timeStyle: 'short',
+    timeZone: timezone,
+  }).format(new Date(value))
+}
+
+function currentLocalValue(value: string, timezone: string): string {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  })
+    .formatToParts(new Date(value))
+    .reduce<Record<string, string>>((acc, part) => {
+      acc[part.type] = part.value
+      return acc
+    }, {})
+  return `${parts.year}-${parts.month}-${parts.day}T${parts.hour === '24' ? '00' : parts.hour}:${parts.minute}`
+}
+
+function localNowValue(timezone: string): string {
+  return currentLocalValue(new Date().toISOString(), timezone)
 }
 
 export function PublicReservationManagementPage({
@@ -21,6 +50,9 @@ export function PublicReservationManagementPage({
   const [current, setCurrent] = useState(reservation)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [newDate, setNewDate] = useState(() =>
+    currentLocalValue(reservation.startsAt, reservation.timezone),
+  )
   const cancelled = current.status === 'cancelled'
 
   async function cancel() {
@@ -36,6 +68,25 @@ export function PublicReservationManagementPage({
       setCurrent({ ...current, status: 'cancelled' })
     } catch {
       setError('No hemos podido cancelar la reserva. Inténtalo de nuevo.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function reschedule() {
+    setBusy(true)
+    setError('')
+    try {
+      const result = await reschedulePublicReservation({
+        data: { token, startsAt: zonedLocalToIso(newDate, current.timezone) },
+      })
+      if (!result.rescheduled) {
+        setError('No se puede cambiar a esa hora. Puede estar ocupada.')
+        return
+      }
+      setCurrent({ ...current, startsAt: zonedLocalToIso(newDate, current.timezone) })
+    } catch {
+      setError('No hemos podido cambiar la reserva. Inténtalo de nuevo.')
     } finally {
       setBusy(false)
     }
@@ -67,7 +118,7 @@ export function PublicReservationManagementPage({
           {current.venueName}
         </p>
         <p className="mt-2 text-[#60656d]">
-          {formatDateTime(current.startsAt)} · {current.partySize}{' '}
+          {formatDateTime(current.startsAt, current.timezone)} · {current.partySize}{' '}
           {current.partySize === 1 ? 'persona' : 'personas'}
         </p>
         {error && (
@@ -76,9 +127,32 @@ export function PublicReservationManagementPage({
           </p>
         )}
         {!cancelled && (
-          <Button className="mt-6" disabled={busy} onPress={() => void cancel()} variant="outline">
-            Cancelar reserva
-          </Button>
+          <div className="mt-6 space-y-3 text-left">
+            <label
+              className="block text-sm font-semibold text-[#292d34]"
+              htmlFor="new-reservation-time"
+            >
+              Cambiar fecha y hora
+            </label>
+            <input
+              aria-label="Nueva fecha y hora"
+              className="w-full rounded-xl border border-[#292d34]/15 px-3 py-2"
+              id="new-reservation-time"
+              onChange={(event) => setNewDate(event.target.value)}
+              min={localNowValue(current.timezone)}
+              step={900}
+              type="datetime-local"
+              value={newDate}
+            />
+            <div className="flex flex-wrap gap-3">
+              <Button disabled={busy || !newDate} onPress={() => void reschedule()}>
+                Guardar cambio
+              </Button>
+              <Button disabled={busy} onPress={() => void cancel()} variant="outline">
+                Cancelar reserva
+              </Button>
+            </div>
+          </div>
         )}
         {cancelled && (
           <p className="mt-6 text-xs leading-5 text-[#737983]">

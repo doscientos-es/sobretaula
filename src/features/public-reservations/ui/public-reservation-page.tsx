@@ -20,6 +20,7 @@ import {
   getPublicReservationAvailability,
   type PublicReservationProfile,
 } from '../application/public-reservations'
+import { zonedLocalToIso } from '../domain/zoned-time'
 
 const weekdayNames = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado']
 
@@ -60,6 +61,14 @@ function formatDate(date: string): string {
   }).format(new Date(`${date}T12:00:00`))
 }
 
+function restaurantTime(value: string, timezone: string): string {
+  return new Intl.DateTimeFormat('es-ES', {
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: timezone,
+  }).format(new Date(value))
+}
+
 export function PublicReservationPage({ profile }: { profile: PublicReservationProfile }) {
   const feedback = useFormFeedback()
   const [serviceId, setServiceId] = useState(profile.services[0]?.id ?? '')
@@ -73,6 +82,7 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
   const [confirmed, setConfirmed] = useState(false)
   const [managementToken, setManagementToken] = useState('')
   const [availableSlots, setAvailableSlots] = useState<string[]>([])
+  const [alternativeSlots, setAlternativeSlots] = useState<string[]>([])
   const [availabilityLoading, setAvailabilityLoading] = useState(false)
   const service = profile.services.find((candidate) => candidate.id === serviceId)
   const dates = useMemo(() => (service ? nextDates(service.weekday) : []), [service])
@@ -82,6 +92,7 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
     setServiceId(id)
     setDate('')
     setTime('')
+    setAlternativeSlots([])
     setAvailableSlots([])
   }
 
@@ -103,7 +114,22 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
           slug: profile.slug,
         },
       })
-      setAvailableSlots(result)
+      const normalized = result.map((slot) =>
+        slot.includes('T') ? restaurantTime(slot, profile.timezone) : slot.slice(0, 5),
+      )
+      setAvailableSlots(normalized)
+      if (selectedArea && result.length === 0) {
+        const fallback = await getPublicReservationAvailability({
+          data: { date: value, partySize: size, serviceId: service.id, slug: profile.slug },
+        })
+        setAlternativeSlots(
+          fallback
+            .slice(0, 3)
+            .map((slot) =>
+              slot.includes('T') ? restaurantTime(slot, profile.timezone) : slot.slice(0, 5),
+            ),
+        )
+      }
     } catch {
       setAvailableSlots([])
     } finally {
@@ -130,7 +156,7 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
           slug: profile.slug,
           // The browser's local zone is the restaurant's zone in this MVP. The
           // server validates the instant again against the tenant timezone.
-          startsAt: new Date(`${date}T${time}:00`).toISOString(),
+          startsAt: zonedLocalToIso(`${date}T${time}`, profile.timezone),
         },
       })
       setManagementToken(result.managementToken)
@@ -285,7 +311,28 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                   </select>
                   {date && !availabilityLoading && availableSlots.length === 0 ? (
                     <p className="mt-2 text-xs text-[#c34d3e]">
-                      No quedan horas libres para ese día y número de personas.
+                      {areaId
+                        ? 'No quedan horas libres en esta zona para ese día y número de personas. Prueba otra zona.'
+                        : 'No quedan horas libres para ese día y número de personas.'}
+                    </p>
+                  ) : null}
+                  {alternativeSlots.length ? (
+                    <p className="mt-2 text-xs text-[#5b6470]">
+                      Primeras horas libres en otras zonas:{' '}
+                      {alternativeSlots.map((slot) => (
+                        <button
+                          className="ml-2 underline"
+                          key={slot}
+                          onClick={() => {
+                            setAreaId('')
+                            setAvailableSlots([slot])
+                            setTime(slot)
+                          }}
+                          type="button"
+                        >
+                          {slot}
+                        </button>
+                      ))}
                     </p>
                   ) : null}
                 </Field>

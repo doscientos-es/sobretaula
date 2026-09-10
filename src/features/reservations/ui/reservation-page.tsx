@@ -16,6 +16,7 @@ import {
 } from '@doscientos/ui'
 import { useEffect, useState, type FormEvent } from 'react'
 
+import { zonedLocalToIso } from '@/features/public-reservations/domain/zoned-time'
 import { cancelReservation, markReservationNoShow } from '@/features/service'
 import type { Locale } from '@/shared/lib/i18n/locale'
 import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
@@ -72,11 +73,13 @@ export function ReservationPage({
   tenantId,
   venueId,
   locale,
+  timezone,
 }: {
   services: readonly ReservationService[]
   tenantId: string
   venueId: string
   locale: Locale
+  timezone: string
 }) {
   const feedback = useFormFeedback()
   const [serviceName, setServiceName] = useState('Comida')
@@ -239,7 +242,7 @@ export function ReservationPage({
         data: {
           partySize: editingPartySize,
           reservationId,
-          startsAt: startsAt.toISOString(),
+          startsAt: zonedLocalToIso(editingStartsAt, timezone),
           tenantId,
           venueId,
         },

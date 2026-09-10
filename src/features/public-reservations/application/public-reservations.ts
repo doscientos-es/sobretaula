@@ -52,6 +52,7 @@ export interface PublicReservation {
   startsAt: string
   status: string
   tenantName: string
+  timezone: string
   venueName: string
 }
 
@@ -194,6 +195,7 @@ export const getPublicReservation = createServerFn({ method: 'GET' })
           status: string
           tenant_name: string
           venue_name: string
+          timezone: string
         }
       | undefined
     if (!row) return null
@@ -204,6 +206,7 @@ export const getPublicReservation = createServerFn({ method: 'GET' })
       startsAt: row.starts_at,
       status: row.status,
       tenantName: row.tenant_name,
+      timezone: row.timezone,
       venueName: row.venue_name,
     }
   })
@@ -244,4 +247,17 @@ export const cancelPublicReservation = createServerFn({ method: 'POST' })
     )
     if (error) throw new Error(`public_reservation_cancel_failed:${error.code}`)
     return { cancelled: cancelled === true }
+  })
+
+export const reschedulePublicReservation = createServerFn({ method: 'POST' })
+  .validator(
+    z.object({ startsAt: z.string().datetime({ offset: true }), token: tokenInput.shape.token }),
+  )
+  .handler(async ({ data }) => {
+    const { data: updated, error } = await createAnonSupabaseClient().rpc(
+      'reschedule_public_reservation',
+      { p_starts_at: data.startsAt, p_token_hash: hashPublicToken(data.token) },
+    )
+    if (error) throw new Error(`public_reservation_reschedule_failed:${error.code}`)
+    return { rescheduled: updated === true }
   })

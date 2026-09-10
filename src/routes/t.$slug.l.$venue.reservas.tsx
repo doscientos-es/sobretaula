@@ -17,6 +17,7 @@ function ReservationsRoute() {
       locale={tenant.defaultLocale}
       services={services}
       tenantId={tenant.id}
+      timezone={tenant.timezone}
       venueId={venue.id}
     />
   )

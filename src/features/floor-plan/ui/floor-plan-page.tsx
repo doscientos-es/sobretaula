@@ -14,7 +14,14 @@ import {
   PageHeaderTitle,
   useFormFeedback,
 } from '@doscientos/ui'
-import { useEffect, useState, type FormEvent, type KeyboardEvent, type PointerEvent } from 'react'
+import {
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+  type KeyboardEvent,
+  type PointerEvent,
+} from 'react'
 
 import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
 
@@ -72,6 +79,10 @@ export function FloorPlanPage({
   const [versionActivation, setVersionActivation] = useState('')
   const [draggingTableId, setDraggingTableId] = useState<string>()
   const [selectedId, setSelectedId] = useState<string>()
+  const [zoom, setZoom] = useState(1)
+  const [gridSize, setGridSize] = useState(DEFAULT_GRID_SIZE_CM)
+  const [pan, setPan] = useState({ x: 0, y: 0 })
+  const panPointer = useRef<{ id: number; x: number; y: number } | undefined>(undefined)
   const [selectedAreaId, setSelectedAreaId] = useState(data.areas[0]?.id)
   useEffect(() => {
     if (selectedAreaId && data.areas.some((area) => area.id === selectedAreaId)) return
@@ -93,6 +104,38 @@ export function FloorPlanPage({
   )
   const { elements, placements } = history.present
   const layoutIssues = activeVersion ? validateLayout(placements, activeVersion) : []
+  const selectedPlacement = placements.find((item) => item.id === selectedId)
+  const alignmentGuides = selectedPlacement
+    ? placements
+        .filter((item) => item.id !== selectedPlacement.id)
+        .flatMap((item) => {
+          const guides: Array<{ axis: 'x' | 'y'; value: number }> = []
+          const selectedX = [
+            selectedPlacement.xCm,
+            selectedPlacement.xCm + selectedPlacement.widthCm / 2,
+            selectedPlacement.xCm + selectedPlacement.widthCm,
+          ]
+          const selectedY = [
+            selectedPlacement.yCm,
+            selectedPlacement.yCm + selectedPlacement.heightCm / 2,
+            selectedPlacement.yCm + selectedPlacement.heightCm,
+          ]
+          const otherX = [item.xCm, item.xCm + item.widthCm / 2, item.xCm + item.widthCm]
+          const otherY = [item.yCm, item.yCm + item.heightCm / 2, item.yCm + item.heightCm]
+          const xMatch = otherX.find((candidate) =>
+            selectedX.some((value) => Math.abs(value - candidate) <= gridSize / 2),
+          )
+          const yMatch = otherY.find((candidate) =>
+            selectedY.some((value) => Math.abs(value - candidate) <= gridSize / 2),
+          )
+          if (xMatch !== undefined) guides.push({ axis: 'x', value: xMatch })
+          if (yMatch !== undefined) guides.push({ axis: 'y', value: yMatch })
+          return guides
+        })
+    : []
+  const viewBox = activeVersion
+    ? `${Math.max(0, Math.min(activeVersion.widthCm * (1 - 1 / zoom), (activeVersion.widthCm * (1 - 1 / zoom)) / 2 + pan.x)).toFixed(2)} ${Math.max(0, Math.min(activeVersion.heightCm * (1 - 1 / zoom), (activeVersion.heightCm * (1 - 1 / zoom)) / 2 + pan.y)).toFixed(2)} ${(activeVersion.widthCm / zoom).toFixed(2)} ${(activeVersion.heightCm / zoom).toFixed(2)}`
+    : undefined
 
   async function createPlan(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -148,7 +191,7 @@ export function FloorPlanPage({
     if (!activeVersion) return
     const updated = placements.map((placement) => {
       if (placement.id !== id) return placement
-      return { ...placement, ...movePlacement(placement, { xCm, yCm }) }
+      return { ...placement, ...movePlacement(placement, { xCm, yCm }, gridSize) }
     })
     const candidate = updated.find((placement) => placement.id === id)
     if (
@@ -181,7 +224,7 @@ export function FloorPlanPage({
   }
 
   function moveWithKeyboard(event: KeyboardEvent<HTMLButtonElement>, id: string) {
-    const distance = event.shiftKey ? 5 : DEFAULT_GRID_SIZE_CM
+    const distance = event.shiftKey ? 5 : gridSize
     const current = placements.find((placement) => placement.id === id)
     if (!current) return
     const displacement = {
@@ -479,6 +522,45 @@ export function FloorPlanPage({
                 {activeVersion.widthCm / 100} m × {activeVersion.heightCm / 100} m ·{' '}
                 {placements.length} mesas
               </CardDescription>
+              <div className="flex items-center gap-2 pt-2" aria-label="Controles de zoom">
+                <Button
+                  aria-label="Alejar plano"
+                  disabled={zoom <= 1}
+                  onClick={() => setZoom((current) => Math.max(1, current - 0.25))}
+                  type="button"
+                  variant="outline"
+                >
+                  −
+                </Button>
+                <output className="text-muted-foreground min-w-12 text-center text-sm">
+                  {Math.round(zoom * 100)}%
+                </output>
+                <Button
+                  aria-label="Acercar plano"
+                  disabled={zoom >= 3}
+                  onClick={() => setZoom((current) => Math.min(3, current + 0.25))}
+                  type="button"
+                  variant="outline"
+                >
+                  +
+                </Button>
+                <Button onClick={() => setZoom(1)} type="button" variant="ghost">
+                  Restablecer
+                </Button>
+                <label className="text-muted-foreground ml-2 flex items-center gap-2 text-sm">
+                  Cuadrícula
+                  <select
+                    aria-label="Tamaño de cuadrícula"
+                    className="border-border rounded-md border px-2 py-1"
+                    onChange={(event) => setGridSize(Number(event.target.value))}
+                    value={gridSize}
+                  >
+                    <option value={25}>25 cm</option>
+                    <option value={50}>50 cm</option>
+                    <option value={100}>1 m</option>
+                  </select>
+                </label>
+              </div>
               {data.areas.length > 1 && (
                 <Field className="pt-2">
                   <FieldLabel htmlFor="floor-plan-area">Zona a editar</FieldLabel>
@@ -529,19 +611,91 @@ export function FloorPlanPage({
               <svg
                 aria-label={`Plano ${activeVersion.name}`}
                 className="border-border bg-muted/30 h-auto w-full rounded-xl border shadow-inner"
-                onPointerCancel={() => setDraggingTableId(undefined)}
-                onPointerUp={finishDrag}
-                viewBox={`0 0 ${activeVersion.widthCm} ${activeVersion.heightCm}`}
+                onKeyDown={(event) => {
+                  if (event.key === '+' || event.key === '=') {
+                    event.preventDefault()
+                    setZoom((current) => Math.min(3, current + 0.25))
+                  } else if (event.key === '-') {
+                    event.preventDefault()
+                    setZoom((current) => Math.max(1, current - 0.25))
+                  } else if (event.key === '0') {
+                    event.preventDefault()
+                    setZoom(1)
+                    setPan({ x: 0, y: 0 })
+                  } else if (
+                    event.altKey &&
+                    ['ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowUp'].includes(event.key)
+                  ) {
+                    event.preventDefault()
+                    const distance = 100 / zoom
+                    setPan((current) => ({
+                      x:
+                        current.x +
+                        (event.key === 'ArrowRight'
+                          ? distance
+                          : event.key === 'ArrowLeft'
+                            ? -distance
+                            : 0),
+                      y:
+                        current.y +
+                        (event.key === 'ArrowDown'
+                          ? distance
+                          : event.key === 'ArrowUp'
+                            ? -distance
+                            : 0),
+                    }))
+                  }
+                }}
+                onPointerDown={(event) => {
+                  if (event.button !== 1 && !event.altKey) return
+                  event.preventDefault()
+                  panPointer.current = { id: event.pointerId, x: event.clientX, y: event.clientY }
+                  event.currentTarget.setPointerCapture(event.pointerId)
+                }}
+                onPointerMove={(event) => {
+                  const start = panPointer.current
+                  if (!start || start.id !== event.pointerId) return
+                  const bounds = event.currentTarget.getBoundingClientRect()
+                  setPan((current) => ({
+                    x:
+                      current.x -
+                      ((event.clientX - start.x) / bounds.width) * (activeVersion.widthCm / zoom),
+                    y:
+                      current.y -
+                      ((event.clientY - start.y) / bounds.height) * (activeVersion.heightCm / zoom),
+                  }))
+                  panPointer.current = { ...start, x: event.clientX, y: event.clientY }
+                }}
+                onPointerCancel={() => {
+                  panPointer.current = undefined
+                  setDraggingTableId(undefined)
+                }}
+                onPointerUp={(event) => {
+                  if (panPointer.current?.id === event.pointerId) {
+                    panPointer.current = undefined
+                    event.currentTarget.releasePointerCapture?.(event.pointerId)
+                  }
+                  finishDrag(event)
+                }}
+                onWheel={(event) => {
+                  event.preventDefault()
+                  setZoom((current) =>
+                    Math.min(3, Math.max(1, current + (event.deltaY < 0 ? 0.25 : -0.25))),
+                  )
+                }}
+                role="application"
+                tabIndex={0}
+                viewBox={viewBox}
               >
                 <defs>
                   <pattern
-                    height={DEFAULT_GRID_SIZE_CM}
+                    height={gridSize}
                     id="floor-plan-grid"
                     patternUnits="userSpaceOnUse"
-                    width={DEFAULT_GRID_SIZE_CM}
+                    width={gridSize}
                   >
                     <path
-                      d={`M ${DEFAULT_GRID_SIZE_CM} 0 L 0 0 0 ${DEFAULT_GRID_SIZE_CM}`}
+                      d={`M ${gridSize} 0 L 0 0 0 ${gridSize}`}
                       fill="none"
                       stroke="var(--border)"
                       strokeWidth="2"
@@ -553,6 +707,59 @@ export function FloorPlanPage({
                   height={activeVersion.heightCm}
                   width={activeVersion.widthCm}
                 />
+                {(() => {
+                  const selected =
+                    placements.find((item) => item.id === selectedId) ??
+                    elements.find((item) => item.id === selectedId)
+                  if (!selected) return null
+                  return (
+                    <g
+                      aria-hidden="true"
+                      pointerEvents="none"
+                      stroke="var(--ring)"
+                      strokeDasharray="12 10"
+                      strokeWidth="3"
+                    >
+                      <line
+                        x1={selected.xCm + selected.widthCm / 2}
+                        x2={selected.xCm + selected.widthCm / 2}
+                        y1={0}
+                        y2={activeVersion.heightCm}
+                      />
+                      <line
+                        x1={0}
+                        x2={activeVersion.widthCm}
+                        y1={selected.yCm + selected.heightCm / 2}
+                        y2={selected.yCm + selected.heightCm / 2}
+                      />
+                    </g>
+                  )
+                })()}
+                {alignmentGuides.map((guide, index) =>
+                  guide.axis === 'x' ? (
+                    <line
+                      key={`guide-${index}`}
+                      stroke="var(--destructive)"
+                      strokeDasharray="8 8"
+                      strokeWidth="2"
+                      x1={guide.value}
+                      x2={guide.value}
+                      y1={0}
+                      y2={activeVersion.heightCm}
+                    />
+                  ) : (
+                    <line
+                      key={`guide-${index}`}
+                      stroke="var(--destructive)"
+                      strokeDasharray="8 8"
+                      strokeWidth="2"
+                      x1={0}
+                      x2={activeVersion.widthCm}
+                      y1={guide.value}
+                      y2={guide.value}
+                    />
+                  ),
+                )}
                 {elements.map((element) => (
                   <g
                     key={element.id}
@@ -605,7 +812,11 @@ export function FloorPlanPage({
                     tabIndex={0}
                   >
                     <rect
-                      fill="var(--primary)"
+                      fill={
+                        layoutIssues.some((issue) => issue.placementId === placement.id)
+                          ? 'var(--destructive)'
+                          : 'var(--primary)'
+                      }
                       height={placement.heightCm}
                       onPointerDown={() => setDraggingTableId(placement.id)}
                       opacity="0.85"

@@ -15,7 +15,6 @@ import { useEffect, useState } from 'react'
 import {
   describeSpaceType,
   groupAreasByFloor,
-  selectActiveFloorPlanVersion,
   selectFloorPlanVersion,
   type FloorPlanData,
 } from '@/features/floor-plan'
@@ -39,7 +38,9 @@ export function ServicePage({
   venueId: string
 }) {
   const [selectedTableIds, setSelectedTableIds] = useState<readonly string[]>([])
-  const [selectedAreaId, setSelectedAreaId] = useState<string>('all')
+  const [selectedAreaId, setSelectedAreaId] = useState<string>(
+    plan.areas.length === 1 ? (plan.areas[0]?.id ?? 'all') : 'all',
+  )
   const reload = useLoaderReload()
   useEffect(() => {
     const interval = window.setInterval(() => reload(), 30_000)
@@ -51,10 +52,7 @@ export function ServicePage({
     }
   }, [reload])
   const activeVersion =
-    (selectedAreaId === 'all'
-      ? selectActiveFloorPlanVersion(plan.versions)
-      : selectFloorPlanVersion(plan.versions, selectedAreaId)) ??
-    (selectedAreaId === 'all' ? plan.versions[0] : undefined)
+    selectedAreaId === 'all' ? undefined : selectFloorPlanVersion(plan.versions, selectedAreaId)
   const placements = activeVersion
     ? plan.placements.filter((placement) => placement.floorPlanVersionId === activeVersion.id)
     : []
@@ -67,6 +65,34 @@ export function ServicePage({
     selectedAreaId === 'all'
       ? board.tables
       : board.tables.filter((table) => visibleTableCodes.has(table.code))
+  const activeVersionIds = new Set(
+    plan.areas
+      .map((area) => selectFloorPlanVersion(plan.versions, area.id)?.id)
+      .filter((id): id is string => Boolean(id)),
+  )
+  const tableAreaByCode = new Map(
+    plan.placements
+      .filter((placement) => activeVersionIds.has(placement.floorPlanVersionId))
+      .map((placement) => [
+        placement.code,
+        plan.areas.find((area) =>
+          plan.versions.some(
+            (version) => version.id === placement.floorPlanVersionId && version.areaId === area.id,
+          ),
+        ),
+      ]),
+  )
+  const describeTableArea = (code: string) => {
+    const area = tableAreaByCode.get(code)
+    if (!area) return 'Sin zona'
+    const floor =
+      area.floorNumber === 0
+        ? 'planta baja'
+        : area.floorNumber === null || area.floorNumber === undefined
+          ? 'sin planta'
+          : `planta ${area.floorNumber}`
+    return `${area.name} · ${floor}`
+  }
   const areaGroups = groupAreasByFloor(plan.areas)
 
   function selectArea(areaId: string) {
@@ -260,7 +286,7 @@ export function ServicePage({
                         onClick={() => toggleTable(table.id)}
                         type="button"
                       >
-                        {`Mesa ${table.code} · ${describeStatus(table.status)} · ${table.covers ?? table.maxSeats} pax`}
+                        {`Mesa ${table.code} · ${describeTableArea(table.code)} · ${describeStatus(table.status)} · ${table.covers ?? table.maxSeats} pax`}
                       </Button>
                     </li>
                   ))}

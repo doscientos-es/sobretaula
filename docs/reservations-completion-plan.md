@@ -25,6 +25,9 @@ reserva → sesión → pagos permite obtener visitas y gasto sin duplicar impor
 
 1. **Hora local.** La agenda y los turnos se expresan en la zona horaria del
    local; Postgres guarda instantes `timestamptz`. Cubrir horario de verano.
+   El flujo público convierte la selección local con `zonedLocalToIso` antes de
+   enviarla al servidor y tiene cobertura para invierno/verano de Madrid. La
+   reprogramación interna comparte la misma conversión.
 2. **Disponibilidad autoritativa.** Una RPC transaccional valida turnos, reglas,
    bloqueos, pacing y mesas, y crea/actualiza asignaciones en la misma operación.
    La restricción `EXCLUDE` queda como defensa ante concurrencia.
@@ -89,8 +92,9 @@ probada contra un proyecto de Supabase dedicado.
    queda pendiente incorporar estos bloqueos al cálculo interno. El RPC público
    también excluye bloques visibles online desde `20260910000035`, y la defensa
    transaccional de reservas web se aplica en `20260910000037`. El perfil público
-   ya ofrece áreas y la creación con área usa `20260910000038`; queda ajustar la
-   consulta de franjas para filtrar área antes de mostrar opciones.**
+   ya ofrece áreas y la creación con área usa `20260910000038`. La consulta de
+   franjas usa `public_reservation_availability_for_area`, por lo que las
+   opciones mostradas respetan la zona elegida.**
 
 ### R1 · Operación atómica y auditoría
 

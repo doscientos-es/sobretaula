@@ -2,6 +2,7 @@ export {
   createPublicReservation,
   getPublicReservation,
   cancelPublicReservation,
+  reschedulePublicReservation,
   getPublicReservationAvailability,
   getPublicReservationProfile,
 } from './application/public-reservations'
