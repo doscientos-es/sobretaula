@@ -117,16 +117,20 @@ PIN numérico de 4 a 8 cifras. El TPV enlaza la nueva terminal compartida en
 `/t/:slug/l/:venue/fichaje-terminal`: lista solo al equipo que puede operar en
 ese local, no retiene el PIN en navegador y registra entrada, pausa y salida.
 
-La migración local `20260910000083_timekeeping_terminal_security.sql` fue
-aplicada y verificada en el único proyecto autorizado como
-`timekeeping_terminal_security` (versión `20260910212711`). Los PIN nuevos usan
-bcrypt; los hashes SHA-256 heredados se reemplazan por bcrypt al primer uso
-correcto. Tras cinco PIN erróneos, el terminal queda bloqueado 15 minutos. Los
-eventos no admiten escritura directa, modificación ni borrado: solo las RPC
-atómicas con comprobación de tenant, local y asignación de empleado pueden
-crearlos, y cada evento nuevo referencia el hash del anterior. RLS permanece
-forzado y el trigger append-only y ambos RPC `SECURITY DEFINER` fueron
-comprobados por metadatos; no se crearon ni consultaron datos operativos.
+Las migraciones locales `20260910000083_timekeeping_terminal_security.sql` y
+`20260910000084_timekeeping_pin_attempt_security.sql` fueron aplicadas y
+verificadas en el único proyecto autorizado como
+`timekeeping_terminal_security` (versión `20260910212711`) y
+`timekeeping_pin_attempt_security` (versión `20260910213259`). Los PIN nuevos
+usan bcrypt; los hashes SHA-256 heredados se reemplazan por bcrypt al primer uso
+correcto. Tras cinco PIN erróneos, se bloquean durante 15 minutos tanto el
+terminal como el empleado/local, evitando eludir el límite rotando un
+identificador de navegador. Los eventos no admiten escritura directa,
+modificación ni borrado: solo las RPC atómicas con comprobación de tenant, local
+y asignación de empleado pueden crearlos, y cada evento nuevo referencia el hash
+del anterior. RLS permanece forzado y el trigger append-only y ambos RPC
+`SECURITY DEFINER` fueron comprobados por metadatos; no se crearon ni consultaron
+datos operativos.
 
 La política de terraza ya está aislada en dominio (`weather-policy.ts`): permite
 decidir de forma determinista si mantener el exterior, trasladar al interior o
