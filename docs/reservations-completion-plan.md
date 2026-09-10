@@ -14,7 +14,7 @@ reservas solicitadas. No declara ninguna de ellas como terminada.
 | Reserva interna | Alta con asignación automática, teléfono, deduplicación y agenda por fecha                | Cambio de hora/grupo, detalle e historial              |
 | Operación       | Sentar lleva a `seated`; cerrar sesión a `completed`; cancelación y no-show desde sala y agenda | Cambio de hora/grupo, historial y eventos       |
 | Clientes        | Nombre, contacto, idioma, notas y alergias                                             | Etiquetas, notas auditadas, deduplicación e historial |
-| Espera          | Cola presencial en Servicio con nombre, teléfono y asignación manual                  | Espera de fecha futura, oferta, aviso y caducidad     |
+| Espera          | Cola presencial en Servicio con nombre, teléfono, deduplicación, espera estimada y asignación manual | Espera de fecha futura, oferta, aviso y caducidad |
 | Cobro           | Sesión enlazada a reserva y pagos                                                      | Condiciones, depósitos, webhook y reembolsos          |
 
 Las piezas base están en `src/features/reservations`, `src/features/service` y

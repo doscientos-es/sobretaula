@@ -60,17 +60,19 @@ export function ServiceQueue({
   const [guestName, setGuestName] = useState("");
   const [guestPhone, setGuestPhone] = useState("");
   const [partySize, setPartySize] = useState(2);
+  const [estimatedWait, setEstimatedWait] = useState("");
   const reservations = [...board.reservations].sort(
     (left, right) =>
       Number(canMarkNoShow(right.startsAt)) - Number(canMarkNoShow(left.startsAt)) ||
       new Date(left.startsAt).getTime() - new Date(right.startsAt).getTime(),
   );
 
-  async function run(action: () => Promise<unknown>, message: string) {
+  async function run(action: () => Promise<unknown>, message: string, onSuccess?: () => void) {
     if (feedback.pending) return;
     feedback.setPending();
     try {
       await action();
+      onSuccess?.();
       onDone();
     } catch {
       feedback.setError(message);
@@ -83,7 +85,7 @@ export function ServiceQueue({
       () =>
         addToWaitlist({
           data: {
-            estimatedWaitMinutes: null,
+            estimatedWaitMinutes: estimatedWait ? Number(estimatedWait) : null,
             ...(guestName ? { guestName } : {}),
             ...(guestPhone ? { guestPhone } : {}),
             partySize,
@@ -92,6 +94,12 @@ export function ServiceQueue({
           },
         }),
       "No se ha podido anotar la espera.",
+      () => {
+        setGuestName("");
+        setGuestPhone("");
+        setEstimatedWait("");
+        setPartySize(2);
+      },
     );
   }
 
@@ -223,6 +231,11 @@ export function ServiceQueue({
                         {entry.guestPhone}
                       </a>
                     ) : null}
+                    {entry.estimatedWaitMinutes !== null ? (
+                      <span className="text-muted-foreground ml-2">
+                        {entry.estimatedWaitMinutes} min
+                      </span>
+                    ) : null}
                   </span>
                   <span className="flex gap-2">
                     <Button
@@ -298,6 +311,18 @@ export function ServiceQueue({
               required
               type="number"
               value={partySize}
+            />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="waitlist-wait">Espera estimada (minutos, opcional)</FieldLabel>
+            <Input
+              id="waitlist-wait"
+              inputMode="numeric"
+              max={480}
+              min={0}
+              onChange={(event) => setEstimatedWait(event.target.value)}
+              type="number"
+              value={estimatedWait}
             />
           </Field>
           <Button disabled={feedback.pending} type="submit">

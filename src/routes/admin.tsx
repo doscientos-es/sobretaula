@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, redirect, useRouterState } from '@tanstack/react-router'
+import { createFileRoute, Outlet, useRouterState } from '@tanstack/react-router'
 
 import { PlatformAdminFrame } from '@/app/platform-admin-frame'
 import { loadPlatformRoute } from '@/app/platform-route-loader'
