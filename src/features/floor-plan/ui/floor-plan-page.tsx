@@ -96,6 +96,28 @@ export function FloorPlanPage({
     ? (selectFloorPlanVersion(data.versions, activeArea.id) ??
       data.versions.find((version) => version.areaId === activeArea.id))
     : undefined
+  const lockStorageKey = activeVersion
+    ? `sobretaula:floor-plan-locks:${activeVersion.id}`
+    : undefined
+  const lockHydrated = useRef<string>()
+  useEffect(() => {
+    if (!lockStorageKey || typeof window === 'undefined') return
+    try {
+      const raw = window.localStorage.getItem(lockStorageKey)
+      const parsed = raw ? JSON.parse(raw) : []
+      setLockedIds(
+        Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === 'string') : [],
+      )
+    } catch {
+      setLockedIds([])
+    }
+    lockHydrated.current = lockStorageKey
+  }, [lockStorageKey])
+  useEffect(() => {
+    if (!lockStorageKey || lockHydrated.current !== lockStorageKey || typeof window === 'undefined')
+      return
+    window.localStorage.setItem(lockStorageKey, JSON.stringify(lockedIds))
+  }, [lockStorageKey, lockedIds])
   const savedPlacements = activeVersion
     ? data.placements.filter((placement) => placement.floorPlanVersionId === activeVersion.id)
     : []
