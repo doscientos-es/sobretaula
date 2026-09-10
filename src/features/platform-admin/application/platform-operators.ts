@@ -28,6 +28,10 @@ const tenantStatusInput = z.object({
   status: z.enum(['active', 'suspended']),
   tenantId: z.string().uuid(),
 })
+const tenantDeletionInput = z.object({
+  reason: z.string().trim().min(5).max(500),
+  tenantId: z.string().uuid(),
+})
 
 export interface PlatformOperator {
   createdAt: string
@@ -200,6 +204,26 @@ export const updatePlatformTenantStatus = createServerFn({ method: 'POST' })
       p_tenant_id: data.tenantId,
     })
     if (error) throw new Response('Forbidden', { status: 403 })
+  })
+
+/** Permanently deletes a suspended tenant and every dependent record it owns. */
+export const deletePlatformTenant = createServerFn({ method: 'POST' })
+  .middleware([authMiddleware])
+  .validator(tenantDeletionInput)
+  .handler(async ({ context, data }) => {
+    const request = await createPlatformOwnerClient(
+      context.principal.accessToken,
+      context.principal.userId,
+    )
+    const { error } = await request.rpc('delete_platform_tenant', {
+      p_reason: data.reason,
+      p_tenant_id: data.tenantId,
+    })
+    if (error) {
+      if (error.code === 'ST001') throw new Error('tenant_not_suspended')
+      if (error.code === 'ST002') throw new Error('tenant_has_retained_records')
+      throw new Response('Forbidden', { status: 403 })
+    }
   })
 
 /** Completes an email-bound platform invitation for the current authenticated account. */
