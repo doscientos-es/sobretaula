@@ -31,7 +31,7 @@ reproducible (comando ejecutado y su resultado).
 | F4 · Vista de servicio | Plano en vivo, sentar/mover/unir, walk-ins, espera, no-show                 | Implementado; entrega bloqueada                                                                                                                                                                                                                                              |
 | F5 · Cuenta de mesa    | Catálogo, líneas, dividir, cerrar, cobrar                                   | Implementado; las comandas son reintentables y las anulaciones quedan auditadas; entrega bloqueada                                                                                                                                                                           |
 | F6 · Facturación       | Ajustes fiscales, series, ledger/outbox, PDF, modo test                     | Implementado; entrega bloqueada                                                                                                                                                                                                                                              |
-| F7 · TPV ampliado      | Catálogo, comandas, cocina/barra, cobros, caja y arqueo                     | Parcial; el TPV ya integra selección de cuenta y toma de comandas, y existen catálogo, estaciones, estados, cola, devoluciones, descuentos, caja, histórico, UI/informe y exportación CSV inicial; faltan hardware e informe financiero completo                             |
+| F7 · TPV ampliado      | Catálogo, comandas, cocina/barra, cobros, caja y arqueo                     | Parcial; el TPV integra cuenta, comandas, cocina/barra, cobro manual, caja e informe diario con permisos; faltan hardware e informe financiero completo                                                                                                                      |
 | F8 · Reservas públicas | Reserva sin cuenta, gestión, avisos, espera y ficha de cliente              | Parcial; motor interno existe, falta cierre del flujo público                                                                                                                                                                                                                |
 | F9 · Control horario   | PIN, pausas, jornadas, auditoría y exportación                              | Parcial; eventos, transiciones, cálculo, pantalla inicial, exportación CSV, PIN almacenado como hash y endpoint de terminal para verificar PIN y registrar el evento del empleado implementados; faltan UX de terminal compartido, limitación de intentos y reglas laborales |
 | F10 · Producto         | Inventario, escandallos, alérgenos, precios por canal y carta               | Parcial; ingredientes, recetas, escandallo, inventario, UI, canales y carta pública enriquecida implementados; faltan versionado y validación visual final                                                                                                                   |
@@ -248,6 +248,23 @@ servidas, siempre antes de registrar cobros. Las migraciones
 `20260910000081_order_item_cancellation_audit_immutable.sql` están aplicadas en
 el proyecto existente: la auditoría sólo permite lectura e inserción mediante
 RLS, por lo que sus eventos son inmutables.
+
+### Cocina, cobros, caja e informes dentro del TPV (D3)
+
+La misma ruta TPV incorpora la cola de cocina y barra con avance controlado de
+estado, prevención de doble pulsación y feedback de fallo. El cobro es manual:
+el personal confirma antes la tarjeta en el datáfono y sólo después la registra,
+por lo que no se encola cuando no hay red. Camareros pueden cobrar y operar
+comandas, pero descuentos y devoluciones sólo se muestran a responsables y las
+acciones de servidor mantienen esa autorización.
+
+Los responsables ven además apertura, entradas y salidas de efectivo, desglose
+por método, arqueo e histórico de cierres, junto con el informe de ventas y el
+resumen de productos. Todos estos datos reutilizan los contratos existentes de
+caja, informes y servicio; no hay una segunda fuente de verdad. Se han validado
+el ensamblaje con TypeScript y 21 pruebas unitarias de cuenta, TPV, caja e
+informes. La integración física de datáfonos y el informe financiero/contable
+completo siguen fuera del alcance actual.
 
 ### Últimos avances del editor de sala
 
