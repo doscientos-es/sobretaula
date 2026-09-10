@@ -72,6 +72,7 @@ Servicio carga y muestra las diez últimas entregas del local para consultar el
 histórico sin salir de la operativa. Cada entrega se puede expandir por sección
 para revisar la fotografía completa del turno y compara sus cifras con el
 estado vivo actual, señalando cambios por área.
+El guardado muestra estado de progreso y error recuperable cuando la red falla.
 La comparación también conserva áreas que han desaparecido del tablero actual,
 para hacer visible una sección retirada o desactivada desde la última entrega.
 El historial admite filtrar las últimas entregas por fecha desde la propia vista.
