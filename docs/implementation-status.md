@@ -32,7 +32,7 @@ reproducible (comando ejecutado y su resultado).
 | F5 · Cuenta de mesa    | Catálogo, líneas, dividir, cerrar, cobrar                                   | Implementado; las comandas son reintentables y las anulaciones quedan auditadas; entrega bloqueada                                                                                                                                                                                                   |
 | F6 · Facturación       | Ajustes fiscales, series, ledger/outbox, PDF, modo test                     | Implementado; entrega bloqueada                                                                                                                                                                                                                                                                      |
 | F7 · TPV ampliado      | Catálogo, comandas, cocina/barra, cobros, caja y arqueo                     | Parcial; el TPV integra cuenta, comandas, cocina/barra, cobro manual, caja e informe diario con permisos; faltan hardware e informe financiero completo                                                                                                                                              |
-| F8 · Reservas públicas | Reserva sin cuenta, gestión, avisos, espera y ficha de cliente              | Parcial; reserva, disponibilidad, gestión por token y confirmación por email activas; faltan recordatorios, espera futura y privacidad avanzada                                                                                                                                                      |
+| F8 · Reservas públicas | Reserva sin cuenta, gestión, avisos, espera y ficha de cliente              | Parcial; reserva, disponibilidad, gestión por token y confirmación por email activas; recordatorio 24 h implementado localmente pendiente de aplicar/verificar; faltan espera futura y privacidad avanzada                                                                                           |
 | F9 · Control horario   | PIN, pausas, jornadas, auditoría y exportación                              | Parcial; portal personal, terminal compartido, PIN bcrypt, límites de intentos, eventos inmutables, exportación CSV y motor laboral español indicativo implementados; persisten condiciones/calendario y se explotan en el portal, pero faltan informes laborales avanzados y sincronización offline |
 | F10 · Producto         | Inventario, escandallos, alérgenos, precios por canal y carta               | Parcial; ingredientes, recetas, escandallo, inventario, UI, canales y carta pública enriquecida implementados; faltan versionado y validación visual final                                                                                                                                           |
 | F11 · Entrega          | Documentación operativa, smoke, despliegue autorizado                       | Parcial                                                                                                                                                                                                                                                                                              |
@@ -332,6 +332,22 @@ cambio que no existían esos campos y que permanecen disponibles las firmas
 anteriores, pero la validación local de TypeScript, pruebas y permisos de la
 nueva función fue interrumpida antes de completarse; por ello esta entrega aún
 no se marca como cerrada.
+
+### Recordatorio de reserva 24 h (D6, pendiente de despliegue)
+
+La migración local `20260910000086_reservation_reminders.sql` amplía el outbox
+para encolar un recordatorio email 24 horas antes, o inmediatamente cuando una
+reserva futura se crea con menos de 24 horas de margen. La clave incluye la fecha
+de comienzo para que una reprogramación cancele el recordatorio anterior y cree
+uno nuevo sin duplicados. La reclamación y el worker descartan reservas
+canceladas, completadas, no-show o ya iniciadas; los fallos conservan el backoff
+y el límite de cinco intentos existentes.
+
+El worker `process-notification-jobs` ya distingue la plantilla y el asunto de
+recordatorio, usa la idempotencia de Resend y vuelve a comprobar el estado de la
+reserva antes de enviar. La aplicación/verificación remota de esta migración está
+bloqueada temporalmente por falta de permisos del conector Supabase disponible
+en esta sesión; no se ha ejecutado SQL alternativo ni se han tocado datos reales.
 
 ### Últimos avances del editor de sala
 

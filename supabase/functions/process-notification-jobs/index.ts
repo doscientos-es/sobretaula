@@ -12,6 +12,7 @@ type Reservation = {
   ends_at: string
   guest_id: string | null
   party_size: number
+  status: string
   starts_at: string
   tenant_id: string
   venue_id: string
@@ -47,12 +48,14 @@ function escapeHtml(value: string): string {
 function emailHtml({
   branding,
   guest,
+  isReminder,
   reservation,
   tenant,
   venue,
 }: {
   branding: Branding
   guest: Guest
+  isReminder: boolean
   reservation: Reservation
   tenant: Tenant
   venue: Venue
@@ -67,26 +70,36 @@ function emailHtml({
   const logo = branding.logo_url
     ? `<img src="${escapeHtml(branding.logo_url)}" alt="${name}" style="display:block;max-height:48px;max-width:180px;" />`
     : `<p style="margin:0;color:${escapeHtml(branding.primary_color)};font-size:24px;font-weight:700;">${name}</p>`
+  const heading = isReminder ? 'Te esperamos mañana' : 'Tu reserva está confirmada'
+  const intro = isReminder
+    ? 'Este es un recordatorio de tu próxima reserva.'
+    : `Hola ${escapeHtml(guest.full_name)}, te esperamos en <strong>${escapeHtml(venue.name)}</strong>.`
   return `<!doctype html><html lang="${locale.slice(0, 2)}"><body style="margin:0;background:#f7f7f5;color:#1c1917;font-family:Arial,sans-serif;">
     <main style="max-width:560px;margin:32px auto;background:#ffffff;border-radius:16px;overflow:hidden;">
       <header style="border-top:6px solid ${escapeHtml(branding.primary_color)};padding:28px 32px 20px;">${logo}</header>
-      <section style="padding:0 32px 32px;"><h1 style="margin:0 0 16px;font-size:24px;">Tu reserva está confirmada</h1>
-        <p>Hola ${escapeHtml(guest.full_name)}, te esperamos en <strong>${escapeHtml(venue.name)}</strong>.</p>
+      <section style="padding:0 32px 32px;"><h1 style="margin:0 0 16px;font-size:24px;">${heading}</h1>
+        <p>${intro}</p>
         <div style="margin:24px 0;padding:20px;border-radius:12px;background:#f7f7f5;"><p style="margin:0 0 8px;"><strong>${escapeHtml(startsAt)}</strong></p>
           <p style="margin:0;">${reservation.party_size} ${reservation.party_size === 1 ? 'persona' : 'personas'}</p></div>
         <p style="margin:0;color:#57534e;font-size:14px;line-height:1.5;">Si necesitas hacer un cambio, responde a este correo o contacta con el restaurante.</p>
       </section></main></body></html>`
 }
 
-async function deliverEmail(job: Job): Promise<void> {
+async function deliverEmail(job: Job): Promise<'sent' | 'cancelled'> {
   if (!job.reservation_id || !job.guest_id)
     throw new Error('email_payload_missing_reservation_or_guest')
   const { data: reservation, error: reservationError } = await supabase
     .from('reservations')
-    .select('ends_at, guest_id, party_size, starts_at, tenant_id, venue_id')
+    .select('ends_at, guest_id, party_size, starts_at, status, tenant_id, venue_id')
     .eq('id', job.reservation_id)
     .maybeSingle<Reservation>()
   if (reservationError || !reservation) throw new Error('reservation_not_found')
+  if (
+    job.type === 'reminder' &&
+    (!['pending', 'confirmed'].includes(reservation.status) ||
+      new Date(reservation.starts_at).getTime() <= Date.now())
+  )
+    return 'cancelled'
   const [
     { data: guest, error: guestError },
     { data: venue, error: venueError },
@@ -130,17 +143,25 @@ async function deliverEmail(job: Job): Promise<void> {
     },
     body: JSON.stringify({
       from: `${resolvedBranding.email_from_name} <${fromEmail}>`,
-      html: emailHtml({ branding: resolvedBranding, guest, reservation, tenant, venue }),
+      html: emailHtml({
+        branding: resolvedBranding,
+        guest,
+        isReminder: job.type === 'reminder',
+        reservation,
+        tenant,
+        venue,
+      }),
       reply_to: resolvedBranding.reply_to_email ?? undefined,
-      subject: `Reserva confirmada · ${venue.name}`,
-      text: `Hola ${guest.full_name}, tu reserva en ${venue.name} está confirmada para ${reservation.starts_at}. Personas: ${reservation.party_size}.`,
+      subject: `${job.type === 'reminder' ? 'Recordatorio de reserva' : 'Reserva confirmada'} · ${venue.name}`,
+      text: `${job.type === 'reminder' ? `Te esperamos mañana en ${venue.name}` : `Hola ${guest.full_name}, tu reserva en ${venue.name} está confirmada`} para ${reservation.starts_at}. Personas: ${reservation.party_size}.`,
       to: [guest.email],
     }),
   })
   if (!response.ok) throw new Error(`resend_http_${response.status}`)
+  return 'sent'
 }
 
-async function deliver(job: Job): Promise<void> {
+async function deliver(job: Job): Promise<'sent' | 'cancelled'> {
   if (job.channel === 'email') return deliverEmail(job)
   throw new Error(`provider_not_configured:${job.channel}`)
 }
@@ -154,12 +175,24 @@ Deno.serve(async (request) => {
     p_limit: 25,
   })
   if (error) return new Response('Claim failed', { status: 500 })
-  const results: Array<{ id: string; ok: boolean }> = []
+  const results: Array<{ cancelled: boolean; id: string; sent: boolean }> = []
   for (const job of (jobs ?? []) as Job[]) {
     try {
-      await deliver(job)
-      await supabase.rpc('finish_reservation_notification_job', { p_id: job.id, p_succeeded: true })
-      results.push({ id: job.id, ok: true })
+      const outcome = await deliver(job)
+      if (outcome === 'cancelled') {
+        const { error: cancelError } = await supabase.rpc('cancel_reservation_notification_job', {
+          p_id: job.id,
+          p_reason: 'reservation_not_eligible',
+        })
+        if (cancelError) throw cancelError
+      } else {
+        const { error: finishError } = await supabase.rpc('finish_reservation_notification_job', {
+          p_id: job.id,
+          p_succeeded: true,
+        })
+        if (finishError) throw finishError
+      }
+      results.push({ cancelled: outcome === 'cancelled', id: job.id, sent: outcome === 'sent' })
     } catch (deliveryError) {
       const safeMessage =
         deliveryError instanceof Error ? deliveryError.message.slice(0, 200) : 'delivery_failed'
@@ -168,11 +201,12 @@ Deno.serve(async (request) => {
         p_succeeded: false,
         p_error: safeMessage,
       })
-      results.push({ id: job.id, ok: false })
+      results.push({ cancelled: false, id: job.id, sent: false })
     }
   }
   return Response.json({
+    cancelled: results.filter((result) => result.cancelled).length,
     processed: results.length,
-    succeeded: results.filter((result) => result.ok).length,
+    succeeded: results.filter((result) => result.sent).length,
   })
 })
