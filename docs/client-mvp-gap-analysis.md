@@ -8,7 +8,9 @@ Este documento contrasta [`client-mvp-petition.md`](./client-mvp-petition.md), q
 
 El producto tiene una base sólida para tenancy, autenticación, reservas, plano de sala, servicio, cuentas y facturación, pero no cumple todavía el MVP completo descrito por el cliente. Las mayores brechas son: TPV/catálogo operativo, cocina/barra, caja y arqueo, control horario, hardware, reservas públicas completas y cobros mixtos.
 
-Hay además un conflicto de alcance: la hoja de ruta interna deja TPV completo, escandallos y RRHH fuera o para fases posteriores, pero el cliente los incluye dentro del MVP. Este documento da prioridad a la petición del cliente para planificar el cierre.
+El alcance del cliente manda. La hoja de ruta y el diseño se han actualizado
+para tratar TPV, escandallos, control horario, caja, cocina, hardware y
+reservas públicas como alcance ampliado del MVP.
 
 ## Leyenda
 
@@ -80,7 +82,7 @@ Hay además un conflicto de alcance: la hoja de ruta interna deja TPV completo, 
 
 ## Decisiones que el producto debe cerrar antes de construir
 
-- ¿“TPV completo” entra realmente en el MVP contractual o se acepta una fase intermedia sobre el TPV actual?
+- Confirmar si la entrega será un TPV nativo completo o una integración/exportación temporal, manteniendo ambas dentro del MVP.
 - ¿Qué marcas/modelos de impresora, cajón y datáfono hay en los locales?
 - ¿Se requiere operar sin conexión durante todo el servicio o solo tolerar cortes breves?
 - ¿Qué proveedor se usará para email, SMS y WhatsApp?

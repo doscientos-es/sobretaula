@@ -40,8 +40,9 @@ validación fiscal necesaria para activar VERI*FACTU en producción.
 
 - Antes de empezar una fase, completar y verificar su fase anterior.
 - Preferir un flujo vertical completo a un módulo parcialmente terminado.
-- No construir un TPV completo ni hardware propio antes de saber, con pilotos,
-  qué integración o flujo de cobro evita más trabajo duplicado.
+- El TPV completo, cocina, caja, control horario, inventario y carta forman
+  parte del MVP ampliado del cliente; deben entregarse por verticales y con
+  dependencias explícitas.
 - Mantener todas las operaciones privadas autorizadas en servidor y cubiertas
   por RLS; una mejora de producto no justifica relajar estas garantías.
 - Añadir a cada funcionalidad una métrica de adopción o de resultado operativo.
@@ -294,8 +295,9 @@ decidir construir un TPV completo.
 
 ### Decisión de producto obligatoria antes de continuar
 
-No iniciar comandas de cocina, impresoras, arqueo de hardware o un TPV nativo
-hasta entrevistar a los pilotos y elegir entre:
+Antes de cerrar comandas, impresoras, arqueo de hardware o TPV nativo hay que
+confirmar con los pilotos la variante técnica, pero estas capacidades siguen
+dentro del MVP. Elegir entre:
 
 - integración con el TPV que ya usan;
 - exportación fiable para su circuito actual; o
@@ -358,18 +360,14 @@ ajustar turnos, activar confirmación, revisar una zona o reforzar personal.
 5. Un solo TPV dominante entre los pilotos, o una exportación sólida previa.
 6. Contabilidad/gestoría por exportación antes de una API compleja.
 
-## Fuera del MVP actual
+## Fuera del MVP ampliado
 
-No iniciar estos frentes hasta que las fases anteriores estén funcionando con
-pilotos reales y exista evidencia de demanda recurrente:
+Quedan fuera salvo nueva petición contractual:
 
-- Delivery.
-- Inventario, compras y escandallos.
-- Fidelización y marketing automatizado.
-- RRHH y planificación de turnos de empleados.
 - Marketplace propio de reservas.
-- Hardware TPV, impresoras y cocina nativos.
 - Analítica predictiva o IA.
+- Automatizaciones de marketing avanzadas.
+- Delivery propio; se mantiene la preparación para integraciones externas.
 
 ## Medición mínima por fase
 

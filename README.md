@@ -1,8 +1,10 @@
 # SobreTaula
 
 SaaS de suscripción para gestión integral de restaurantes independientes en
-España. Reserva, servicio, cuenta y factura se operan desde el plano de la
-sala. Diseño y decisiones en `docs/project-design.md` y `docs/adr/`.
+España. El MVP ampliado cubre reservas, sala, TPV, comandas, cocina/barra,
+cuenta, cobros, caja, facturación, control horario e inventario/producto.
+Diseño y decisiones en `docs/project-design.md` y `docs/adr/`; el contraste
+contra la petición del cliente está en `docs/client-mvp-gap-analysis.md`.
 
 ## Puesta en marcha
 

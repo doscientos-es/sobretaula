@@ -29,7 +29,7 @@ sin comisión por cubierto; el dato del comensal es del restaurante.
 | Propietario / gerente | Escritorio              | Configuración, facturación, informes   |
 | Jefe de sala / host   | Tablet en atril, de pie | Plano en vivo, sentar, mover, unir     |
 | Camarero              | Móvil                   | Añadir a la cuenta, cobrar             |
-| Comensal              | Móvil web               | Reservar sin fricción (fase posterior) |
+| Comensal              | Móvil web               | Reservar, gestionar y pagar sin fricción |
 | Operador Doscientos   | Escritorio              | Alta de tenants, soporte, planes       |
 
 El jefe de sala es el usuario crítico: si el plano no responde al instante y con
@@ -45,9 +45,11 @@ el dedo, el producto no se usa.
 | Vista de servicio                            | F4        | Alcance MVP                                        |
 | Cuenta de mesa (simple)                      | F5        | Alcance MVP                                        |
 | Facturación + VERI\*FACTU                    | F6        | Alcance MVP, modo test                             |
-| TPV completo (comandas, cocina, arqueo)      | Posterior | Modelo preparado                                   |
-| Web pública de reservas                      | R4        | Planificada; ver `reservations-completion-plan.md` |
-| Delivery, fidelización, inventario, informes | Posterior | Fuera de alcance                                   |
+| TPV completo (comandas, cocina, arqueo)      | F7        | Alcance ampliado del MVP                          |
+| Web pública de reservas                      | F8        | Alcance ampliado del MVP                          |
+| Control horario y empleados                  | F9        | Alcance ampliado del MVP                          |
+| Inventario, escandallos y carta              | F10       | Alcance ampliado del MVP                          |
+| Delivery, fidelización e informes avanzados  | F11       | Planificado; concretar con cliente                |
 
 La regla de escalabilidad es estructural, no aspiracional: cada módulo es un
 vertical en `src/features/<modulo>` con su dominio, aplicación, infraestructura
@@ -63,9 +65,9 @@ primer local; cada local adicional suma 75 EUR/mes netos. Se reservan hasta diez
 plazas **Founders** a 99 EUR/mes netos mientras mantengan la suscripción. La
 tarifa Founder no es una promoción temporal ni se aplica a los locales extra.
 
-Las futuras capacidades que sí puedan contratarse independientemente —reservas
-públicas, depósitos/no-shows, TPV de comandas y cocina, integraciones o analítica
-avanzada— se podrán ofrecer como complementos cuando estén disponibles.
+Las capacidades incluidas en el MVP ampliado se entregan como un flujo
+integrado. Los complementos comerciales se definirán después de validar con
+el cliente qué partes deben ser opcionales.
 
 La ampliación de reservas (agenda, autoservicio público, avisos, espera, ficha de
 cliente y grupos) tiene su desglose de datos, seguridad, entregas y validación en

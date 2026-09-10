@@ -31,7 +31,11 @@ reproducible (comando ejecutado y su resultado).
 | F4 · Vista de servicio | Plano en vivo, sentar/mover/unir, walk-ins, espera, no-show                 | Implementado; entrega bloqueada                                  |
 | F5 · Cuenta de mesa    | Catálogo, líneas, dividir, cerrar, cobrar                                   | Implementado; entrega bloqueada                                  |
 | F6 · Facturación       | Ajustes fiscales, series, ledger/outbox, PDF, modo test                     | Implementado; entrega bloqueada                                  |
-| F7 · Entrega           | Documentación operativa, smoke, despliegue autorizado                       | Parcial                                                          |
+| F7 · TPV ampliado      | Catálogo, comandas, cocina/barra, cobros, caja y arqueo                     | Pendiente; cuenta de mesa existente es base parcial              |
+| F8 · Reservas públicas | Reserva sin cuenta, gestión, avisos, espera y ficha de cliente              | Parcial; motor interno existe, falta cierre del flujo público    |
+| F9 · Control horario   | PIN, pausas, jornadas, auditoría y exportación                             | Pendiente                                                        |
+| F10 · Producto         | Inventario, escandallos, alérgenos, precios por canal y carta                | Pendiente; requisitos documentados                               |
+| F11 · Entrega          | Documentación operativa, smoke, despliegue autorizado                       | Parcial                                                          |
 
 El dashboard operativo ya calcula reservas activas, reservas de la semana,
 sesiones abiertas y cobros del día desde Supabase; la actividad detallada sigue consultándose en las vistas
@@ -149,7 +153,7 @@ ejecución, en [`reservations-completion-plan.md`](./reservations-completion-pla
 | 4   | Listado con URL, loader, pending/error, reintento, invalidación      | Implementado; falta humo dedicado contra base de pruebas              |
 | 5   | Emisión concurrente idempotente sin números duplicados               | Implementado en SQL; falta prueba concurrente contra base de pruebas  |
 | 6   | PDF privado; descarga cruzada denegada; fiscalidad fuera del cliente | Implementado; falta prueba de descarga cruzada contra base de pruebas |
-| 7   | Integración fiscal en `mock`/`test` y compatibilidad del runtime     | Pendiente: requiere runtime real y certificado, fuera del MVP         |
+| 7   | Integración fiscal en `mock`/`test` y compatibilidad del runtime     | Pendiente: requiere runtime real y certificado; forma parte del MVP ampliado |
 
 ## Checklist previa a VERI\*FACTU `prod` (ADR-0005)
 
