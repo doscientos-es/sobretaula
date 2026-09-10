@@ -95,6 +95,31 @@ export function ServicePage({
       </PageHeader>
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="space-y-6">
+          {plan.areas.length > 1 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Resumen de sala</CardTitle>
+                <CardDescription>Ocupación por zona y planta para el encargado.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                  {plan.areas.map((area) => {
+                    const areaVersion = plan.versions.find((version) => version.areaId === area.id)
+                    const codes = new Set(plan.placements.filter((placement) => placement.floorPlanVersionId === areaVersion?.id).map((placement) => placement.code))
+                    const areaTables = board.tables.filter((table) => codes.has(table.code))
+                    const occupied = areaTables.filter((table) => table.status === 'occupied').length
+                    return (
+                      <button className="border-border hover:bg-muted/60 rounded-lg border p-3 text-left transition-colors" key={area.id} onClick={() => setSelectedAreaId(area.id)} type="button">
+                        <span className="text-muted-foreground block text-xs">{area.floorNumber === 0 ? 'Planta baja' : area.floorNumber ? `Planta ${area.floorNumber}` : 'Zona'}</span>
+                        <span className="mt-1 block font-medium">{area.name}</span>
+                        <span className="text-muted-foreground mt-1 block text-sm">{occupied}/{areaTables.length} ocupadas</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
           {activeVersion && (
             <Card>
               <CardHeader>
