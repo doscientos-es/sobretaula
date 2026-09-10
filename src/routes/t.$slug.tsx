@@ -9,6 +9,9 @@ import {
   DataViewState,
   DataViewStateDescription,
   DataViewStateTitle,
+  PageHeader,
+  PageHeaderDescription,
+  PageHeaderTitle,
   Separator,
 } from '@doscientos/ui'
 import {
