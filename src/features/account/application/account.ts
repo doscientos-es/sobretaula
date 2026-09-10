@@ -21,6 +21,7 @@ import {
   recordPaymentInput,
   removeOrderItemInput,
   requireAccountEditor,
+  updateOrderItemStatusInput,
 } from './account-schema'
 
 export interface AccountView extends AccountData {
@@ -110,11 +111,37 @@ export const addOrderItem = createServerFn({ method: 'POST' })
         name_snapshot: localizedText(menuItem.name_i18n as Record<string, string>, 'es'),
         notes: data.notes ?? null,
         order_id: order.id,
+        status: 'pending',
         quantity: data.quantity,
         tenant_id: data.tenantId,
         unit_price_cents: menuItem.price_cents,
         vat_rate_bps: menuItem.vat_rate_bps,
-      })
+})
+
+/** Cocina/sala actualizan el ciclo de vida de una línea, sin alterar su precio. */
+export const updateOrderItemStatus = createServerFn({ method: 'POST' })
+  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .validator(updateOrderItemStatusInput)
+  .handler(async ({ context, data }) => {
+    requireAccountEditor(context.tenantMembership.role)
+    const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    const sessionId = await requireOpenSession(supabase, data)
+    const { data: item, error: lookupError } = await supabase
+      .from('order_items')
+      .select('id, status, orders!inner(session_id)')
+      .eq('id', data.orderItemId)
+      .eq('tenant_id', data.tenantId)
+      .eq('orders.session_id', sessionId)
+      .single()
+    if (lookupError || !item) throw new Response('Not found', { status: 404 })
+    const { error } = await supabase
+      .from('order_items')
+      .update({ status: data.status })
+      .eq('id', item.id as string)
+      .eq('tenant_id', data.tenantId)
+    if (error) throw new Error(`account_item_status_update_failed:${error.code}`)
+    return { orderItemId: data.orderItemId, status: data.status }
+  })
       .select('id')
       .single()
     if (itemError || !item) {

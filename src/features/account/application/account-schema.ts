@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { PAYMENT_METHODS } from '../domain/account'
+import { ORDER_ITEM_STATUSES, PAYMENT_METHODS } from '../domain/account'
 
 export const accountSessionInput = z.object({
   sessionId: z.string().uuid(),
@@ -16,6 +16,11 @@ export const addOrderItemInput = accountSessionInput.extend({
 
 export const removeOrderItemInput = accountSessionInput.extend({
   orderItemId: z.string().uuid(),
+})
+
+export const updateOrderItemStatusInput = accountSessionInput.extend({
+  orderItemId: z.string().uuid(),
+  status: z.enum(ORDER_ITEM_STATUSES),
 })
 
 export const recordPaymentInput = accountSessionInput.extend({

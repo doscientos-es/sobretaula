@@ -4,6 +4,7 @@ import type {
   AccountLine,
   AccountPayment,
   KitchenStation,
+  OrderItemStatus,
   PaymentMethod,
 } from '../../domain/account'
 
@@ -73,7 +74,7 @@ export async function loadAccount(
     : supabase
         .from('order_items')
         .select(
-          'id, kitchen_station, name_snapshot, notes, preparation_minutes, quantity, unit_price_cents, vat_rate_bps',
+          'id, kitchen_station, name_snapshot, notes, preparation_minutes, quantity, status, unit_price_cents, vat_rate_bps',
         )
         .eq('tenant_id', tenantId)
         .in('order_id', orderIds)
@@ -91,6 +92,7 @@ export async function loadAccount(
         ...item,
         kitchen_station: 'general',
         preparation_minutes: 15,
+        status: 'pending',
       })),
     } as typeof itemsResult
   }
@@ -103,6 +105,7 @@ export async function loadAccount(
   return {
     lines: (itemsResult.data ?? []).map((item) => ({
       id: item.id as string,
+      status: (item.status as OrderItemStatus | null) ?? 'pending',
       kitchenStation: item.kitchen_station as KitchenStation,
       name: item.name_snapshot as string,
       notes: (item.notes as string | null) ?? null,
