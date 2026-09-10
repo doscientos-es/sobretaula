@@ -1,6 +1,8 @@
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from '@doscientos/ui'
-import { Link, useRouter } from '@tanstack/react-router'
+import { Link } from '@tanstack/react-router'
 import { CircleAlert, RefreshCw } from 'lucide-react'
+
+import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
 
 export function platformRouteErrorCopy(error: unknown) {
   if (error instanceof Response && error.status === 403) {
@@ -42,12 +44,12 @@ export function PlatformRoutePending() {
 
 /** Route boundary that keeps the platform shell usable after a loader failure. */
 export function PlatformRouteError({ error, reset }: { error: unknown; reset: () => void }) {
-  const router = useRouter()
+  const reload = useLoaderReload()
   const copy = platformRouteErrorCopy(error)
 
   function retry() {
     reset()
-    void router.invalidate()
+    reload()
   }
 
   return (

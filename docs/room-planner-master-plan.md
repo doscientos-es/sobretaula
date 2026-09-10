@@ -1,0 +1,82 @@
+# Plan maestro · Planificador de sala de Sobretaula
+
+Estado: activo · Inicio: 2026-09-10
+
+Este es el plan vivo solicitado para convertir Sobretaula en el planificador de
+sala más claro y útil para restaurantes con varias zonas, pisos y terrazas.
+Se ejecuta sobre el trabajo existente de `features/floor-plan`; no se duplica
+la hoja de ruta operativa de reservas y servicio, sino que concreta la calidad
+del diseñador y su uso diario.
+
+## Norte de producto
+
+- El admin puede crear o modificar un plano sin formación técnica.
+- El jefe de sala entiende en menos de cinco segundos qué está pasando.
+- Un camarero puede actuar desde móvil o tablet con una mano.
+- Ningún cambio destruye reservas, cuentas, histórico o seguridad.
+
+## Alcance por entregas
+
+### P0 · Base fiable (en curso)
+
+- [x] Revisar modelo y editor SVG existentes.
+- [x] Mantener borrador, versión activa e historial.
+- [ ] Añadir pisos, zonas y tipo de espacio (interior, terraza cubierta,
+  terraza exterior).
+- [ ] Documentar estados de carga, error, vacío, permisos y red inestable.
+
+### P1 · Diseñador visual v1
+
+- [ ] Biblioteca de elementos: mesa, pared, puerta, barra, pilar, escalera,
+  baño, cocina, salida, obstáculo y zona.
+- [ ] Selección múltiple, duplicar, agrupar, bloquear, alinear y distribuir.
+- [ ] Zoom/pan, cuadrícula configurable, snap y guías de alineación.
+- [ ] Propiedades de elemento en panel lateral y numeración automática segura.
+- [ ] Validación visual de solapes, límites, pasillos y salidas bloqueadas.
+- [ ] Previsualización tablet/móvil y publicación programada.
+
+### P2 · Operación de turno
+
+- [ ] Plano en vivo y vista lista intercambiables.
+- [ ] Estados de mesa con color + icono + texto, nunca solo color.
+- [ ] Acciones rápidas: sentar, liberar, limpiar, bloquear, nota y asignar.
+- [ ] Pisos/zonas filtrables y vista global para encargados.
+- [ ] Combinar/separar mesas preservando reservas y cuentas.
+- [ ] Realtime, reintento idempotente y modo degradado sin conexión.
+
+### P3 · Inteligencia y casos avanzados
+
+- [ ] Recomendación de mesa por capacidad, zona, accesibilidad y próxima
+  reserva.
+- [ ] Layouts temporales para eventos, temporada y cierre de terraza.
+- [ ] Reglas meteorológicas y traslado terraza ↔ interior.
+- [ ] Pacing, cronómetros, secciones de camareros y handover de turno.
+- [ ] Importación desde imagen/PDF y plantillas reutilizables.
+
+## Edge cases obligatorios
+
+Solapes, puertas o salidas bloqueadas, mesa eliminada con reservas futuras,
+cambio concurrente, pérdida de red, dispositivo con datos antiguos, terraza
+cerrada inesperadamente, mesa combinada con clientes sentados, cambio de
+numeración, layouts que cruzan medianoche y permisos por piso/zona.
+
+## Definition of Done
+
+Cada entrega debe tener pruebas de dominio y de interacción, estados de carga,
+vacío, error y permiso, responsive para su dispositivo objetivo, teclado/foco,
+contraste WCAG 2.2 AA, auditoría de mutaciones y verificación contra Supabase
+de pruebas cuando exista el entorno dedicado.
+
+## Métricas
+
+Tiempo para crear el primer plano, tiempo para modificar una mesa, errores de
+asignación, tiempo de liberación a disponibilidad, adopción del plano durante
+el servicio y latencia de sincronización.
+
+## Siguiente trabajo ejecutable
+
+1. Auditar el dominio y la migración actual de `floor-plan`.
+2. Implementar pisos/zonas/tipo de espacio sin romper versiones existentes.
+3. Extraer el lienzo en componentes accesibles y añadir selección múltiple.
+4. Cubrir validaciones de layout con pruebas unitarias y de UI.
+5. Ejecutar `pnpm lint`, `pnpm typecheck`, `pnpm test` y `pnpm build`.

@@ -13,11 +13,11 @@ import {
   PageHeaderDescription,
   PageHeaderTitle,
   useFormFeedback,
-} from "@doscientos/ui";
-import { useEffect, useState, type FormEvent } from "react";
+} from '@doscientos/ui'
+import { useEffect, useState, type FormEvent } from 'react'
 
-import { useLoaderReload } from "@/shared/lib/router/use-loader-reload";
-import { cancelReservation, markReservationNoShow } from "@/features/service";
+import { cancelReservation, markReservationNoShow } from '@/features/service'
+import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
 
 import {
   createReservation,
@@ -25,38 +25,30 @@ import {
   getReservationsForDate,
   type ReservationAgendaItem,
   type ReservationService,
-} from "../application/reservations";
+} from '../application/reservations'
+import { reservationStatusLabel } from '../domain/reservation-labels'
 
-const weekdays = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+const weekdays = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
 
 function canMarkNoShow(startsAt: string): boolean {
-  return Date.now() - new Date(startsAt).getTime() >= 15 * 60_000;
+  return Date.now() - new Date(startsAt).getTime() >= 15 * 60_000
 }
 
 function dateOffset(days: number): string {
-  const date = new Date();
-  date.setHours(12, 0, 0, 0);
-  date.setDate(date.getDate() + days);
-  return new Intl.DateTimeFormat("en-CA").format(date);
+  const date = new Date()
+  date.setHours(12, 0, 0, 0)
+  date.setDate(date.getDate() + days)
+  return new Intl.DateTimeFormat('en-CA').format(date)
 }
-
-const reservationStatusLabels: Record<string, string> = {
-  cancelled: "Cancelada",
-  completed: "Completada",
-  confirmed: "Confirmada",
-  no_show: "No presentada",
-  pending: "Pendiente",
-  seated: "Sentada",
-};
 
 function describeServiceRules(service: ReservationService): string {
   const covers = service.maxCoversPerSlot
     ? `${service.maxCoversPerSlot} cubiertos`
-    : "aforo flexible";
+    : 'aforo flexible'
   const reservations = service.maxReservationsPerSlot
     ? `${service.maxReservationsPerSlot} reservas`
-    : "reservas flexibles";
-  return `${service.slotMinutes} min · ${covers} · ${reservations} por hueco`;
+    : 'reservas flexibles'
+  return `${service.slotMinutes} min · ${covers} · ${reservations} por hueco`
 }
 
 export function ReservationPage({
@@ -64,54 +56,54 @@ export function ReservationPage({
   tenantId,
   venueId,
 }: {
-  services: readonly ReservationService[];
-  tenantId: string;
-  venueId: string;
+  services: readonly ReservationService[]
+  tenantId: string
+  venueId: string
 }) {
-  const feedback = useFormFeedback();
-  const [serviceName, setServiceName] = useState("Comida");
-  const [weekday, setWeekday] = useState(1);
-  const [serviceId, setServiceId] = useState(services[0]?.id ?? "");
-  const [guestName, setGuestName] = useState("");
-  const [guestPhone, setGuestPhone] = useState("");
-  const [partySize, setPartySize] = useState(2);
-  const [startsAt, setStartsAt] = useState("");
-  const [agendaDate, setAgendaDate] = useState(() => new Date().toISOString().slice(0, 10));
-  const [agenda, setAgenda] = useState<ReservationAgendaItem[]>([]);
-  const [agendaLoading, setAgendaLoading] = useState(false);
-  const [agendaRefresh, setAgendaRefresh] = useState(0);
+  const feedback = useFormFeedback()
+  const [serviceName, setServiceName] = useState('Comida')
+  const [weekday, setWeekday] = useState(1)
+  const [serviceId, setServiceId] = useState(services[0]?.id ?? '')
+  const [guestName, setGuestName] = useState('')
+  const [guestPhone, setGuestPhone] = useState('')
+  const [partySize, setPartySize] = useState(2)
+  const [startsAt, setStartsAt] = useState('')
+  const [agendaDate, setAgendaDate] = useState(() => new Date().toISOString().slice(0, 10))
+  const [agenda, setAgenda] = useState<ReservationAgendaItem[]>([])
+  const [agendaLoading, setAgendaLoading] = useState(false)
+  const [agendaRefresh, setAgendaRefresh] = useState(0)
 
   async function configureService(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    feedback.setPending();
+    event.preventDefault()
+    feedback.setPending()
     try {
       await createReservationService({
         data: {
-          endsAtTime: "16:00",
+          endsAtTime: '16:00',
           maxCoversPerSlot: 20,
           maxReservationsPerSlot: 6,
           name: serviceName,
           slotMinutes: 15,
-          startsAtTime: "13:00",
+          startsAtTime: '13:00',
           tenantId,
           venueId,
           weekday,
         },
-      });
-      reload();
+      })
+      reload()
     } catch {
-      feedback.setError("No se ha podido crear el turno. Comprueba que no esté duplicado.");
+      feedback.setError('No se ha podido crear el turno. Comprueba que no esté duplicado.')
     }
   }
 
   async function reserve(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const date = new Date(startsAt);
+    event.preventDefault()
+    const date = new Date(startsAt)
     if (!serviceId || Number.isNaN(date.getTime())) {
-      feedback.setError("Selecciona un turno y una fecha válida.");
-      return;
+      feedback.setError('Selecciona un turno y una fecha válida.')
+      return
     }
-    feedback.setPending();
+    feedback.setPending()
     try {
       await createReservation({
         data: {
@@ -123,64 +115,64 @@ export function ReservationPage({
           tenantId,
           venueId,
         },
-      });
-      feedback.setSuccess("Reserva creada y mesa asignada automáticamente.");
-      setGuestName("");
-      setGuestPhone("");
-      setStartsAt("");
-      reload();
+      })
+      feedback.setSuccess('Reserva creada y mesa asignada automáticamente.')
+      setGuestName('')
+      setGuestPhone('')
+      setStartsAt('')
+      reload()
     } catch {
-      feedback.setError("No hay disponibilidad para esta petición.");
+      feedback.setError('No hay disponibilidad para esta petición.')
     }
   }
 
-  const reload = useLoaderReload();
-  const selectedService = services.find((service) => service.id === serviceId);
+  const reload = useLoaderReload()
+  const selectedService = services.find((service) => service.id === serviceId)
 
   useEffect(() => {
-    let cancelled = false;
+    let cancelled = false
     void getReservationsForDate({ data: { date: agendaDate, tenantId, venueId } })
       .then((items) => {
-        if (!cancelled) setAgenda(items);
+        if (!cancelled) setAgenda(items)
       })
       .catch(() => {
-        if (!cancelled) setAgenda([]);
+        if (!cancelled) setAgenda([])
       })
       .finally(() => {
-        if (!cancelled) setAgendaLoading(false);
-      });
+        if (!cancelled) setAgendaLoading(false)
+      })
     return () => {
-      cancelled = true;
-    };
-  }, [agendaDate, agendaRefresh, tenantId, venueId]);
+      cancelled = true
+    }
+  }, [agendaDate, agendaRefresh, tenantId, venueId])
 
   useEffect(() => {
     const interval = window.setInterval(() => {
-      setAgendaLoading(true);
-      setAgendaRefresh((value) => value + 1);
-    }, 60_000);
-    return () => window.clearInterval(interval);
-  }, []);
+      setAgendaLoading(true)
+      setAgendaRefresh((value) => value + 1)
+    }, 60_000)
+    return () => window.clearInterval(interval)
+  }, [])
 
   async function cancelAgendaReservation(reservationId: string) {
-    if (!window.confirm("¿Cancelar esta reserva?")) return;
+    if (!window.confirm('¿Cancelar esta reserva?')) return
     try {
-      await cancelReservation({ data: { reservationId, tenantId, venueId } });
-      setAgendaLoading(true);
-      setAgendaRefresh((value) => value + 1);
+      await cancelReservation({ data: { reservationId, tenantId, venueId } })
+      setAgendaLoading(true)
+      setAgendaRefresh((value) => value + 1)
     } catch {
-      feedback.setError("No se ha podido cancelar la reserva.");
+      feedback.setError('No se ha podido cancelar la reserva.')
     }
   }
 
   async function markAgendaNoShow(reservationId: string) {
-    if (!window.confirm("¿Marcar esta reserva como no presentada?")) return;
+    if (!window.confirm('¿Marcar esta reserva como no presentada?')) return
     try {
-      await markReservationNoShow({ data: { reservationId, tenantId, venueId } });
-      setAgendaLoading(true);
-      setAgendaRefresh((value) => value + 1);
+      await markReservationNoShow({ data: { reservationId, tenantId, venueId } })
+      setAgendaLoading(true)
+      setAgendaRefresh((value) => value + 1)
     } catch {
-      feedback.setError("No se ha podido marcar como no presentada.");
+      feedback.setError('No se ha podido marcar como no presentada.')
     }
   }
 
@@ -318,8 +310,8 @@ export function ReservationPage({
                 <Button
                   disabled={agendaLoading}
                   onClick={() => {
-                    setAgendaLoading(true);
-                    setAgendaRefresh((value) => value + 1);
+                    setAgendaLoading(true)
+                    setAgendaRefresh((value) => value + 1)
                   }}
                   size="sm"
                   type="button"
@@ -341,24 +333,24 @@ export function ReservationPage({
                   type="date"
                   value={agendaDate}
                   onChange={(event) => {
-                    setAgendaLoading(true);
-                    setAgendaDate(event.target.value);
+                    setAgendaLoading(true)
+                    setAgendaDate(event.target.value)
                   }}
                 />
                 <div className="mt-2 flex gap-2">
                   {[
-                    { label: "Hoy", value: dateOffset(0) },
-                    { label: "Mañana", value: dateOffset(1) },
+                    { label: 'Hoy', value: dateOffset(0) },
+                    { label: 'Mañana', value: dateOffset(1) },
                   ].map((option) => (
                     <Button
                       key={option.value}
                       onClick={() => {
-                        setAgendaLoading(true);
-                        setAgendaDate(option.value);
+                        setAgendaLoading(true)
+                        setAgendaDate(option.value)
                       }}
                       size="sm"
                       type="button"
-                      variant={agendaDate === option.value ? "default" : "outline"}
+                      variant={agendaDate === option.value ? 'default' : 'outline'}
                     >
                       {option.label}
                     </Button>
@@ -367,8 +359,8 @@ export function ReservationPage({
               </Field>
               <output aria-live="polite" className="text-muted-foreground text-sm">
                 {agendaLoading
-                  ? "Cargando agenda…"
-                  : `${agenda.length} reserva${agenda.length === 1 ? "" : "s"}`}
+                  ? 'Cargando agenda…'
+                  : `${agenda.length} reserva${agenda.length === 1 ? '' : 's'}`}
               </output>
               {agenda.length > 0 ? (
                 <ul className="grid gap-2">
@@ -379,25 +371,24 @@ export function ReservationPage({
                     >
                       <div>
                         <p className="font-medium">
-                          {new Date(item.startsAt).toLocaleTimeString("es-ES", {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}{" "}
-                          · {item.guestName ?? "Sin nombre"}
+                          {new Date(item.startsAt).toLocaleTimeString('es-ES', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}{' '}
+                          · {item.guestName ?? 'Sin nombre'}
                         </p>
                         <p className="text-muted-foreground text-sm">
-                          {item.partySize} comensales ·{" "}
-                          {reservationStatusLabels[item.status] ?? item.status}
+                          {item.partySize} comensales · {reservationStatusLabel(item.status)}
                         </p>
                       </div>
-                      <div className="text-muted-foreground text-sm text-right">
+                      <div className="text-muted-foreground text-right text-sm">
                         {item.guestPhone ? (
                           <a href={`tel:${item.guestPhone}`}>{item.guestPhone}</a>
                         ) : null}
                         <div>
-                          {item.tableIds.length ? `Mesa ${item.tableIds.join(", ")}` : "Sin mesa"}
+                          {item.tableIds.length ? `Mesa ${item.tableIds.join(', ')}` : 'Sin mesa'}
                         </div>
-                        {["pending", "confirmed"].includes(item.status) ? (
+                        {['pending', 'confirmed'].includes(item.status) ? (
                           <span className="mt-2 flex flex-wrap justify-end gap-2">
                             {canMarkNoShow(item.startsAt) ? (
                               <Button
@@ -432,5 +423,5 @@ export function ReservationPage({
         </>
       )}
     </section>
-  );
+  )
 }

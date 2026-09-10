@@ -10,24 +10,24 @@ import {
   FormFeedback,
   Input,
   useFormFeedback,
-} from "@doscientos/ui";
-import { useState, type FormEvent } from "react";
+} from '@doscientos/ui'
+import { useState, type FormEvent } from 'react'
 
-import type { Locale } from "@/shared/lib/i18n/locale";
-import { formatMoney, parsePriceToCents } from "@/shared/lib/money/money";
+import type { Locale } from '@/shared/lib/i18n/locale'
+import { formatMoney, parsePriceToCents } from '@/shared/lib/money/money'
 
-import { recordPayment, type AccountView } from "../application/account";
-import { PAYMENT_METHODS, splitEvenly, type PaymentMethod } from "../domain/account";
+import { recordPayment, type AccountView } from '../application/account'
+import { PAYMENT_METHODS, splitEvenly, type PaymentMethod } from '../domain/account'
 
 export const PAYMENT_METHOD_LABEL: Record<PaymentMethod, string> = {
-  card: "Tarjeta",
-  cash: "Efectivo",
-  other: "Otro",
-  transfer: "Transferencia",
-  voucher: "Vale",
-};
+  card: 'Tarjeta',
+  cash: 'Efectivo',
+  other: 'Otro',
+  transfer: 'Transferencia',
+  voucher: 'Vale',
+}
 
-const SPLIT_OPTIONS = [2, 3, 4, 5, 6] as const;
+const SPLIT_OPTIONS = [2, 3, 4, 5, 6] as const
 
 /** Totals of the account plus the charge form with equal-part splitting. */
 export function AccountPayments({
@@ -37,46 +37,46 @@ export function AccountPayments({
   tenantId,
   venueId,
 }: {
-  account: AccountView;
-  locale: Locale;
-  onDone: () => void;
-  tenantId: string;
-  venueId: string;
+  account: AccountView
+  locale: Locale
+  onDone: () => void
+  tenantId: string
+  venueId: string
 }) {
-  const { payments, session, totals } = account;
-  const feedback = useFormFeedback();
-  const [method, setMethod] = useState<PaymentMethod>("cash");
-  const [amountDraft, setAmountDraft] = useState((totals.balanceCents / 100).toFixed(2));
-  const [tipDraft, setTipDraft] = useState("");
-  const [parts, setParts] = useState<number>(2);
-  const open = session.status === "open";
-  const settled = totals.balanceCents === 0;
-  const shares = settled ? [] : splitEvenly(totals.balanceCents, parts);
+  const { payments, session, totals } = account
+  const feedback = useFormFeedback()
+  const [method, setMethod] = useState<PaymentMethod>('cash')
+  const [amountDraft, setAmountDraft] = useState((totals.balanceCents / 100).toFixed(2))
+  const [tipDraft, setTipDraft] = useState('')
+  const [parts, setParts] = useState<number>(2)
+  const open = session.status === 'open'
+  const settled = totals.balanceCents === 0
+  const shares = settled ? [] : splitEvenly(totals.balanceCents, parts)
 
   function charge(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const amountCents = parsePriceToCents(amountDraft);
-    const tipCents = tipDraft.trim() === "" ? 0 : parsePriceToCents(tipDraft);
+    event.preventDefault()
+    const amountCents = parsePriceToCents(amountDraft)
+    const tipCents = tipDraft.trim() === '' ? 0 : parsePriceToCents(tipDraft)
     if (amountCents === null || tipCents === null) {
-      feedback.setError("Importe no válido. Usa euros con dos decimales, por ejemplo 25,50.");
-      return;
+      feedback.setError('Importe no válido. Usa euros con dos decimales, por ejemplo 25,50.')
+      return
     }
     if (amountCents <= 0) {
-      feedback.setError("El importe debe ser mayor que cero.");
-      return;
+      feedback.setError('El importe debe ser mayor que cero.')
+      return
     }
     if (tipCents < 0) {
-      feedback.setError("La propina no puede ser negativa.");
-      return;
+      feedback.setError('La propina no puede ser negativa.')
+      return
     }
     if (amountCents > totals.balanceCents) {
       feedback.setError(
         `El importe supera el pendiente de ${formatMoney(totals.balanceCents, locale)}.`,
-      );
-      return;
+      )
+      return
     }
-    if (feedback.pending) return;
-    feedback.setPending();
+    if (feedback.pending) return
+    feedback.setPending()
     void recordPayment({
       data: {
         amountCents,
@@ -88,7 +88,7 @@ export function AccountPayments({
       },
     })
       .then(() => onDone())
-      .catch(() => feedback.setError("No se ha podido registrar el cobro."));
+      .catch(() => feedback.setError('No se ha podido registrar el cobro.'))
   }
 
   return (
@@ -202,7 +202,7 @@ export function AccountPayments({
                 <span className="text-muted-foreground">
                   {PAYMENT_METHOD_LABEL[payment.method]}
                   <span className="ml-2 text-xs">
-                    {new Intl.DateTimeFormat(locale, { hour: "2-digit", minute: "2-digit" }).format(
+                    {new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit' }).format(
                       new Date(payment.paidAt),
                     )}
                   </span>
@@ -217,5 +217,5 @@ export function AccountPayments({
         )}
       </CardContent>
     </Card>
-  );
+  )
 }

@@ -10,36 +10,36 @@ import {
   FormFeedback,
   Input,
   useFormFeedback,
-} from "@doscientos/ui";
-import { useState, type FormEvent } from "react";
+} from '@doscientos/ui'
+import { useState, type FormEvent } from 'react'
 
 import {
   cancelReservation,
   markReservationNoShow,
   seatReservation,
-} from "../application/table-service";
-import { addToWaitlist, removeFromWaitlist, seatWaitlistEntry } from "../application/waitlist";
-import type { ServiceBoard } from "../domain/service-board";
-import { describeTime } from "./service-labels";
+} from '../application/table-service'
+import { addToWaitlist, removeFromWaitlist, seatWaitlistEntry } from '../application/waitlist'
+import type { ServiceBoard } from '../domain/service-board'
+import { describeTime } from './service-labels'
 
 function reservationTableLabel(
-  reservation: ServiceBoard["reservations"][number],
+  reservation: ServiceBoard['reservations'][number],
   board: ServiceBoard,
 ): string {
-  const codes = new Map(board.tables.map((table) => [table.id, table.code]));
-  const labels = reservation.tableIds.map((id) => codes.get(id)).filter(Boolean);
-  return labels.length > 0 ? labels.join(", ") : "Sin mesa";
+  const codes = new Map(board.tables.map((table) => [table.id, table.code]))
+  const labels = reservation.tableIds.map((id) => codes.get(id)).filter(Boolean)
+  return labels.length > 0 ? labels.join(', ') : 'Sin mesa'
 }
 
 function reservationTiming(startsAt: string): { label: string; tone: string } {
-  const minutes = (new Date(startsAt).getTime() - Date.now()) / 60_000;
-  if (minutes < -15) return { label: "Retrasada", tone: "text-destructive" };
-  if (minutes <= 30) return { label: "Llega ahora", tone: "text-amber-700" };
-  return { label: "Próxima", tone: "text-muted-foreground" };
+  const minutes = (new Date(startsAt).getTime() - Date.now()) / 60_000
+  if (minutes < -15) return { label: 'Retrasada', tone: 'text-destructive' }
+  if (minutes <= 30) return { label: 'Llega ahora', tone: 'text-amber-700' }
+  return { label: 'Próxima', tone: 'text-muted-foreground' }
 }
 
 function canMarkNoShow(startsAt: string): boolean {
-  return Date.now() - new Date(startsAt).getTime() >= 15 * 60_000;
+  return Date.now() - new Date(startsAt).getTime() >= 15 * 60_000
 }
 
 /** The door: bookings about to arrive and parties waiting without one. */
@@ -50,37 +50,37 @@ export function ServiceQueue({
   tenantId,
   venueId,
 }: {
-  board: ServiceBoard;
-  onDone: () => void;
-  selectedTableIds: readonly string[];
-  tenantId: string;
-  venueId: string;
+  board: ServiceBoard
+  onDone: () => void
+  selectedTableIds: readonly string[]
+  tenantId: string
+  venueId: string
 }) {
-  const feedback = useFormFeedback();
-  const [guestName, setGuestName] = useState("");
-  const [guestPhone, setGuestPhone] = useState("");
-  const [partySize, setPartySize] = useState(2);
-  const [estimatedWait, setEstimatedWait] = useState("");
+  const feedback = useFormFeedback()
+  const [guestName, setGuestName] = useState('')
+  const [guestPhone, setGuestPhone] = useState('')
+  const [partySize, setPartySize] = useState(2)
+  const [estimatedWait, setEstimatedWait] = useState('')
   const reservations = [...board.reservations].sort(
     (left, right) =>
       Number(canMarkNoShow(right.startsAt)) - Number(canMarkNoShow(left.startsAt)) ||
       new Date(left.startsAt).getTime() - new Date(right.startsAt).getTime(),
-  );
+  )
 
   async function run(action: () => Promise<unknown>, message: string, onSuccess?: () => void) {
-    if (feedback.pending) return;
-    feedback.setPending();
+    if (feedback.pending) return
+    feedback.setPending()
     try {
-      await action();
-      onSuccess?.();
-      onDone();
+      await action()
+      onSuccess?.()
+      onDone()
     } catch {
-      feedback.setError(message);
+      feedback.setError(message)
     }
   }
 
   function addWaiting(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+    event.preventDefault()
     void run(
       () =>
         addToWaitlist({
@@ -93,14 +93,14 @@ export function ServiceQueue({
             venueId,
           },
         }),
-      "No se ha podido anotar la espera.",
+      'No se ha podido anotar la espera.',
       () => {
-        setGuestName("");
-        setGuestPhone("");
-        setEstimatedWait("");
-        setPartySize(2);
+        setGuestName('')
+        setGuestPhone('')
+        setEstimatedWait('')
+        setPartySize(2)
       },
-    );
+    )
   }
 
   return (
@@ -123,10 +123,10 @@ export function ServiceQueue({
                 >
                   <span className="min-w-0">
                     <span className="block font-medium">
-                      {describeTime(reservation.startsAt)} · {reservation.guestName ?? "Sin nombre"}
+                      {describeTime(reservation.startsAt)} · {reservation.guestName ?? 'Sin nombre'}
                     </span>
                     <span className="text-muted-foreground block text-xs">
-                      {reservation.partySize} pax ·{" "}
+                      {reservation.partySize} pax ·{' '}
                       {reservation.guestPhone ? (
                         <a
                           className="text-primary underline underline-offset-2"
@@ -135,8 +135,8 @@ export function ServiceQueue({
                           {reservation.guestPhone}
                         </a>
                       ) : (
-                        "Sin teléfono"
-                      )}{" "}
+                        'Sin teléfono'
+                      )}{' '}
                       · Mesa {reservationTableLabel(reservation, board)}
                     </span>
                   </span>
@@ -159,7 +159,7 @@ export function ServiceQueue({
                                 venueId,
                               },
                             }),
-                          "No se ha podido sentar la reserva.",
+                          'No se ha podido sentar la reserva.',
                         )
                       }
                       type="button"
@@ -169,7 +169,7 @@ export function ServiceQueue({
                     <Button
                       disabled={feedback.pending || !canMarkNoShow(reservation.startsAt)}
                       onClick={() =>
-                        window.confirm("¿Marcar esta reserva como no presentada?")
+                        window.confirm('¿Marcar esta reserva como no presentada?')
                           ? void run(
                               () =>
                                 markReservationNoShow({
@@ -179,7 +179,7 @@ export function ServiceQueue({
                                     venueId,
                                   },
                                 }),
-                              "No se ha podido marcar como no presentada.",
+                              'No se ha podido marcar como no presentada.',
                             )
                           : undefined
                       }
@@ -191,7 +191,7 @@ export function ServiceQueue({
                     <Button
                       disabled={feedback.pending}
                       onClick={() =>
-                        window.confirm("¿Cancelar esta reserva y liberar su mesa?")
+                        window.confirm('¿Cancelar esta reserva y liberar su mesa?')
                           ? void run(
                               () =>
                                 cancelReservation({
@@ -201,7 +201,7 @@ export function ServiceQueue({
                                     venueId,
                                   },
                                 }),
-                              "No se ha podido cancelar la reserva.",
+                              'No se ha podido cancelar la reserva.',
                             )
                           : undefined
                       }
@@ -223,9 +223,9 @@ export function ServiceQueue({
           ) : (
             <ul className="space-y-2 text-sm">
               {board.waitlist.map((entry) => (
-                <li key={entry.id} className="flex items-center justify-between gap-2">
+                <li key={entry.id} className="flex flex-wrap items-center justify-between gap-3">
                   <span>
-                    {`${entry.guestName ?? "Sin nombre"} · ${entry.partySize} pax`}
+                    {`${entry.guestName ?? 'Sin nombre'} · ${entry.partySize} pax`}
                     {entry.guestPhone ? (
                       <a className="ml-2 underline" href={`tel:${entry.guestPhone}`}>
                         {entry.guestPhone}
@@ -237,7 +237,7 @@ export function ServiceQueue({
                       </span>
                     ) : null}
                   </span>
-                  <span className="flex gap-2">
+                  <span className="flex flex-wrap gap-2">
                     <Button
                       disabled={feedback.pending || selectedTableIds.length === 0}
                       onClick={() =>
@@ -251,7 +251,7 @@ export function ServiceQueue({
                                 waitlistEntryId: entry.id,
                               },
                             }),
-                          "Esas mesas no sirven para este grupo.",
+                          'Esas mesas no sirven para este grupo.',
                         )
                       }
                       type="button"
@@ -270,7 +270,7 @@ export function ServiceQueue({
                                 waitlistEntryId: entry.id,
                               },
                             }),
-                          "No se ha podido quitar de la lista.",
+                          'No se ha podido quitar de la lista.',
                         )
                       }
                       type="button"
@@ -332,5 +332,5 @@ export function ServiceQueue({
         <FormFeedback pendingLabel="Actualizando la puerta…" state={feedback.state} />
       </CardContent>
     </Card>
-  );
+  )
 }

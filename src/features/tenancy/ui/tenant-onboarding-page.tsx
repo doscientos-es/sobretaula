@@ -96,22 +96,22 @@ export function TenantOnboardingPage() {
             {createdTenant ? (
               <div className="space-y-5">
                 <p className="text-sm leading-6">
-                  Tu restaurante ya está creado. Puedes dejar preparado VERI*FACTU ahora o continuar
-                  y configurarlo desde Facturación cuando tengas el certificado a mano.
+                  Tu restaurante ya está creado. Empieza creando el primer local y después podrás
+                  configurar la sala, las reservas y VERI*FACTU desde el panel.
                 </p>
                 <div className="flex flex-wrap gap-3">
                   <Button
-                    onPress={() => window.location.assign(`/t/${createdTenant.slug}/facturacion`)}
+                    onPress={() => window.location.assign(`/t/${createdTenant.slug}/l/nuevo`)}
                     size="lg"
                   >
-                    Configurar VERI*FACTU ahora
+                    Crear primer local
                   </Button>
                   <Button
-                    onPress={() => window.location.assign(`/t/${createdTenant.slug}`)}
+                    onPress={() => window.location.assign(`/t/${createdTenant.slug}/facturacion`)}
                     size="lg"
                     variant="outline"
                   >
-                    Lo haré más tarde
+                    Configurar VERI*FACTU
                   </Button>
                 </div>
               </div>
@@ -199,7 +199,7 @@ export function TenantOnboardingPage() {
                 </div>
                 <FormFeedback pendingLabel="Guardando configuración…" state={feedback.state} />
                 <Button disabled={feedback.pending} size="lg" type="submit">
-                  Continuar con el pago
+                  Crear restaurante
                 </Button>
               </form>
             )}

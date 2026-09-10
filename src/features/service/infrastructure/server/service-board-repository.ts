@@ -1,4 +1,4 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 import {
   buildServiceTableStates,
@@ -8,12 +8,12 @@ import {
   type ServiceSession,
   type ServiceTable,
   type WaitlistEntry,
-} from "../../domain/service-board";
+} from '../../domain/service-board'
 
 export interface ServiceBoardQuery {
-  now: Date;
-  tenantId: string;
-  venueId: string;
+  now: Date
+  tenantId: string
+  venueId: string
 }
 
 /**
@@ -24,101 +24,101 @@ export async function loadServiceBoard(
   supabase: SupabaseClient,
   { now, tenantId, venueId }: ServiceBoardQuery,
 ): Promise<ServiceBoard> {
-  const windowStart = new Date(now.getTime() - SERVICE_SHIFT_WINDOW_MINUTES * 60_000);
-  const windowEnd = new Date(now.getTime() + SERVICE_SHIFT_WINDOW_MINUTES * 60_000);
+  const windowStart = new Date(now.getTime() - SERVICE_SHIFT_WINDOW_MINUTES * 60_000)
+  const windowEnd = new Date(now.getTime() + SERVICE_SHIFT_WINDOW_MINUTES * 60_000)
 
   const [tablesResult, sessionsResult, reservationsResult, waitlistResult] = await Promise.all([
     supabase
-      .from("tables")
-      .select("code, id, max_seats, min_seats")
-      .eq("tenant_id", tenantId)
-      .eq("venue_id", venueId)
-      .eq("is_active", true)
-      .order("code"),
+      .from('tables')
+      .select('code, id, max_seats, min_seats')
+      .eq('tenant_id', tenantId)
+      .eq('venue_id', venueId)
+      .eq('is_active', true)
+      .order('code'),
     supabase
-      .from("table_sessions")
-      .select("covers, id, opened_at, reservation_id, table_ids")
-      .eq("tenant_id", tenantId)
-      .eq("venue_id", venueId)
-      .eq("status", "open")
-      .order("opened_at"),
+      .from('table_sessions')
+      .select('covers, id, opened_at, reservation_id, table_ids')
+      .eq('tenant_id', tenantId)
+      .eq('venue_id', venueId)
+      .eq('status', 'open')
+      .order('opened_at'),
     supabase
-      .from("reservations")
-      .select("guest_id, id, party_size, starts_at")
-      .eq("tenant_id", tenantId)
-      .eq("venue_id", venueId)
-      .in("status", ["pending", "confirmed"])
-      .gte("starts_at", windowStart.toISOString())
-      .lte("starts_at", windowEnd.toISOString())
-      .order("starts_at"),
+      .from('reservations')
+      .select('guest_id, id, party_size, starts_at')
+      .eq('tenant_id', tenantId)
+      .eq('venue_id', venueId)
+      .in('status', ['pending', 'confirmed'])
+      .gte('starts_at', windowStart.toISOString())
+      .lte('starts_at', windowEnd.toISOString())
+      .order('starts_at'),
     supabase
-      .from("waitlist")
-      .select("estimated_wait_minutes, guest_id, id, party_size, requested_for")
-      .eq("tenant_id", tenantId)
-      .eq("venue_id", venueId)
-      .order("created_at"),
-  ]);
+      .from('waitlist')
+      .select('estimated_wait_minutes, guest_id, id, party_size, requested_for')
+      .eq('tenant_id', tenantId)
+      .eq('venue_id', venueId)
+      .order('created_at'),
+  ])
 
   const error = [
     tablesResult.error,
     sessionsResult.error,
     reservationsResult.error,
     waitlistResult.error,
-  ].find(Boolean);
-  if (error) throw new Error(`service_board_load_failed:${error.code}`);
+  ].find(Boolean)
+  if (error) throw new Error(`service_board_load_failed:${error.code}`)
 
-  const reservationIds = (reservationsResult.data ?? []).map((reservation) => reservation.id);
+  const reservationIds = (reservationsResult.data ?? []).map((reservation) => reservation.id)
   const guestIds = [
     ...(reservationsResult.data ?? []).map((reservation) => reservation.guest_id),
     ...(waitlistResult.data ?? []).map((entry) => entry.guest_id),
-  ].filter((guestId): guestId is string => typeof guestId === "string");
+  ].filter((guestId): guestId is string => typeof guestId === 'string')
 
   const [assignmentsResult, guestsResult] = await Promise.all([
     reservationIds.length === 0
       ? Promise.resolve({ data: [], error: null })
       : supabase
-          .from("reservation_tables")
-          .select("reservation_id, table_id")
-          .eq("tenant_id", tenantId)
-          .in("reservation_id", reservationIds),
+          .from('reservation_tables')
+          .select('reservation_id, table_id')
+          .eq('tenant_id', tenantId)
+          .in('reservation_id', reservationIds),
     guestIds.length === 0
       ? Promise.resolve({ data: [], error: null })
       : supabase
-          .from("guests")
-          .select("full_name, id, phone")
-          .eq("tenant_id", tenantId)
-          .in("id", [...new Set(guestIds)]),
-  ]);
-  if (assignmentsResult.error || guestsResult.error) throw new Error("service_board_load_failed");
+          .from('guests')
+          .select('full_name, id, phone')
+          .eq('tenant_id', tenantId)
+          .in('id', [...new Set(guestIds)]),
+  ])
+  if (assignmentsResult.error || guestsResult.error) throw new Error('service_board_load_failed')
 
-  const assignedTables = new Map<string, string[]>();
+  const assignedTables = new Map<string, string[]>()
   for (const assignment of assignmentsResult.data ?? []) {
-    const current = assignedTables.get(assignment.reservation_id) ?? [];
-    assignedTables.set(assignment.reservation_id, [...current, assignment.table_id]);
+    const current = assignedTables.get(assignment.reservation_id) ?? []
+    assignedTables.set(assignment.reservation_id, [...current, assignment.table_id])
   }
   const guestNames = new Map<string, string>(
     (guestsResult.data ?? []).map((guest) => [guest.id as string, guest.full_name as string]),
-  );
+  )
   const guestPhones = new Map<string, string | null>(
     (guestsResult.data ?? []).map((guest) => [
       guest.id as string,
       (guest.phone as string | null) ?? null,
     ]),
-  );
+  )
 
   const tables: ServiceTable[] = (tablesResult.data ?? []).map((table) => ({
     code: table.code,
     id: table.id,
     maxSeats: table.max_seats,
     minSeats: table.min_seats,
-  }));
+  }))
   const sessions: ServiceSession[] = (sessionsResult.data ?? []).map((session) => ({
     covers: session.covers,
     id: session.id,
     openedAt: session.opened_at,
     reservationId: session.reservation_id,
     tableIds: session.table_ids,
-  }));
+  }))
   const reservations: ServiceReservation[] = (reservationsResult.data ?? []).map((reservation) => ({
     guestName: reservation.guest_id ? (guestNames.get(reservation.guest_id) ?? null) : null,
     guestPhone: reservation.guest_id ? (guestPhones.get(reservation.guest_id) ?? null) : null,
@@ -126,7 +126,7 @@ export async function loadServiceBoard(
     partySize: reservation.party_size,
     startsAt: reservation.starts_at,
     tableIds: assignedTables.get(reservation.id) ?? [],
-  }));
+  }))
   const waitlist: WaitlistEntry[] = (waitlistResult.data ?? []).map((entry) => ({
     estimatedWaitMinutes: entry.estimated_wait_minutes,
     guestName: entry.guest_id ? (guestNames.get(entry.guest_id) ?? null) : null,
@@ -134,7 +134,7 @@ export async function loadServiceBoard(
     id: entry.id,
     partySize: entry.party_size,
     requestedFor: entry.requested_for,
-  }));
+  }))
 
   return {
     reservations,
@@ -147,5 +147,5 @@ export async function loadServiceBoard(
       windowMinutes: SERVICE_SHIFT_WINDOW_MINUTES,
     }),
     waitlist,
-  };
+  }
 }

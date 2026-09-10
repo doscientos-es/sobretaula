@@ -1,19 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-import { loadPlatformRoute } from '@/app/platform-route-loader'
-import {
-  getPlatformOperators,
-  PlatformOperatorsPage,
-  PlatformRouteError,
-  PlatformRoutePending,
-} from '@/features/platform-admin'
+import { loadPlatformRoute, platformRouteState } from '@/app/platform-route-loader'
+import { getPlatformOperators, PlatformOperatorsPage } from '@/features/platform-admin'
 
 export const Route = createFileRoute('/admin/equipo')({
   loader: () => loadPlatformRoute('/admin/equipo', () => getPlatformOperators()),
   component: PlatformOperatorsRoute,
-  errorComponent: PlatformRouteError,
-  pendingComponent: PlatformRoutePending,
-  pendingMs: 200,
+  ...platformRouteState,
 })
 
 function PlatformOperatorsRoute() {

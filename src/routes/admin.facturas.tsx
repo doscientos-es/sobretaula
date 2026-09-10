@@ -1,16 +1,13 @@
 import { PageHeader, PageHeaderDescription, PageHeaderTitle } from '@doscientos/ui'
 import { createFileRoute } from '@tanstack/react-router'
 
-import { loadPlatformRoute } from '@/app/platform-route-loader'
-import { PlatformRouteError, PlatformRoutePending } from '@/features/platform-admin'
+import { loadPlatformRoute, platformRouteState } from '@/app/platform-route-loader'
 import { getPlatformFiscalInvoices, PlatformFiscalInvoiceList } from '@/features/platform-billing'
 
 export const Route = createFileRoute('/admin/facturas')({
   loader: () => loadPlatformRoute('/admin/facturas', () => getPlatformFiscalInvoices()),
   component: PlatformFiscalInvoicesRoute,
-  errorComponent: PlatformRouteError,
-  pendingComponent: PlatformRoutePending,
-  pendingMs: 200,
+  ...platformRouteState,
 })
 
 function PlatformFiscalInvoicesRoute() {

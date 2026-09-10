@@ -1,5 +1,13 @@
 import { redirect } from '@tanstack/react-router'
 
+import { PlatformRouteError, PlatformRoutePending } from '@/features/platform-admin'
+
+export const platformRouteState = {
+  errorComponent: PlatformRouteError,
+  pendingComponent: PlatformRoutePending,
+  pendingMs: 200,
+}
+
 /** Gives every protected platform loader the same session-expiry behavior. */
 export async function loadPlatformRoute<T>(redirectTo: string, load: () => Promise<T>): Promise<T> {
   try {

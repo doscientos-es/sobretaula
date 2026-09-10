@@ -1,12 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-import { loadPlatformRoute } from '@/app/platform-route-loader'
+import { loadPlatformRoute, platformRouteState } from '@/app/platform-route-loader'
 import {
   getPlatformAuditLog,
   getPlatformTenantDetail,
   PlatformTenantDetailsPage,
-  PlatformRouteError,
-  PlatformRoutePending,
 } from '@/features/platform-admin'
 
 export const Route = createFileRoute('/admin/tenants/$tenantId')({
@@ -19,9 +17,7 @@ export const Route = createFileRoute('/admin/tenants/$tenantId')({
       return { auditEvents, tenant }
     }),
   component: PlatformTenantDetailsRoute,
-  errorComponent: PlatformRouteError,
-  pendingComponent: PlatformRoutePending,
-  pendingMs: 200,
+  ...platformRouteState,
 })
 
 function PlatformTenantDetailsRoute() {

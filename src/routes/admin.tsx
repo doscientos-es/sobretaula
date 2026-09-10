@@ -1,12 +1,8 @@
 import { createFileRoute, Outlet, useRouterState } from '@tanstack/react-router'
 
 import { PlatformAdminFrame } from '@/app/platform-admin-frame'
-import { loadPlatformRoute } from '@/app/platform-route-loader'
-import {
-  getPlatformAdminAccess,
-  PlatformRouteError,
-  PlatformRoutePending,
-} from '@/features/platform-admin'
+import { loadPlatformRoute, platformRouteState } from '@/app/platform-route-loader'
+import { getPlatformAdminAccess } from '@/features/platform-admin'
 
 export const Route = createFileRoute('/admin')({
   beforeLoad: ({ location }) => {
@@ -14,9 +10,7 @@ export const Route = createFileRoute('/admin')({
     return loadPlatformRoute('/admin', () => getPlatformAdminAccess())
   },
   component: PlatformAdminLayout,
-  errorComponent: PlatformRouteError,
-  pendingComponent: PlatformRoutePending,
-  pendingMs: 200,
+  ...platformRouteState,
 })
 
 function PlatformAdminLayout() {

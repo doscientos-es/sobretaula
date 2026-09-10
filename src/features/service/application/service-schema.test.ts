@@ -162,6 +162,27 @@ describe('waitlistEntryInput', () => {
       }).success,
     ).toBe(false)
   })
+
+  it('accepts contact details and caps the estimated wait', () => {
+    expect(
+      waitlistEntryInput.safeParse({
+        estimatedWaitMinutes: 45,
+        guestName: 'Ana',
+        guestPhone: '+34600111222',
+        partySize: 2,
+        tenantId,
+        venueId,
+      }).success,
+    ).toBe(true)
+    expect(
+      waitlistEntryInput.safeParse({
+        estimatedWaitMinutes: 481,
+        partySize: 2,
+        tenantId,
+        venueId,
+      }).success,
+    ).toBe(false)
+  })
 })
 
 describe('seatWaitlistEntryInput', () => {
