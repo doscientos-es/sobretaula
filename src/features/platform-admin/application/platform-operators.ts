@@ -221,7 +221,7 @@ export const deletePlatformTenant = createServerFn({ method: 'POST' })
     })
     if (error) {
       if (error.code === 'ST001') throw new Error('tenant_not_suspended')
-      if (error.code === 'ST002') throw new Error('tenant_has_retained_records')
+      if (error.code === 'ST003') throw new Error('tenant_already_deleted')
       throw new Response('Forbidden', { status: 403 })
     }
   })

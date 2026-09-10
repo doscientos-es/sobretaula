@@ -71,6 +71,7 @@ export const getPlatformDashboard = createServerFn({ method: 'GET' })
       supabase
         .from('tenants')
         .select('created_at, id, name, slug, status')
+        .is('deleted_at', null)
         .order('created_at', { ascending: false }),
       supabase
         .from('subscriptions')
