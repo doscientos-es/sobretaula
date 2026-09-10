@@ -130,7 +130,8 @@ seguras y se bloquean las que puedan perder una reserva o cuenta.
   el umbral configurable del local.
 - [~] Importación desde imagen/PDF y plantillas reutilizables: existe formato
   JSON versionado, validación, exportación y selector/importador visual; queda
-  la extracción asistida desde imagen/PDF.
+  la extracción asistida desde imagen/PDF. El contrato de parser ya exige
+  revisión manual cuando no hay OCR/vectorización disponible.
 
 ## Edge cases obligatorios
 

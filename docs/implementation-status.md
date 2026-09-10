@@ -172,12 +172,12 @@ hasta que un asesor fiscal valide el reparto de responsabilidad.
 ### Última ejecución local (2026-09-10)
 
 Tras añadir la validación geométrica de la huella rotada de mesas, la suite
-local queda en 63 archivos correctos y 268 pruebas correctas; 1 archivo y 3
+local queda en 63 archivos correctos y 269 pruebas correctas; 1 archivo y 3
 pruebas RLS siguen omitidos por falta de entorno Supabase dedicado.
 
 La verificación posterior de producción (`pnpm build`) también completa
 correctamente y genera el artefacto Nitro/Vercel. La suite global actual queda
-en 63 archivos y 268 pruebas correctas; 1 archivo y 3 pruebas RLS continúan
+en 63 archivos y 269 pruebas correctas; 1 archivo y 3 pruebas RLS continúan
 omitidos por el conector no autorizado.
 
 | Comando                | Resultado                                                                                    |
@@ -185,7 +185,7 @@ omitidos por el conector no autorizado.
 | `pnpm format:check`    | Pendiente por 5 archivos ajenos al alcance actual                                            |
 | `pnpm lint`            | Correcto                                                                                     |
 | `pnpm structure:check` | Correcto localmente; el asset de login vive en `public/` y los módulos usan nombres estándar |
-| `pnpm test`            | 63 archivos y 268 pruebas correctas; 1 archivo y 3 pruebas RLS omitidas                      |
+| `pnpm test`            | 63 archivos y 269 pruebas correctas; 1 archivo y 3 pruebas RLS omitidas                      |
 | `pnpm typecheck`       | Correcto                                                                                     |
 | `pnpm quality`         | Correcto                                                                                     |
 | `pnpm build`           | Correcto; solo avisos de Vite/chunks                                                         |
