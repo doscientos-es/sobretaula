@@ -21,11 +21,13 @@ export {
 export { FloorPlanPage } from './ui/floor-plan-page'
 export type {
   FloorPlanArea,
+  FloorAreaGroup,
   FloorPlanData,
   FloorPlanElement,
   FloorPlanTablePlacement,
   FloorPlanVersion,
   PlanElementKind,
 } from './domain/floor-plan'
+export { groupAreasByFloor } from './domain/floor-plan'
 export type { EditorHistory } from './domain/editor-history'
 export type { PlanBounds, PlanPlacement, Position } from './domain/geometry'

@@ -7,15 +7,15 @@ reservas solicitadas. No declara ninguna de ellas como terminada.
 
 ## 1. Base existente y brechas
 
-| Capacidad       | Existe                                                                                               | Falta para el alcance final                           |
-| --------------- | ---------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
-| Turnos y reglas | `services`, `availability_rules`, duración y pacing                                                  | Edición, máximo de grupo y regla/horario por área     |
-| Disponibilidad  | Cierres, best-fit y `EXCLUDE` de mesas                                                               | Transacción única para crear, editar y cancelar       |
-| Reserva interna | Alta con asignación automática, teléfono, deduplicación y agenda por fecha                           | Cambio de hora/grupo, detalle e historial             |
-| Operación       | Sentar lleva a `seated`; cerrar sesión a `completed`; cancelación y no-show desde sala y agenda      | Cambio de hora/grupo, historial y eventos             |
-| Clientes        | Nombre, contacto, idioma, notas y alergias                                                           | Etiquetas, notas auditadas, deduplicación e historial |
-| Espera          | Cola presencial en Servicio con nombre, teléfono, deduplicación, espera estimada y asignación manual | Espera de fecha futura, oferta, aviso y caducidad     |
-| Cobro           | Sesión enlazada a reserva y pagos                                                                    | Condiciones, depósitos, webhook y reembolsos          |
+| Capacidad       | Existe                                                                                                   | Falta para el alcance final                           |
+| --------------- | -------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| Turnos y reglas | `services`, `availability_rules`, duración y pacing                                                      | Edición, máximo de grupo y regla/horario por área     |
+| Disponibilidad  | Cierres, best-fit y `EXCLUDE` de mesas                                                                   | Transacción única para crear, editar y cancelar       |
+| Reserva interna | Alta con asignación automática, teléfono, deduplicación, agenda por fecha y reprogramación               | Detalle e historial                                   |
+| Operación       | Sentar lleva a `seated`; cerrar sesión a `completed`; cancelación, no-show y reprogramación desde agenda | Historial y eventos                                   |
+| Clientes        | Nombre, contacto, idioma, notas y alergias                                                               | Etiquetas, notas auditadas, deduplicación e historial |
+| Espera          | Cola presencial en Servicio con nombre, teléfono, deduplicación, espera estimada y asignación manual     | Espera de fecha futura, oferta, aviso y caducidad     |
+| Cobro           | Sesión enlazada a reserva y pagos                                                                        | Condiciones, depósitos, webhook y reembolsos          |
 
 Las piezas base están en `src/features/reservations`, `src/features/service` y
 las migraciones `20260908000007`, `00008` y `00016`. La cadena

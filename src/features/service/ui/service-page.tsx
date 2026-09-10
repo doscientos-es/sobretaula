@@ -12,7 +12,7 @@ import {
 import { RefreshCw } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
-import type { FloorPlanData } from '@/features/floor-plan'
+import { groupAreasByFloor, type FloorPlanData } from '@/features/floor-plan'
 import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
 
 import type { ServiceBoard } from '../domain/service-board'
@@ -44,21 +44,22 @@ export function ServicePage({
       window.removeEventListener('focus', refreshOnFocus)
     }
   }, [reload])
-  const activeVersion = plan.versions[0]
+  const activeVersion =
+    plan.versions.find((version) => selectedAreaId === 'all' || version.areaId === selectedAreaId) ??
+    (selectedAreaId === 'all' ? plan.versions[0] : undefined)
   const placements = activeVersion
     ? plan.placements.filter((placement) => placement.floorPlanVersionId === activeVersion.id)
     : []
   const visiblePlacements =
     selectedAreaId === 'all'
       ? placements
-      : placements.filter(
-          () => plan.areas.find((area) => area.id === selectedAreaId)?.id === activeVersion?.areaId,
-        )
+      : placements.filter((placement) => placement.floorPlanVersionId === activeVersion?.id)
   const visibleTableCodes = new Set(visiblePlacements.map((placement) => placement.code))
   const visibleTables =
     selectedAreaId === 'all'
       ? board.tables
       : board.tables.filter((table) => visibleTableCodes.has(table.code))
+  const areaGroups = groupAreasByFloor(plan.areas)
 
   useEffect(() => {
     if (selectedAreaId === 'all') return
@@ -105,7 +106,7 @@ export function ServicePage({
               </CardHeader>
               <CardContent>
                 {plan.areas.length > 1 && (
-                  <div className="mb-4 flex flex-wrap gap-2" aria-label="Filtrar por zona">
+                  <div className="mb-4 space-y-2" aria-label="Filtrar por zona">
                     <Button
                       onClick={() => setSelectedAreaId('all')}
                       type="button"
@@ -113,15 +114,15 @@ export function ServicePage({
                     >
                       Todas
                     </Button>
-                    {plan.areas.map((area) => (
-                      <Button
-                        key={area.id}
-                        onClick={() => setSelectedAreaId(area.id)}
-                        type="button"
-                        variant={selectedAreaId === area.id ? 'default' : 'outline'}
-                      >
-                        {area.name}
-                      </Button>
+                    {areaGroups.map((group) => (
+                      <div key={group.label} className="flex flex-wrap items-center gap-2">
+                        <span className="text-muted-foreground w-28 text-xs font-medium">{group.label}</span>
+                        {group.areas.map((area) => (
+                          <Button key={area.id} onClick={() => setSelectedAreaId(area.id)} type="button" variant={selectedAreaId === area.id ? 'default' : 'outline'}>
+                            {area.name}
+                          </Button>
+                        ))}
+                      </div>
                     ))}
                   </div>
                 )}
@@ -144,6 +145,16 @@ export function ServicePage({
                     version={activeVersion}
                   />
                 )}
+              </CardContent>
+            </Card>
+          )}
+          {!activeVersion && selectedAreaId !== 'all' && (
+            <Card>
+              <CardContent className="pt-6">
+                <p className="text-muted-foreground text-sm">
+                  Esta zona no tiene una versión de plano activa. Activa un layout desde el
+                  diseñador para poder operar sus mesas.
+                </p>
               </CardContent>
             </Card>
           )}
