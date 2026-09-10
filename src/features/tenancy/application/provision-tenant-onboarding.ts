@@ -31,6 +31,9 @@ export const provisionTenantOnboarding = createServerFn({ method: 'POST' })
     })
     if (error) {
       if (error.code === '23505') throw new Response('Tenant slug already exists', { status: 409 })
+      if (error.code === '22023') throw new Response('Invalid onboarding data', { status: 422 })
+      if (error.code === '42501') throw new Response('Unauthenticated', { status: 401 })
+      if (error.code === 'PGRST202') throw new Response('Onboarding unavailable', { status: 503 })
       throw new Error(`tenant_onboarding_failed:${error.code}`)
     }
 

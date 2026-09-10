@@ -15,6 +15,7 @@ import { Building2, CircleCheck } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 
 import { tenantSlugCandidate } from '../application/onboarding-schema'
+import { tenantOnboardingErrorMessage } from '../application/onboarding-error'
 import { provisionTenantOnboarding } from '../application/provision-tenant-onboarding'
 
 export function TenantOnboardingPage() {
@@ -37,6 +38,7 @@ export function TenantOnboardingPage() {
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (feedback.pending) return
     feedback.setPending()
     try {
       const tenant = await provisionTenantOnboarding({
@@ -55,11 +57,7 @@ export function TenantOnboardingPage() {
       })
       setCreatedTenant(tenant)
     } catch (error) {
-      feedback.setError(
-        error instanceof Response && error.status === 409
-          ? 'Esta dirección de restaurante ya está en uso.'
-          : 'No se ha podido guardar el alta. Revisa los datos e inténtalo de nuevo.',
-      )
+      feedback.setError(tenantOnboardingErrorMessage(error))
     }
   }
 
@@ -96,27 +94,26 @@ export function TenantOnboardingPage() {
             {createdTenant ? (
               <div className="space-y-5">
                 <p className="text-sm leading-6">
-                  Tu restaurante ya está creado. Empieza creando el primer local y después podrás
-                  configurar la sala, las reservas y VERI*FACTU desde el panel.
+                  Tu restaurante y su primer local ya están creados. Falta autorizar el pago seguro
+                  para activar el acceso a la sala, las reservas y el equipo.
                 </p>
                 <div className="flex flex-wrap gap-3">
                   <Button
-                    onPress={() => window.location.assign(`/t/${createdTenant.slug}/l/nuevo`)}
-                    size="lg"
-                  >
-                    Crear primer local
-                  </Button>
-                  <Button
                     onPress={() => window.location.assign(`/t/${createdTenant.slug}/facturacion`)}
                     size="lg"
-                    variant="outline"
                   >
-                    Configurar VERI*FACTU
+                    Continuar con el pago seguro
                   </Button>
                 </div>
               </div>
             ) : (
               <form className="space-y-5" onSubmit={(event) => void submit(event)}>
+                <div className="space-y-1">
+                  <h2 className="text-sm font-semibold">1. Tu restaurante</h2>
+                  <p className="text-muted-foreground text-sm">
+                    La dirección de SobreTaula identifica tu espacio y debe ser única.
+                  </p>
+                </div>
                 <div className="grid gap-5 sm:grid-cols-2">
                   <Field>
                     <FieldLabel htmlFor="tenant-name">Nombre comercial</FieldLabel>
@@ -140,6 +137,14 @@ export function TenantOnboardingPage() {
                       value={slug}
                     />
                   </Field>
+                </div>
+                <div className="space-y-1 pt-1">
+                  <h2 className="text-sm font-semibold">2. Datos de facturación</h2>
+                  <p className="text-muted-foreground text-sm">
+                    Los necesitamos para preparar tu suscripción; el pago se autoriza después.
+                  </p>
+                </div>
+                <div className="grid gap-5 sm:grid-cols-2">
                   <Field>
                     <FieldLabel htmlFor="legal-name">Razón social</FieldLabel>
                     <Input

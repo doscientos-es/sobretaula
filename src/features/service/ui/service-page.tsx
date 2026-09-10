@@ -22,7 +22,11 @@ import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
 import { createBrowserSupabaseClient } from '@/shared/lib/supabase/client'
 
 import { createHandoverSnapshot } from '../application/table-service'
-import { buildServiceHandover, type ServiceBoard } from '../domain/service-board'
+import {
+  buildServiceHandover,
+  compareServiceHandover,
+  type ServiceBoard,
+} from '../domain/service-board'
 import { ServiceActions } from './service-actions'
 import { describeStatus } from './service-labels'
 import { ServicePlan } from './service-plan'
@@ -537,6 +541,31 @@ export function ServicePage({
                                   {section.activeSessions} abiertas · {section.attentionSessions}{' '}
                                   pacing · {section.cleaningTables} por limpiar ·{' '}
                                   {section.blockedTables} bloqueadas
+                                </p>
+                              )
+                            })}
+                            {compareServiceHandover(snapshot.summary, handover).map((delta) => {
+                              const changes = [
+                                delta.activeSessionsDelta !== 0
+                                  ? `${delta.activeSessionsDelta > 0 ? '+' : ''}${delta.activeSessionsDelta} cuentas`
+                                  : '',
+                                delta.attentionSessionsDelta !== 0
+                                  ? `${delta.attentionSessionsDelta > 0 ? '+' : ''}${delta.attentionSessionsDelta} pacing`
+                                  : '',
+                                delta.cleaningTablesDelta !== 0
+                                  ? `${delta.cleaningTablesDelta > 0 ? '+' : ''}${delta.cleaningTablesDelta} por limpiar`
+                                  : '',
+                                delta.blockedTablesDelta !== 0
+                                  ? `${delta.blockedTablesDelta > 0 ? '+' : ''}${delta.blockedTablesDelta} bloqueadas`
+                                  : '',
+                              ].filter(Boolean)
+                              if (changes.length === 0) return null
+                              const areaName = plan.areas.find(
+                                (area) => area.id === delta.areaId,
+                              )?.name
+                              return (
+                                <p className="text-primary" key={`${snapshot.id}-${delta.areaId}`}>
+                                  Cambio en {areaName ?? 'sección'}: {changes.join(' · ')}
                                 </p>
                               )
                             })}

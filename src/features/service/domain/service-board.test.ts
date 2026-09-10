@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   inspectServiceTableGroupPreset,
+  compareServiceHandover,
   buildServiceTableStates,
   findSeatingConflicts,
   mergeTableIds,
@@ -102,6 +103,33 @@ describe('service board', () => {
     expect(sessionElapsedMinutes(session, current)).toBe(125)
     expect(sessionPacingState(session, current)).toBe('attention')
     expect(sessionPacingState(session, current, 130)).toBe('on_track')
+  })
+
+  it('compares a saved handover with the current state by area', () => {
+    const saved = [
+      {
+        activeSessions: 1,
+        assignedStaffIds: [],
+        attentionSessions: 0,
+        areaId: 'area-1',
+        blockedTables: 1,
+        cleaningTables: 0,
+      },
+    ]
+    const current = [
+      {
+        activeSessions: 2,
+        assignedStaffIds: [],
+        attentionSessions: 0,
+        areaId: 'area-1',
+        blockedTables: 0,
+        cleaningTables: 0,
+      },
+    ]
+    expect(compareServiceHandover(saved, current)[0]).toMatchObject({
+      activeSessionsDelta: 1,
+      blockedTablesDelta: -1,
+    })
   })
 
   it('keeps the earliest reservation when two share a table', () => {

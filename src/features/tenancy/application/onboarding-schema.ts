@@ -19,11 +19,13 @@ export type TenantOnboardingInput = z.infer<typeof tenantOnboardingInput>
 
 /** Produces a valid starting point, while server validation remains authoritative. */
 export function tenantSlugCandidate(name: string): string {
-  return name
+  const candidate = name
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .slice(0, 50)
+
+  return candidate.length >= 3 ? candidate : `restaurante-${candidate || 'nuevo'}`
 }

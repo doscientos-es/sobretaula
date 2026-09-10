@@ -7,6 +7,10 @@ describe('tenant onboarding input', () => {
     expect(tenantSlugCandidate('  Café de l’Àvia  ')).toBe('cafe-de-l-avia')
   })
 
+  it('turns a short restaurant name into a slug the server accepts', () => {
+    expect(tenantSlugCandidate('El')).toBe('restaurante-el')
+  })
+
   it('rejects slugs that cannot be used as a tenant URL', () => {
     expect(
       tenantOnboardingInput.safeParse({

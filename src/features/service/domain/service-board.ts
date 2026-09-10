@@ -136,6 +136,30 @@ export function buildServiceHandover(board: ServiceBoard, now: Date): ServiceHan
   })
 }
 
+export interface ServiceHandoverDelta extends ServiceHandoverSection {
+  activeSessionsDelta: number
+  attentionSessionsDelta: number
+  blockedTablesDelta: number
+  cleaningTablesDelta: number
+}
+
+/** Compares a saved handover with the current snapshot by area. */
+export function compareServiceHandover(
+  saved: readonly ServiceHandoverSection[],
+  current: readonly ServiceHandoverSection[],
+): ServiceHandoverDelta[] {
+  return current.map((section) => {
+    const previous = saved.find((candidate) => candidate.areaId === section.areaId)
+    return {
+      ...section,
+      activeSessionsDelta: section.activeSessions - (previous?.activeSessions ?? 0),
+      attentionSessionsDelta: section.attentionSessions - (previous?.attentionSessions ?? 0),
+      blockedTablesDelta: section.blockedTables - (previous?.blockedTables ?? 0),
+      cleaningTablesDelta: section.cleaningTables - (previous?.cleaningTables ?? 0),
+    }
+  })
+}
+
 /**
  * Occupancy wins over reservation: a seated party is the truth of the room even
  * if another booking is already approaching for the same table.
