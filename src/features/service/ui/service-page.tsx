@@ -351,19 +351,20 @@ export function ServicePage({
                     Vista lista
                   </Button>
                 </div>
-                {serviceView === 'plan' && (visiblePlacements.length === 0 ? (
-                  <p className="text-muted-foreground rounded-lg border border-dashed p-6 text-center text-sm">
-                    Esta zona todavía no tiene mesas configuradas en el plano activo.
-                  </p>
-                ) : (
-                  <ServicePlan
-                    onToggleTable={toggleTable}
-                    placements={visiblePlacements}
-                    selectedTableIds={selectedTableIds}
-                    states={visibleTables}
-                    version={activeVersion}
-                  />
-                ))}
+                {serviceView === 'plan' &&
+                  (visiblePlacements.length === 0 ? (
+                    <p className="text-muted-foreground rounded-lg border border-dashed p-6 text-center text-sm">
+                      Esta zona todavía no tiene mesas configuradas en el plano activo.
+                    </p>
+                  ) : (
+                    <ServicePlan
+                      onToggleTable={toggleTable}
+                      placements={visiblePlacements}
+                      selectedTableIds={selectedTableIds}
+                      states={visibleTables}
+                      version={activeVersion}
+                    />
+                  ))}
               </CardContent>
             </Card>
           )}
@@ -377,34 +378,36 @@ export function ServicePage({
               </CardContent>
             </Card>
           )}
-          {serviceView === 'list' && <Card>
-            <CardHeader>
-              <CardTitle>Mesas</CardTitle>
-              <CardDescription>Alternativa accesible al plano en vivo.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {board.tables.length === 0 ? (
-                <p className="text-muted-foreground text-sm">
-                  Este local todavía no tiene mesas activas.
-                </p>
-              ) : (
-                <ul className="grid gap-2 sm:grid-cols-2">
-                  {visibleTables.map((table) => (
-                    <li key={table.id}>
-                      <Button
-                        aria-pressed={selectedTableIds.includes(table.id)}
-                        className="w-full justify-start"
-                        onClick={() => toggleTable(table.id)}
-                        type="button"
-                      >
-                        {`Mesa ${table.code} · ${describeTableArea(table.code)} · ${describeStatus(table.status)} · ${table.covers ?? table.maxSeats} pax`}
-                      </Button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </CardContent>
-          </Card>}
+          {serviceView === 'list' && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Mesas</CardTitle>
+                <CardDescription>Alternativa accesible al plano en vivo.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {board.tables.length === 0 ? (
+                  <p className="text-muted-foreground text-sm">
+                    Este local todavía no tiene mesas activas.
+                  </p>
+                ) : (
+                  <ul className="grid gap-2 sm:grid-cols-2">
+                    {visibleTables.map((table) => (
+                      <li key={table.id}>
+                        <Button
+                          aria-pressed={selectedTableIds.includes(table.id)}
+                          className="w-full justify-start"
+                          onClick={() => toggleTable(table.id)}
+                          type="button"
+                        >
+                          {`Mesa ${table.code} · ${describeTableArea(table.code)} · ${describeStatus(table.status)} · ${table.covers ?? table.maxSeats} pax`}
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </div>
         <aside className="space-y-6 lg:sticky lg:top-6 lg:self-start">
           <ServiceActions
