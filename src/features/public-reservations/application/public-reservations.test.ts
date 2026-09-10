@@ -15,12 +15,20 @@ const reservation = {
 describe('public reservation input', () => {
   it('requires email and privacy acknowledgement', () => {
     expect(publicReservationInput.safeParse(reservation).success).toBe(true)
-    expect(publicReservationInput.safeParse({ ...reservation, email: undefined }).success).toBe(false)
-    expect(publicReservationInput.safeParse({ ...reservation, privacyAccepted: false }).success).toBe(false)
+    expect(publicReservationInput.safeParse({ ...reservation, email: undefined }).success).toBe(
+      false,
+    )
+    expect(
+      publicReservationInput.safeParse({ ...reservation, privacyAccepted: false }).success,
+    ).toBe(false)
   })
 
   it('accepts a bounded optional note', () => {
-    expect(publicReservationInput.safeParse({ ...reservation, notes: 'Sin gluten, por favor.' }).success).toBe(true)
-    expect(publicReservationInput.safeParse({ ...reservation, notes: 'a'.repeat(1001) }).success).toBe(false)
+    expect(
+      publicReservationInput.safeParse({ ...reservation, notes: 'Sin gluten, por favor.' }).success,
+    ).toBe(true)
+    expect(
+      publicReservationInput.safeParse({ ...reservation, notes: 'a'.repeat(1001) }).success,
+    ).toBe(false)
   })
 })

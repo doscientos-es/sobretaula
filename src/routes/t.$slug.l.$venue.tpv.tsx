@@ -56,7 +56,14 @@ export const Route = createFileRoute('/t/$slug/l/$venue/tpv')({
     const account = sessionId
       ? await getAccount({ data: { sessionId, tenantId: tenant.id, venueId: venue.id } })
       : undefined
-    return { account, board, cashHistory: management?.[1], cashRegister: management?.[0], menu, report: management?.[2] }
+    return {
+      account,
+      board,
+      cashHistory: management?.[1],
+      cashRegister: management?.[0],
+      menu,
+      report: management?.[2],
+    }
   },
   component: PosTerminalRoute,
 })

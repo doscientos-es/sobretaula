@@ -14,7 +14,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "quality": "pnpm format:check && pnpm lint && pnpm structure:check && pnpm typecheck && pnpm test",
-    "quality:quick": "pnpm format:check && pnpm lint"
+    "quality:quick": "pnpm format:check && pnpm lint",
+    "hooks:install": "node .githooks/install.mjs"
   },
   "dependencies": {
     "@doscientos/ui": "^0.1.39",

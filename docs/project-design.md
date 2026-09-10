@@ -24,32 +24,32 @@ sin comisión por cubierto; el dato del comensal es del restaurante.
 
 ### Usuarios
 
-| Perfil                | Dispositivo             | Necesidad dominante                    |
-| --------------------- | ----------------------- | -------------------------------------- |
-| Propietario / gerente | Escritorio              | Configuración, facturación, informes   |
-| Jefe de sala / host   | Tablet en atril, de pie | Plano en vivo, sentar, mover, unir     |
-| Camarero              | Móvil                   | Añadir a la cuenta, cobrar             |
+| Perfil                | Dispositivo             | Necesidad dominante                      |
+| --------------------- | ----------------------- | ---------------------------------------- |
+| Propietario / gerente | Escritorio              | Configuración, facturación, informes     |
+| Jefe de sala / host   | Tablet en atril, de pie | Plano en vivo, sentar, mover, unir       |
+| Camarero              | Móvil                   | Añadir a la cuenta, cobrar               |
 | Comensal              | Móvil web               | Reservar, gestionar y pagar sin fricción |
-| Operador Doscientos   | Escritorio              | Alta de tenants, soporte, planes       |
+| Operador Doscientos   | Escritorio              | Alta de tenants, soporte, planes         |
 
 El jefe de sala es el usuario crítico: si el plano no responde al instante y con
 el dedo, el producto no se usa.
 
 ### Módulos
 
-| Módulo                                       | Fase      | Estado                                             |
-| -------------------------------------------- | --------- | -------------------------------------------------- |
-| Tenancy, auth, roles, ajustes                | F1        | Alcance MVP                                        |
-| Diseñador de sala                            | F2        | Alcance MVP                                        |
-| Motor de reservas                            | F3        | Alcance MVP                                        |
-| Vista de servicio                            | F4        | Alcance MVP                                        |
-| Cuenta de mesa (simple)                      | F5        | Alcance MVP                                        |
-| Facturación + VERI\*FACTU                    | F6        | Alcance MVP, modo test                             |
-| TPV completo (comandas, cocina, arqueo)      | F7        | Alcance ampliado del MVP                          |
-| Web pública de reservas                      | F8        | Alcance ampliado del MVP                          |
-| Control horario y empleados                  | F9        | Alcance ampliado del MVP                          |
-| Inventario, escandallos y carta              | F10       | Alcance ampliado del MVP                          |
-| Delivery, fidelización e informes avanzados  | F11       | Planificado; concretar con cliente                |
+| Módulo                                      | Fase | Estado                             |
+| ------------------------------------------- | ---- | ---------------------------------- |
+| Tenancy, auth, roles, ajustes               | F1   | Alcance MVP                        |
+| Diseñador de sala                           | F2   | Alcance MVP                        |
+| Motor de reservas                           | F3   | Alcance MVP                        |
+| Vista de servicio                           | F4   | Alcance MVP                        |
+| Cuenta de mesa (simple)                     | F5   | Alcance MVP                        |
+| Facturación + VERI\*FACTU                   | F6   | Alcance MVP, modo test             |
+| TPV completo (comandas, cocina, arqueo)     | F7   | Alcance ampliado del MVP           |
+| Web pública de reservas                     | F8   | Alcance ampliado del MVP           |
+| Control horario y empleados                 | F9   | Alcance ampliado del MVP           |
+| Inventario, escandallos y carta             | F10  | Alcance ampliado del MVP           |
+| Delivery, fidelización e informes avanzados | F11  | Planificado; concretar con cliente |
 
 La regla de escalabilidad es estructural, no aspiracional: cada módulo es un
 vertical en `src/features/<modulo>` con su dominio, aplicación, infraestructura

@@ -36,6 +36,7 @@ import {
   deleteTableGroupPreset,
   saveFloorPlanVersion,
 } from '../application/floor-plan'
+import { detectLayoutSourceKind } from '../application/layout-source-parser'
 import {
   commitEditorHistory,
   createEditorHistory,
@@ -65,7 +66,6 @@ import {
   serializeLayoutTemplate,
 } from '../domain/layout-template'
 import { inspectTableGroupPresetAvailability } from '../domain/table-group-presets'
-import { detectLayoutSourceKind } from '../application/layout-source-parser'
 
 function readLockedIds(lockStorageKey: string | undefined): string[] {
   if (!lockStorageKey || typeof window === 'undefined') return []

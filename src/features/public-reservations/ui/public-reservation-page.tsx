@@ -415,7 +415,9 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                 />
               </Field>
               <Field>
-                <FieldLabel htmlFor="public-notes">Comentario para el restaurante (opcional)</FieldLabel>
+                <FieldLabel htmlFor="public-notes">
+                  Comentario para el restaurante (opcional)
+                </FieldLabel>
                 <textarea
                   className="min-h-20 w-full rounded-md border bg-white px-3 py-2"
                   id="public-notes"
@@ -431,7 +433,10 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                   required
                   type="checkbox"
                 />
-                <span>He leído la política de privacidad y acepto el tratamiento de mis datos para gestionar esta reserva.</span>
+                <span>
+                  He leído la política de privacidad y acepto el tratamiento de mis datos para
+                  gestionar esta reserva.
+                </span>
               </label>
               <FormFeedback pendingLabel="Comprobando disponibilidad…" state={feedback.state} />
               <Button

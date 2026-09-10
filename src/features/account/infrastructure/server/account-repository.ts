@@ -72,11 +72,20 @@ export async function loadAccount(
   const orderIds = (ordersResult.data ?? []).map((order) => order.id as string)
   const paymentIds = (paymentsResult.data ?? []).map((payment) => payment.id as string)
   const refundsResult = paymentIds.length
-    ? await supabase.from('payment_refunds').select('amount_cents, payment_id').eq('tenant_id', tenantId).in('payment_id', paymentIds)
+    ? await supabase
+        .from('payment_refunds')
+        .select('amount_cents, payment_id')
+        .eq('tenant_id', tenantId)
+        .in('payment_id', paymentIds)
     : { data: [], error: null }
-  if (refundsResult.error && refundsResult.error.code !== '42P01') throw new Error('account_refunds_load_failed')
+  if (refundsResult.error && refundsResult.error.code !== '42P01')
+    throw new Error('account_refunds_load_failed')
   const refundedByPayment = new Map<string, number>()
-  for (const refund of refundsResult.data ?? []) refundedByPayment.set(refund.payment_id as string, (refundedByPayment.get(refund.payment_id as string) ?? 0) + (refund.amount_cents as number))
+  for (const refund of refundsResult.data ?? [])
+    refundedByPayment.set(
+      refund.payment_id as string,
+      (refundedByPayment.get(refund.payment_id as string) ?? 0) + (refund.amount_cents as number),
+    )
   let itemsResult = await (orderIds.length === 0
     ? Promise.resolve({ data: [], error: null })
     : supabase

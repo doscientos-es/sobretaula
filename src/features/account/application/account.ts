@@ -376,15 +376,13 @@ export const applyDiscount = createServerFn({ method: 'POST' })
     )
     if (data.discountCents > totals.grossCents)
       throw new Response('Discount exceeds account', { status: 422 })
-    const { error: auditError } = await supabase
-      .from('session_discount_audits')
-      .insert({
-        tenant_id: data.tenantId,
-        session_id: data.sessionId,
-        discount_cents: data.discountCents,
-        reason: data.reason,
-        created_by: context.tenantMembership.userId,
-      })
+    const { error: auditError } = await supabase.from('session_discount_audits').insert({
+      tenant_id: data.tenantId,
+      session_id: data.sessionId,
+      discount_cents: data.discountCents,
+      reason: data.reason,
+      created_by: context.tenantMembership.userId,
+    })
     if (auditError) throw new Error(`discount_audit_failed:${auditError.code}`)
     const { error } = await supabase
       .from('table_sessions')

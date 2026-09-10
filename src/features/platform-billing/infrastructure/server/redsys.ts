@@ -143,21 +143,30 @@ export async function chargeRedsysReference({
     DS_MERCHANT_COF_TYPE: 'R',
   })
   const signature = base64Url(
-    createHmac('sha512', deriveOrderKey(merchantOrder, config.secretKey)).update(parameters).digest(),
+    createHmac('sha512', deriveOrderKey(merchantOrder, config.secretKey))
+      .update(parameters)
+      .digest(),
   )
-  const endpoint = config.environment === 'prod'
-    ? 'https://sis.redsys.es/sis/rest/trataPeticionREST'
-    : 'https://sis-t.redsys.es:25443/sis/rest/trataPeticionREST'
+  const endpoint =
+    config.environment === 'prod'
+      ? 'https://sis.redsys.es/sis/rest/trataPeticionREST'
+      : 'https://sis-t.redsys.es:25443/sis/rest/trataPeticionREST'
   const response = await fetch(endpoint, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ Ds_SignatureVersion: 'HMAC_SHA512_V1', Ds_MerchantParameters: parameters, Ds_Signature: signature }),
+    body: JSON.stringify({
+      Ds_SignatureVersion: 'HMAC_SHA512_V1',
+      Ds_MerchantParameters: parameters,
+      Ds_Signature: signature,
+    }),
     signal: AbortSignal.timeout(50_000),
   })
   if (!response.ok) throw new Error(`redsys_rest_http_${response.status}`)
   const body = (await response.json()) as { Ds_MerchantParameters?: string }
   if (!body.Ds_MerchantParameters) throw new Error('redsys_rest_response_missing_parameters')
-  return JSON.parse(Buffer.from(body.Ds_MerchantParameters, 'base64').toString('utf8')) as RedsysRestResponse
+  return JSON.parse(
+    Buffer.from(body.Ds_MerchantParameters, 'base64').toString('utf8'),
+  ) as RedsysRestResponse
 }
 
 /** Validates HMAC_SHA256_V1 without exposing the shared terminal secret. */

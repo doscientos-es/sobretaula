@@ -127,7 +127,9 @@ export async function loadServiceBoard(
   const kitchenTicketsResult = recentOrderIds.length
     ? await supabase
         .from('order_items')
-        .select('id, name_snapshot, notes, quantity, preparation_minutes, kitchen_station, status, created_at, orders!inner(session_id)')
+        .select(
+          'id, name_snapshot, notes, quantity, preparation_minutes, kitchen_station, status, created_at, orders!inner(session_id)',
+        )
         .eq('tenant_id', tenantId)
         .in('order_id', recentOrderIds)
         .order('created_at')
@@ -141,8 +143,8 @@ export async function loadServiceBoard(
     quantity: item.quantity as number,
     preparationMinutes: (item.preparation_minutes as number | null) ?? 15,
     station: (item.kitchen_station as string | null) ?? 'general',
-    status: ((item.status as KitchenTicket['status'] | null) ?? 'pending'),
-    sessionId: ((item.orders as { session_id: string }[])[0]?.session_id ?? ''),
+    status: (item.status as KitchenTicket['status'] | null) ?? 'pending',
+    sessionId: (item.orders as { session_id: string }[])[0]?.session_id ?? '',
     createdAt: item.created_at as string,
   }))
   let kitchenItemsResult = recentOrderIds.length
@@ -155,7 +157,7 @@ export async function loadServiceBoard(
   if (kitchenItemsResult.error?.code === '42703' && recentOrderIds.length > 0) {
     const legacy = await supabase
       .from('order_items')
-        .select('quantity')
+      .select('quantity')
       .eq('tenant_id', tenantId)
       .in('order_id', recentOrderIds)
     kitchenItemsResult = {

@@ -16,7 +16,12 @@ import { useState, type FormEvent } from 'react'
 import type { Locale } from '@/shared/lib/i18n/locale'
 import { formatMoney, parsePriceToCents } from '@/shared/lib/money/money'
 
-import { applyDiscount, recordPayment, refundPayment, type AccountView } from '../application/account'
+import {
+  applyDiscount,
+  recordPayment,
+  refundPayment,
+  type AccountView,
+} from '../application/account'
 import { PAYMENT_METHODS, splitEvenly, type PaymentMethod } from '../domain/account'
 
 export const PAYMENT_METHOD_LABEL: Record<PaymentMethod, string> = {
@@ -98,17 +103,45 @@ export function AccountPayments({
   function refund(paymentId: string, amountCents: number) {
     if (feedback.pending || !window.confirm('¿Devolver este cobro completo?')) return
     feedback.setPending()
-    void refundPayment({ data: { amountCents, paymentId, reason: 'Devolución solicitada desde la cuenta', sessionId: session.id, tenantId, venueId } })
-      .then(() => { feedback.setSuccess('Devolución registrada.'); onDone() })
+    void refundPayment({
+      data: {
+        amountCents,
+        paymentId,
+        reason: 'Devolución solicitada desde la cuenta',
+        sessionId: session.id,
+        tenantId,
+        venueId,
+      },
+    })
+      .then(() => {
+        feedback.setSuccess('Devolución registrada.')
+        onDone()
+      })
       .catch(() => feedback.setError('No se ha podido registrar la devolución.'))
   }
 
   function discount(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const cents = parsePriceToCents(discountDraft)
-    if (cents === null || cents <= 0 || cents > totals.grossCents) { feedback.setError('Descuento no válido.'); return }
+    if (cents === null || cents <= 0 || cents > totals.grossCents) {
+      feedback.setError('Descuento no válido.')
+      return
+    }
     feedback.setPending()
-    void applyDiscount({ data: { discountCents: cents, reason: discountReason, sessionId: session.id, tenantId, venueId } }).then(() => { feedback.setSuccess('Descuento aplicado.'); onDone() }).catch(() => feedback.setError('No se ha podido aplicar el descuento.'))
+    void applyDiscount({
+      data: {
+        discountCents: cents,
+        reason: discountReason,
+        sessionId: session.id,
+        tenantId,
+        venueId,
+      },
+    })
+      .then(() => {
+        feedback.setSuccess('Descuento aplicado.')
+        onDone()
+      })
+      .catch(() => feedback.setError('No se ha podido aplicar el descuento.'))
   }
 
   return (
@@ -144,7 +177,32 @@ export function AccountPayments({
             </dd>
           </div>
         </dl>
-        {open && canManageAdjustments && <form className="flex flex-wrap items-end gap-2 border-b pb-4" onSubmit={discount}><Field><FieldLabel htmlFor="discount-amount">Descuento (€)</FieldLabel><Input id="discount-amount" min="0.01" onChange={(event) => setDiscountDraft(event.target.value)} required value={discountDraft} /></Field><Field><FieldLabel htmlFor="discount-reason">Motivo</FieldLabel><Input id="discount-reason" onChange={(event) => setDiscountReason(event.target.value)} required value={discountReason} /></Field><Button disabled={feedback.pending} size="sm" type="submit">Aplicar descuento</Button></form>}
+        {open && canManageAdjustments && (
+          <form className="flex flex-wrap items-end gap-2 border-b pb-4" onSubmit={discount}>
+            <Field>
+              <FieldLabel htmlFor="discount-amount">Descuento (€)</FieldLabel>
+              <Input
+                id="discount-amount"
+                min="0.01"
+                onChange={(event) => setDiscountDraft(event.target.value)}
+                required
+                value={discountDraft}
+              />
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="discount-reason">Motivo</FieldLabel>
+              <Input
+                id="discount-reason"
+                onChange={(event) => setDiscountReason(event.target.value)}
+                required
+                value={discountReason}
+              />
+            </Field>
+            <Button disabled={feedback.pending} size="sm" type="submit">
+              Aplicar descuento
+            </Button>
+          </form>
+        )}
         {!open && <p className="text-muted-foreground text-sm">La cuenta está cerrada.</p>}
         {open && settled && (
           <p className="text-success text-sm font-medium">Cuenta pagada por completo.</p>
@@ -232,9 +290,20 @@ export function AccountPayments({
                 </span>
                 <span className="flex items-center gap-2 tabular-nums">
                   {formatMoney(payment.amountCents, locale)}
-                  {(payment.refundedCents ?? 0) > 0 && ` · devuelto ${formatMoney(payment.refundedCents ?? 0, locale)}`}
+                  {(payment.refundedCents ?? 0) > 0 &&
+                    ` · devuelto ${formatMoney(payment.refundedCents ?? 0, locale)}`}
                   {payment.tipCents > 0 && ` + ${formatMoney(payment.tipCents, locale)} propina`}
-                  {canManageAdjustments && <Button disabled={feedback.pending} onClick={() => refund(payment.id, payment.amountCents)} size="sm" type="button" variant="ghost">Devolver</Button>}
+                  {canManageAdjustments && (
+                    <Button
+                      disabled={feedback.pending}
+                      onClick={() => refund(payment.id, payment.amountCents)}
+                      size="sm"
+                      type="button"
+                      variant="ghost"
+                    >
+                      Devolver
+                    </Button>
+                  )}
                 </span>
               </li>
             ))}
