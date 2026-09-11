@@ -10,15 +10,23 @@ import {
   verifyRedsysSignature,
 } from './redsys'
 
-const secretKey = Buffer.alloc(24, 7).toString('base64')
+const secretKey = 'sq7HjrUOBfKmC576ILgskD5srU870gJ7'
+const legacySecretKey = Buffer.alloc(24, 7).toString('base64')
 const params = Buffer.from(
-  JSON.stringify({ Ds_Order: 'BILL202601', Ds_Response: '0000' }),
+  JSON.stringify({
+    Ds_Order: 'BILL202601',
+    Ds_Response: '0000',
+    Ds_MerchantCode: 'merchant',
+    Ds_Terminal: '1',
+    Ds_Currency: '978',
+    Ds_Amount: '100',
+  }),
 ).toString('base64url')
 
 function signatureFor(order: string, merchantParameters: string): string {
   const cipher = createCipheriv(
     'des-ede3-cbc',
-    Buffer.from(secretKey, 'base64'),
+    Buffer.from(legacySecretKey, 'base64'),
     Buffer.alloc(8, 0),
   )
   cipher.setAutoPadding(false)
@@ -60,8 +68,36 @@ describe('Redsys notification helpers', () => {
     expect(
       verifyRedsysSignature({
         merchantParameters: params,
-        secretKey,
+        secretKey: legacySecretKey,
         signature: signatureFor('BILL202601', params),
+        signatureVersion: 'HMAC_SHA256_V1',
+      }),
+    ).toBe(true)
+  })
+
+  it('matches the official HMAC_SHA512_V2 Redsys vector', () => {
+    const merchantParameters = Buffer.from(
+      JSON.stringify({
+        DS_MERCHANT_AMOUNT: '999',
+        DS_MERCHANT_ORDER: '1234567890',
+        DS_MERCHANT_MERCHANTCODE: '999008881',
+        DS_MERCHANT_CURRENCY: '978',
+        DS_MERCHANT_TRANSACTIONTYPE: '0',
+        DS_MERCHANT_TERMINAL: '1',
+        DS_MERCHANT_MERCHANTURL: 'http://www.prueba.com/urlNotificacion.php',
+        DS_MERCHANT_URLOK: 'http://www.prueba.com/urlOK.php',
+        DS_MERCHANT_URLKO: 'http://www.prueba.com/urlKO.php',
+      }).replaceAll('/', '\\/'),
+    ).toString('base64url')
+    const signature =
+      'Vjo02eSWq249IeZZp3R-ArFnGLhKY0OuzDDlx1BuVtZDC2yhczA7_11uZhsYzLZBCMFAz8u8uzGDX3AErHKmmw'
+
+    expect(
+      verifyRedsysSignature({
+        merchantParameters,
+        secretKey,
+        signature,
+        signatureVersion: 'HMAC_SHA512_V2',
       }),
     ).toBe(true)
   })
@@ -73,6 +109,11 @@ describe('Redsys notification helpers', () => {
     expect(parseRedsysNotification(params)).toEqual({
       merchantOrder: 'BILL202601',
       responseCode: '0000',
+      merchantCode: 'merchant',
+      terminal: '1',
+      currency: '978',
+      amountCents: 100,
+      identifier: undefined,
     })
     expect(isRedsysSuccess('0099')).toBe(true)
     expect(isRedsysSuccess('0101')).toBe(false)

@@ -14,13 +14,23 @@ export const Route = createFileRoute('/api/webhooks/redsys')({
         const form = await request.formData()
         const merchantParameters = form.get('Ds_MerchantParameters')
         const signature = form.get('Ds_Signature')
-        if (typeof merchantParameters !== 'string' || typeof signature !== 'string') {
+        const signatureVersion = form.get('Ds_SignatureVersion')
+        if (
+          typeof merchantParameters !== 'string' ||
+          typeof signature !== 'string' ||
+          (signatureVersion !== 'HMAC_SHA512_V2' && signatureVersion !== 'HMAC_SHA256_V1')
+        ) {
           return new Response('Missing Redsys parameters', { status: 400 })
         }
 
         const config = readRedsysConfig()
         if (
-          !verifyRedsysSignature({ merchantParameters, secretKey: config.secretKey, signature })
+          !verifyRedsysSignature({
+            merchantParameters,
+            secretKey: config.secretKey,
+            signature,
+            signatureVersion,
+          })
         ) {
           return new Response('Invalid Redsys signature', { status: 403 })
         }

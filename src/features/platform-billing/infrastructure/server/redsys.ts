@@ -1,5 +1,7 @@
 import { createCipheriv, createHash, createHmac, timingSafeEqual } from 'node:crypto'
 
+export type RedsysSignatureVersion = 'HMAC_SHA256_V1' | 'HMAC_SHA512_V2'
+
 export interface RedsysConfig {
   currency: string
   environment: 'prod' | 'test'
@@ -11,11 +13,16 @@ export interface RedsysConfig {
 export interface RedsysNotification {
   merchantOrder: string
   responseCode: string
+  merchantCode: string
+  terminal: string
+  currency: string
+  amountCents: number
+  identifier?: string | undefined
 }
 
 export interface RedsysPaymentForm {
   url: string
-  signatureVersion: 'HMAC_SHA256_V1'
+  signatureVersion: 'HMAC_SHA512_V2'
   merchantParameters: string
   signature: string
 }
@@ -29,6 +36,10 @@ function base64(value: Buffer | string): string {
   return (Buffer.isBuffer(value) ? value : Buffer.from(value)).toString('base64')
 }
 
+function base64Url(value: Buffer | string): string {
+  return (Buffer.isBuffer(value) ? value : Buffer.from(value)).toString('base64url')
+}
+
 function deriveOrderKey(order: string, secretKey: string): Buffer {
   const key = Buffer.from(secretKey, 'base64')
   const cipher = createCipheriv('des-ede3-cbc', key, Buffer.alloc(8, 0))
@@ -37,6 +48,18 @@ function deriveOrderKey(order: string, secretKey: string): Buffer {
   const padding = source.length % 8
   const padded = padding === 0 ? source : Buffer.concat([source, Buffer.alloc(8 - padding, 0)])
   return Buffer.concat([cipher.update(padded), cipher.final()])
+}
+
+/** Derives the operation key required by Redsys HMAC_SHA512_V2. */
+function deriveSha512OrderKey(order: string, secretKey: string): string {
+  const merchantKey = secretKey.slice(0, 16).padEnd(16, '0')
+  const cipher = createCipheriv(
+    'aes-128-cbc',
+    Buffer.from(merchantKey, 'utf8'),
+    Buffer.alloc(16, 0),
+  )
+  const encryptedOrder = Buffer.concat([cipher.update(order, 'utf8'), cipher.final()])
+  return base64(encryptedOrder)
 }
 
 function normalizedSignature(signature: string): Buffer {
@@ -65,7 +88,32 @@ export function readRedsysConfig(): RedsysConfig {
 }
 
 function encodeParameters(parameters: Record<string, string>): string {
-  return base64(JSON.stringify(parameters))
+  return base64Url(JSON.stringify(parameters))
+}
+
+function signParameters({
+  merchantParameters,
+  merchantOrder,
+  secretKey,
+  signatureVersion,
+}: {
+  merchantParameters: string
+  merchantOrder: string
+  secretKey: string
+  signatureVersion: RedsysSignatureVersion
+}): string {
+  if (signatureVersion === 'HMAC_SHA256_V1') {
+    return base64(
+      createHmac('sha256', deriveOrderKey(merchantOrder, secretKey))
+        .update(merchantParameters)
+        .digest(),
+    )
+  }
+  return base64Url(
+    createHmac('sha512', deriveSha512OrderKey(merchantOrder, secretKey))
+      .update(merchantParameters)
+      .digest(),
+  )
 }
 
 /** Builds the hosted Redsys form used for the first subscription authorization. */
@@ -100,17 +148,19 @@ export function createRedsysPaymentForm({
     Ds_Merchant_COF_INI: 'S',
     Ds_Merchant_COF_TYPE: 'R',
   })
-  const signature = base64(
-    createHmac('sha256', deriveOrderKey(merchantOrder, config.secretKey))
-      .update(merchantParameters)
-      .digest(),
-  )
+  const signatureVersion = 'HMAC_SHA512_V2'
+  const signature = signParameters({
+    merchantParameters,
+    merchantOrder,
+    secretKey: config.secretKey,
+    signatureVersion,
+  })
   return {
     url:
       config.environment === 'prod'
         ? 'https://sis.redsys.es/sis/realizarPago'
         : 'https://sis-t.redsys.es:25443/sis/realizarPago',
-    signatureVersion: 'HMAC_SHA256_V1',
+    signatureVersion,
     merchantParameters,
     signature,
   }
@@ -139,11 +189,13 @@ export async function chargeRedsysReference({
     DS_MERCHANT_IDENTIFIER: identifier,
     DS_MERCHANT_COF_TYPE: 'R',
   })
-  const signature = base64(
-    createHmac('sha512', deriveOrderKey(merchantOrder, config.secretKey))
-      .update(parameters)
-      .digest(),
-  )
+  const signatureVersion = 'HMAC_SHA512_V2'
+  const signature = signParameters({
+    merchantParameters: parameters,
+    merchantOrder,
+    secretKey: config.secretKey,
+    signatureVersion,
+  })
   const endpoint =
     config.environment === 'prod'
       ? 'https://sis.redsys.es/sis/rest/trataPeticionREST'
@@ -152,7 +204,7 @@ export async function chargeRedsysReference({
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({
-      Ds_SignatureVersion: 'HMAC_SHA512_V1',
+      Ds_SignatureVersion: signatureVersion,
       Ds_MerchantParameters: parameters,
       Ds_Signature: signature,
     }),
@@ -161,34 +213,37 @@ export async function chargeRedsysReference({
   if (!response.ok) throw new Error(`redsys_rest_http_${response.status}`)
   const body = (await response.json()) as { Ds_MerchantParameters?: string }
   if (!body.Ds_MerchantParameters) throw new Error('redsys_rest_response_missing_parameters')
-  return JSON.parse(
-    Buffer.from(body.Ds_MerchantParameters, 'base64').toString('utf8'),
-  ) as RedsysRestResponse
+  return JSON.parse(Buffer.from(body.Ds_MerchantParameters, 'base64').toString('utf8')) as RedsysRestResponse
 }
 
-/** Validates HMAC_SHA256_V1 without exposing the shared terminal secret. */
+/** Validates a Redsys notification without exposing the shared terminal secret. */
 export function verifyRedsysSignature({
   merchantParameters,
   secretKey,
   signature,
+  signatureVersion = 'HMAC_SHA512_V2',
 }: {
   merchantParameters: string
   secretKey: string
   signature: string
+  signatureVersion?: RedsysSignatureVersion
 }): boolean {
   try {
     const decoded = JSON.parse(
       Buffer.from(merchantParameters, 'base64').toString('utf8'),
     ) as Record<string, unknown>
-    const order = decoded.Ds_Order ?? decoded.Ds_Merchant_Order
+    const order =
+      decoded.Ds_Order ??
+      decoded.Ds_Merchant_Order ??
+      decoded.DS_ORDER ??
+      decoded.DS_MERCHANT_ORDER
     if (typeof order !== 'string' || !/^[A-Za-z0-9]{4,12}$/.test(order)) return false
     const expected = Buffer.from(
-      base64(
-        createHmac('sha256', deriveOrderKey(order, secretKey)).update(merchantParameters).digest(),
-      ),
-      'base64',
+      signParameters({ merchantParameters, merchantOrder: order, secretKey, signatureVersion }),
+      signatureVersion === 'HMAC_SHA512_V2' ? 'base64url' : 'base64',
     )
     const received = normalizedSignature(signature)
+    console.log({ order, expected: expected.toString('base64url'), received: received.toString('base64url') })
     return expected.length === received.length && timingSafeEqual(expected, received)
   } catch {
     return false
@@ -201,13 +256,34 @@ export function parseRedsysNotification(merchantParameters: string): RedsysNotif
     string,
     unknown
   >
-  const merchantOrder = decoded.Ds_Order ?? decoded.Ds_Merchant_Order
-  const responseCode = decoded.Ds_Response
+  const merchantOrder =
+    decoded.Ds_Order ??
+    decoded.Ds_Merchant_Order ??
+    decoded.DS_ORDER ??
+    decoded.DS_MERCHANT_ORDER
+  const responseCode = decoded.Ds_Response ?? decoded.DS_RESPONSE
+  const merchantCode = decoded.Ds_MerchantCode ?? decoded.DS_MERCHANT_MERCHANTCODE
+  const terminal = decoded.Ds_Terminal ?? decoded.DS_MERCHANT_TERMINAL
+  const currency = decoded.Ds_Currency ?? decoded.DS_MERCHANT_CURRENCY
+  const amount = decoded.Ds_Amount ?? decoded.DS_MERCHANT_AMOUNT
+  const identifier = decoded.Ds_Merchant_Identifier ?? decoded.DS_MERCHANT_IDENTIFIER
   if (typeof merchantOrder !== 'string' || !/^[A-Za-z0-9]{4,12}$/.test(merchantOrder))
     throw new Error('invalid_redsys_order')
   if (typeof responseCode !== 'string' && typeof responseCode !== 'number')
     throw new Error('invalid_redsys_response')
-  return { merchantOrder, responseCode: String(responseCode) }
+  if (typeof merchantCode !== 'string' || typeof terminal !== 'string' || typeof currency !== 'string')
+    throw new Error('invalid_redsys_context')
+  const amountCents = Number(amount)
+  if (!Number.isInteger(amountCents) || amountCents <= 0) throw new Error('invalid_redsys_amount')
+  return {
+    merchantOrder,
+    responseCode: String(responseCode),
+    merchantCode,
+    terminal,
+    currency,
+    amountCents,
+    identifier: typeof identifier === 'string' && identifier.trim() ? identifier.trim() : undefined,
+  }
 }
 
 export function isRedsysSuccess(responseCode: string): boolean {
