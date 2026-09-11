@@ -13,6 +13,11 @@ const es = {
   'nav.settings': 'Ajustes',
   'error.title': 'No se ha podido cargar esta pantalla',
   'error.description': 'Reintenta la operación o vuelve al inicio.',
+  'error.configuration.title': 'Configuración del servidor incompleta',
+  'error.configuration.description':
+    'La aplicación no puede cargar esta pantalla porque falta una variable de entorno del servidor.',
+  'error.configuration.detail':
+    'Falta configurar {variable} en Vercel para Preview (branch dev) y volver a desplegar.',
   'error.reassurance': 'Tus datos siguen guardados y no se ha realizado ningún cambio.',
   'error.retry': 'Reintentar',
   'error.help.title': 'Mientras tanto, puedes probar esto',
@@ -54,6 +59,11 @@ const ca: Record<MessageKey, string> = {
   'nav.settings': 'Configuració',
   'error.title': 'No s’ha pogut carregar aquesta pantalla',
   'error.description': 'Torna-ho a provar o torna a l’inici.',
+  'error.configuration.title': 'Configuració del servidor incompleta',
+  'error.configuration.description':
+    'L’aplicació no pot carregar aquesta pantalla perquè falta una variable d’entorn del servidor.',
+  'error.configuration.detail':
+    'Cal configurar {variable} a Vercel per a Preview (branch dev) i tornar a desplegar.',
   'error.reassurance': 'Les teves dades continuen desades i no s’ha fet cap canvi.',
   'error.retry': 'Torna-ho a provar',
   'error.help.title': 'Mentrestant, pots provar això',

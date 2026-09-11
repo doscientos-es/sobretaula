@@ -11,6 +11,7 @@ import { CircleAlert, House, RefreshCw, Utensils } from 'lucide-react'
 import { useSyncExternalStore, type ReactNode } from 'react'
 
 import { isPasswordRecoveryHash, PasswordResetPage } from '@/features/auth'
+import { missingEnvironmentVariable } from '@/app/root-error'
 import { DEFAULT_LOCALE } from '@/shared/lib/i18n/locale'
 import { createTranslator } from '@/shared/lib/i18n/messages'
 
@@ -61,7 +62,7 @@ function RootLayout() {
   return <Outlet />
 }
 
-function RootError({ reset }: { reset: () => void }) {
+function RootError({ error, reset }: { error: unknown; reset: () => void }) {
   const isPasswordRecovery = useSyncExternalStore(
     subscribeToLocationHash,
     isPasswordRecoveryLocation,
@@ -71,6 +72,8 @@ function RootError({ reset }: { reset: () => void }) {
   if (isPasswordRecovery) {
     return <PasswordResetPage />
   }
+
+  const missingVariable = missingEnvironmentVariable(error)
 
   return (
     <main aria-labelledby="error-title" className="st-error-page">
@@ -87,8 +90,17 @@ function RootError({ reset }: { reset: () => void }) {
           <div aria-hidden="true" className="st-error-icon">
             <CircleAlert className="size-7" />
           </div>
-          <h1 id="error-title">{t('error.title')}</h1>
-          <p id="error-description">{t('error.description')}</p>
+          <h1 id="error-title">
+            {missingVariable ? t('error.configuration.title') : t('error.title')}
+          </h1>
+          <p id="error-description">
+            {missingVariable ? t('error.configuration.description') : t('error.description')}
+          </p>
+          {missingVariable && (
+            <p className="st-error-reassurance" role="alert">
+              {t('error.configuration.detail').replace('{variable}', missingVariable)}
+            </p>
+          )}
           <p className="st-error-reassurance">{t('error.reassurance')}</p>
           <div aria-describedby="error-description" className="st-error-actions">
             <Button className="h-11 px-5" onPress={reset}>
