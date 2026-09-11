@@ -78,23 +78,23 @@ export const Route = createFileRoute('/t/$slug')({
       : []
     const metrics = isTenantOperational(tenant.status)
       ? await getDashboardMetrics({
-        data: {
-          tenantId: tenant.id,
-          venueIds: venues.map((venue) => venue.id),
-        },
-      })
+          data: {
+            tenantId: tenant.id,
+            venueIds: venues.map((venue) => venue.id),
+          },
+        })
       : {
-        actionItems: [],
-        nextReservationCovers: null,
-        nextReservationStartsAt: null,
-        openSessionCount: 0,
-        occupiedTables: 0,
-        paidTodayCents: 0,
-        pendingReservationsToday: 0,
-        reservationsToday: 0,
-        reservationsThisWeek: 0,
-        noShowsThisWeek: 0,
-      }
+          actionItems: [],
+          nextReservationCovers: null,
+          nextReservationStartsAt: null,
+          openSessionCount: 0,
+          occupiedTables: 0,
+          paidTodayCents: 0,
+          pendingReservationsToday: 0,
+          reservationsToday: 0,
+          reservationsThisWeek: 0,
+          noShowsThisWeek: 0,
+        }
     return {
       billingStatus,
       membership: context.tenantMembership,
@@ -143,12 +143,13 @@ function OnboardingStep({
     <div>
       <div className="flex items-start gap-4 py-4">
         <span
-          className={`mt-0.5 inline-flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${status === 'done'
-            ? 'bg-success/15 text-success'
-            : status === 'active'
-              ? 'bg-primary text-primary-foreground'
-              : 'bg-muted text-muted-foreground'
-            }`}
+          className={`mt-0.5 inline-flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${
+            status === 'done'
+              ? 'bg-success/15 text-success'
+              : status === 'active'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-muted text-muted-foreground'
+          }`}
         >
           {status === 'done' ? <Check className="size-4" /> : index}
         </span>
@@ -303,9 +304,9 @@ function TenantSuspendedNotice({
           </PageHeaderDescription>
         </div>
       </PageHeader>
-      <Card className="border-0 bg-destructive/8 shadow-[0_8px_24px_rgb(35_39_45_/_7%)] ring-1 ring-inset ring-destructive/20">
+      <Card className="bg-destructive/8 ring-destructive/20 border-0 shadow-[0_8px_24px_rgb(35_39_45_/_7%)] ring-1 ring-inset">
         <CardContent className="flex gap-4 pt-6">
-          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-destructive/12 text-destructive">
+          <span className="bg-destructive/12 text-destructive grid size-10 shrink-0 place-items-center rounded-xl">
             <TriangleAlert aria-hidden="true" className="size-5" />
           </span>
           <div className="min-w-0 flex-1 space-y-4">
@@ -361,10 +362,7 @@ function TenantLayout() {
     return tenant.status === 'setup_pending' ? (
       <TenantSetupPendingOnboarding billingStatus={billingStatus} tenant={tenant} />
     ) : (
-      <TenantSuspendedNotice
-        canAuthorizePayment={membership.role === 'owner'}
-        tenant={tenant}
-      />
+      <TenantSuspendedNotice canAuthorizePayment={membership.role === 'owner'} tenant={tenant} />
     )
   }
 
