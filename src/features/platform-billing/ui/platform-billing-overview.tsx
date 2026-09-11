@@ -7,6 +7,12 @@ import {
   DataViewState,
   DataViewStateDescription,
   DataViewStateTitle,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from '@doscientos/ui'
 
 import type { PlatformSubscriptionOverview } from '../application/get-platform-billing-overview'
@@ -44,42 +50,40 @@ export function PlatformBillingOverview({
         <CardTitle>Suscripciones activas</CardTitle>
         <CardDescription>Restaurantes, facturación recurrente y estado de acceso.</CardDescription>
       </CardHeader>
-      <CardContent className="overflow-x-auto px-0">
+      <CardContent className="px-0">
         <section aria-label="Suscripciones de tenants">
-          <table className="w-full min-w-[720px] text-left text-sm">
-            <thead className="text-muted-foreground border-b">
-              <tr>
-                <th className="px-3 py-3 font-medium">Restaurante</th>
-                <th className="px-3 py-3 font-medium">Plan neto</th>
-                <th className="px-3 py-3 font-medium">Locales</th>
-                <th className="px-3 py-3 font-medium">Total neto</th>
-                <th className="px-3 py-3 font-medium">Suscripción</th>
-                <th className="px-3 py-3 font-medium">Próximo cobro</th>
-                <th className="px-3 py-3 font-medium">Tenant</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table className="min-w-[720px] text-left">
+            <TableHeader className="text-muted-foreground">
+              <TableRow>
+                <TableHead>Restaurante</TableHead>
+                <TableHead>Plan neto</TableHead>
+                <TableHead>Locales</TableHead>
+                <TableHead>Total neto</TableHead>
+                <TableHead>Suscripción</TableHead>
+                <TableHead>Próximo cobro</TableHead>
+                <TableHead>Tenant</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {subscriptions.map((subscription) => (
-                <tr className="border-b last:border-0" key={subscription.tenantSlug}>
-                  <td className="px-3 py-3 font-medium">{subscription.tenantName}</td>
-                  <td className="px-3 py-3">
+                <TableRow key={subscription.tenantSlug}>
+                  <TableCell className="font-medium">{subscription.tenantName}</TableCell>
+                  <TableCell>
                     {subscription.planName} · {euro.format(subscription.planMonthlyNetCents / 100)}
                     /mes + IVA
-                  </td>
-                  <td className="px-3 py-3">{subscription.venueCount}</td>
-                  <td className="px-3 py-3">
-                    {euro.format(subscription.monthlyNetCents / 100)}/mes + IVA
-                  </td>
-                  <td className="px-3 py-3">
+                  </TableCell>
+                  <TableCell>{subscription.venueCount}</TableCell>
+                  <TableCell>{euro.format(subscription.monthlyNetCents / 100)}/mes + IVA</TableCell>
+                  <TableCell>
                     {statusLabel(subscription.status)}
                     {subscription.graceEndsOn ? ` · Gracia hasta ${subscription.graceEndsOn}` : ''}
-                  </td>
-                  <td className="px-3 py-3">{subscription.nextPaymentOn ?? 'Sin programar'}</td>
-                  <td className="px-3 py-3 capitalize">{subscription.tenantStatus}</td>
-                </tr>
+                  </TableCell>
+                  <TableCell>{subscription.nextPaymentOn ?? 'Sin programar'}</TableCell>
+                  <TableCell className="capitalize">{subscription.tenantStatus}</TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </section>
       </CardContent>
     </Card>

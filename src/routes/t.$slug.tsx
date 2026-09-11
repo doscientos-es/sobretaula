@@ -22,6 +22,7 @@ import {
   notFound,
   Outlet,
   redirect,
+  useParams,
   useRouterState,
 } from '@tanstack/react-router'
 import { ArrowLeft, Check, FileText, Store, TriangleAlert, Users } from 'lucide-react'
@@ -388,57 +389,36 @@ function TenantLayout() {
   )
 }
 
-function TenantRouteError({ reset }: { reset: () => void }) {
-  const { billingStatus, membership, tenant, venues } = Route.useLoaderData()
-  const navigationLocked = billingStatus.status === 'trialing' && !billingStatus.hasPaymentMethod
-  const Frame = isTenantAdministrator(membership.role) ? TenantAdminFrame : WorkerFrame
+function TenantRouteError({ error, reset }: { error: unknown; reset: () => void }) {
+  const { slug } = useParams({ from: '/t/$slug' })
+  const status = error instanceof Response ? error.status : undefined
+  const title = status === 403 ? 'No tienes permisos para acceder' : 'No se ha podido cargar esta pantalla'
+  const description =
+    status === 403
+      ? 'Tu usuario no tiene acceso a este restaurante o a esta sección.'
+      : status === 404
+        ? 'El restaurante o la sección solicitada no existe.'
+        : 'Ha ocurrido un problema al cargar los datos. Reintenta la operación; si continúa, contacta con soporte.'
 
   return (
-    <Frame
-      locale={tenant.defaultLocale}
-      navigationLocked={navigationLocked}
-      role={membership.role}
-      slug={tenant.slug}
-      title={tenant.name}
-      venues={venues}
-    >
-      <section className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              {navigationLocked
-                ? 'No puedes acceder todavía a esta sección'
-                : 'No se ha podido cargar esta sección'}
-            </CardTitle>
-            <CardDescription>
-              {navigationLocked
-                ? 'Para acceder, autoriza el pago de tu suscripción con SobreTaula.'
-                : 'Inténtalo de nuevo. Si el problema continúa, contacta con soporte.'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-wrap items-center gap-3">
-            {navigationLocked && membership.role === 'owner' ? (
-              <RedsysSubscriptionButton label="Autorizar pago seguro" tenantId={tenant.id} />
-            ) : navigationLocked ? (
-              <p className="text-muted-foreground text-sm">
-                Solo la persona propietaria puede autorizar este pago.
-              </p>
-            ) : (
-              <Button onPress={reset} type="button">
-                Reintentar
-              </Button>
-            )}
-            <Link
-              className="text-primary text-sm font-medium underline underline-offset-4"
-              params={{ slug: tenant.slug }}
-              to="/t/$slug/suscripcion/facturas"
-            >
-              Ver suscripción
-            </Link>
-          </CardContent>
-        </Card>
-      </section>
-    </Frame>
+    <main aria-live="assertive" className="mx-auto w-full max-w-2xl p-6 sm:p-10">
+      <Card>
+        <CardHeader>
+          <CardTitle>{title}</CardTitle>
+          <CardDescription>{description}</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-wrap items-center gap-3">
+          <Button onPress={reset} type="button">Reintentar</Button>
+          <Link
+            className="text-primary text-sm font-medium underline underline-offset-4"
+            params={{ slug }}
+            to="/t/$slug/suscripcion/facturas"
+          >
+            Ver suscripción
+          </Link>
+        </CardContent>
+      </Card>
+    </main>
   )
 }
 

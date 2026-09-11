@@ -4,6 +4,14 @@ import {
   AppShellHeader,
   AppShellMain,
   AppShellSidebar,
+  Button,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogRoot,
+  DialogTitle,
 } from '@doscientos/ui'
 import { Link, useNavigate, useParams } from '@tanstack/react-router'
 import {
@@ -266,41 +274,33 @@ export function TenantAdminFrame({
         )}
         <AppShellContent className="mx-auto max-w-7xl p-4 sm:p-6">{children}</AppShellContent>
         {showPaymentDialog && (
-          <dialog
-            aria-labelledby="payment-dialog-title"
-            className="fixed inset-0 z-50 grid place-items-center bg-black/35 p-4"
-            onCancel={() => setShowPaymentDialog(false)}
-            open
-          >
-            <div className="bg-background w-full max-w-md rounded-2xl border p-6 shadow-2xl">
-              <h2 className="text-lg font-semibold" id="payment-dialog-title">
-                Valida el pago para acceder
-              </h2>
-              <p className="text-muted-foreground mt-2 text-sm leading-6">
-                Este módulo estará disponible cuando autorices el método de pago seguro de tu
-                suscripción.
-              </p>
-              <div className="mt-5 flex flex-wrap justify-end gap-2">
-                <button
-                  className="border-border rounded-lg border px-4 py-2 text-sm font-medium"
-                  onClick={() => setShowPaymentDialog(false)}
-                  type="button"
-                >
-                  Ahora no
-                </button>
-                <button
-                  className="bg-primary text-primary-foreground rounded-lg px-4 py-2 text-sm font-medium"
-                  onClick={() => {
+          <DialogRoot onOpenChange={setShowPaymentDialog} open>
+            <DialogContent className="max-w-md" showCloseButton={false}>
+              <DialogHeader>
+                <DialogTitle>Valida el pago para acceder</DialogTitle>
+                <DialogDescription>
+                  Este módulo estará disponible cuando autorices el método de pago seguro de tu
+                  suscripción.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button type="button" variant="outline">
+                    Ahora no
+                  </Button>
+                </DialogClose>
+                <Button
+                  onPress={() => {
                     setShowPaymentDialog(false)
                     void navigate({ to: '/t/$slug/suscripcion/facturas', params: { slug } })
                   }}
                   type="button"
                 >
                   Ir a suscripción
-                </button>
-              </div>
-            </div>
-          </dialog>
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </DialogRoot>
         )}
       </AppShellMain>
     </AppShell>

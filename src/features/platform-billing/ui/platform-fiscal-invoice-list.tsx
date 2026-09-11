@@ -7,6 +7,12 @@ import {
   DataViewState,
   DataViewStateDescription,
   DataViewStateTitle,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from '@doscientos/ui'
 
 import type { Locale } from '@/shared/lib/i18n/locale'
@@ -43,40 +49,42 @@ export function PlatformFiscalInvoiceList({
   }
 
   return (
-    <Card>
+    <Card className="border-border/70">
       <CardHeader>
         <CardTitle>{title}</CardTitle>
         <CardDescription>Documentos emitidos por la plataforma a sus restaurantes.</CardDescription>
       </CardHeader>
-      <CardContent className="overflow-x-auto px-0">
+      <CardContent className="px-0">
         <section aria-label={title}>
-          <table className="w-full min-w-[680px] text-left text-sm">
-            <thead className="text-muted-foreground border-b">
-              <tr>
-                {showTenant && <th className="px-3 py-3 font-medium">Restaurante</th>}
-                <th className="px-3 py-3 font-medium">Factura</th>
-                <th className="px-3 py-3 font-medium">Periodo</th>
-                <th className="px-3 py-3 font-medium">Total</th>
-                <th className="px-3 py-3 font-medium">Estado</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table className="min-w-[680px] text-left">
+            <TableHeader className="text-muted-foreground">
+              <TableRow>
+                {showTenant && <TableHead>Restaurante</TableHead>}
+                <TableHead>Factura</TableHead>
+                <TableHead>Periodo</TableHead>
+                <TableHead>Total</TableHead>
+                <TableHead>Estado</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {invoices.map((invoice) => (
-                <tr className="border-b last:border-0" key={invoice.id}>
-                  {showTenant && <td className="px-3 py-3">{invoice.tenantName}</td>}
-                  <td className="px-3 py-3 font-medium">{invoice.fullNumber ?? 'Sin numerar'}</td>
-                  <td className="px-3 py-3">
+                <TableRow key={invoice.id}>
+                  {showTenant && <TableCell>{invoice.tenantName}</TableCell>}
+                  <TableCell className="font-medium">
+                    {invoice.fullNumber ?? 'Sin numerar'}
+                  </TableCell>
+                  <TableCell>
                     {invoice.periodStart} — {invoice.periodEnd}
-                  </td>
-                  <td className="px-3 py-3">{formatMoney(invoice.totalCents, locale)}</td>
-                  <td className="px-3 py-3">
+                  </TableCell>
+                  <TableCell>{formatMoney(invoice.totalCents, locale)}</TableCell>
+                  <TableCell>
                     {statusLabel(invoice.status)}
                     {invoice.reviewReason ? ` · ${invoice.reviewReason}` : ''}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </section>
       </CardContent>
     </Card>

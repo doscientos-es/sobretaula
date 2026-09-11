@@ -31,7 +31,7 @@ export function CurrentUserSidebar() {
   const displayName = user?.displayName ?? 'Cuenta'
 
   return (
-    <footer className="bg-sidebar border-border/70 sticky bottom-0 z-10 mt-auto flex shrink-0 items-center gap-2 border-t px-1.5 pt-3 pb-1">
+    <footer className="st-saas-user-menu border-border/70 sticky bottom-0 z-10 mt-auto flex shrink-0 items-center gap-2 border-t px-1.5 pt-3 pb-1">
       <Avatar className="bg-primary/10 text-primary" size="sm">
         <AvatarFallback>{userInitials(displayName)}</AvatarFallback>
       </Avatar>
