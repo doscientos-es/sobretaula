@@ -60,6 +60,9 @@ para no ejecutar sus usuarios ni fixtures contra el único proyecto con datos
 reales. La revisión de migraciones comprueba sus políticas y grants; las pruebas
 unitarias y de interfaz no se conectan a producción.
 
+Las tarjetas sandbox y las condiciones necesarias para probar Redsys están en
+[`docs/redsys-testing.md`](docs/redsys-testing.md).
+
 ## Despliegue
 
 Requisitos del runtime (ADR-0001): Node 22+, módulos nativos disponibles y

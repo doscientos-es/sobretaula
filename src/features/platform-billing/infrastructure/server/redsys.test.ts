@@ -3,6 +3,7 @@ import { createCipheriv, createHmac } from 'node:crypto'
 import { describe, expect, it } from 'vitest'
 
 import {
+  encryptRedsysReference,
   isRedsysSuccess,
   createRedsysPaymentForm,
   parseRedsysNotification,
@@ -40,6 +41,13 @@ function signatureFor(order: string, merchantParameters: string): string {
 }
 
 describe('Redsys notification helpers', () => {
+  it('encrypts recurring references before persistence', () => {
+    const encrypted = encryptRedsysReference('test-reference', 'preview-key')
+
+    expect(encrypted).not.toEqual(Buffer.from('test-reference'))
+    expect(encrypted.length).toBeGreaterThan('test-reference'.length)
+  })
+
   it('builds a hosted form with a verifiable signature', () => {
     const form = createRedsysPaymentForm({
       amountCents: 14900,

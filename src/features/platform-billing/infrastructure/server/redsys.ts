@@ -1,4 +1,4 @@
-import { createCipheriv, createHash, createHmac, timingSafeEqual } from 'node:crypto'
+import { createCipheriv, createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto'
 
 export type RedsysSignatureVersion = 'HMAC_SHA256_V1' | 'HMAC_SHA512_V2'
 
@@ -71,6 +71,16 @@ function readRequired(name: string): string {
   const value = process.env[name]?.trim()
   if (!value) throw new Error(`missing_${name.toLowerCase()}`)
   return value
+}
+
+/** Encrypts a Redsys recurring reference before it is stored in Supabase. */
+export function encryptRedsysReference(reference: string, encryptionKey: string): Buffer {
+  if (!reference.trim() || !encryptionKey.trim()) throw new Error('invalid_redsys_reference')
+  const key = createHash('sha256').update(encryptionKey, 'utf8').digest()
+  const iv = randomBytes(12)
+  const cipher = createCipheriv('aes-256-gcm', key, iv)
+  const ciphertext = Buffer.concat([cipher.update(reference, 'utf8'), cipher.final()])
+  return Buffer.concat([Buffer.from([1]), iv, cipher.getAuthTag(), ciphertext])
 }
 
 /** Reads only the payment terminal dedicated to SobreTaula from server secrets. */
