@@ -59,7 +59,7 @@ export function TenantHomePage({
                 ? `Hay ${metrics.openSessionCount} servicio${metrics.openSessionCount === 1 ? '' : 's'} en curso.`
                 : nextService
                   ? `Todo preparado para el próximo servicio a las ${nextService}.`
-                  : `No hay incidencias operativas pendientes en ${tenant.name}.`}
+                  : `Todos los sistemas funcionan correctamente en ${tenant.name}.`}
           </PageHeaderDescription>
         </div>
       </PageHeader>
@@ -117,12 +117,12 @@ export function TenantHomePage({
         ))}
       </div>
       <Card>
-        <CardHeader className="border-b">
+        <CardHeader className="border-border/70 border-b">
           <CardTitle>Prioridades de hoy</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           {metrics.actionItems.length > 0 ? (
-            <ul className="divide-y">
+            <ul className="divide-border divide-y">
               {metrics.actionItems.map((item) => {
                 const venue = venues.find((candidate) => candidate.id === item.venueId)
                 if (!venue) return null

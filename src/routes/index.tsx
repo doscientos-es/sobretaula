@@ -49,7 +49,7 @@ function TenantPicker() {
       }
       headerClassName="st-saas-header flex h-11 items-center justify-between px-5 sm:px-6"
       mainClassName="st-saas-main min-w-0 flex-1"
-      mobileNavigation={null}
+      mobileTabs={null}
       sidebar={
         <>
           <Link

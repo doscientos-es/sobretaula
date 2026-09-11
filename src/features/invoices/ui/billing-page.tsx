@@ -36,6 +36,7 @@ import {
   upsertFiscalSettings,
   type FiscalSettingsView,
 } from '../application/invoice'
+import { validateFiscalSettings } from '../domain/fiscal-settings'
 
 const CURRENT_YEAR = new Date().getFullYear()
 
@@ -287,15 +288,24 @@ function FiscalSettingsCard({
   function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (feedback.pending) return
-    feedback.setPending()
-    void upsertFiscalSettings({
-      data: {
+    let normalized
+    try {
+      normalized = validateFiscalSettings({
         addressLine,
         city,
         countryCode,
         issuerNif,
         legalName,
         postalCode,
+      })
+    } catch (error) {
+      feedback.setError(fiscalErrorMessage(error))
+      return
+    }
+    feedback.setPending()
+    void upsertFiscalSettings({
+      data: {
+        ...normalized,
         tenantId,
       },
     })

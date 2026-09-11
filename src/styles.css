@@ -308,6 +308,31 @@ select:not([data-slot]):focus-visible {
   padding-bottom: 2.5rem;
 }
 
+.st-saas-frame {
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.st-saas-frame [data-slot='app-shell-sidebar'] {
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.st-saas-frame [data-slot='app-shell-main'] {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.st-saas-frame [data-slot='app-shell-content'] {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
 .st-mobile-nav {
   border-bottom: 1px solid var(--border);
   background: var(--background);
@@ -360,6 +385,11 @@ select:not([data-slot]):focus-visible {
 .st-saas-nav-link--active {
   color: #24272d;
   background: #eeeeef;
+}
+
+.st-saas-sidebar nav[inert] {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 .st-saas-empty-state {

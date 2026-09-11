@@ -177,19 +177,16 @@ export function TimekeepingPage({
             ))}
           </div>
           {!isOnline && (
-            <p
-              className="text-warning-foreground bg-warning/10 rounded-md p-3 text-sm"
-              role="status"
-            >
+            <output className="text-warning-foreground bg-warning/10 rounded-md p-3 text-sm">
               Sin conexión. El fichaje personal se guardará localmente y se sincronizará al volver
               la red. Pendientes: {pendingOffline}.
-            </p>
+            </output>
           )}
           {isOnline && pendingOffline > 0 && (
-            <p className="text-muted-foreground text-sm" role="status">
+            <output className="text-muted-foreground text-sm">
               Sincronizando {pendingOffline} fichaje{pendingOffline === 1 ? '' : 's'} pendiente
               {pendingOffline === 1 ? '' : 's'}…
-            </p>
+            </output>
           )}
           <div className="border-border/70 space-y-3 border-t pt-4">
             <p className="font-medium">PIN de terminal</p>
@@ -256,7 +253,11 @@ function TimekeepingManagement({
   venueId: string
 }) {
   const [employeeId, setEmployeeId] = useState(management.employees[0]?.userId ?? '')
-  const [assignmentVenueIds, setAssignmentVenueIds] = useState<string[]>([])
+  const [assignmentVenueIds, setAssignmentVenueIds] = useState<string[]>(
+    () =>
+      management.assignments.find((assignment) => assignment.employeeId === employeeId)?.venueIds ??
+      [],
+  )
   const [report, setReport] = useState<Awaited<
     ReturnType<typeof getTimekeepingAdvancedReport>
   > | null>(null)
@@ -267,14 +268,7 @@ function TimekeepingManagement({
   })
   const [reportTo, setReportTo] = useState(() => new Date().toISOString().slice(0, 10))
   const currentTerm = management.terms.find((term) => term.employeeId === employeeId)
-  const currentAssignment = management.assignments.find(
-    (assignment) => assignment.employeeId === employeeId,
-  )
   const today = new Date().toISOString().slice(0, 10)
-
-  useEffect(() => {
-    setAssignmentVenueIds(currentAssignment?.venueIds ?? [])
-  }, [currentAssignment])
 
   async function saveTerm(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -380,7 +374,15 @@ function TimekeepingManagement({
               <span className="mb-1 block text-sm font-medium">Empleado</span>
               <select
                 className="border-input h-10 w-full rounded-md border bg-transparent px-3"
-                onChange={(event) => setEmployeeId(event.target.value)}
+                onChange={(event) => {
+                  const nextEmployeeId = event.target.value
+                  setEmployeeId(nextEmployeeId)
+                  setAssignmentVenueIds(
+                    management.assignments.find(
+                      (assignment) => assignment.employeeId === nextEmployeeId,
+                    )?.venueIds ?? [],
+                  )
+                }}
                 value={employeeId}
               >
                 {management.employees.map((employee) => (
@@ -557,7 +559,7 @@ function TimekeepingManagement({
             </Button>
           </form>
           {report && (
-            <div className="space-y-2" role="region" aria-label="Resultado del informe laboral">
+            <section aria-label="Resultado del informe laboral" className="space-y-2">
               <p className="text-sm font-medium">
                 Total: {report.totalWorkedMinutes} min trabajados
               </p>
@@ -592,7 +594,7 @@ function TimekeepingManagement({
                   </tbody>
                 </table>
               </div>
-            </div>
+            </section>
           )}
         </div>
         <FormFeedback pendingLabel="Guardando configuración…" state={feedback.state} />

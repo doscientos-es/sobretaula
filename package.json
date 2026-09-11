@@ -10,11 +10,12 @@
     "format": "oxfmt -c node_modules/@doscientos/configs/oxfmt.json --write .",
     "format:check": "oxfmt -c node_modules/@doscientos/configs/oxfmt.json --check .",
     "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
     "structure:check": "doscientos-structure --root src --tanstack-router",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "quality": "pnpm format:check && pnpm lint && pnpm structure:check && pnpm typecheck && pnpm test",
-    "quality:quick": "pnpm format:check && pnpm lint",
+    "quality:quick": "pnpm format && pnpm lint:fix",
     "hooks:install": "node .githooks/install.mjs"
   },
   "dependencies": {

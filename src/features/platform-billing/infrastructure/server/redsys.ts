@@ -25,12 +25,8 @@ export interface RedsysRestResponse {
   [key: string]: unknown
 }
 
-function base64Url(value: Buffer | string): string {
-  return (Buffer.isBuffer(value) ? value : Buffer.from(value))
-    .toString('base64')
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/g, '')
+function base64(value: Buffer | string): string {
+  return (Buffer.isBuffer(value) ? value : Buffer.from(value)).toString('base64')
 }
 
 function deriveOrderKey(order: string, secretKey: string): Buffer {
@@ -44,7 +40,8 @@ function deriveOrderKey(order: string, secretKey: string): Buffer {
 }
 
 function normalizedSignature(signature: string): Buffer {
-  return Buffer.from(signature.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, ''))
+  const standard = signature.replace(/-/g, '+').replace(/_/g, '/')
+  return Buffer.from(standard + '='.repeat((4 - (standard.length % 4)) % 4), 'base64')
 }
 
 function readRequired(name: string): string {
@@ -68,7 +65,7 @@ export function readRedsysConfig(): RedsysConfig {
 }
 
 function encodeParameters(parameters: Record<string, string>): string {
-  return base64Url(JSON.stringify(parameters))
+  return base64(JSON.stringify(parameters))
 }
 
 /** Builds the hosted Redsys form used for the first subscription authorization. */
@@ -103,7 +100,7 @@ export function createRedsysPaymentForm({
     Ds_Merchant_COF_INI: 'S',
     Ds_Merchant_COF_TYPE: 'R',
   })
-  const signature = base64Url(
+  const signature = base64(
     createHmac('sha256', deriveOrderKey(merchantOrder, config.secretKey))
       .update(merchantParameters)
       .digest(),
@@ -142,7 +139,7 @@ export async function chargeRedsysReference({
     DS_MERCHANT_IDENTIFIER: identifier,
     DS_MERCHANT_COF_TYPE: 'R',
   })
-  const signature = base64Url(
+  const signature = base64(
     createHmac('sha512', deriveOrderKey(merchantOrder, config.secretKey))
       .update(parameters)
       .digest(),
@@ -186,9 +183,10 @@ export function verifyRedsysSignature({
     const order = decoded.Ds_Order ?? decoded.Ds_Merchant_Order
     if (typeof order !== 'string' || !/^[A-Za-z0-9]{4,12}$/.test(order)) return false
     const expected = Buffer.from(
-      base64Url(
+      base64(
         createHmac('sha256', deriveOrderKey(order, secretKey)).update(merchantParameters).digest(),
       ),
+      'base64',
     )
     const received = normalizedSignature(signature)
     return expected.length === received.length && timingSafeEqual(expected, received)

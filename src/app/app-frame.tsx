@@ -5,7 +5,7 @@ import {
   AppShellMain,
   AppShellSidebar,
 } from '@doscientos/ui'
-import { Link, useParams } from '@tanstack/react-router'
+import { Link, useNavigate, useParams } from '@tanstack/react-router'
 import {
   CalendarDays,
   ConciergeBell,
@@ -18,9 +18,9 @@ import {
   UtensilsCrossed,
   Users,
 } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { useState, type MouseEvent, type ReactNode } from 'react'
 
-import { CurrentUserSidebar, LogoutButton } from '@/features/auth'
+import { CurrentUserSidebar } from '@/features/auth'
 import { resolveVenue, VenueSwitcher, type Venue } from '@/features/venues'
 import type { Locale } from '@/shared/lib/i18n/locale'
 import { createTranslator } from '@/shared/lib/i18n/messages'
@@ -32,19 +32,30 @@ const navLinkClass =
 export function TenantAdminFrame({
   children,
   locale,
+  navigationLocked = false,
   slug,
   title,
   venues,
 }: {
   children: ReactNode
   locale: Locale
+  navigationLocked?: boolean
   slug: string
   title: string
   venues: readonly Venue[]
 }) {
   const t = createTranslator(locale)
+  const navigate = useNavigate()
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false)
   const params = useParams({ strict: false })
   const activeVenue = resolveVenue(venues, params.venue ?? null)
+
+  function handleLockedNavigation(event: MouseEvent<HTMLElement>) {
+    if (!navigationLocked) return
+    event.preventDefault()
+    event.stopPropagation()
+    setShowPaymentDialog(true)
+  }
 
   return (
     <AppShell className="st-app-frame st-saas-frame" sidebarBreakpoint="lg">
@@ -82,6 +93,7 @@ export function TenantAdminFrame({
             <p className="st-saas-section-label px-1.5">Operativa del local</p>
             <nav aria-label="Operativa del local" className="mt-2 space-y-0.5">
               <Link
+                onClick={handleLockedNavigation}
                 to="/t/$slug/l/$venue/tpv"
                 params={{ slug, venue: activeVenue.slug }}
                 activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
@@ -96,6 +108,7 @@ export function TenantAdminFrame({
                 activeOptions={{ exact: true }}
                 activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
                 className={navLinkClass}
+                onClick={handleLockedNavigation}
               >
                 <Map className="size-3" />
                 {t('nav.floorPlan')}
@@ -105,6 +118,7 @@ export function TenantAdminFrame({
                 params={{ slug, venue: activeVenue.slug }}
                 activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
                 className={navLinkClass}
+                onClick={handleLockedNavigation}
               >
                 <ConciergeBell className="size-3" />
                 {t('nav.service')}
@@ -114,6 +128,7 @@ export function TenantAdminFrame({
                 params={{ slug, venue: activeVenue.slug }}
                 activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
                 className={navLinkClass}
+                onClick={handleLockedNavigation}
               >
                 <CalendarDays className="size-3" />
                 {t('nav.reservations')}
@@ -129,6 +144,7 @@ export function TenantAdminFrame({
               params={{ slug }}
               activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
               className={navLinkClass}
+              onClick={handleLockedNavigation}
             >
               <UtensilsCrossed className="size-3" />
               {t('nav.menu')}
@@ -138,6 +154,7 @@ export function TenantAdminFrame({
               params={{ slug }}
               activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
               className={navLinkClass}
+              onClick={handleLockedNavigation}
             >
               <FileText className="size-3" />
               {t('nav.billing')}
@@ -147,6 +164,7 @@ export function TenantAdminFrame({
               params={{ slug }}
               activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
               className={navLinkClass}
+              onClick={handleLockedNavigation}
             >
               <FileText className="size-3" />
               {t('nav.invoices')}
@@ -156,6 +174,7 @@ export function TenantAdminFrame({
               params={{ slug }}
               activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
               className={navLinkClass}
+              onClick={handleLockedNavigation}
             >
               <Mail className="size-3" />
               Comunicaciones
@@ -165,6 +184,7 @@ export function TenantAdminFrame({
               params={{ slug }}
               activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
               className={navLinkClass}
+              onClick={handleLockedNavigation}
             >
               <Users className="size-3" />
               Equipo
@@ -181,7 +201,7 @@ export function TenantAdminFrame({
               className={navLinkClass}
             >
               <FileText className="size-3" />
-              Facturas de SobreTaula
+              Suscripción
             </Link>
           </nav>
         </div>
@@ -208,50 +228,80 @@ export function TenantAdminFrame({
               <span className="hidden sm:inline">Ver como cliente</span>
             </Link>
           </div>
-          <LogoutButton />
         </AppShellHeader>
-        <nav
-          aria-label="Navegación principal"
-          className="st-mobile-nav flex gap-5 overflow-x-auto px-5 py-3 text-xs font-medium lg:hidden"
-        >
-          <Link params={{ slug }} to="/t/$slug">
-            Resumen
-          </Link>
-          {activeVenue && (
-            <Link params={{ slug, venue: activeVenue.slug }} to="/t/$slug/l/$venue/plano">
+        {activeVenue && (
+          <nav
+            aria-label="Navegación del local"
+            className={`st-mobile-nav flex gap-5 overflow-x-auto px-5 py-3 text-xs font-medium lg:hidden ${navigationLocked ? 'opacity-60' : ''}`}
+          >
+            <Link
+              onClick={handleLockedNavigation}
+              params={{ slug, venue: activeVenue.slug }}
+              to="/t/$slug/l/$venue/tpv"
+            >
+              TPV
+            </Link>
+            <Link
+              onClick={handleLockedNavigation}
+              params={{ slug, venue: activeVenue.slug }}
+              to="/t/$slug/l/$venue/plano"
+            >
               Plano
             </Link>
-          )}
-          {activeVenue && (
-            <Link params={{ slug, venue: activeVenue.slug }} to="/t/$slug/l/$venue/servicio">
+            <Link
+              onClick={handleLockedNavigation}
+              params={{ slug, venue: activeVenue.slug }}
+              to="/t/$slug/l/$venue/servicio"
+            >
               Servicio
             </Link>
-          )}
-          {activeVenue && (
-            <Link params={{ slug, venue: activeVenue.slug }} to="/t/$slug/l/$venue/reservas">
+            <Link
+              onClick={handleLockedNavigation}
+              params={{ slug, venue: activeVenue.slug }}
+              to="/t/$slug/l/$venue/reservas"
+            >
               Reservas
             </Link>
-          )}
-          <Link params={{ slug }} to="/t/$slug/carta">
-            Carta
-          </Link>
-          <Link params={{ slug }} to="/t/$slug/facturacion">
-            Facturación
-          </Link>
-          <Link params={{ slug }} to="/t/$slug/facturas">
-            Facturas
-          </Link>
-          <Link params={{ slug }} to="/t/$slug/comunicaciones">
-            Comunicaciones
-          </Link>
-          <Link params={{ slug }} to="/t/$slug/equipo">
-            Equipo
-          </Link>
-          <Link params={{ slug }} to="/t/$slug/suscripcion/facturas">
-            Cuenta
-          </Link>
-        </nav>
+          </nav>
+        )}
         <AppShellContent className="mx-auto max-w-7xl p-4 sm:p-6">{children}</AppShellContent>
+        {showPaymentDialog && (
+          <dialog
+            aria-labelledby="payment-dialog-title"
+            className="fixed inset-0 z-50 grid place-items-center bg-black/35 p-4"
+            onCancel={() => setShowPaymentDialog(false)}
+            open
+          >
+            <div className="bg-background w-full max-w-md rounded-2xl border p-6 shadow-2xl">
+              <h2 className="text-lg font-semibold" id="payment-dialog-title">
+                Valida el pago para acceder
+              </h2>
+              <p className="text-muted-foreground mt-2 text-sm leading-6">
+                Este módulo estará disponible cuando autorices el método de pago seguro de tu
+                suscripción.
+              </p>
+              <div className="mt-5 flex flex-wrap justify-end gap-2">
+                <button
+                  className="border-border rounded-lg border px-4 py-2 text-sm font-medium"
+                  onClick={() => setShowPaymentDialog(false)}
+                  type="button"
+                >
+                  Ahora no
+                </button>
+                <button
+                  className="bg-primary text-primary-foreground rounded-lg px-4 py-2 text-sm font-medium"
+                  onClick={() => {
+                    setShowPaymentDialog(false)
+                    void navigate({ to: '/t/$slug/suscripcion/facturas', params: { slug } })
+                  }}
+                  type="button"
+                >
+                  Ir a suscripción
+                </button>
+              </div>
+            </div>
+          </dialog>
+        )}
       </AppShellMain>
     </AppShell>
   )

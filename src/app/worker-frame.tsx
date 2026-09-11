@@ -3,7 +3,8 @@ import { CalendarDays, ConciergeBell, Map, Utensils } from 'lucide-react'
 import type { ReactNode } from 'react'
 
 import { AppShellFrame } from '@/app/app-shell-frame'
-import { CurrentUserSidebar, LogoutButton } from '@/features/auth'
+import { CurrentUserSidebar } from '@/features/auth'
+import type { TenantRole } from '@/features/tenancy'
 import { resolveVenue, VenueSwitcher, type Venue } from '@/features/venues'
 import type { Locale } from '@/shared/lib/i18n/locale'
 import { createTranslator } from '@/shared/lib/i18n/messages'
@@ -20,9 +21,11 @@ export function WorkerFrame({
 }: {
   children: ReactNode
   locale: Locale
+  navigationLocked?: boolean
   slug: string
   title: string
   venues: readonly Venue[]
+  role?: TenantRole
 }) {
   const t = createTranslator(locale)
   const params = useParams({ strict: false })
@@ -34,21 +37,18 @@ export function WorkerFrame({
       className="st-app-frame st-saas-frame"
       contentClassName="mx-auto max-w-7xl p-4 sm:p-6"
       header={
-        <>
-          <div className="flex min-w-0 flex-1 items-center gap-2">
-            <span className="st-saas-brand-mark lg:hidden">
-              <Utensils className="size-3" />
-            </span>
-            <p className="st-saas-breadcrumb truncate text-xs">
-              {title} <span>/</span> {activeVenue?.name ?? 'Selecciona un local'}
-            </p>
-          </div>
-          <LogoutButton />
-        </>
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          <span className="st-saas-brand-mark lg:hidden">
+            <Utensils className="size-3" />
+          </span>
+          <p className="st-saas-breadcrumb truncate text-xs">
+            {title} <span>/</span> {activeVenue?.name ?? 'Selecciona un local'}
+          </p>
+        </div>
       }
       headerClassName="st-saas-header flex h-11 items-center justify-between px-5 sm:px-6"
       mainClassName="st-saas-main min-w-0 flex-1"
-      mobileNavigation={
+      mobileTabs={
         <nav
           aria-label="Navegación de operación"
           className="st-mobile-nav flex gap-5 overflow-x-auto px-5 py-3 text-xs font-medium lg:hidden"

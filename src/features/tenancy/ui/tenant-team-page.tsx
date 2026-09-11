@@ -63,6 +63,12 @@ function teamErrorMessage(error: unknown): string {
     return 'No se pudo enviar la invitación. Comprueba el correo e inténtalo de nuevo.'
   if (code.includes('team_profile_lookup_failed'))
     return 'No se pudo consultar la cuenta del trabajador. Inténtalo de nuevo.'
+  if (code.includes('tenant_invitation_save_failed:42501'))
+    return 'No tienes permisos para enviar invitaciones en este restaurante.'
+  if (code.includes('tenant_invitation_save_failed'))
+    return 'No se pudo guardar la invitación. Comprueba que el restaurante esté disponible e inténtalo de nuevo.'
+  if (code.includes('team_member_upsert_failed'))
+    return 'No se pudo incorporar la cuenta existente. Inténtalo de nuevo o usa una invitación.'
   if (error instanceof Response && error.status === 403)
     return 'No tienes permisos para añadir este rol.'
   return 'No se ha podido actualizar el equipo. Revisa tus permisos e inténtalo de nuevo.'

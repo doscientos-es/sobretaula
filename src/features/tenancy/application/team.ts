@@ -139,7 +139,10 @@ export const inviteTenantMember = createServerFn({ method: 'POST' })
         p_tenant_id: data.tenantId,
         p_user_id: existing.user_id,
       })
-      if (error) throw new Response('Forbidden', { status: 403 })
+      if (error) {
+        if (error.code === '42501') throw new Response('Forbidden', { status: 403 })
+        throw new Error(`team_member_upsert_failed:${error.code}`)
+      }
       return { kind: 'member_added' as const }
     }
 

@@ -4,7 +4,10 @@ import {
   AppShellHeader,
   AppShellMain,
   AppShellSidebar,
+  Button,
+  Drawer,
 } from '@doscientos/ui'
+import { Menu } from 'lucide-react'
 import type { ReactNode } from 'react'
 
 /** Shared structure for frames. Each area owns its own navigation and context. */
@@ -15,7 +18,7 @@ export function AppShellFrame({
   header,
   headerClassName,
   mainClassName,
-  mobileNavigation,
+  mobileTabs,
   sidebar,
   sidebarClassName,
 }: {
@@ -25,7 +28,7 @@ export function AppShellFrame({
   header: ReactNode
   headerClassName: string
   mainClassName: string
-  mobileNavigation: ReactNode
+  mobileTabs: ReactNode
   sidebar: ReactNode
   sidebarClassName: string
 }) {
@@ -33,8 +36,29 @@ export function AppShellFrame({
     <AppShell className={className} sidebarBreakpoint="lg">
       <AppShellSidebar className={sidebarClassName}>{sidebar}</AppShellSidebar>
       <AppShellMain className={mainClassName}>
-        <AppShellHeader className={headerClassName}>{header}</AppShellHeader>
-        {mobileNavigation}
+        <AppShellHeader className={headerClassName}>
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <Drawer
+              className="w-[min(88vw,22rem)]"
+              dialogProps={{ 'aria-label': 'Menú de navegación' }}
+              side="left"
+              trigger={
+                <Button
+                  aria-label="Abrir menú de navegación"
+                  className="shrink-0 lg:hidden"
+                  size="icon"
+                  variant="ghost"
+                >
+                  <Menu aria-hidden="true" className="size-4" />
+                </Button>
+              }
+            >
+              <div className="flex h-full min-h-0 flex-col overflow-y-auto p-3">{sidebar}</div>
+            </Drawer>
+            {header}
+          </div>
+        </AppShellHeader>
+        {mobileTabs}
         <AppShellContent className={contentClassName}>{children}</AppShellContent>
       </AppShellMain>
     </AppShell>

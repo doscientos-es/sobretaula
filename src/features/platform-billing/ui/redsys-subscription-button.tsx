@@ -1,9 +1,16 @@
 import { Button } from '@doscientos/ui'
+import { CreditCard } from 'lucide-react'
 import { useState } from 'react'
 
 import { createSubscriptionPayment } from '../application/create-subscription-payment'
 
-export function RedsysSubscriptionButton({ tenantId }: { tenantId: string }) {
+export function RedsysSubscriptionButton({
+  label = 'Autorizar pago seguro',
+  tenantId,
+}: {
+  label?: string
+  tenantId: string
+}) {
   const [pending, setPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -37,7 +44,8 @@ export function RedsysSubscriptionButton({ tenantId }: { tenantId: string }) {
   return (
     <div className="space-y-2">
       <Button disabled={pending} onClick={() => void start()} size="lg">
-        {pending ? 'Preparando pago…' : 'Autorizar pago seguro'}
+        <CreditCard aria-hidden="true" className="size-4" />
+        {pending ? 'Preparando pago…' : label}
       </Button>
       {error && <p className="text-destructive text-sm">{error}</p>}
     </div>

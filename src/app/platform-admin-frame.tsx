@@ -6,7 +6,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from '@doscientos/ui'
-import { Link, useNavigate } from '@tanstack/react-router'
+import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
 import {
   Building2,
   CreditCard,
@@ -29,6 +29,9 @@ const navLinkClass =
   'st-platform-nav-link flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors'
 
 export function PlatformAdminFrame({ children }: { children: ReactNode }) {
+  const pathname = useRouterState({ select: (state) => state.location.pathname })
+  const isBillingModule = pathname === '/admin/facturacion' || pathname === '/admin/facturas'
+
   return (
     <AppShellFrame
       className="st-app-frame st-platform-frame"
@@ -48,21 +51,16 @@ export function PlatformAdminFrame({ children }: { children: ReactNode }) {
       }
       headerClassName="st-platform-header flex h-11 items-center justify-between px-5 sm:px-8"
       mainClassName="st-platform-main min-w-0 flex-1"
-      mobileNavigation={
-        <nav
-          aria-label="Navegación de plataforma"
-          className="st-mobile-nav flex gap-5 overflow-x-auto px-5 py-3 text-xs font-medium lg:hidden"
-        >
-          <Link activeOptions={{ exact: true }} to="/admin">
-            Resumen
-          </Link>
-          <Link to="/admin/facturacion">Suscripciones</Link>
-          <Link to="/admin/facturas">Facturas</Link>
-          <Link to="/admin/tenants">Tenants</Link>
-          <Link to="/admin/equipo">Equipo</Link>
-          <Link to="/admin/auditoria">Auditoría</Link>
-          <Link to="/admin/ajustes">Ajustes</Link>
-        </nav>
+      mobileTabs={
+        isBillingModule ? (
+          <nav
+            aria-label="Navegación de facturación"
+            className="st-mobile-nav flex gap-5 overflow-x-auto px-5 py-3 text-xs font-medium lg:hidden"
+          >
+            <Link to="/admin/facturacion">Suscripciones</Link>
+            <Link to="/admin/facturas">Facturas</Link>
+          </nav>
+        ) : null
       }
       sidebar={
         <>

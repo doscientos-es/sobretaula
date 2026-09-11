@@ -1,9 +1,11 @@
 import {
   Badge,
+  Button,
   type BadgeProps,
   buttonVariants,
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
   DataViewState,
@@ -22,7 +24,7 @@ import {
   redirect,
   useRouterState,
 } from '@tanstack/react-router'
-import { ArrowLeft, Check, CreditCard, FileText, Store, Users } from 'lucide-react'
+import { ArrowLeft, Check, FileText, Store, TriangleAlert, Users } from 'lucide-react'
 import type { ReactNode } from 'react'
 
 import { TenantAdminFrame } from '@/app/app-frame'
@@ -76,23 +78,23 @@ export const Route = createFileRoute('/t/$slug')({
       : []
     const metrics = isTenantOperational(tenant.status)
       ? await getDashboardMetrics({
-          data: {
-            tenantId: tenant.id,
-            venueIds: venues.map((venue) => venue.id),
-          },
-        })
+        data: {
+          tenantId: tenant.id,
+          venueIds: venues.map((venue) => venue.id),
+        },
+      })
       : {
-          actionItems: [],
-          nextReservationCovers: null,
-          nextReservationStartsAt: null,
-          openSessionCount: 0,
-          occupiedTables: 0,
-          paidTodayCents: 0,
-          pendingReservationsToday: 0,
-          reservationsToday: 0,
-          reservationsThisWeek: 0,
-          noShowsThisWeek: 0,
-        }
+        actionItems: [],
+        nextReservationCovers: null,
+        nextReservationStartsAt: null,
+        openSessionCount: 0,
+        occupiedTables: 0,
+        paidTodayCents: 0,
+        pendingReservationsToday: 0,
+        reservationsToday: 0,
+        reservationsThisWeek: 0,
+        noShowsThisWeek: 0,
+      }
     return {
       billingStatus,
       membership: context.tenantMembership,
@@ -102,6 +104,7 @@ export const Route = createFileRoute('/t/$slug')({
     }
   },
   component: TenantLayout,
+  errorComponent: TenantRouteError,
   notFoundComponent: TenantNotFound,
 })
 
@@ -140,13 +143,12 @@ function OnboardingStep({
     <div>
       <div className="flex items-start gap-4 py-4">
         <span
-          className={`mt-0.5 inline-flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${
-            status === 'done'
-              ? 'bg-success/15 text-success'
-              : status === 'active'
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-muted text-muted-foreground'
-          }`}
+          className={`mt-0.5 inline-flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${status === 'done'
+            ? 'bg-success/15 text-success'
+            : status === 'active'
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-muted text-muted-foreground'
+            }`}
         >
           {status === 'done' ? <Check className="size-4" /> : index}
         </span>
@@ -283,7 +285,13 @@ function TenantPendingRouteFrame({
   )
 }
 
-function TenantSuspendedNotice({ tenant }: { tenant: { name: string; slug: string } }) {
+function TenantSuspendedNotice({
+  canAuthorizePayment,
+  tenant,
+}: {
+  canAuthorizePayment: boolean
+  tenant: { id: string; name: string; slug: string }
+}) {
   return (
     <main className="mx-auto max-w-2xl space-y-6 p-4 sm:p-8">
       <PageHeader className="border-border/70 border-b pb-6">
@@ -295,28 +303,36 @@ function TenantSuspendedNotice({ tenant }: { tenant: { name: string; slug: strin
           </PageHeaderDescription>
         </div>
       </PageHeader>
-      <Card>
-        <CardContent className="space-y-4 pt-6">
-          <p className="text-sm leading-6">
-            Regulariza el método de pago para reactivar el restaurante.
-          </p>
-          <div className="flex flex-wrap gap-3">
-            <Link
-              className={buttonVariants({ size: 'lg' })}
-              params={{ slug: tenant.slug }}
-              to="/t/$slug/facturacion"
-            >
-              <CreditCard className="size-4" />
-              Regularizar pago
-            </Link>
-            <Link
-              className={buttonVariants({ variant: 'outline' })}
-              params={{ slug: tenant.slug }}
-              to="/t/$slug/suscripcion/facturas"
-            >
-              <FileText className="size-4" />
-              Ver facturas de SobreTaula
-            </Link>
+      <Card className="border-0 bg-destructive/8 shadow-[0_8px_24px_rgb(35_39_45_/_7%)] ring-1 ring-inset ring-destructive/20">
+        <CardContent className="flex gap-4 pt-6">
+          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-destructive/12 text-destructive">
+            <TriangleAlert aria-hidden="true" className="size-5" />
+          </span>
+          <div className="min-w-0 flex-1 space-y-4">
+            <div>
+              <h2 className="text-base font-semibold">Cobro pendiente</h2>
+              <p className="text-muted-foreground mt-1 text-sm leading-6">
+                Regulariza el método de pago para reactivar el restaurante. Tu información se
+                conserva.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              {canAuthorizePayment ? (
+                <RedsysSubscriptionButton label="Regularizar pago seguro" tenantId={tenant.id} />
+              ) : (
+                <p className="text-muted-foreground text-xs">
+                  Solo la persona propietaria puede autorizar este pago.
+                </p>
+              )}
+              <Link
+                className={buttonVariants({ variant: 'outline' })}
+                params={{ slug: tenant.slug }}
+                to="/t/$slug/suscripcion/facturas"
+              >
+                <FileText className="size-4" />
+                Ver suscripción
+              </Link>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -345,15 +361,85 @@ function TenantLayout() {
     return tenant.status === 'setup_pending' ? (
       <TenantSetupPendingOnboarding billingStatus={billingStatus} tenant={tenant} />
     ) : (
-      <TenantSuspendedNotice tenant={tenant} />
+      <TenantSuspendedNotice
+        canAuthorizePayment={membership.role === 'owner'}
+        tenant={tenant}
+      />
     )
   }
 
   const Frame = isTenantAdministrator(membership.role) ? TenantAdminFrame : WorkerFrame
   return (
-    <Frame locale={tenant.defaultLocale} slug={tenant.slug} title={tenant.name} venues={venues}>
-      <TenantBillingNotice status={billingStatus} />
+    <Frame
+      locale={tenant.defaultLocale}
+      navigationLocked={billingStatus.status === 'trialing' && !billingStatus.hasPaymentMethod}
+      role={membership.role}
+      slug={tenant.slug}
+      title={tenant.name}
+      venues={venues}
+    >
+      <TenantBillingNotice
+        canAuthorizePayment={membership.role === 'owner'}
+        canManageBilling={isTenantAdministrator(membership.role)}
+        status={billingStatus}
+        tenantId={tenant.id}
+        tenantSlug={tenant.slug}
+      />
       <Outlet />
+    </Frame>
+  )
+}
+
+function TenantRouteError({ reset }: { reset: () => void }) {
+  const { billingStatus, membership, tenant, venues } = Route.useLoaderData()
+  const navigationLocked = billingStatus.status === 'trialing' && !billingStatus.hasPaymentMethod
+  const Frame = isTenantAdministrator(membership.role) ? TenantAdminFrame : WorkerFrame
+
+  return (
+    <Frame
+      locale={tenant.defaultLocale}
+      navigationLocked={navigationLocked}
+      role={membership.role}
+      slug={tenant.slug}
+      title={tenant.name}
+      venues={venues}
+    >
+      <section className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              {navigationLocked
+                ? 'No puedes acceder todavía a esta sección'
+                : 'No se ha podido cargar esta sección'}
+            </CardTitle>
+            <CardDescription>
+              {navigationLocked
+                ? 'Para acceder, autoriza el pago de tu suscripción con SobreTaula.'
+                : 'Inténtalo de nuevo. Si el problema continúa, contacta con soporte.'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-wrap items-center gap-3">
+            {navigationLocked && membership.role === 'owner' ? (
+              <RedsysSubscriptionButton label="Autorizar pago seguro" tenantId={tenant.id} />
+            ) : navigationLocked ? (
+              <p className="text-muted-foreground text-sm">
+                Solo la persona propietaria puede autorizar este pago.
+              </p>
+            ) : (
+              <Button onPress={reset} type="button">
+                Reintentar
+              </Button>
+            )}
+            <Link
+              className="text-primary text-sm font-medium underline underline-offset-4"
+              params={{ slug: tenant.slug }}
+              to="/t/$slug/suscripcion/facturas"
+            >
+              Ver suscripción
+            </Link>
+          </CardContent>
+        </Card>
+      </section>
     </Frame>
   )
 }
