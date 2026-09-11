@@ -4,9 +4,9 @@ import { missingEnvironmentVariable } from './root-error'
 
 describe('missingEnvironmentVariable', () => {
   it('extracts the missing variable without exposing a value', () => {
-    expect(missingEnvironmentVariable(new Error('Falta la variable de entorno SESSION_PASSWORD.'))).toBe(
-      'SESSION_PASSWORD',
-    )
+    expect(
+      missingEnvironmentVariable(new Error('Falta la variable de entorno SESSION_PASSWORD.')),
+    ).toBe('SESSION_PASSWORD')
   })
 
   it('recognizes missing public Supabase configuration', () => {

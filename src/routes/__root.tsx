@@ -10,8 +10,8 @@ import {
 import { CircleAlert, House, RefreshCw, Utensils } from 'lucide-react'
 import { useSyncExternalStore, type ReactNode } from 'react'
 
-import { isPasswordRecoveryHash, PasswordResetPage } from '@/features/auth'
 import { missingEnvironmentVariable } from '@/app/root-error'
+import { isPasswordRecoveryHash, PasswordResetPage } from '@/features/auth'
 import { DEFAULT_LOCALE } from '@/shared/lib/i18n/locale'
 import { createTranslator } from '@/shared/lib/i18n/messages'
 
