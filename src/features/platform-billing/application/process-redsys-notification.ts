@@ -33,20 +33,16 @@ export async function processRedsysNotification({
     notification.merchantCode !== config.merchantCode ||
     notification.terminal !== config.terminal ||
     notification.currency !== config.currency
-  ) throw new Error('platform_redsys_context_mismatch')
-
-  const { data, error } = await supabase.rpc(
-    'process_platform_redsys_notification',
-    {
-      p_merchant_order: notification.merchantOrder,
-      p_payload_sha256: redsysPayloadSha256(merchantParameters),
-      p_provider_event_key: redsysPayloadSha256(
-        `${merchantParameters}:${notification.responseCode}`,
-      ),
-      p_response_code: notification.responseCode,
-      p_succeeded: isRedsysSuccess(notification.responseCode),
-    },
   )
+    throw new Error('platform_redsys_context_mismatch')
+
+  const { data, error } = await supabase.rpc('process_platform_redsys_notification', {
+    p_merchant_order: notification.merchantOrder,
+    p_payload_sha256: redsysPayloadSha256(merchantParameters),
+    p_provider_event_key: redsysPayloadSha256(`${merchantParameters}:${notification.responseCode}`),
+    p_response_code: notification.responseCode,
+    p_succeeded: isRedsysSuccess(notification.responseCode),
+  })
   if (error || !data)
     throw new Error(`platform_redsys_notification_process_failed:${error?.code ?? 'unknown'}`)
   if (notification.identifier) {

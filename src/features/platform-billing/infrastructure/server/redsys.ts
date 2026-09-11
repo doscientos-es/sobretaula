@@ -213,7 +213,9 @@ export async function chargeRedsysReference({
   if (!response.ok) throw new Error(`redsys_rest_http_${response.status}`)
   const body = (await response.json()) as { Ds_MerchantParameters?: string }
   if (!body.Ds_MerchantParameters) throw new Error('redsys_rest_response_missing_parameters')
-  return JSON.parse(Buffer.from(body.Ds_MerchantParameters, 'base64').toString('utf8')) as RedsysRestResponse
+  return JSON.parse(
+    Buffer.from(body.Ds_MerchantParameters, 'base64').toString('utf8'),
+  ) as RedsysRestResponse
 }
 
 /** Validates a Redsys notification without exposing the shared terminal secret. */
@@ -233,17 +235,13 @@ export function verifyRedsysSignature({
       Buffer.from(merchantParameters, 'base64').toString('utf8'),
     ) as Record<string, unknown>
     const order =
-      decoded.Ds_Order ??
-      decoded.Ds_Merchant_Order ??
-      decoded.DS_ORDER ??
-      decoded.DS_MERCHANT_ORDER
+      decoded.Ds_Order ?? decoded.Ds_Merchant_Order ?? decoded.DS_ORDER ?? decoded.DS_MERCHANT_ORDER
     if (typeof order !== 'string' || !/^[A-Za-z0-9]{4,12}$/.test(order)) return false
     const expected = Buffer.from(
       signParameters({ merchantParameters, merchantOrder: order, secretKey, signatureVersion }),
       signatureVersion === 'HMAC_SHA512_V2' ? 'base64url' : 'base64',
     )
     const received = normalizedSignature(signature)
-    console.log({ order, expected: expected.toString('base64url'), received: received.toString('base64url') })
     return expected.length === received.length && timingSafeEqual(expected, received)
   } catch {
     return false
@@ -257,10 +255,7 @@ export function parseRedsysNotification(merchantParameters: string): RedsysNotif
     unknown
   >
   const merchantOrder =
-    decoded.Ds_Order ??
-    decoded.Ds_Merchant_Order ??
-    decoded.DS_ORDER ??
-    decoded.DS_MERCHANT_ORDER
+    decoded.Ds_Order ?? decoded.Ds_Merchant_Order ?? decoded.DS_ORDER ?? decoded.DS_MERCHANT_ORDER
   const responseCode = decoded.Ds_Response ?? decoded.DS_RESPONSE
   const merchantCode = decoded.Ds_MerchantCode ?? decoded.DS_MERCHANT_MERCHANTCODE
   const terminal = decoded.Ds_Terminal ?? decoded.DS_MERCHANT_TERMINAL
@@ -271,7 +266,11 @@ export function parseRedsysNotification(merchantParameters: string): RedsysNotif
     throw new Error('invalid_redsys_order')
   if (typeof responseCode !== 'string' && typeof responseCode !== 'number')
     throw new Error('invalid_redsys_response')
-  if (typeof merchantCode !== 'string' || typeof terminal !== 'string' || typeof currency !== 'string')
+  if (
+    typeof merchantCode !== 'string' ||
+    typeof terminal !== 'string' ||
+    typeof currency !== 'string'
+  )
     throw new Error('invalid_redsys_context')
   const amountCents = Number(amount)
   if (!Number.isInteger(amountCents) || amountCents <= 0) throw new Error('invalid_redsys_amount')
