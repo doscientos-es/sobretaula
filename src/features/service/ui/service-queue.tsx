@@ -9,6 +9,12 @@ import {
   FieldLabel,
   FormFeedback,
   Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectList,
+  SelectTrigger,
+  SelectValue,
   useFormFeedback,
 } from '@doscientos/ui'
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
@@ -217,19 +223,25 @@ export function ServiceQueue({
         <div className="space-y-2">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h3 className="text-sm font-medium">Reservas del turno</h3>
-            <label className="text-muted-foreground text-xs" htmlFor="queue-filter">
-              Mostrar{' '}
-              <select
-                className="border-border text-foreground rounded-md border px-2 py-1"
-                id="queue-filter"
-                onChange={(event) => setQueueFilter(event.target.value as typeof queueFilter)}
-                value={queueFilter}
+            <div className="text-muted-foreground flex items-center gap-2 text-xs">
+              <span>Mostrar</span>
+              <Select
+                aria-label="Filtrar reservas"
+                onSelectionChange={(key) => setQueueFilter(String(key) as typeof queueFilter)}
+                selectedKey={queueFilter}
               >
-                <option value="all">Todas</option>
-                <option value="delayed">Retrasadas</option>
-                <option value="upcoming">Próximas</option>
-              </select>
-            </label>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectList>
+                    <SelectItem id="all">Todas</SelectItem>
+                    <SelectItem id="delayed">Retrasadas</SelectItem>
+                    <SelectItem id="upcoming">Próximas</SelectItem>
+                  </SelectList>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           {reservations.length === 0 ? (
             <p className="text-muted-foreground text-sm">No hay reservas en las próximas horas.</p>

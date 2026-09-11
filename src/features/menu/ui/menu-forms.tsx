@@ -9,6 +9,12 @@ import {
   FieldLabel,
   FormFeedback,
   Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectList,
+  SelectTrigger,
+  SelectValue,
   useFormFeedback,
 } from '@doscientos/ui'
 import { useState, type FormEvent } from 'react'
@@ -149,17 +155,25 @@ export function MenuForms({
             <form className="grid gap-4" onSubmit={addItem}>
               <Field>
                 <FieldLabel htmlFor="item-category">Categoría</FieldLabel>
-                <select
+                <Select
+                  className="w-full"
                   id="item-category"
-                  onChange={(event) => setItemCategoryId(event.target.value)}
-                  value={itemCategoryId}
+                  onSelectionChange={(key) => setItemCategoryId(String(key))}
+                  selectedKey={itemCategoryId}
                 >
-                  {categories.map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {localizedText(category.nameI18n, locale)}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectList>
+                      {categories.map((category) => (
+                        <SelectItem id={category.id} key={category.id}>
+                          {localizedText(category.nameI18n, locale)}
+                        </SelectItem>
+                      ))}
+                    </SelectList>
+                  </SelectContent>
+                </Select>
               </Field>
               <Field>
                 <FieldLabel htmlFor="item-name-es">Nombre</FieldLabel>
@@ -191,17 +205,25 @@ export function MenuForms({
               </Field>
               <Field>
                 <FieldLabel htmlFor="item-vat">Tipo de IVA</FieldLabel>
-                <select
+                <Select
+                  className="w-full"
                   id="item-vat"
-                  onChange={(event) => setItemVatRate(Number(event.target.value))}
-                  value={itemVatRate}
+                  onSelectionChange={(key) => setItemVatRate(Number(key))}
+                  selectedKey={String(itemVatRate)}
                 >
-                  {VAT_RATE_OPTIONS.map((bps) => (
-                    <option key={bps} value={bps}>
-                      {formatVatRate(bps, locale)}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectList>
+                      {VAT_RATE_OPTIONS.map((bps) => (
+                        <SelectItem id={String(bps)} key={bps}>
+                          {formatVatRate(bps, locale)}
+                        </SelectItem>
+                      ))}
+                    </SelectList>
+                  </SelectContent>
+                </Select>
               </Field>
               <Field>
                 <FieldLabel htmlFor="item-preparation">Preparación (minutos)</FieldLabel>
@@ -216,17 +238,25 @@ export function MenuForms({
               </Field>
               <Field>
                 <FieldLabel htmlFor="item-station">Estación</FieldLabel>
-                <select
+                <Select
+                  className="w-full"
                   id="item-station"
-                  onChange={(event) => setItemKitchenStation(event.target.value as KitchenStation)}
-                  value={itemKitchenStation}
+                  onSelectionChange={(key) => setItemKitchenStation(String(key) as KitchenStation)}
+                  selectedKey={itemKitchenStation}
                 >
-                  <option value="general">General</option>
-                  <option value="hot">Caliente</option>
-                  <option value="cold">Frío</option>
-                  <option value="bar">Barra</option>
-                  <option value="dessert">Postres</option>
-                </select>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectList>
+                      <SelectItem id="general">General</SelectItem>
+                      <SelectItem id="hot">Caliente</SelectItem>
+                      <SelectItem id="cold">Frío</SelectItem>
+                      <SelectItem id="bar">Barra</SelectItem>
+                      <SelectItem id="dessert">Postres</SelectItem>
+                    </SelectList>
+                  </SelectContent>
+                </Select>
               </Field>
               <Field>
                 <FieldLabel htmlFor="item-sku">SKU (opcional)</FieldLabel>

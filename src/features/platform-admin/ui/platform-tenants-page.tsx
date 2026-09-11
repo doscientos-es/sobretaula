@@ -8,6 +8,18 @@ import {
   PageHeader,
   PageHeaderDescription,
   PageHeaderTitle,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectList,
+  SelectTrigger,
+  SelectValue,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from '@doscientos/ui'
 import { Link } from '@tanstack/react-router'
 import { useMemo, useState } from 'react'
@@ -80,48 +92,67 @@ export function PlatformTenantsPage({ tenants }: { tenants: PlatformDashboardTen
             placeholder="Nombre o slug…"
             value={query}
           />
-          <select
+          <Select
             aria-label="Filtrar por estado"
-            className="border-input h-10 rounded-md border bg-transparent px-3 text-sm"
-            onChange={(event) => setStatus(event.target.value as TenantDirectoryStatus)}
-            value={status}
+            className="w-full"
+            onSelectionChange={(key) => setStatus(String(key) as TenantDirectoryStatus)}
+            selectedKey={status}
           >
-            <option value="all">Todos los estados</option>
-            <option value="active">Activo</option>
-            <option value="trial">Prueba</option>
-            <option value="setup_pending">Configuración pendiente</option>
-            <option value="suspended">Suspendido</option>
-          </select>
-          <select
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectList>
+                <SelectItem id="all">Todos los estados</SelectItem>
+                <SelectItem id="active">Activo</SelectItem>
+                <SelectItem id="trial">Prueba</SelectItem>
+                <SelectItem id="setup_pending">Configuración pendiente</SelectItem>
+                <SelectItem id="suspended">Suspendido</SelectItem>
+              </SelectList>
+            </SelectContent>
+          </Select>
+          <Select
             aria-label="Filtrar por suscripción"
-            className="border-input h-10 rounded-md border bg-transparent px-3 text-sm"
-            onChange={(event) =>
+            className="w-full"
+            onSelectionChange={(key) =>
               setSubscription(
-                event.target.value === 'none'
-                  ? null
-                  : (event.target.value as TenantDirectorySubscription),
+                String(key) === 'none' ? null : (String(key) as TenantDirectorySubscription),
               )
             }
-            value={subscription ?? 'none'}
+            selectedKey={subscription ?? 'none'}
           >
-            <option value="all">Todas las suscripciones</option>
-            <option value="active">Activa</option>
-            <option value="trialing">Primer año</option>
-            <option value="past_due">Impago</option>
-            <option value="canceled">Cancelada</option>
-            <option value="none">Sin suscripción</option>
-          </select>
-          <select
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectList>
+                <SelectItem id="all">Todas las suscripciones</SelectItem>
+                <SelectItem id="active">Activa</SelectItem>
+                <SelectItem id="trialing">Primer año</SelectItem>
+                <SelectItem id="past_due">Impago</SelectItem>
+                <SelectItem id="canceled">Cancelada</SelectItem>
+                <SelectItem id="none">Sin suscripción</SelectItem>
+              </SelectList>
+            </SelectContent>
+          </Select>
+          <Select
             aria-label="Ordenar tenants"
-            className="border-input h-10 rounded-md border bg-transparent px-3 text-sm"
-            onChange={(event) => setOrder(event.target.value as TenantDirectoryOrder)}
-            value={order}
+            className="w-full"
+            onSelectionChange={(key) => setOrder(String(key) as TenantDirectoryOrder)}
+            selectedKey={order}
           >
-            <option value="newest">Más recientes primero</option>
-            <option value="oldest">Más antiguos primero</option>
-            <option value="name_asc">Nombre: A a Z</option>
-            <option value="name_desc">Nombre: Z a A</option>
-          </select>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectList>
+                <SelectItem id="newest">Más recientes primero</SelectItem>
+                <SelectItem id="oldest">Más antiguos primero</SelectItem>
+                <SelectItem id="name_asc">Nombre: A a Z</SelectItem>
+                <SelectItem id="name_desc">Nombre: Z a A</SelectItem>
+              </SelectList>
+            </SelectContent>
+          </Select>
         </CardContent>
       </Card>
 
@@ -132,40 +163,42 @@ export function PlatformTenantsPage({ tenants }: { tenants: PlatformDashboardTen
             Consulta el estado y abre la ficha para revisar o configurar un tenant.
           </CardDescription>
         </CardHeader>
-        <CardContent className="overflow-x-auto px-0">
-          <table className="w-full min-w-[800px] text-left text-sm">
-            <thead className="text-muted-foreground border-b">
-              <tr>
-                <th className="px-5 py-3 font-medium">Restaurante</th>
-                <th className="px-3 py-3 font-medium">Estado</th>
-                <th className="px-3 py-3 font-medium">Suscripción</th>
-                <th className="px-3 py-3 font-medium">Próximo cobro</th>
-                <th className="px-3 py-3 font-medium">Alta</th>
-                <th className="px-3 py-3 font-medium">Acción</th>
-              </tr>
-            </thead>
-            <tbody>
+        <CardContent className="px-0">
+          <Table className="min-w-[800px] text-left">
+            <TableHeader className="text-muted-foreground">
+              <TableRow>
+                <TableHead className="px-5">Restaurante</TableHead>
+                <TableHead>Estado</TableHead>
+                <TableHead>Suscripción</TableHead>
+                <TableHead>Próximo cobro</TableHead>
+                <TableHead>Alta</TableHead>
+                <TableHead>Acción</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {visibleTenants.map((tenant) => (
-                <tr className="border-b last:border-0" key={tenant.id}>
-                  <td className="px-5 py-4">
+                <TableRow key={tenant.id}>
+                  <TableCell className="px-5 py-4">
                     <p className="font-medium">{tenant.name}</p>
                     <p className="text-muted-foreground mt-1 text-xs">{tenant.slug}</p>
-                  </td>
-                  <td className="px-3 py-4">
+                  </TableCell>
+                  <TableCell className="px-3 py-4">
                     <span className="bg-muted rounded-full px-2 py-1 text-xs">
                       {tenantStatusLabel(tenant.status)}
                     </span>
-                  </td>
-                  <td className="px-3 py-4">
+                  </TableCell>
+                  <TableCell className="px-3 py-4">
                     {tenant.subscription
                       ? `${tenant.subscription.planName} · ${subscriptionStatusLabel(tenant.subscription.status)}`
                       : 'Sin suscripción'}
-                  </td>
-                  <td className="px-3 py-4">
+                  </TableCell>
+                  <TableCell className="px-3 py-4">
                     {tenant.subscription?.nextPaymentOn ?? 'Sin programar'}
-                  </td>
-                  <td className="px-3 py-4">{date.format(new Date(tenant.createdAt))}</td>
-                  <td className="px-3 py-4">
+                  </TableCell>
+                  <TableCell className="px-3 py-4">
+                    {date.format(new Date(tenant.createdAt))}
+                  </TableCell>
+                  <TableCell className="px-3 py-4">
                     <Link
                       className="text-primary whitespace-nowrap underline"
                       params={{ tenantId: tenant.id }}
@@ -173,18 +206,18 @@ export function PlatformTenantsPage({ tenants }: { tenants: PlatformDashboardTen
                     >
                       Ver ficha
                     </Link>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
               {visibleTenants.length === 0 && (
-                <tr>
-                  <td className="text-muted-foreground px-5 py-8 text-center" colSpan={6}>
+                <TableRow>
+                  <TableCell className="text-muted-foreground px-5 py-8 text-center" colSpan={6}>
                     No hay tenants que coincidan con los filtros seleccionados.
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               )}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
     </main>

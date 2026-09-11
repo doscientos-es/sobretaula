@@ -8,6 +8,12 @@ import {
   FieldLabel,
   FormFeedback,
   Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectList,
+  SelectTrigger,
+  SelectValue,
   Table,
   TableBody,
   TableCell,
@@ -100,18 +106,25 @@ export function ProductPage({
             </Field>
             <Field>
               <FieldLabel htmlFor="ingredient-unit">Unidad</FieldLabel>
-              <select
-                className="border-input bg-background h-10 rounded-md border px-3 text-sm"
+              <Select
                 id="ingredient-unit"
-                onChange={(e) => setUnit(e.target.value)}
-                value={unit}
+                className="w-full"
+                onSelectionChange={(key) => setUnit(String(key))}
+                selectedKey={unit}
               >
-                <option>kg</option>
-                <option>g</option>
-                <option>l</option>
-                <option>ml</option>
-                <option>unit</option>
-              </select>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectList>
+                    <SelectItem id="kg">kg</SelectItem>
+                    <SelectItem id="g">g</SelectItem>
+                    <SelectItem id="l">l</SelectItem>
+                    <SelectItem id="ml">ml</SelectItem>
+                    <SelectItem id="unit">unit</SelectItem>
+                  </SelectList>
+                </SelectContent>
+              </Select>
             </Field>
             <Field>
               <FieldLabel htmlFor="ingredient-cost">Coste céntimos/unidad</FieldLabel>
@@ -149,19 +162,26 @@ export function ProductPage({
         <CardContent className="space-y-4">
           <Field>
             <FieldLabel htmlFor="recipe-menu-item">Producto</FieldLabel>
-            <select
-              className="border-input bg-background h-10 rounded-md border px-3 text-sm"
+            <Select
               id="recipe-menu-item"
-              onChange={(e) => setMenuItemId(e.target.value)}
-              value={menuItemId}
+              className="w-full"
+              onSelectionChange={(key) => setMenuItemId(String(key) === 'empty' ? '' : String(key))}
+              selectedKey={menuItemId || 'empty'}
             >
-              <option value="">Seleccionar producto…</option>
-              {menuItems.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.name}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectList>
+                  <SelectItem id="empty">Seleccionar producto…</SelectItem>
+                  {menuItems.map((item) => (
+                    <SelectItem id={item.id} key={item.id}>
+                      {item.name}
+                    </SelectItem>
+                  ))}
+                </SelectList>
+              </SelectContent>
+            </Select>
           </Field>
           <form
             className="flex flex-wrap items-end gap-3"
@@ -182,19 +202,28 @@ export function ProductPage({
           >
             <Field>
               <FieldLabel htmlFor="recipe-ingredient">Ingrediente</FieldLabel>
-              <select
-                className="border-input bg-background h-10 rounded-md border px-3 text-sm"
+              <Select
                 id="recipe-ingredient"
-                onChange={(e) => setRecipeIngredientId(e.target.value)}
-                value={recipeIngredientId}
+                className="w-full"
+                onSelectionChange={(key) =>
+                  setRecipeIngredientId(String(key) === 'empty' ? '' : String(key))
+                }
+                selectedKey={recipeIngredientId || 'empty'}
               >
-                <option value="">Seleccionar…</option>
-                {ingredients.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectList>
+                    <SelectItem id="empty">Seleccionar…</SelectItem>
+                    {ingredients.map((item) => (
+                      <SelectItem id={item.id} key={item.id}>
+                        {item.name}
+                      </SelectItem>
+                    ))}
+                  </SelectList>
+                </SelectContent>
+              </Select>
             </Field>
             <Field>
               <FieldLabel htmlFor="recipe-quantity">Cantidad</FieldLabel>
@@ -268,33 +297,49 @@ export function ProductPage({
           >
             <Field>
               <FieldLabel htmlFor="movement-ingredient">Ingrediente</FieldLabel>
-              <select
-                className="border-input bg-background h-10 rounded-md border px-3 py-2 text-sm"
+              <Select
                 id="movement-ingredient"
-                onChange={(e) => setIngredientId(e.target.value)}
-                required
-                value={ingredientId}
+                className="w-full"
+                isRequired
+                onSelectionChange={(key) =>
+                  setIngredientId(String(key) === 'empty' ? '' : String(key))
+                }
+                selectedKey={ingredientId || 'empty'}
               >
-                <option value="">Seleccionar…</option>
-                {ingredients.map((ingredient) => (
-                  <option key={ingredient.id} value={ingredient.id}>
-                    {ingredient.name}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectList>
+                    <SelectItem id="empty">Seleccionar…</SelectItem>
+                    {ingredients.map((ingredient) => (
+                      <SelectItem id={ingredient.id} key={ingredient.id}>
+                        {ingredient.name}
+                      </SelectItem>
+                    ))}
+                  </SelectList>
+                </SelectContent>
+              </Select>
             </Field>
             <Field>
               <FieldLabel htmlFor="movement-kind">Tipo</FieldLabel>
-              <select
-                className="border-input bg-background h-10 rounded-md border px-3 py-2 text-sm"
+              <Select
                 id="movement-kind"
-                onChange={(e) => setMovementKind(e.target.value as typeof movementKind)}
-                value={movementKind}
+                className="w-full"
+                onSelectionChange={(key) => setMovementKind(String(key) as typeof movementKind)}
+                selectedKey={movementKind}
               >
-                <option value="purchase">Compra (+)</option>
-                <option value="waste">Merma (-)</option>
-                <option value="adjustment">Ajuste (+/-)</option>
-              </select>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectList>
+                    <SelectItem id="purchase">Compra (+)</SelectItem>
+                    <SelectItem id="waste">Merma (-)</SelectItem>
+                    <SelectItem id="adjustment">Ajuste (+/-)</SelectItem>
+                  </SelectList>
+                </SelectContent>
+              </Select>
             </Field>
             <Field>
               <FieldLabel htmlFor="movement-quantity">Cantidad (+/-)</FieldLabel>

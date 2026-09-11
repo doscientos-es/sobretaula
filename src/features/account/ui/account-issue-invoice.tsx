@@ -9,6 +9,12 @@ import {
   FieldLabel,
   FormFeedback,
   Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectList,
+  SelectTrigger,
+  SelectValue,
   useFormFeedback,
 } from '@doscientos/ui'
 import { useState, type FormEvent } from 'react'
@@ -73,17 +79,25 @@ export function AccountIssueInvoice({
         <form className="grid gap-4" onSubmit={issue}>
           <Field>
             <FieldLabel htmlFor="issue-series">Serie</FieldLabel>
-            <select
+            <Select
+              className="w-full"
               id="issue-series"
-              onChange={(event) => setSeriesId(event.target.value)}
-              value={seriesId}
+              onSelectionChange={(key) => setSeriesId(String(key))}
+              selectedKey={seriesId}
             >
-              {series.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {`${item.code} · ejercicio ${item.fiscalYear}`}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectList>
+                  {series.map((item) => (
+                    <SelectItem id={item.id} key={item.id}>
+                      {`${item.code} · ejercicio ${item.fiscalYear}`}
+                    </SelectItem>
+                  ))}
+                </SelectList>
+              </SelectContent>
+            </Select>
           </Field>
           <Field>
             <FieldLabel htmlFor="issue-customer-name">Cliente (opcional)</FieldLabel>

@@ -9,6 +9,12 @@ import {
   FieldLabel,
   FormFeedback,
   Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectList,
+  SelectTrigger,
+  SelectValue,
   useFormFeedback,
 } from '@doscientos/ui'
 import { useState, type FormEvent } from 'react'
@@ -200,31 +206,43 @@ export function PlatformTenantProvisioningForm() {
             </Field>
             <Field>
               <FieldLabel htmlFor="platform-tenant-locale">Idioma predeterminado</FieldLabel>
-              <select
-                className="border-input h-10 w-full rounded-md border bg-transparent px-3 text-sm"
+              <Select
                 id="platform-tenant-locale"
-                onChange={(event) => setDefaultLocale(event.target.value as 'ca' | 'es')}
-                value={defaultLocale}
+                onSelectionChange={(key) => setDefaultLocale(String(key) as 'ca' | 'es')}
+                selectedKey={defaultLocale}
               >
-                <option value="es">Español</option>
-                <option value="ca">Catalán</option>
-              </select>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectList>
+                    <SelectItem id="es">Español</SelectItem>
+                    <SelectItem id="ca">Catalán</SelectItem>
+                  </SelectList>
+                </SelectContent>
+              </Select>
             </Field>
             <Field>
               <FieldLabel htmlFor="platform-tenant-timezone">Zona horaria</FieldLabel>
-              <select
-                className="border-input h-10 w-full rounded-md border bg-transparent px-3 text-sm"
+              <Select
                 id="platform-tenant-timezone"
-                onChange={(event) => setTimezone(event.target.value)}
-                required
-                value={timezone}
+                isRequired
+                onSelectionChange={(key) => setTimezone(String(key))}
+                selectedKey={timezone}
               >
-                {tenantTimezones.map((timezoneOption) => (
-                  <option key={timezoneOption.value} value={timezoneOption.value}>
-                    {timezoneOption.label}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectList>
+                    {tenantTimezones.map((timezoneOption) => (
+                      <SelectItem id={timezoneOption.value} key={timezoneOption.value}>
+                        {timezoneOption.label}
+                      </SelectItem>
+                    ))}
+                  </SelectList>
+                </SelectContent>
+              </Select>
             </Field>
             <div className="md:col-span-2">
               <FormFeedback pendingLabel="Creando tenant…" state={feedback.state} />

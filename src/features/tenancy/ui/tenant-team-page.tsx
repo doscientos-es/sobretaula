@@ -15,6 +15,12 @@ import {
   PageHeader,
   PageHeaderDescription,
   PageHeaderTitle,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectList,
+  SelectTrigger,
+  SelectValue,
   useFormFeedback,
 } from '@doscientos/ui'
 import { useState, type FormEvent } from 'react'
@@ -154,18 +160,25 @@ export function TenantTeamPage({
               </Field>
               <Field>
                 <FieldLabel htmlFor="member-role">Rol</FieldLabel>
-                <select
-                  className="border-input h-10 w-full rounded-md border bg-transparent px-3 text-sm"
+                <Select
                   id="member-role"
-                  onChange={(e) => setRole(selectedRole(e.target.value))}
-                  value={role}
+                  className="w-full"
+                  onSelectionChange={(key) => setRole(selectedRole(String(key)))}
+                  selectedKey={role}
                 >
-                  {rolesFor(viewerRole).map((candidate) => (
-                    <option key={candidate} value={candidate}>
-                      {roleLabel[candidate]}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectList>
+                      {rolesFor(viewerRole).map((candidate) => (
+                        <SelectItem id={candidate} key={candidate}>
+                          {roleLabel[candidate]}
+                        </SelectItem>
+                      ))}
+                    </SelectList>
+                  </SelectContent>
+                </Select>
               </Field>
               <Button className="self-end" disabled={feedback.pending} type="submit">
                 Añadir
@@ -209,16 +222,15 @@ export function TenantTeamPage({
                 </div>
                 {manageable && (
                   <div className="flex gap-2">
-                    <select
+                    <Select
                       aria-label={`Rol de ${member.name}`}
-                      className="border-input h-9 rounded-md border bg-transparent px-2 text-sm"
-                      defaultValue={member.role}
-                      onChange={(e) =>
+                      defaultSelectedKey={member.role}
+                      onSelectionChange={(key) =>
                         void run(
                           () =>
                             updateTenantMemberRole({
                               data: {
-                                role: selectedRole(e.target.value),
+                                role: selectedRole(String(key)),
                                 tenantId,
                                 userId: member.userId,
                               },
@@ -227,12 +239,19 @@ export function TenantTeamPage({
                         )
                       }
                     >
-                      {rolesFor(viewerRole).map((candidate) => (
-                        <option key={candidate} value={candidate}>
-                          {roleLabel[candidate]}
-                        </option>
-                      ))}
-                    </select>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectList>
+                          {rolesFor(viewerRole).map((candidate) => (
+                            <SelectItem id={candidate} key={candidate}>
+                              {roleLabel[candidate]}
+                            </SelectItem>
+                          ))}
+                        </SelectList>
+                      </SelectContent>
+                    </Select>
                     {member.status === 'active' && (
                       <Button
                         disabled={feedback.pending}

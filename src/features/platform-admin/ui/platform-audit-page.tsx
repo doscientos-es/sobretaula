@@ -8,6 +8,12 @@ import {
   PageHeader,
   PageHeaderDescription,
   PageHeaderTitle,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectList,
+  SelectTrigger,
+  SelectValue,
 } from '@doscientos/ui'
 import { useMemo, useState } from 'react'
 
@@ -67,21 +73,28 @@ export function PlatformAuditPage({ events }: { events: readonly PlatformAuditEv
             placeholder="Actor, tenant o detalle…"
             value={query}
           />
-          <select
+          <Select
             aria-label="Filtrar por acción de auditoría"
-            className="border-input h-10 rounded-md border bg-transparent px-3 text-sm"
-            onChange={(event) =>
-              setAction(event.target.value as 'all' | PlatformAuditEvent['action'])
+            className="w-full"
+            onSelectionChange={(key) =>
+              setAction(String(key) as 'all' | PlatformAuditEvent['action'])
             }
-            value={action}
+            selectedKey={action}
           >
-            <option value="all">Todas las acciones</option>
-            {PLATFORM_AUDIT_ACTIONS.map((candidate) => (
-              <option key={candidate} value={candidate}>
-                {platformAuditActionLabel(candidate)}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectList>
+                <SelectItem id="all">Todas las acciones</SelectItem>
+                {PLATFORM_AUDIT_ACTIONS.map((candidate) => (
+                  <SelectItem id={candidate} key={candidate}>
+                    {platformAuditActionLabel(candidate)}
+                  </SelectItem>
+                ))}
+              </SelectList>
+            </SelectContent>
+          </Select>
           <Input
             aria-label="Desde fecha"
             onChange={(event) => setFromDate(event.target.value)}

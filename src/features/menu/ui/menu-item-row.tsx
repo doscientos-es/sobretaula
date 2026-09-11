@@ -3,6 +3,12 @@ import {
   Button,
   FormFeedback,
   Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectList,
+  SelectTrigger,
+  SelectValue,
   TableCell,
   TableRow,
   useFormFeedback,
@@ -117,17 +123,24 @@ export function MenuItemRow({
         </span>
       </TableCell>
       <TableCell>
-        <select
+        <Select
           aria-label={`Estación de ${name}`}
-          onChange={(event) => setStationDraft(event.target.value as KitchenStation)}
-          value={stationDraft}
+          onSelectionChange={(key) => setStationDraft(String(key) as KitchenStation)}
+          selectedKey={stationDraft}
         >
-          <option value="general">General</option>
-          <option value="hot">Caliente</option>
-          <option value="cold">Frío</option>
-          <option value="bar">Barra</option>
-          <option value="dessert">Postres</option>
-        </select>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectList>
+              <SelectItem id="general">General</SelectItem>
+              <SelectItem id="hot">Caliente</SelectItem>
+              <SelectItem id="cold">Frío</SelectItem>
+              <SelectItem id="bar">Barra</SelectItem>
+              <SelectItem id="dessert">Postres</SelectItem>
+            </SelectList>
+          </SelectContent>
+        </Select>
       </TableCell>
       <TableCell>
         <span className="flex items-center justify-end gap-3">

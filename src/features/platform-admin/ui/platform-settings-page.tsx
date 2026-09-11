@@ -5,6 +5,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  Checkbox,
   Field,
   FieldLabel,
   FormFeedback,
@@ -12,6 +13,12 @@ import {
   PageHeader,
   PageHeaderDescription,
   PageHeaderTitle,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectList,
+  SelectTrigger,
+  SelectValue,
   useFormFeedback,
 } from '@doscientos/ui'
 import { useState, type FormEvent } from 'react'
@@ -147,32 +154,36 @@ export function PlatformSettingsPage({ settings }: { settings: PlatformFiscalSet
             </Field>
             <Field>
               <FieldLabel htmlFor="platform-environment">Entorno Veri*factu</FieldLabel>
-              <select
-                className="border-input h-10 w-full rounded-md border bg-transparent px-3 text-sm"
-                defaultValue={settings?.environment ?? 'test'}
+              <Select
+                className="w-full"
+                defaultSelectedKey={settings?.environment ?? 'test'}
                 id="platform-environment"
                 name="environment"
               >
-                <option value="test">Pruebas</option>
-                <option value="prod">Producción</option>
-              </select>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectList>
+                    <SelectItem id="test">Pruebas</SelectItem>
+                    <SelectItem id="prod">Producción</SelectItem>
+                  </SelectList>
+                </SelectContent>
+              </Select>
             </Field>
             <div className="border-border/70 bg-surface-subtle flex items-center justify-between gap-4 rounded-xl border p-4 md:col-span-2">
-              <span>
-                <label className="block text-sm font-medium" htmlFor="platform-issuance-enabled">
+              <div>
+                <Checkbox
+                  id="platform-issuance-enabled"
+                  isSelected={issuanceEnabled}
+                  onChange={setIssuanceEnabled}
+                >
                   Emisión automática
-                </label>
+                </Checkbox>
                 <span className="text-muted-foreground mt-1 block text-sm">
                   Permite crear facturas fiscales SaaS para los cierres de ciclo.
                 </span>
-              </span>
-              <input
-                checked={issuanceEnabled}
-                className="accent-primary size-4"
-                id="platform-issuance-enabled"
-                onChange={(event) => setIssuanceEnabled(event.target.checked)}
-                type="checkbox"
-              />
+              </div>
             </div>
             <div className="md:col-span-2">
               <FormFeedback pendingLabel="Guardando ajustes…" state={feedback.state} />

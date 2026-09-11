@@ -12,6 +12,12 @@ import {
   PageHeader,
   PageHeaderDescription,
   PageHeaderTitle,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectList,
+  SelectTrigger,
+  SelectValue,
   useFormFeedback,
 } from '@doscientos/ui'
 import { Link, useNavigate, useRouter } from '@tanstack/react-router'
@@ -248,34 +254,50 @@ export function PlatformTenantDetailsPage({
               </Field>
               <Field>
                 <FieldLabel htmlFor="tenant-locale">Idioma predeterminado</FieldLabel>
-                <select
-                  className="border-input h-10 w-full rounded-md border bg-transparent px-3 text-sm"
-                  defaultValue={tenant.defaultLocale}
+                <Select
+                  className="w-full"
+                  defaultSelectedKey={tenant.defaultLocale}
                   id="tenant-locale"
                   name="defaultLocale"
                 >
-                  <option value="es">Español</option>
-                  <option value="ca">Catalán</option>
-                </select>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectList>
+                      <SelectItem id="es">Español</SelectItem>
+                      <SelectItem id="ca">Catalán</SelectItem>
+                    </SelectList>
+                  </SelectContent>
+                </Select>
               </Field>
               <Field>
                 <FieldLabel htmlFor="tenant-timezone">Zona horaria</FieldLabel>
-                <select
-                  className="border-input h-10 w-full rounded-md border bg-transparent px-3 text-sm"
-                  defaultValue={tenant.tenantTimezone}
+                <Select
+                  className="w-full"
+                  defaultSelectedKey={tenant.tenantTimezone}
                   id="tenant-timezone"
+                  isRequired
                   name="timezone"
-                  required
                 >
-                  {!tenantTimezones.some(
-                    (timezone) => timezone.value === tenant.tenantTimezone,
-                  ) && <option value={tenant.tenantTimezone}>{tenant.tenantTimezone}</option>}
-                  {tenantTimezones.map((timezone) => (
-                    <option key={timezone.value} value={timezone.value}>
-                      {timezone.label}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectList>
+                      {!tenantTimezones.some(
+                        (timezone) => timezone.value === tenant.tenantTimezone,
+                      ) && (
+                        <SelectItem id={tenant.tenantTimezone}>{tenant.tenantTimezone}</SelectItem>
+                      )}
+                      {tenantTimezones.map((timezone) => (
+                        <SelectItem id={timezone.value} key={timezone.value}>
+                          {timezone.label}
+                        </SelectItem>
+                      ))}
+                    </SelectList>
+                  </SelectContent>
+                </Select>
               </Field>
               <div className="flex items-center gap-3 md:col-span-2">
                 <Button disabled={configurationFeedback.pending} type="submit">

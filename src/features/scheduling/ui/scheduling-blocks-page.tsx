@@ -9,6 +9,12 @@ import {
   PageHeader,
   PageHeaderDescription,
   PageHeaderTitle,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectList,
+  SelectTrigger,
+  SelectValue,
 } from '@doscientos/ui'
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 
@@ -86,31 +92,43 @@ export function SchedulingBlocksPage({ tenantId, venueId }: { tenantId: string; 
               required
               value={title}
             />
-            <select
+            <Select
               aria-label="Tipo"
-              className="border-border rounded-md border px-2"
-              onChange={(e) => setBlockType(e.target.value)}
-              value={blockType}
+              onSelectionChange={(key) => setBlockType(String(key))}
+              selectedKey={blockType}
             >
-              <option value="closure">Cierre</option>
-              <option value="vacation">Vacaciones</option>
-              <option value="private_event">Evento privado</option>
-              <option value="maintenance">Mantenimiento</option>
-              <option value="last_minute">Última hora</option>
-            </select>
-            <select
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectList>
+                  <SelectItem id="closure">Cierre</SelectItem>
+                  <SelectItem id="vacation">Vacaciones</SelectItem>
+                  <SelectItem id="private_event">Evento privado</SelectItem>
+                  <SelectItem id="maintenance">Mantenimiento</SelectItem>
+                  <SelectItem id="last_minute">Última hora</SelectItem>
+                </SelectList>
+              </SelectContent>
+            </Select>
+            <Select
               aria-label="Área"
-              className="border-border rounded-md border px-2"
-              onChange={(e) => setAreaId(e.target.value)}
-              value={areaId}
+              onSelectionChange={(key) => setAreaId(String(key) === 'all' ? '' : String(key))}
+              selectedKey={areaId || 'all'}
             >
-              <option value="">Todo el local</option>
-              {areas.map((area) => (
-                <option key={area.id} value={area.id}>
-                  {area.name}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectList>
+                  <SelectItem id="all">Todo el local</SelectItem>
+                  {areas.map((area) => (
+                    <SelectItem id={area.id} key={area.id}>
+                      {area.name}
+                    </SelectItem>
+                  ))}
+                </SelectList>
+              </SelectContent>
+            </Select>
             <Input
               aria-label="Inicio"
               onChange={(e) => setStartsAt(e.target.value)}
@@ -142,17 +160,19 @@ export function SchedulingBlocksPage({ tenantId, venueId }: { tenantId: string; 
                 <span className="text-muted-foreground text-sm">
                   {block.blockType} · {new Date(block.startsAt).toLocaleString()} –{' '}
                   {new Date(block.endsAt).toLocaleString()}
-                  <button
+                  <Button
                     className="text-destructive ml-2 underline"
                     onClick={() =>
                       void deleteSchedulingBlock({
                         data: { tenantId, venueId, blockId: block.id },
                       }).then(load)
                     }
+                    size="sm"
                     type="button"
+                    variant="ghost"
                   >
                     Eliminar
-                  </button>
+                  </Button>
                 </span>
               </li>
             ))}

@@ -31,8 +31,7 @@ function TenantPlatformFiscalInvoicesRoute() {
       <PageHeader>
         <PageHeaderTitle>Suscripción</PageHeaderTitle>
         <PageHeaderDescription>
-          Consulta la información de tu suscripción con SobreTaula y el historial de pagos de{' '}
-          {tenant.name}. No incluye las facturas que emites a tus clientes.
+          Tu historial de pagos, no incluye las facturas que emites a tus clientes.
         </PageHeaderDescription>
       </PageHeader>
       <PlatformFiscalInvoiceList

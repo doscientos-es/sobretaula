@@ -4,9 +4,16 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  Checkbox,
   Field,
   FieldLabel,
   Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectList,
+  SelectTrigger,
+  SelectValue,
   useFormFeedback,
 } from '@doscientos/ui'
 import { useState } from 'react'
@@ -62,34 +69,48 @@ export function ChannelPriceCard({
         >
           <Field>
             <FieldLabel htmlFor="channel-price-item">Producto</FieldLabel>
-            <select
-              className="border-input bg-background h-10 rounded-md border px-3 text-sm"
+            <Select
+              className="w-full"
               id="channel-price-item"
-              onChange={(e) => setItemId(e.target.value)}
-              required
-              value={itemId}
+              isRequired
+              onSelectionChange={(key) => setItemId(String(key) === 'empty' ? '' : String(key))}
+              selectedKey={itemId || 'empty'}
             >
-              <option value="">Seleccionar…</option>
-              {menuItems.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.name}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectList>
+                  <SelectItem id="empty">Seleccionar…</SelectItem>
+                  {menuItems.map((item) => (
+                    <SelectItem id={item.id} key={item.id}>
+                      {item.name}
+                    </SelectItem>
+                  ))}
+                </SelectList>
+              </SelectContent>
+            </Select>
           </Field>
           <Field>
             <FieldLabel htmlFor="channel-price-channel">Canal</FieldLabel>
-            <select
-              className="border-input bg-background h-10 rounded-md border px-3 text-sm"
+            <Select
+              className="w-full"
               id="channel-price-channel"
-              onChange={(e) => setChannel(e.target.value as typeof channel)}
-              value={channel}
+              onSelectionChange={(key) => setChannel(String(key) as typeof channel)}
+              selectedKey={channel}
             >
-              <option value="room">Sala</option>
-              <option value="web">Web</option>
-              <option value="delivery">Delivery</option>
-              <option value="takeaway">Takeaway</option>
-            </select>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectList>
+                  <SelectItem id="room">Sala</SelectItem>
+                  <SelectItem id="web">Web</SelectItem>
+                  <SelectItem id="delivery">Delivery</SelectItem>
+                  <SelectItem id="takeaway">Takeaway</SelectItem>
+                </SelectList>
+              </SelectContent>
+            </Select>
           </Field>
           <Field>
             <FieldLabel htmlFor="channel-price-value">Precio (€)</FieldLabel>
@@ -103,14 +124,9 @@ export function ChannelPriceCard({
               value={price}
             />
           </Field>
-          <label className="flex h-10 items-center gap-2 text-sm">
-            <input
-              checked={isAvailable}
-              onChange={(event) => setIsAvailable(event.target.checked)}
-              type="checkbox"
-            />
+          <Checkbox isSelected={isAvailable} onChange={setIsAvailable}>
             Disponible en este local
-          </label>
+          </Checkbox>
           <Button type="submit">Guardar precio</Button>
         </form>
       </CardContent>

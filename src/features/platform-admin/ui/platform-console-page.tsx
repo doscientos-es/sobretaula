@@ -7,6 +7,12 @@ import {
   PageHeader,
   PageHeaderDescription,
   PageHeaderTitle,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from '@doscientos/ui'
 import { Link } from '@tanstack/react-router'
 
@@ -108,32 +114,32 @@ export function PlatformConsolePage({ dashboard }: { dashboard: PlatformDashboar
             </Link>
           </div>
         </CardHeader>
-        <CardContent className="overflow-x-auto px-0">
-          <table className="w-full min-w-[780px] text-left text-sm">
-            <thead className="text-muted-foreground border-b">
-              <tr>
-                <th className="px-5 py-3 font-medium">Restaurante</th>
-                <th className="px-3 py-3 font-medium">Tenant</th>
-                <th className="px-3 py-3 font-medium">Suscripción</th>
-                <th className="px-3 py-3 font-medium">Cobro</th>
-                <th className="px-3 py-3 font-medium">Acción</th>
-              </tr>
-            </thead>
-            <tbody>
+        <CardContent className="px-0">
+          <Table className="min-w-[780px] text-left">
+            <TableHeader className="text-muted-foreground">
+              <TableRow>
+                <TableHead className="px-5">Restaurante</TableHead>
+                <TableHead>Tenant</TableHead>
+                <TableHead>Suscripción</TableHead>
+                <TableHead>Cobro</TableHead>
+                <TableHead>Acción</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {recentTenants.map((tenant) => (
-                <tr className="border-b align-top last:border-0" key={tenant.id}>
-                  <td className="px-5 py-4">
+                <TableRow className="align-top" key={tenant.id}>
+                  <TableCell className="px-5 py-4">
                     <p className="font-medium">{tenant.name}</p>
                     <p className="text-muted-foreground mt-1 text-xs">
                       Alta: {new Date(tenant.createdAt).toLocaleDateString('es-ES')}
                     </p>
-                  </td>
-                  <td className="px-3 py-4">
+                  </TableCell>
+                  <TableCell className="px-3 py-4">
                     <span className="bg-muted rounded-full px-2 py-1 text-xs">
                       {tenantStatusLabel(tenant.status)}
                     </span>
-                  </td>
-                  <td className="px-3 py-4">
+                  </TableCell>
+                  <TableCell className="px-3 py-4">
                     {tenant.subscription ? (
                       <>
                         <p>
@@ -147,16 +153,16 @@ export function PlatformConsolePage({ dashboard }: { dashboard: PlatformDashboar
                     ) : (
                       'Sin suscripción'
                     )}
-                  </td>
-                  <td className="px-3 py-4">
+                  </TableCell>
+                  <TableCell className="px-3 py-4">
                     {tenant.subscription?.nextPaymentOn ?? 'Sin cobro programado'}
                     {tenant.subscription?.graceEndsOn && (
                       <p className="text-warning mt-1 text-xs">
                         Gracia: {tenant.subscription.graceEndsOn}
                       </p>
                     )}
-                  </td>
-                  <td className="px-3 py-4">
+                  </TableCell>
+                  <TableCell className="px-3 py-4">
                     <Link
                       className="text-primary text-sm whitespace-nowrap underline"
                       params={{ tenantId: tenant.id }}
@@ -164,18 +170,18 @@ export function PlatformConsolePage({ dashboard }: { dashboard: PlatformDashboar
                     >
                       Ver ficha
                     </Link>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
               {recentTenants.length === 0 && (
-                <tr>
-                  <td className="text-muted-foreground px-5 py-8 text-center" colSpan={5}>
+                <TableRow>
+                  <TableCell className="text-muted-foreground px-5 py-8 text-center" colSpan={5}>
                     Aún no hay tenants dados de alta.
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               )}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
     </main>

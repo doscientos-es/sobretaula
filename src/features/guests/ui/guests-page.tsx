@@ -9,6 +9,12 @@ import {
   PageHeader,
   PageHeaderDescription,
   PageHeaderTitle,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectList,
+  SelectTrigger,
+  SelectValue,
 } from '@doscientos/ui'
 import { useEffect, useState } from 'react'
 
@@ -158,21 +164,29 @@ export function GuestsPage({ tenantId, venueId }: { tenantId: string; venueId: s
                         >
                           Fusionar este cliente en
                         </label>
-                        <select
-                          className="border-border rounded-md border px-2 py-1 text-sm"
+                        <Select
                           id={`merge-${guest.id}`}
-                          onChange={(event) => setMergeTarget(event.target.value)}
-                          value={mergeTarget}
+                          onSelectionChange={(key) =>
+                            setMergeTarget(String(key) === 'empty' ? '' : String(key))
+                          }
+                          selectedKey={mergeTarget || 'empty'}
                         >
-                          <option value="">Selecciona cliente destino</option>
-                          {guests
-                            .filter((candidate) => candidate.id !== guest.id)
-                            .map((candidate) => (
-                              <option key={candidate.id} value={candidate.id}>
-                                {candidate.name}
-                              </option>
-                            ))}
-                        </select>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectList>
+                              <SelectItem id="empty">Selecciona cliente destino</SelectItem>
+                              {guests
+                                .filter((candidate) => candidate.id !== guest.id)
+                                .map((candidate) => (
+                                  <SelectItem id={candidate.id} key={candidate.id}>
+                                    {candidate.name}
+                                  </SelectItem>
+                                ))}
+                            </SelectList>
+                          </SelectContent>
+                        </Select>
                         <Button
                           disabled={!mergeTarget || saving}
                           onClick={() =>
@@ -315,19 +329,25 @@ export function GuestsPage({ tenantId, venueId }: { tenantId: string; venueId: s
                           placeholder="Añadir nota interna…"
                           value={note}
                         />
-                        <select
+                        <Select
                           aria-label="Categoría de la nota"
-                          className="border-border rounded-md border px-2 text-sm"
-                          onChange={(event) =>
-                            setNoteCategory(event.target.value as typeof noteCategory)
+                          onSelectionChange={(key) =>
+                            setNoteCategory(String(key) as typeof noteCategory)
                           }
-                          value={noteCategory}
+                          selectedKey={noteCategory}
                         >
-                          <option value="general">General</option>
-                          <option value="preference">Preferencia</option>
-                          <option value="allergy">Alergia</option>
-                          <option value="incident">Incidencia</option>
-                        </select>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectList>
+                              <SelectItem id="general">General</SelectItem>
+                              <SelectItem id="preference">Preferencia</SelectItem>
+                              <SelectItem id="allergy">Alergia</SelectItem>
+                              <SelectItem id="incident">Incidencia</SelectItem>
+                            </SelectList>
+                          </SelectContent>
+                        </Select>
                         <Button
                           disabled={!note.trim() || saving}
                           onClick={() =>

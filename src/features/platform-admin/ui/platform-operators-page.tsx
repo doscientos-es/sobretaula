@@ -12,6 +12,12 @@ import {
   PageHeader,
   PageHeaderDescription,
   PageHeaderTitle,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectList,
+  SelectTrigger,
+  SelectValue,
   useFormFeedback,
 } from '@doscientos/ui'
 import { useState, type FormEvent } from 'react'
@@ -119,17 +125,25 @@ export function PlatformOperatorsPage({
             </Field>
             <Field>
               <FieldLabel htmlFor="operator-role">Acceso</FieldLabel>
-              <select
-                className="border-input h-10 w-full rounded-md border bg-transparent px-3 text-sm"
+              <Select
+                className="w-full"
                 id="operator-role"
-                onChange={(event) => {
-                  if (isPlatformAdminRole(event.target.value)) setRole(event.target.value)
+                onSelectionChange={(key) => {
+                  const nextRole = String(key)
+                  if (isPlatformAdminRole(nextRole)) setRole(nextRole)
                 }}
-                value={role}
+                selectedKey={role}
               >
-                <option value="platform_support">Soporte de plataforma</option>
-                <option value="platform_owner">Superadministrador</option>
-              </select>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectList>
+                    <SelectItem id="platform_support">Soporte de plataforma</SelectItem>
+                    <SelectItem id="platform_owner">Superadministrador</SelectItem>
+                  </SelectList>
+                </SelectContent>
+              </Select>
             </Field>
             <Button className="self-end" disabled={feedback.pending} type="submit">
               Enviar invitación
@@ -173,13 +187,12 @@ export function PlatformOperatorsPage({
                 </div>
                 {manageable && (
                   <div className="flex gap-2">
-                    <select
+                    <Select
                       aria-label={`Rol de ${operator.name}`}
-                      className="border-input h-9 rounded-md border bg-transparent px-2 text-sm"
-                      defaultValue={operator.role}
-                      disabled={feedback.pending}
-                      onChange={(event) => {
-                        const nextRole = event.target.value
+                      defaultSelectedKey={operator.role}
+                      isDisabled={feedback.pending}
+                      onSelectionChange={(key) => {
+                        const nextRole = String(key)
                         if (!isPlatformAdminRole(nextRole)) return
                         void run(
                           () =>
@@ -190,9 +203,16 @@ export function PlatformOperatorsPage({
                         )
                       }}
                     >
-                      <option value="platform_support">Soporte</option>
-                      <option value="platform_owner">Superadministrador</option>
-                    </select>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectList>
+                          <SelectItem id="platform_support">Soporte</SelectItem>
+                          <SelectItem id="platform_owner">Superadministrador</SelectItem>
+                        </SelectList>
+                      </SelectContent>
+                    </Select>
                     <Button
                       disabled={feedback.pending}
                       onClick={() =>

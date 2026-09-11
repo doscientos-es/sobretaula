@@ -12,6 +12,12 @@ import {
   PageHeader,
   PageHeaderDescription,
   PageHeaderTitle,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectList,
+  SelectTrigger,
+  SelectValue,
   useFormFeedback,
 } from '@doscientos/ui'
 import { useState } from 'react'
@@ -105,18 +111,25 @@ export function TimekeepingTerminalPage({
         <CardContent className="space-y-4">
           <Field>
             <FieldLabel htmlFor="terminal-employee">Empleado</FieldLabel>
-            <select
-              className="border-input min-h-10 w-full rounded-md border bg-transparent px-3"
+            <Select
               id="terminal-employee"
-              onChange={(event) => setEmployeeId(event.target.value)}
-              value={employeeId}
+              className="w-full"
+              onSelectionChange={(key) => setEmployeeId(String(key))}
+              selectedKey={employeeId}
             >
-              {staff.map((member) => (
-                <option key={member.userId} value={member.userId}>
-                  {member.displayName} · {member.role}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectList>
+                  {staff.map((member) => (
+                    <SelectItem id={member.userId} key={member.userId}>
+                      {member.displayName} · {member.role}
+                    </SelectItem>
+                  ))}
+                </SelectList>
+              </SelectContent>
+            </Select>
           </Field>
           <Field>
             <FieldLabel htmlFor="terminal-pin">PIN personal</FieldLabel>

@@ -9,6 +9,12 @@ import {
   FieldLabel,
   FormFeedback,
   Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectList,
+  SelectTrigger,
+  SelectValue,
   useFormFeedback,
 } from '@doscientos/ui'
 import { useState, type FormEvent } from 'react'
@@ -267,31 +273,47 @@ export function AccountPayments({
           <form className="grid gap-4 border-t pt-4" onSubmit={charge}>
             <Field>
               <FieldLabel htmlFor="payment-method">Método</FieldLabel>
-              <select
+              <Select
+                className="w-full"
                 id="payment-method"
-                onChange={(event) => setMethod(event.target.value as PaymentMethod)}
-                value={method}
+                onSelectionChange={(key) => setMethod(String(key) as PaymentMethod)}
+                selectedKey={method}
               >
-                {PAYMENT_METHODS.map((option) => (
-                  <option key={option} value={option}>
-                    {PAYMENT_METHOD_LABEL[option]}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectList>
+                    {PAYMENT_METHODS.map((option) => (
+                      <SelectItem id={option} key={option}>
+                        {PAYMENT_METHOD_LABEL[option]}
+                      </SelectItem>
+                    ))}
+                  </SelectList>
+                </SelectContent>
+              </Select>
             </Field>
             <Field>
               <FieldLabel htmlFor="payment-parts">Dividir la cuenta</FieldLabel>
-              <select
+              <Select
+                className="w-full"
                 id="payment-parts"
-                onChange={(event) => setParts(Number(event.target.value))}
-                value={parts}
+                onSelectionChange={(key) => setParts(Number(key))}
+                selectedKey={String(parts)}
               >
-                {SPLIT_OPTIONS.map((option) => (
-                  <option key={option} value={option}>
-                    {`${option} partes`}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectList>
+                    {SPLIT_OPTIONS.map((option) => (
+                      <SelectItem id={String(option)} key={option}>
+                        {`${option} partes`}
+                      </SelectItem>
+                    ))}
+                  </SelectList>
+                </SelectContent>
+              </Select>
             </Field>
             <div className="flex flex-wrap gap-2">
               {shares.map((share, index) => (
@@ -343,17 +365,25 @@ export function AccountPayments({
             <div className="grid gap-3 sm:grid-cols-2">
               <Field>
                 <FieldLabel htmlFor="mixed-method-a">Primer método</FieldLabel>
-                <select
+                <Select
+                  className="w-full"
                   id="mixed-method-a"
-                  onChange={(event) => setMixedMethodA(event.target.value as PaymentMethod)}
-                  value={mixedMethodA}
+                  onSelectionChange={(key) => setMixedMethodA(String(key) as PaymentMethod)}
+                  selectedKey={mixedMethodA}
                 >
-                  {PAYMENT_METHODS.map((option) => (
-                    <option key={option} value={option}>
-                      {PAYMENT_METHOD_LABEL[option]}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectList>
+                      {PAYMENT_METHODS.map((option) => (
+                        <SelectItem id={option} key={option}>
+                          {PAYMENT_METHOD_LABEL[option]}
+                        </SelectItem>
+                      ))}
+                    </SelectList>
+                  </SelectContent>
+                </Select>
               </Field>
               <Field>
                 <FieldLabel htmlFor="mixed-amount-a">Importe (€)</FieldLabel>
@@ -367,17 +397,25 @@ export function AccountPayments({
               </Field>
               <Field>
                 <FieldLabel htmlFor="mixed-method-b">Segundo método</FieldLabel>
-                <select
+                <Select
+                  className="w-full"
                   id="mixed-method-b"
-                  onChange={(event) => setMixedMethodB(event.target.value as PaymentMethod)}
-                  value={mixedMethodB}
+                  onSelectionChange={(key) => setMixedMethodB(String(key) as PaymentMethod)}
+                  selectedKey={mixedMethodB}
                 >
-                  {PAYMENT_METHODS.map((option) => (
-                    <option key={option} value={option}>
-                      {PAYMENT_METHOD_LABEL[option]}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectList>
+                      {PAYMENT_METHODS.map((option) => (
+                        <SelectItem id={option} key={option}>
+                          {PAYMENT_METHOD_LABEL[option]}
+                        </SelectItem>
+                      ))}
+                    </SelectList>
+                  </SelectContent>
+                </Select>
               </Field>
               <Field>
                 <FieldLabel htmlFor="mixed-amount-b">Importe (€)</FieldLabel>

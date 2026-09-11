@@ -9,6 +9,12 @@ import {
   FieldLabel,
   FormFeedback,
   Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectList,
+  SelectTrigger,
+  SelectValue,
   useFormFeedback,
 } from '@doscientos/ui'
 import { useState, type FormEvent } from 'react'
@@ -86,19 +92,26 @@ export function ModifierCard({
         <form className="grid gap-4 md:grid-cols-2" onSubmit={(event) => void submit(event)}>
           <Field>
             <FieldLabel htmlFor="modifier-item">Plato</FieldLabel>
-            <select
-              className="border-input bg-background h-10 rounded-md border px-3 text-sm"
+            <Select
               id="modifier-item"
-              onChange={(event) => setMenuItemId(event.target.value)}
-              required
-              value={menuItemId}
+              className="w-full"
+              isRequired
+              onSelectionChange={(key) => setMenuItemId(String(key))}
+              selectedKey={menuItemId}
             >
-              {menu.items.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {localizedText(item.nameI18n, 'es')}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectList>
+                  {menu.items.map((item) => (
+                    <SelectItem id={item.id} key={item.id}>
+                      {localizedText(item.nameI18n, 'es')}
+                    </SelectItem>
+                  ))}
+                </SelectList>
+              </SelectContent>
+            </Select>
           </Field>
           <Field>
             <FieldLabel htmlFor="modifier-group">Grupo</FieldLabel>
