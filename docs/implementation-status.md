@@ -1,6 +1,6 @@
 # Estado de implementación
 
-Última actualización: 2026-09-10. Incluye la ejecución local de controles de
+Última actualización: 2026-09-11. Incluye la ejecución local de controles de
 calidad de esta fecha.
 
 El plan maestro de producto y UX del diseñador/operación de sala vive en
@@ -275,10 +275,10 @@ transforma silenciosamente en `test` ni puede emitir por accidente.
 `pnpm format:check`, `pnpm lint`, `pnpm structure:check`, `pnpm typecheck`,
 `pnpm test`, `pnpm quality`, `pnpm build`.
 
-### Última ejecución local (2026-09-10)
+### Última ejecución local (2026-09-11)
 
-La última ejecución de `pnpm quality` completa correctamente con 75 archivos y
-299 pruebas correctas. Un archivo y tres pruebas RLS siguen omitidos de forma
+La última ejecución de `pnpm quality` completa correctamente con 76 archivos y
+304 pruebas correctas. Un archivo y tres pruebas RLS siguen omitidos de forma
 deliberada para no conectarlos al proyecto con datos reales.
 
 | Comando                | Resultado                                                                                    |
@@ -286,7 +286,7 @@ deliberada para no conectarlos al proyecto con datos reales.
 | `pnpm format:check`    | Correcto                                                                                     |
 | `pnpm lint`            | Correcto                                                                                     |
 | `pnpm structure:check` | Correcto localmente; el asset de login vive en `public/` y los módulos usan nombres estándar |
-| `pnpm test`            | 75 archivos y 299 pruebas correctas; 1 archivo y 3 pruebas RLS omitidas deliberadamente      |
+| `pnpm test`            | 76 archivos y 304 pruebas correctas; 1 archivo y 3 pruebas RLS omitidas deliberadamente      |
 | `pnpm typecheck`       | Correcto                                                                                     |
 | `pnpm quality`         | Correcto                                                                                     |
 | `pnpm build`           | Correcto; solo avisos de Vite/chunks                                                         |
@@ -312,6 +312,26 @@ de cuenta idempotente y auditoría inmutable de anulaciones (`80` y `81`), y la
 de reserva pública con comentario, constancia de privacidad y correo exclusivo
 (`82`). No se usaron fixtures ni se ejecutaron pruebas de carga, concurrencia o
 humo contra datos de producción.
+
+### Auditoría de cierre (2026-09-11)
+
+Se reconciliaron los 100 ficheros locales de `supabase/migrations` con el
+historial del proyecto autorizado: no queda ninguna migración propia pendiente
+de aplicar. El historial tiene 101 entradas porque
+`is_tenant_member_compatibility` figura dos veces por una reaplicación histórica;
+no se alteró ese historial ni se ejecutó DDL innecesario. El esquema conserva RLS
+forzada en 95 tablas públicas.
+
+La base ya contiene las cuentas demo documentadas en
+[`demo-users.md`](./demo-users.md): owner, manager y waiter para
+`la-fonda-demo`, además de dos cuentas owner para escenarios de onboarding. No
+se crearon fixtures nuevos ni se consultaron contraseñas en esta auditoría.
+
+CI incorpora ahora `pnpm structure:check` junto al resto de gates estáticos. La
+entrega sigue sin marcar el MVP comercial como completo: permanecen los gates
+externos de piloto, privacidad/retención, validación fiscal/laboral, proveedores
+de pagos/comunicaciones y la validación operativa sin usar producción como
+entorno de pruebas.
 
 ### Primer módulo TPV unificado (D1)
 

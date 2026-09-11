@@ -26,10 +26,9 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      # structure:check is currently blocked by three pre-existing, unrelated
-      # filenames; keep the actionable quality gates blocking CI.
       - run: pnpm format:check
       - run: pnpm lint
+      - run: pnpm structure:check
       - run: pnpm typecheck
       - run: pnpm test
 

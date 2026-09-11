@@ -1,8 +1,10 @@
 # Modelo de datos
 
-Diseño de F0 materializado incrementalmente en `supabase/migrations/`: las
-migraciones 0001–0022 y 0901–0903 están aplicadas en el proyecto de producción;
-la 0904 de gobierno de plataforma está pendiente de aplicar y verificar.
+Diseño de F0 materializado incrementalmente en `supabase/migrations/`: los 100
+ficheros SQL locales están representados en el historial del proyecto autorizado
+y no queda ninguna migración local pendiente de aplicar. Supabase registra 101
+entradas porque `is_tenant_member_compatibility` aparece dos veces por una
+reaplicación histórica; no se modifica ese historial ya aplicado.
 El documento conserva el contrato del modelo y se actualiza junto a cada cambio
 de esquema. Toda tabla de negocio lleva `tenant_id uuid not null` y RLS forzada
 ([ADR-0002](./adr/0002-multitenancy-rls.md)).

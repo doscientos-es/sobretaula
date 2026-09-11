@@ -34,6 +34,13 @@ se aplica individualmente por MCP al destino autorizado, verificando después el
 esquema. Nunca se usan fixtures, humo, carga ni pruebas de concurrencia sobre
 ese proyecto.
 
+## Cuentas demo
+
+La lista de cuentas de presentación ya existentes, sus roles y los tenants de
+escenario está en [`docs/demo-users.md`](docs/demo-users.md). Las contraseñas no
+se versionan; usa recuperación de contraseña o invitación si necesitas
+restablecer el acceso.
+
 ## Variables de entorno
 
 | Variable                                                                                                                                                                                                | Plano         | Uso                                                          |
