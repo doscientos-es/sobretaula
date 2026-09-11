@@ -392,7 +392,8 @@ function TenantLayout() {
 function TenantRouteError({ error, reset }: { error: unknown; reset: () => void }) {
   const { slug } = useParams({ from: '/t/$slug' })
   const status = error instanceof Response ? error.status : undefined
-  const title = status === 403 ? 'No tienes permisos para acceder' : 'No se ha podido cargar esta pantalla'
+  const title =
+    status === 403 ? 'No tienes permisos para acceder' : 'No se ha podido cargar esta pantalla'
   const description =
     status === 403
       ? 'Tu usuario no tiene acceso a este restaurante o a esta sección.'
@@ -408,7 +409,9 @@ function TenantRouteError({ error, reset }: { error: unknown; reset: () => void 
           <CardDescription>{description}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap items-center gap-3">
-          <Button onPress={reset} type="button">Reintentar</Button>
+          <Button onPress={reset} type="button">
+            Reintentar
+          </Button>
           <Link
             className="text-primary text-sm font-medium underline underline-offset-4"
             params={{ slug }}
