@@ -41,6 +41,7 @@ import {
   tenantBySlugQuery,
 } from '@/features/tenancy'
 import { getTenantVenues } from '@/features/venues'
+import { LocaleProvider } from '@/shared/lib/i18n/locale-preference'
 import { parseTenantSlug } from '@/shared/lib/tenant/tenant-slug'
 
 async function getMembershipOrRedirect(tenantId: string, tenantSlug: string) {
@@ -79,23 +80,23 @@ export const Route = createFileRoute('/t/$slug')({
       : []
     const metrics = isTenantOperational(tenant.status)
       ? await getDashboardMetrics({
-          data: {
-            tenantId: tenant.id,
-            venueIds: venues.map((venue) => venue.id),
-          },
-        })
+        data: {
+          tenantId: tenant.id,
+          venueIds: venues.map((venue) => venue.id),
+        },
+      })
       : {
-          actionItems: [],
-          nextReservationCovers: null,
-          nextReservationStartsAt: null,
-          openSessionCount: 0,
-          occupiedTables: 0,
-          paidTodayCents: 0,
-          pendingReservationsToday: 0,
-          reservationsToday: 0,
-          reservationsThisWeek: 0,
-          noShowsThisWeek: 0,
-        }
+        actionItems: [],
+        nextReservationCovers: null,
+        nextReservationStartsAt: null,
+        openSessionCount: 0,
+        occupiedTables: 0,
+        paidTodayCents: 0,
+        pendingReservationsToday: 0,
+        reservationsToday: 0,
+        reservationsThisWeek: 0,
+        noShowsThisWeek: 0,
+      }
     return {
       billingStatus,
       membership: context.tenantMembership,
@@ -144,13 +145,12 @@ function OnboardingStep({
     <div>
       <div className="flex items-start gap-4 py-4">
         <span
-          className={`mt-0.5 inline-flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${
-            status === 'done'
-              ? 'bg-success/15 text-success'
-              : status === 'active'
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-muted text-muted-foreground'
-          }`}
+          className={`mt-0.5 inline-flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${status === 'done'
+            ? 'bg-success/15 text-success'
+            : status === 'active'
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-muted text-muted-foreground'
+            }`}
         >
           {status === 'done' ? <Check className="size-4" /> : index}
         </span>
@@ -343,6 +343,15 @@ function TenantSuspendedNotice({
 }
 
 function TenantLayout() {
+  const { billingStatus, membership, tenant, venues } = Route.useLoaderData()
+  return (
+    <LocaleProvider defaultLocale={tenant.defaultLocale}>
+      <TenantLayoutContent />
+    </LocaleProvider>
+  )
+}
+
+function TenantLayoutContent() {
   const { billingStatus, membership, tenant, venues } = Route.useLoaderData()
   const pathname = useRouterState({
     select: (state) => state.location.pathname,

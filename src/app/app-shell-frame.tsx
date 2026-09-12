@@ -10,7 +10,9 @@ import {
 import { Menu } from 'lucide-react'
 import type { ReactNode } from 'react'
 
+import { LanguageSwitcher } from '@/shared/lib/i18n/language-switcher'
 import type { Locale } from '@/shared/lib/i18n/locale'
+import { useLocale } from '@/shared/lib/i18n/locale-preference'
 import { createTranslator } from '@/shared/lib/i18n/messages'
 
 /** Shared structure for frames. Each area owns its own navigation and context. */
@@ -37,7 +39,8 @@ export function AppShellFrame({
   sidebar: ReactNode
   sidebarClassName: string
 }) {
-  const t = createTranslator(locale)
+  const effectiveLocale = useLocale(locale)
+  const t = createTranslator(effectiveLocale)
 
   return (
     <AppShell className={className} sidebarBreakpoint="lg">
@@ -64,6 +67,7 @@ export function AppShellFrame({
             </Drawer>
             {header}
           </div>
+          <LanguageSwitcher className="ml-3 shrink-0" />
         </AppShellHeader>
         {mobileTabs}
         <AppShellContent className={contentClassName}>{children}</AppShellContent>

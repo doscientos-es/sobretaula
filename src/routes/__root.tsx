@@ -13,6 +13,7 @@ import { useSyncExternalStore, type ReactNode } from 'react'
 import { missingEnvironmentVariable } from '@/app/root-error'
 import { isPasswordRecoveryHash, PasswordResetPage } from '@/features/auth'
 import { DEFAULT_LOCALE } from '@/shared/lib/i18n/locale'
+import { LocaleProvider } from '@/shared/lib/i18n/locale-preference'
 import { createTranslator } from '@/shared/lib/i18n/messages'
 
 import appCss from '../styles.css?url'
@@ -59,7 +60,11 @@ function RootDocument({ children }: { children: ReactNode }) {
 }
 
 function RootLayout() {
-  return <Outlet />
+  return (
+    <LocaleProvider>
+      <Outlet />
+    </LocaleProvider>
+  )
 }
 
 function RootError({ error, reset }: { error: unknown; reset: () => void }) {

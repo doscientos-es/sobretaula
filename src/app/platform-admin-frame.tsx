@@ -22,6 +22,7 @@ import {
 import { type ReactNode } from 'react'
 
 import { LogoutButton, useCurrentUser, useLogout, userInitials } from '@/features/auth'
+import { useLocale } from '@/shared/lib/i18n/locale-preference'
 
 import { AppShellFrame } from './app-shell-frame'
 
@@ -29,6 +30,7 @@ const navLinkClass =
   'st-platform-nav-link flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors'
 
 export function PlatformAdminFrame({ children }: { children: ReactNode }) {
+  const locale = useLocale('es')
   const pathname = useRouterState({ select: (state) => state.location.pathname })
   const isBillingModule = pathname === '/admin/facturacion' || pathname === '/admin/facturas'
 
@@ -50,7 +52,7 @@ export function PlatformAdminFrame({ children }: { children: ReactNode }) {
         </>
       }
       headerClassName="st-platform-header flex h-11 items-center justify-between px-5 sm:px-8"
-      locale="es"
+      locale={locale}
       mainClassName="st-platform-main min-w-0 flex-1"
       mobileTabs={
         isBillingModule ? (

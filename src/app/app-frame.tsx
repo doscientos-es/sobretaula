@@ -30,7 +30,9 @@ import { useState, type MouseEvent, type ReactNode } from 'react'
 
 import { CurrentUserSidebar } from '@/features/auth'
 import { resolveVenue, VenueSwitcher, type Venue } from '@/features/venues'
+import { LanguageSwitcher } from '@/shared/lib/i18n/language-switcher'
 import type { Locale } from '@/shared/lib/i18n/locale'
+import { useLocale } from '@/shared/lib/i18n/locale-preference'
 import { createTranslator } from '@/shared/lib/i18n/messages'
 
 const navLinkClass =
@@ -52,7 +54,8 @@ export function TenantAdminFrame({
   title: string
   venues: readonly Venue[]
 }) {
-  const t = createTranslator(locale)
+  const effectiveLocale = useLocale(locale)
+  const t = createTranslator(effectiveLocale)
   const navigate = useNavigate()
   const [showPaymentDialog, setShowPaymentDialog] = useState(false)
   const params = useParams({ strict: false })
@@ -213,7 +216,7 @@ export function TenantAdminFrame({
             </Link>
           </nav>
         </div>
-        <CurrentUserSidebar />
+        <CurrentUserSidebar locale={effectiveLocale} />
       </AppShellSidebar>
       <AppShellMain className="st-saas-main min-w-0 flex-1">
         <AppShellHeader className="st-saas-header flex h-11 items-center justify-between px-5 sm:px-6">
@@ -235,6 +238,7 @@ export function TenantAdminFrame({
               <ExternalLink aria-hidden="true" className="size-3.5" />
               <span className="hidden sm:inline">{t('app.customerView')}</span>
             </Link>
+            <LanguageSwitcher className="ml-1 shrink-0" />
           </div>
         </AppShellHeader>
         {activeVenue && (

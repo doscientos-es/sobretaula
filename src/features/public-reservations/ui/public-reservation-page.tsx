@@ -15,14 +15,16 @@ import { Link } from '@tanstack/react-router'
 import { CalendarDays, Check, Clock3, MapPin, Users } from 'lucide-react'
 import { useMemo, useRef, useState, type FormEvent } from 'react'
 
+import { LanguageSwitcher } from '@/shared/lib/i18n/language-switcher'
+import { useLocale } from '@/shared/lib/i18n/locale-preference'
+import { formatMessage, createTranslator } from '@/shared/lib/i18n/messages'
+
 import {
   createPublicReservation,
   getPublicReservationAvailability,
   type PublicReservationProfile,
 } from '../application/public-reservations'
 import { zonedLocalToIso } from '../domain/zoned-time'
-
-const weekdayNames = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado']
 
 function localDateKey(date: Date, timeZone: string): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone }).format(date)
@@ -54,16 +56,16 @@ function slotsForService(service: PublicReservationProfile['services'][number]):
   return slots
 }
 
-function formatDate(date: string): string {
-  return new Intl.DateTimeFormat('es-ES', {
+function formatDate(date: string, locale: string): string {
+  return new Intl.DateTimeFormat(locale, {
     day: 'numeric',
     month: 'long',
     weekday: 'long',
   }).format(new Date(`${date}T12:00:00.000Z`))
 }
 
-function restaurantTime(value: string, timezone: string): string {
-  return new Intl.DateTimeFormat('es-ES', {
+function restaurantTime(value: string, timezone: string, locale: string): string {
+  return new Intl.DateTimeFormat(locale, {
     hour: '2-digit',
     minute: '2-digit',
     timeZone: timezone,
@@ -71,6 +73,12 @@ function restaurantTime(value: string, timezone: string): string {
 }
 
 export function PublicReservationPage({ profile }: { profile: PublicReservationProfile }) {
+  const locale = useLocale()
+  const t = createTranslator(locale)
+  const message = (
+    key: Parameters<typeof formatMessage>[1],
+    values: Record<string, string | number> = {},
+  ) => formatMessage(locale, key, values)
   const feedback = useFormFeedback()
   const [serviceId, setServiceId] = useState(profile.services[0]?.id ?? '')
   const [areaId, setAreaId] = useState('')
@@ -129,7 +137,7 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
       })
       if (requestId !== availabilityRequestRef.current) return
       const normalized = result.map((slot) =>
-        slot.includes('T') ? restaurantTime(slot, profile.timezone) : slot.slice(0, 5),
+        slot.includes('T') ? restaurantTime(slot, profile.timezone, locale) : slot.slice(0, 5),
       )
       setAvailableSlots(normalized)
       if (selectedArea && result.length === 0) {
@@ -141,7 +149,9 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
           fallback
             .slice(0, 3)
             .map((slot) =>
-              slot.includes('T') ? restaurantTime(slot, profile.timezone) : slot.slice(0, 5),
+              slot.includes('T')
+                ? restaurantTime(slot, profile.timezone, locale)
+                : slot.slice(0, 5),
             ),
         )
       }
@@ -155,15 +165,15 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!service || !date || !time) {
-      feedback.setError('Elige el día y la hora que prefieras.')
+      feedback.setError(t('public.chooseTime'))
       return
     }
     if (!privacyAccepted) {
-      feedback.setError('Acepta la política de privacidad para continuar.')
+      feedback.setError(t('public.acceptPrivacy'))
       return
     }
     if (profile.terms && !termsAccepted) {
-      feedback.setError('Acepta las condiciones de reserva para continuar.')
+      feedback.setError(t('public.acceptTermsError'))
       return
     }
     feedback.setPending()
@@ -191,8 +201,8 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
     } catch (error) {
       feedback.setError(
         error instanceof Response && error.status === 409
-          ? 'Esta hora acaba de ocuparse. Elige otra, por favor.'
-          : 'No hemos podido completar la reserva. Revisa los datos e inténtalo de nuevo.',
+          ? t('public.slotTaken')
+          : t('public.bookingFailed'),
       )
     }
   }
@@ -200,6 +210,9 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
   if (confirmed) {
     return (
       <main className="relative grid min-h-svh place-items-center overflow-hidden bg-[#fbfaf8] p-[clamp(1rem,4vw,3.5rem)]">
+        <div className="absolute top-4 right-4 z-20">
+          <LanguageSwitcher />
+        </div>
         <section
           aria-labelledby="booking-confirmed"
           className="relative z-10 w-full max-w-[34rem] rounded-3xl border border-[#292d34]/10 bg-white/92 p-[clamp(2rem,7vw,5rem)] text-center shadow-[0_1.5rem_4rem_rgb(66_48_35_/_12%)]"
@@ -211,27 +224,30 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
             <Check className="size-7" />
           </span>
           <p className="mb-3 text-xs font-bold tracking-[0.14em] text-[#c34d3e] uppercase">
-            Reserva recibida
+            {t('public.received')}
           </p>
           <h1
             id="booking-confirmed"
             className="mt-4 text-[clamp(2.25rem,6vw,4rem)] leading-[0.95] font-[650] tracking-[-0.075em] text-[#292d34]"
           >
-            Te esperamos en {profile.name}
+            {message('public.weWait', { name: profile.name })}
           </h1>
           <p className="mt-6 leading-relaxed text-[#60656d]">
-            Hemos reservado una mesa para {partySize} {partySize === 1 ? 'persona' : 'personas'} el{' '}
-            {formatDate(date)} a las {time}.
+            {message(partySize === 1 ? 'public.confirmed.single' : 'public.confirmed.multiple', {
+              count: partySize,
+              date: formatDate(date, locale),
+              time,
+            })}
           </p>
           <Link
             className="st-public-booking-manage-link"
             params={{ token: managementToken }}
             to="/reserva/$token"
           >
-            Consultar o cancelar esta reserva
+            {t('public.manage')}
           </Link>
           <p className="mt-6 text-xs leading-5 text-[#737983]">
-            {profile.venueName}. Hemos enviado la confirmación y el enlace de gestión a tu email.
+            {message('public.confirmationSent', { venue: profile.venueName })}
           </p>
         </section>
       </main>
@@ -240,6 +256,9 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
 
   return (
     <main className="relative grid min-h-svh place-items-center overflow-hidden bg-[#fbfaf8] p-[clamp(1rem,4vw,3.5rem)]">
+      <div className="absolute top-4 right-4 z-20">
+        <LanguageSwitcher />
+      </div>
       <div
         aria-hidden="true"
         className="pointer-events-none absolute -top-72 -right-32 size-[32rem] rounded-full bg-[#f8c4a6] opacity-45 blur-xl motion-reduce:blur-none"
@@ -251,36 +270,34 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
       <section className="relative z-10 grid w-full max-w-[68rem] items-center gap-[clamp(1.5rem,5vw,5rem)] min-[800px]:grid-cols-[minmax(0,1fr)_minmax(24rem,32rem)]">
         <header className="max-w-lg">
           <p className="mb-3 text-xs font-bold tracking-[0.14em] text-[#c34d3e] uppercase">
-            Reserva directa
+            {t('public.directBooking')}
           </p>
           <h1 className="m-0 text-[clamp(2.5rem,7vw,5.5rem)] leading-[0.95] font-[650] tracking-[-0.075em] text-[#292d34]">
             {profile.name}
           </h1>
           <p className="mt-5 max-w-sm text-[clamp(1.05rem,2vw,1.3rem)] leading-6 text-[#60656d]">
-            Elige tu momento. Nosotros nos ocupamos de preparar la mesa.
+            {t('public.heroDescription')}
           </p>
           <div className="mt-8 grid gap-2.5 text-sm text-[#737983]">
             <span className="inline-flex items-center gap-2">
               <MapPin aria-hidden="true" className="size-4" /> {profile.venueName}
             </span>
             <span className="inline-flex items-center gap-2">
-              <Clock3 aria-hidden="true" className="size-4" /> Reserva en menos de un minuto
+              <Clock3 aria-hidden="true" className="size-4" /> {t('public.bookingInMinute')}
             </span>
           </div>
         </header>
         <Card className="w-full max-w-lg border-[#292d34]/10 bg-white/92 shadow-[0_1.5rem_4rem_rgb(66_48_35_/_12%)] backdrop-blur-[12px]">
           <CardHeader>
-            <CardTitle>Encuentra tu mesa</CardTitle>
+            <CardTitle>{t('public.findTable')}</CardTitle>
             <CardDescription>
-              {profile.services.length > 0
-                ? 'No necesitas crear una cuenta.'
-                : 'Este restaurante todavía no ha publicado ningún turno disponible.'}
+              {profile.services.length > 0 ? t('public.noAccount') : t('public.noServices')}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form className="grid gap-4" onSubmit={(event) => void submit(event)}>
               <Field>
-                <FieldLabel htmlFor="public-service">Momento</FieldLabel>
+                <FieldLabel htmlFor="public-service">{t('public.moment')}</FieldLabel>
                 <select
                   id="public-service"
                   className="min-h-12 bg-white"
@@ -289,14 +306,17 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                 >
                   {profile.services.map((candidate) => (
                     <option key={candidate.id} value={candidate.id}>
-                      {candidate.name} · {weekdayNames[candidate.weekday]}
+                      {candidate.name} ·{' '}
+                      {new Intl.DateTimeFormat(locale, { timeZone: 'UTC', weekday: 'long' }).format(
+                        new Date(Date.UTC(2024, 0, 7 + candidate.weekday)),
+                      )}
                     </option>
                   ))}
                 </select>
               </Field>
               {profile.areas.length ? (
                 <Field>
-                  <FieldLabel htmlFor="public-area">Zona (opcional)</FieldLabel>
+                  <FieldLabel htmlFor="public-area">{t('public.optionalArea')}</FieldLabel>
                   <select
                     id="public-area"
                     className="min-h-12 bg-white"
@@ -306,7 +326,7 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                     }}
                     value={areaId}
                   >
-                    <option value="">Cualquier zona</option>
+                    <option value="">{t('public.anyArea')}</option>
                     {profile.areas.map((area) => (
                       <option key={area.id} value={area.id}>
                         {area.name}
@@ -318,7 +338,8 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field>
                   <FieldLabel htmlFor="public-date">
-                    <CalendarDays aria-hidden="true" className="mr-1 inline size-4" /> Día
+                    <CalendarDays aria-hidden="true" className="mr-1 inline size-4" />{' '}
+                    {t('public.day')}
                   </FieldLabel>
                   <select
                     id="public-date"
@@ -327,23 +348,21 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                     required
                     value={date}
                   >
-                    <option value="">Selecciona un día</option>
+                    <option value="">{t('public.selectDay')}</option>
                     {dates.map((candidate) => (
                       <option key={candidate} value={candidate}>
-                        {formatDate(candidate)}
+                        {formatDate(candidate, locale)}
                       </option>
                     ))}
                   </select>
                   {date && !availabilityLoading && availableSlots.length === 0 ? (
                     <p className="mt-2 text-xs text-[#c34d3e]">
-                      {areaId
-                        ? 'No quedan horas libres en esta zona para ese día y número de personas. Prueba otra zona.'
-                        : 'No quedan horas libres para ese día y número de personas.'}
+                      {areaId ? t('public.noSlotsInArea') : t('public.noSlots')}
                     </p>
                   ) : null}
                   {alternativeSlots.length ? (
                     <p className="mt-2 text-xs text-[#5b6470]">
-                      Primeras horas libres en otras zonas:{' '}
+                      {t('public.alternativeSlots')}{' '}
                       {alternativeSlots.map((slot) => (
                         <button
                           className="ml-2 underline"
@@ -362,7 +381,7 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                   ) : null}
                 </Field>
                 <Field>
-                  <FieldLabel htmlFor="public-time">Hora</FieldLabel>
+                  <FieldLabel htmlFor="public-time">{t('public.time')}</FieldLabel>
                   <select
                     id="public-time"
                     className="min-h-12 bg-white"
@@ -370,7 +389,7 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                     required
                     value={time}
                   >
-                    <option value="">Selecciona una hora</option>
+                    <option value="">{t('public.selectTime')}</option>
                     {(date ? availableSlots : slots).map((candidate) => (
                       <option key={candidate} value={candidate}>
                         {candidate}
@@ -379,14 +398,14 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                   </select>
                   {availabilityLoading ? (
                     <p aria-live="polite" className="text-muted-foreground mt-2 text-xs">
-                      Buscando horas disponibles…
+                      {t('public.searching')}
                     </p>
                   ) : null}
                 </Field>
               </div>
               <Field>
                 <FieldLabel htmlFor="public-party">
-                  <Users aria-hidden="true" className="mr-1 inline size-4" /> Personas
+                  <Users aria-hidden="true" className="mr-1 inline size-4" /> {t('public.people')}
                 </FieldLabel>
                 <Input
                   id="public-party"
@@ -405,7 +424,7 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
               </Field>
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field>
-                  <FieldLabel htmlFor="public-name">Tu nombre</FieldLabel>
+                  <FieldLabel htmlFor="public-name">{t('public.name')}</FieldLabel>
                   <Input
                     autoComplete="name"
                     id="public-name"
@@ -415,7 +434,7 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                   />
                 </Field>
                 <Field>
-                  <FieldLabel htmlFor="public-phone">Teléfono</FieldLabel>
+                  <FieldLabel htmlFor="public-phone">{t('public.phone')}</FieldLabel>
                   <Input
                     autoComplete="tel"
                     id="public-phone"
@@ -426,7 +445,7 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                 </Field>
               </div>
               <Field>
-                <FieldLabel htmlFor="public-email">Email</FieldLabel>
+                <FieldLabel htmlFor="public-email">{t('public.email')}</FieldLabel>
                 <Input
                   autoComplete="email"
                   id="public-email"
@@ -437,9 +456,7 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                 />
               </Field>
               <Field>
-                <FieldLabel htmlFor="public-notes">
-                  Comentario para el restaurante (opcional)
-                </FieldLabel>
+                <FieldLabel htmlFor="public-notes">{t('public.notes')}</FieldLabel>
                 <textarea
                   className="min-h-20 w-full rounded-md border bg-white px-3 py-2"
                   id="public-notes"
@@ -455,15 +472,13 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                   required
                   type="checkbox"
                 />
-                <span>
-                  He leído la política de privacidad y acepto el tratamiento de mis datos para
-                  gestionar esta reserva.
-                </span>
+                <span>{t('public.privacyConsent')}</span>
               </label>
               {profile.terms ? (
                 <div className="grid gap-2 rounded-md border border-[#292d34]/10 bg-[#fbfaf8] p-3 text-xs leading-5 text-[#60656d]">
                   <p className="font-semibold text-[#292d34]">
-                    {profile.terms.title} · versión {profile.terms.version}
+                    {profile.terms.title} ·{' '}
+                    {message('public.termsVersion', { version: profile.terms.version })}
                   </p>
                   <p className="max-h-28 overflow-y-auto whitespace-pre-wrap">
                     {profile.terms.body}
@@ -475,11 +490,11 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                       required
                       type="checkbox"
                     />
-                    <span>Acepto las condiciones de reserva indicadas arriba.</span>
+                    <span>{t('public.acceptTerms')}</span>
                   </label>
                 </div>
               ) : null}
-              <FormFeedback pendingLabel="Comprobando disponibilidad…" state={feedback.state} />
+              <FormFeedback pendingLabel={t('public.checking')} state={feedback.state} />
               <Button
                 className="w-full"
                 disabled={
@@ -491,10 +506,10 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                 size="lg"
                 type="submit"
               >
-                Reservar mesa
+                {t('public.reserve')}
               </Button>
               <p className="m-0 text-xs leading-5 text-[#737983]">
-                Al reservar, {profile.name} tratará tus datos para gestionar la reserva. Consulta su{' '}
+                {message('public.legalPrefix', { name: profile.name })}{' '}
                 <Link
                   className="underline underline-offset-2"
                   params={{ slug: profile.slug }}
@@ -502,9 +517,9 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                   target="_blank"
                   to="/reservar/$slug/privacidad"
                 >
-                  política de privacidad
+                  {t('public.privacyPolicy')}
                 </Link>{' '}
-                y las{' '}
+                {t('public.andTerms')}{' '}
                 <Link
                   className="underline underline-offset-2"
                   params={{ slug: profile.slug }}
@@ -512,7 +527,7 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                   target="_blank"
                   to="/reservar/$slug/condiciones"
                 >
-                  condiciones de reserva
+                  {t('public.bookingTerms')}
                 </Link>
                 .
               </p>

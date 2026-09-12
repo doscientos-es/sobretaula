@@ -21,6 +21,7 @@ import {
 import { useState } from 'react'
 
 import type { Venue } from '@/features/venues'
+import { useLocale } from '@/shared/lib/i18n/locale-preference'
 import { createTranslator, formatMessage, type MessageKey } from '@/shared/lib/i18n/messages'
 
 import type { DashboardMetrics } from '../application/dashboard-metrics'
@@ -35,12 +36,13 @@ export function TenantHomePage({
   tenant: Tenant
   venues: readonly Venue[]
 }) {
-  const t = createTranslator(tenant.defaultLocale)
+  const locale = useLocale(tenant.defaultLocale)
+  const t = createTranslator(locale)
   const message = (key: MessageKey, values: Record<string, string | number> = {}) =>
-    formatMessage(tenant.defaultLocale, key, values)
+    formatMessage(locale, key, values)
   const [copied, setCopied] = useState(false)
   const [copyFailed, setCopyFailed] = useState(false)
-  const timeFormatter = new Intl.DateTimeFormat(tenant.defaultLocale, {
+  const timeFormatter = new Intl.DateTimeFormat(locale, {
     hour: '2-digit',
     minute: '2-digit',
     timeZone: tenant.timezone,
@@ -104,7 +106,7 @@ export function TenantHomePage({
             ],
             [
               message('dashboard.dailyRevenue'),
-              new Intl.NumberFormat(tenant.defaultLocale, {
+              new Intl.NumberFormat(locale, {
                 style: 'currency',
                 currency: 'EUR',
               }).format(metrics.paidTodayCents / 100),

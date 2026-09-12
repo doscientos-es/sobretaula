@@ -2,6 +2,7 @@ import { createFileRoute, notFound } from '@tanstack/react-router'
 
 import { BillingPage, getBillingOverview } from '@/features/invoices'
 import { requireTenantRouteAccess, tenantBySlugQuery } from '@/features/tenancy'
+import { useLocale } from '@/shared/lib/i18n/locale-preference'
 import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
 
 export const Route = createFileRoute('/t/$slug/facturacion')({
@@ -20,10 +21,11 @@ export const Route = createFileRoute('/t/$slug/facturacion')({
 function BillingRoute() {
   const { overview, tenant } = Route.useLoaderData()
   const reload = useLoaderReload()
+  const locale = useLocale(tenant.defaultLocale)
 
   return (
     <BillingPage
-      locale={tenant.defaultLocale}
+      locale={locale}
       isOwner={Route.useRouteContext().tenantMembership.role === 'owner'}
       onDone={reload}
       overview={overview}

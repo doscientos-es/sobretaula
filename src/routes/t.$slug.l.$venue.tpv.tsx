@@ -17,6 +17,7 @@ import { PosTerminalPage } from '@/features/pos'
 import { getSalesReport, ProductSalesSummary, SalesReportPage } from '@/features/reports'
 import { getServiceBoard, KitchenQueue, type ServiceBoard } from '@/features/service'
 import { requireTenantRouteAccess } from '@/features/tenancy/application/tenant-route-access'
+import { useLocale } from '@/shared/lib/i18n/locale-preference'
 import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
 
 export const Route = createFileRoute('/t/$slug/l/$venue/tpv')({
@@ -35,22 +36,22 @@ export const Route = createFileRoute('/t/$slug/l/$venue/tpv')({
       getMenu({ data: { tenantId: tenant.id, venueId: venue.id } }),
       canManage
         ? Promise.all([
-            getCashRegister({ data: { tenantId: tenant.id, venueId: venue.id } }),
-            listClosedCashRegisters({ data: { tenantId: tenant.id, venueId: venue.id } }),
-            getSalesReport({
-              data: {
-                from: startOfDay.toISOString(),
-                tenantId: tenant.id,
-                to: now.toISOString(),
-                venueId: venue.id,
-              },
-            }),
-          ])
+          getCashRegister({ data: { tenantId: tenant.id, venueId: venue.id } }),
+          listClosedCashRegisters({ data: { tenantId: tenant.id, venueId: venue.id } }),
+          getSalesReport({
+            data: {
+              from: startOfDay.toISOString(),
+              tenantId: tenant.id,
+              to: now.toISOString(),
+              venueId: venue.id,
+            },
+          }),
+        ])
         : Promise.resolve(undefined),
     ])
     const sessionId =
       context.tenantMembership.role !== 'host' &&
-      board.sessions.some((session) => session.id === deps.sessionId)
+        board.sessions.some((session) => session.id === deps.sessionId)
         ? deps.sessionId
         : undefined
     const account = sessionId
@@ -85,14 +86,14 @@ function PosTerminalRoute() {
         : {})}
       {...(canManage && cashHistory && report
         ? {
-            managementWorkspace: (
-              <PosTerminalManagementWorkspace
-                history={cashHistory}
-                register={cashRegister ?? null}
-                report={report}
-              />
-            ),
-          }
+          managementWorkspace: (
+            <PosTerminalManagementWorkspace
+              history={cashHistory}
+              register={cashRegister ?? null}
+              report={report}
+            />
+          ),
+        }
         : {})}
       slug={Route.useParams().slug}
       venue={venue.slug}
@@ -104,12 +105,13 @@ function PosTerminalAccountWorkspace({ account }: { account: AccountView }) {
   const { tenant, tenantMembership, venue } = Route.useRouteContext()
   const { menu } = Route.useLoaderData()
   const reload = useLoaderReload()
+  const locale = useLocale(tenant.defaultLocale)
   return (
     <div className="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_22rem]">
       <span className="sr-only">{`Mesa ${account.session.tableCodes.join(' + ')}`}</span>
       <AccountOrderWorkspace
         account={account}
-        locale={tenant.defaultLocale}
+        locale={locale}
         menu={menu}
         tenantId={tenant.id}
         venueId={venue.id}
@@ -117,7 +119,7 @@ function PosTerminalAccountWorkspace({ account }: { account: AccountView }) {
       <AccountPayments
         account={account}
         canManageAdjustments={['owner', 'manager'].includes(tenantMembership.role)}
-        locale={tenant.defaultLocale}
+        locale={locale}
         onDone={reload}
         tenantId={tenant.id}
         venueId={venue.id}
