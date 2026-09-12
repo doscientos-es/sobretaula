@@ -77,7 +77,7 @@ export function TenantAdminFrame({
           </span>
           <span className="font-semibold tracking-[-0.03em]">{t('app.name')}</span>
         </Link>
-        <p className="st-saas-section-label mt-6 px-1.5">Restaurante</p>
+        <p className="st-saas-section-label mt-6 px-1.5">{t('app.restaurant')}</p>
         <nav aria-label="Principal" className="mt-3 space-y-0.5">
           <Link
             to="/t/$slug"
@@ -87,7 +87,7 @@ export function TenantAdminFrame({
             className={navLinkClass}
           >
             <LayoutDashboard className="size-3" />
-            Resumen
+            {t('app.overview')}
           </Link>
         </nav>
         <VenueSwitcher
@@ -98,8 +98,8 @@ export function TenantAdminFrame({
         />
         {activeVenue && (
           <div className="st-saas-nav-group mt-5 pt-4">
-            <p className="st-saas-section-label px-1.5">Operativa del local</p>
-            <nav aria-label="Operativa del local" className="mt-2 space-y-0.5">
+            <p className="st-saas-section-label px-1.5">{t('app.venueOperations')}</p>
+            <nav aria-label={t('app.venueOperations')} className="mt-2 space-y-0.5">
               <Link
                 onClick={handleLockedNavigation}
                 to="/t/$slug/l/$venue/tpv"
@@ -145,8 +145,8 @@ export function TenantAdminFrame({
           </div>
         )}
         <div className="st-saas-nav-group mt-5 pt-4">
-          <p className="st-saas-section-label px-1.5">Gestión del restaurante</p>
-          <nav aria-label="Gestión del restaurante" className="mt-2 space-y-0.5">
+          <p className="st-saas-section-label px-1.5">{t('app.restaurantManagement')}</p>
+          <nav aria-label={t('app.restaurantManagement')} className="mt-2 space-y-0.5">
             <Link
               to="/t/$slug/carta"
               params={{ slug }}
@@ -185,7 +185,7 @@ export function TenantAdminFrame({
               onClick={handleLockedNavigation}
             >
               <Mail className="size-3" />
-              Comunicaciones
+              {t('app.communications')}
             </Link>
             <Link
               to="/t/$slug/equipo"
@@ -195,12 +195,12 @@ export function TenantAdminFrame({
               onClick={handleLockedNavigation}
             >
               <Users className="size-3" />
-              Equipo
+              {t('app.team')}
             </Link>
           </nav>
         </div>
         <div className="st-saas-nav-group mt-5 pt-4">
-          <p className="st-saas-section-label px-1.5">Cuenta</p>
+          <p className="st-saas-section-label px-1.5">{t('app.account')}</p>
           <nav className="mt-2">
             <Link
               to="/t/$slug/suscripcion/facturas"
@@ -209,7 +209,7 @@ export function TenantAdminFrame({
               className={navLinkClass}
             >
               <FileText className="size-3" />
-              Suscripción
+              {t('app.subscription')}
             </Link>
           </nav>
         </div>
@@ -233,13 +233,13 @@ export function TenantAdminFrame({
               to="/reservar/$slug"
             >
               <ExternalLink aria-hidden="true" className="size-3.5" />
-              <span className="hidden sm:inline">Ver como cliente</span>
+              <span className="hidden sm:inline">{t('app.customerView')}</span>
             </Link>
           </div>
         </AppShellHeader>
         {activeVenue && (
           <nav
-            aria-label="Navegación del local"
+            aria-label={t('app.venueNavigation')}
             className={`st-mobile-nav flex gap-5 overflow-x-auto px-5 py-3 text-xs font-medium lg:hidden ${navigationLocked ? 'opacity-60' : ''}`}
           >
             <Link
@@ -277,16 +277,13 @@ export function TenantAdminFrame({
           <DialogRoot onOpenChange={setShowPaymentDialog} open>
             <DialogContent className="max-w-md" showCloseButton={false}>
               <DialogHeader>
-                <DialogTitle>Valida el pago para acceder</DialogTitle>
-                <DialogDescription>
-                  Este módulo estará disponible cuando autorices el método de pago seguro de tu
-                  suscripción.
-                </DialogDescription>
+                <DialogTitle>{t('app.paymentRequiredTitle')}</DialogTitle>
+                <DialogDescription>{t('app.paymentRequiredDescription')}</DialogDescription>
               </DialogHeader>
               <DialogFooter>
                 <DialogClose asChild>
                   <Button type="button" variant="outline">
-                    Ahora no
+                    {t('app.paymentNotNow')}
                   </Button>
                 </DialogClose>
                 <Button
@@ -296,7 +293,7 @@ export function TenantAdminFrame({
                   }}
                   type="button"
                 >
-                  Ir a suscripción
+                  {t('app.goToSubscription')}
                 </Button>
               </DialogFooter>
             </DialogContent>

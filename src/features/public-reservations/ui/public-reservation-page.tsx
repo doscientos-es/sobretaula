@@ -13,7 +13,7 @@ import {
 } from '@doscientos/ui'
 import { Link } from '@tanstack/react-router'
 import { CalendarDays, Check, Clock3, MapPin, Users } from 'lucide-react'
-import { useMemo, useState, type FormEvent } from 'react'
+import { useMemo, useRef, useState, type FormEvent } from 'react'
 
 import {
   createPublicReservation,
@@ -24,17 +24,18 @@ import { zonedLocalToIso } from '../domain/zoned-time'
 
 const weekdayNames = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado']
 
-function localDateKey(date: Date): string {
-  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(date)
+function localDateKey(date: Date, timeZone: string): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone }).format(date)
 }
 
-function nextDates(weekday: number): string[] {
-  const today = new Date()
+function nextDates(weekday: number, timeZone: string): string[] {
+  const today = localDateKey(new Date(), timeZone)
+  const localDate = new Date(`${today}T12:00:00.000Z`)
   const result: string[] = []
   for (let offset = 0; offset < 30 && result.length < 8; offset += 1) {
-    const date = new Date(today)
-    date.setDate(today.getDate() + offset)
-    if (date.getDay() === weekday) result.push(localDateKey(date))
+    const date = new Date(localDate)
+    date.setUTCDate(localDate.getUTCDate() + offset)
+    if (date.getUTCDay() === weekday) result.push(date.toISOString().slice(0, 10))
   }
   return result
 }
@@ -58,7 +59,7 @@ function formatDate(date: string): string {
     day: 'numeric',
     month: 'long',
     weekday: 'long',
-  }).format(new Date(`${date}T12:00:00`))
+  }).format(new Date(`${date}T12:00:00.000Z`))
 }
 
 function restaurantTime(value: string, timezone: string): string {
@@ -87,21 +88,30 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
   const [availableSlots, setAvailableSlots] = useState<string[]>([])
   const [alternativeSlots, setAlternativeSlots] = useState<string[]>([])
   const [availabilityLoading, setAvailabilityLoading] = useState(false)
+  const availabilityRequestRef = useRef(0)
   const service = profile.services.find((candidate) => candidate.id === serviceId)
-  const dates = useMemo(() => (service ? nextDates(service.weekday) : []), [service])
+  const dates = useMemo(
+    () => (service ? nextDates(service.weekday, profile.timezone) : []),
+    [profile.timezone, service],
+  )
   const slots = useMemo(() => (service ? slotsForService(service) : []), [service])
 
   function selectService(id: string) {
+    availabilityRequestRef.current += 1
     setServiceId(id)
     setDate('')
     setTime('')
     setAlternativeSlots([])
     setAvailableSlots([])
+    setAvailabilityLoading(false)
   }
 
   async function selectDate(value: string, size = partySize, selectedArea = areaId) {
+    const requestId = availabilityRequestRef.current + 1
+    availabilityRequestRef.current = requestId
     setDate(value)
     setTime('')
+    setAlternativeSlots([])
     if (!value || !service) {
       setAvailableSlots([])
       return
@@ -117,6 +127,7 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
           slug: profile.slug,
         },
       })
+      if (requestId !== availabilityRequestRef.current) return
       const normalized = result.map((slot) =>
         slot.includes('T') ? restaurantTime(slot, profile.timezone) : slot.slice(0, 5),
       )
@@ -125,6 +136,7 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
         const fallback = await getPublicReservationAvailability({
           data: { date: value, partySize: size, serviceId: service.id, slug: profile.slug },
         })
+        if (requestId !== availabilityRequestRef.current) return
         setAlternativeSlots(
           fallback
             .slice(0, 3)
@@ -134,9 +146,9 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
         )
       }
     } catch {
-      setAvailableSlots([])
+      if (requestId === availabilityRequestRef.current) setAvailableSlots([])
     } finally {
-      setAvailabilityLoading(false)
+      if (requestId === availabilityRequestRef.current) setAvailabilityLoading(false)
     }
   }
 
@@ -486,6 +498,7 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                 <Link
                   className="underline underline-offset-2"
                   params={{ slug: profile.slug }}
+                  rel="noreferrer"
                   target="_blank"
                   to="/reservar/$slug/privacidad"
                 >
@@ -495,6 +508,7 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                 <Link
                   className="underline underline-offset-2"
                   params={{ slug: profile.slug }}
+                  rel="noreferrer"
                   target="_blank"
                   to="/reservar/$slug/condiciones"
                 >

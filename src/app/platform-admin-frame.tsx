@@ -50,6 +50,7 @@ export function PlatformAdminFrame({ children }: { children: ReactNode }) {
         </>
       }
       headerClassName="st-platform-header flex h-11 items-center justify-between px-5 sm:px-8"
+      locale="es"
       mainClassName="st-platform-main min-w-0 flex-1"
       mobileTabs={
         isBillingModule ? (

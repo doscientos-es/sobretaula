@@ -42,30 +42,31 @@ export function WorkerFrame({
             <Utensils className="size-3" />
           </span>
           <p className="st-saas-breadcrumb truncate text-xs">
-            {title} <span>/</span> {activeVenue?.name ?? 'Selecciona un local'}
+            {title} <span>/</span> {activeVenue?.name ?? t('common.selectVenue')}
           </p>
         </div>
       }
       headerClassName="st-saas-header flex h-11 items-center justify-between px-5 sm:px-6"
+      locale={locale}
       mainClassName="st-saas-main min-w-0 flex-1"
       mobileTabs={
         <nav
-          aria-label="Navegación de operación"
+          aria-label={t('app.venueOperations')}
           className="st-mobile-nav flex gap-5 overflow-x-auto px-5 py-3 text-xs font-medium lg:hidden"
         >
           {venueParams && (
             <>
               <Link params={venueParams} to="/t/$slug/l/$venue/tpv">
-                TPV
+                {t('nav.tpv')}
               </Link>
               <Link params={venueParams} to="/t/$slug/l/$venue/plano">
-                Plano
+                {t('nav.floorPlan')}
               </Link>
               <Link params={venueParams} to="/t/$slug/l/$venue/servicio">
-                Servicio
+                {t('nav.service')}
               </Link>
               <Link params={venueParams} to="/t/$slug/l/$venue/reservas">
-                Reservas
+                {t('nav.reservations')}
               </Link>
             </>
           )}
@@ -82,8 +83,8 @@ export function WorkerFrame({
             </span>
             <span className="font-semibold tracking-[-0.03em]">{t('app.name')}</span>
           </Link>
-          <p className="st-saas-section-label mt-6 px-1.5">Operación</p>
-          <nav aria-label="Operación del restaurante" className="mt-3 space-y-0.5">
+          <p className="st-saas-section-label mt-6 px-1.5">{t('app.venueOperations')}</p>
+          <nav aria-label={t('app.venueOperations')} className="mt-3 space-y-0.5">
             {venueParams && (
               <>
                 <Link
@@ -92,7 +93,7 @@ export function WorkerFrame({
                   params={venueParams}
                   to="/t/$slug/l/$venue/tpv"
                 >
-                  <Utensils className="size-3" /> TPV
+                  <Utensils className="size-3" /> {t('nav.tpv')}
                 </Link>
                 <Link
                   activeOptions={{ exact: true }}
@@ -128,7 +129,7 @@ export function WorkerFrame({
             tenantSlug={slug}
             venues={venues}
           />
-          <CurrentUserSidebar />
+          <CurrentUserSidebar locale={locale} />
         </>
       }
       sidebarClassName="st-saas-sidebar hidden w-56 p-3 lg:flex lg:h-svh lg:flex-col"

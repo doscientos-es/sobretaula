@@ -2,6 +2,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 
 import { authMiddleware } from '@/features/auth/infrastructure/server/auth-middleware'
+import { getZonedWeekBounds } from '@/shared/lib/date/zoned-time'
 import { createRequestSupabaseClient } from '@/shared/lib/supabase/server/create-server-client'
 
 import { getDashboardActions, type TenantDashboardAction } from '../domain/dashboard-actions'
@@ -48,16 +49,15 @@ export const getDashboardMetrics = createServerFn({ method: 'GET' })
         noShowsThisWeek: 0,
       }
     }
-    const start = new Date()
-    start.setHours(0, 0, 0, 0)
-    const end = new Date(start)
-    end.setDate(end.getDate() + 1)
-    const weekStart = new Date(start)
-    const daysSinceMonday = (weekStart.getDay() + 6) % 7
-    weekStart.setDate(weekStart.getDate() - daysSinceMonday)
-    const weekEnd = new Date(weekStart)
-    weekEnd.setDate(weekEnd.getDate() + 7)
     const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    const tenantResult = await supabase
+      .from('tenants')
+      .select('timezone')
+      .eq('id', data.tenantId)
+      .single()
+    if (tenantResult.error || !tenantResult.data) throw new Error('dashboard_metrics_load_failed')
+    const now = new Date()
+    const bounds = getZonedWeekBounds(now, tenantResult.data.timezone as string)
     const [
       reservations,
       noShowsWeek,
@@ -72,24 +72,24 @@ export const getDashboardMetrics = createServerFn({ method: 'GET' })
         .select('id', { count: 'exact', head: true })
         .eq('tenant_id', data.tenantId)
         .in('venue_id', data.venueIds)
-        .gte('starts_at', start.toISOString())
-        .lt('starts_at', end.toISOString())
+        .gte('starts_at', bounds.dayStartIso)
+        .lt('starts_at', bounds.dayEndIso)
         .in('status', ['pending', 'confirmed', 'seated']),
       supabase
         .from('reservations')
         .select('id', { count: 'exact', head: true })
         .eq('tenant_id', data.tenantId)
         .in('venue_id', data.venueIds)
-        .gte('starts_at', weekStart.toISOString())
-        .lt('starts_at', weekEnd.toISOString())
+        .gte('starts_at', bounds.weekStartIso)
+        .lt('starts_at', bounds.weekEndIso)
         .eq('status', 'no_show'),
       supabase
         .from('reservations')
         .select('id', { count: 'exact', head: true })
         .eq('tenant_id', data.tenantId)
         .in('venue_id', data.venueIds)
-        .gte('starts_at', weekStart.toISOString())
-        .lt('starts_at', weekEnd.toISOString())
+        .gte('starts_at', bounds.weekStartIso)
+        .lt('starts_at', bounds.weekEndIso)
         .in('status', ['pending', 'confirmed', 'seated']),
       supabase
         .from('table_sessions')
@@ -103,7 +103,7 @@ export const getDashboardMetrics = createServerFn({ method: 'GET' })
         .eq('tenant_id', data.tenantId)
         .in('venue_id', data.venueIds)
         .in('status', ['pending', 'confirmed'])
-        .gte('starts_at', new Date().toISOString())
+        .gte('starts_at', now.toISOString())
         .order('starts_at')
         .limit(1),
       supabase
@@ -111,16 +111,16 @@ export const getDashboardMetrics = createServerFn({ method: 'GET' })
         .select('id', { count: 'exact', head: true })
         .eq('tenant_id', data.tenantId)
         .in('venue_id', data.venueIds)
-        .gte('starts_at', start.toISOString())
-        .lt('starts_at', end.toISOString())
+        .gte('starts_at', bounds.dayStartIso)
+        .lt('starts_at', bounds.dayEndIso)
         .eq('status', 'pending'),
       supabase
         .from('reservations')
         .select('id, party_size, starts_at, venue_id')
         .eq('tenant_id', data.tenantId)
         .in('venue_id', data.venueIds)
-        .gte('starts_at', start.toISOString())
-        .lt('starts_at', end.toISOString())
+        .gte('starts_at', bounds.dayStartIso)
+        .lt('starts_at', bounds.dayEndIso)
         .eq('status', 'pending')
         .order('starts_at')
         .limit(3),
@@ -144,8 +144,8 @@ export const getDashboardMetrics = createServerFn({ method: 'GET' })
             .select('amount_cents')
             .eq('tenant_id', data.tenantId)
             .in('session_id', sessionIds)
-            .gte('paid_at', start.toISOString())
-            .lt('paid_at', end.toISOString())
+            .gte('paid_at', bounds.dayStartIso)
+            .lt('paid_at', bounds.dayEndIso)
     if (payments.error) throw new Error('dashboard_metrics_load_failed')
     const occupiedTables = new Set(
       (sessions.data ?? [])

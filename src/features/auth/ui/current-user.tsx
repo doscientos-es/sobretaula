@@ -2,6 +2,9 @@ import { Avatar, AvatarFallback, Button, DropdownMenu, DropdownMenuItem } from '
 import { EllipsisVertical, LogOut } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
+import { DEFAULT_LOCALE, type Locale } from '@/shared/lib/i18n/locale'
+import { createTranslator } from '@/shared/lib/i18n/messages'
+
 import { getCurrentUser, type CurrentUser } from '../application/authentication'
 import { useLogout } from './logout-button'
 
@@ -25,7 +28,8 @@ export function useCurrentUser() {
 }
 
 /** Compact identity shown at the bottom of authenticated sidebars. */
-export function CurrentUserSidebar() {
+export function CurrentUserSidebar({ locale = DEFAULT_LOCALE }: { locale?: Locale }) {
+  const t = createTranslator(locale)
   const user = useCurrentUser()
   const { pending: logoutPending, signOut } = useLogout()
   const displayName = user?.displayName ?? 'Cuenta'
@@ -46,7 +50,7 @@ export function CurrentUserSidebar() {
         offset={8}
         placement="top end"
         trigger={
-          <Button aria-label="Más acciones de cuenta" size="icon" variant="ghost">
+          <Button aria-label={t('common.accountActions')} size="icon" variant="ghost">
             <EllipsisVertical aria-hidden="true" className="size-4" />
           </Button>
         }
@@ -54,9 +58,9 @@ export function CurrentUserSidebar() {
         <DropdownMenuItem
           isDisabled={logoutPending}
           onPress={() => void signOut()}
-          textValue="Cerrar sesión"
+          textValue={t('common.logout')}
         >
-          <LogOut className="size-3.5" /> Cerrar sesión
+          <LogOut className="size-3.5" /> {t('common.logout')}
         </DropdownMenuItem>
       </DropdownMenu>
     </footer>

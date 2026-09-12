@@ -10,6 +10,9 @@ import {
 import { Menu } from 'lucide-react'
 import type { ReactNode } from 'react'
 
+import type { Locale } from '@/shared/lib/i18n/locale'
+import { createTranslator } from '@/shared/lib/i18n/messages'
+
 /** Shared structure for frames. Each area owns its own navigation and context. */
 export function AppShellFrame({
   children,
@@ -17,6 +20,7 @@ export function AppShellFrame({
   contentClassName,
   header,
   headerClassName,
+  locale,
   mainClassName,
   mobileTabs,
   sidebar,
@@ -27,11 +31,14 @@ export function AppShellFrame({
   contentClassName: string
   header: ReactNode
   headerClassName: string
+  locale: Locale
   mainClassName: string
   mobileTabs: ReactNode
   sidebar: ReactNode
   sidebarClassName: string
 }) {
+  const t = createTranslator(locale)
+
   return (
     <AppShell className={className} sidebarBreakpoint="lg">
       <AppShellSidebar className={sidebarClassName}>{sidebar}</AppShellSidebar>
@@ -40,11 +47,11 @@ export function AppShellFrame({
           <div className="flex min-w-0 flex-1 items-center gap-2">
             <Drawer
               className="w-[min(88vw,22rem)]"
-              dialogProps={{ 'aria-label': 'Menú de navegación' }}
+              dialogProps={{ 'aria-label': t('common.navigationMenu') }}
               side="left"
               trigger={
                 <Button
-                  aria-label="Abrir menú de navegación"
+                  aria-label={t('common.openNavigation')}
                   className="shrink-0 lg:hidden"
                   size="icon"
                   variant="ghost"

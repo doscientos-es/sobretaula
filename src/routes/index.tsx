@@ -11,6 +11,8 @@ import { ArrowRight, Building2, Utensils } from 'lucide-react'
 import { AppShellFrame } from '@/app/app-shell-frame'
 import { CurrentUserSidebar } from '@/features/auth'
 import { getUserDestinations } from '@/features/tenancy'
+import { DEFAULT_LOCALE } from '@/shared/lib/i18n/locale'
+import { createTranslator } from '@/shared/lib/i18n/messages'
 
 export const Route = createFileRoute('/')({
   loader: async () => {
@@ -34,6 +36,7 @@ export const Route = createFileRoute('/')({
 
 function TenantPicker() {
   const { tenants } = Route.useLoaderData()
+  const t = createTranslator(DEFAULT_LOCALE)
 
   return (
     <AppShellFrame
@@ -44,10 +47,11 @@ function TenantPicker() {
           <span className="st-saas-brand-mark lg:hidden">
             <Utensils className="size-3" />
           </span>
-          <p className="st-saas-breadcrumb truncate text-xs">Tus restaurantes</p>
+          <p className="st-saas-breadcrumb truncate text-xs">{t('app.myRestaurants')}</p>
         </div>
       }
       headerClassName="st-saas-header flex h-11 items-center justify-between px-5 sm:px-6"
+      locale={DEFAULT_LOCALE}
       mainClassName="st-saas-main min-w-0 flex-1"
       mobileTabs={null}
       sidebar={
@@ -69,12 +73,12 @@ function TenantPicker() {
       <PageHeader className="border-border/70 border-b pb-6">
         <div>
           <PageHeaderTitle>
-            {tenants.length === 0 ? 'Sin acceso a restaurantes' : 'Elige un restaurante'}
+            {tenants.length === 0 ? t('tenant.noAccess.title') : t('tenant.choose.title')}
           </PageHeaderTitle>
           <PageHeaderDescription>
             {tenants.length === 0
-              ? 'Crea y configura tu primer restaurante para empezar.'
-              : 'Selecciona el restaurante que quieres gestionar.'}
+              ? t('tenant.noAccess.description')
+              : t('tenant.choose.description')}
           </PageHeaderDescription>
         </div>
       </PageHeader>
@@ -83,16 +87,16 @@ function TenantPicker() {
         <Card className="mt-6">
           <CardContent className="flex flex-wrap items-center justify-between gap-4 pt-6">
             <div>
-              <p className="font-medium">Aún no tienes ningún restaurante</p>
+              <p className="font-medium">{t('tenant.noRestaurants.title')}</p>
               <p className="text-muted-foreground text-sm">
-                Configura tu primer restaurante para empezar a gestionar reservas y cobros.
+                {t('tenant.noRestaurants.description')}
               </p>
             </div>
             <Link
               className="bg-primary text-primary-foreground inline-flex h-10 shrink-0 items-center gap-2 rounded-lg px-3.5 text-sm font-medium shadow-sm"
               to="/onboarding"
             >
-              Configurar mi restaurante <ArrowRight className="size-4" />
+              {t('tenant.configure')} <ArrowRight className="size-4" />
             </Link>
           </CardContent>
         </Card>

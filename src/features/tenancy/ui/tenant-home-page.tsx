@@ -21,7 +21,7 @@ import {
 import { useState } from 'react'
 
 import type { Venue } from '@/features/venues'
-import { createTranslator } from '@/shared/lib/i18n/messages'
+import { createTranslator, formatMessage, type MessageKey } from '@/shared/lib/i18n/messages'
 
 import type { DashboardMetrics } from '../application/dashboard-metrics'
 import type { Tenant } from '../domain/tenant'
@@ -36,30 +36,52 @@ export function TenantHomePage({
   venues: readonly Venue[]
 }) {
   const t = createTranslator(tenant.defaultLocale)
+  const message = (key: MessageKey, values: Record<string, string | number> = {}) =>
+    formatMessage(tenant.defaultLocale, key, values)
   const [copied, setCopied] = useState(false)
+  const [copyFailed, setCopyFailed] = useState(false)
+  const timeFormatter = new Intl.DateTimeFormat(tenant.defaultLocale, {
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: tenant.timezone,
+  })
   const publicUrl =
     typeof window === 'undefined'
       ? `/reservar/${tenant.slug}`
       : `${window.location.origin}/reservar/${tenant.slug}`
   const nextService = metrics.nextReservationStartsAt
-    ? new Intl.DateTimeFormat(tenant.defaultLocale, { hour: '2-digit', minute: '2-digit' }).format(
-        new Date(metrics.nextReservationStartsAt),
-      )
+    ? timeFormatter.format(new Date(metrics.nextReservationStartsAt))
     : null
+  const tenantStatusKey = {
+    active: 'tenant.status.active',
+    setup_pending: 'tenant.status.setupPending',
+    suspended: 'tenant.status.suspended',
+    trial: 'tenant.status.trial',
+  } as const
 
   return (
     <section className="space-y-7">
       <PageHeader className="border-border/70 border-b pb-6">
         <div>
-          <PageHeaderTitle>Buenos días</PageHeaderTitle>
+          <PageHeaderTitle>{message('dashboard.greeting')}</PageHeaderTitle>
           <PageHeaderDescription>
             {metrics.pendingReservationsToday > 0
-              ? `Hay ${metrics.pendingReservationsToday} reserva${metrics.pendingReservationsToday === 1 ? '' : 's'} pendiente${metrics.pendingReservationsToday === 1 ? '' : 's'} de confirmar hoy.`
+              ? message(
+                  metrics.pendingReservationsToday === 1
+                    ? 'dashboard.pendingReservation.single'
+                    : 'dashboard.pendingReservation.multiple',
+                  { count: metrics.pendingReservationsToday },
+                )
               : metrics.openSessionCount > 0
-                ? `Hay ${metrics.openSessionCount} servicio${metrics.openSessionCount === 1 ? '' : 's'} en curso.`
+                ? message(
+                    metrics.openSessionCount === 1
+                      ? 'dashboard.openSession.single'
+                      : 'dashboard.openSession.multiple',
+                    { count: metrics.openSessionCount },
+                  )
                 : nextService
-                  ? `Todo preparado para el próximo servicio a las ${nextService}.`
-                  : `Todos los sistemas funcionan correctamente en ${tenant.name}.`}
+                  ? message('dashboard.nextService', { time: nextService })
+                  : message('dashboard.allSystems', { name: tenant.name })}
           </PageHeaderDescription>
         </div>
       </PageHeader>
@@ -67,40 +89,37 @@ export function TenantHomePage({
         {(
           [
             [
-              'Reservas de hoy',
+              message('dashboard.reservationsToday'),
               String(metrics.reservationsToday),
-              `${metrics.reservationsThisWeek} esta semana`,
+              message('dashboard.reservationsThisWeek', { count: metrics.reservationsThisWeek }),
               CalendarCheck2,
               '#5aa6ff',
             ],
             [
-              'Mesas ocupadas',
+              message('dashboard.occupiedTables'),
               String(metrics.occupiedTables),
-              'Sesiones abiertas ahora',
+              message('dashboard.openSessionsNow'),
               Users,
               '#ffb946',
             ],
             [
-              'Facturación del día',
+              message('dashboard.dailyRevenue'),
               new Intl.NumberFormat(tenant.defaultLocale, {
                 style: 'currency',
                 currency: 'EUR',
               }).format(metrics.paidTodayCents / 100),
-              'Cobros registrados hoy',
+              message('dashboard.paymentsToday'),
               Euro,
               '#64c59a',
             ],
             [
-              'Próximo servicio',
+              message('dashboard.nextServiceLabel'),
               metrics.nextReservationStartsAt
-                ? new Intl.DateTimeFormat(tenant.defaultLocale, {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  }).format(new Date(metrics.nextReservationStartsAt))
+                ? timeFormatter.format(new Date(metrics.nextReservationStartsAt))
                 : '—',
               metrics.nextReservationCovers === null
-                ? 'No hay reservas próximas'
-                : `${metrics.nextReservationCovers} comensales previstos`,
+                ? message('dashboard.noUpcomingReservations')
+                : message('dashboard.expectedGuests', { count: metrics.nextReservationCovers }),
               Clock3,
               '#d29cff',
             ],
@@ -118,7 +137,7 @@ export function TenantHomePage({
       </div>
       <Card>
         <CardHeader className="border-border/70 border-b">
-          <CardTitle>Prioridades de hoy</CardTitle>
+          <CardTitle>{message('dashboard.todayPriorities')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           {metrics.actionItems.length > 0 ? (
@@ -128,15 +147,14 @@ export function TenantHomePage({
                 if (!venue) return null
 
                 const isPendingReservation = item.kind === 'pending_reservation'
-                const actionLabel = isPendingReservation ? 'Revisar reserva' : 'Abrir servicio'
+                const actionLabel = isPendingReservation
+                  ? message('dashboard.reviewReservation')
+                  : message('dashboard.openService')
                 const occurredAt = isPendingReservation ? item.startsAt : item.openedAt
-                const time = new Intl.DateTimeFormat(tenant.defaultLocale, {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                }).format(new Date(occurredAt))
+                const time = timeFormatter.format(new Date(occurredAt))
                 const detail = isPendingReservation
-                  ? `${item.partySize} comensales · ${time}`
-                  : `Abierto desde ${time}`
+                  ? message('dashboard.partyGuests', { count: item.partySize, time })
+                  : message('dashboard.openedSince', { time })
 
                 return (
                   <li
@@ -152,8 +170,8 @@ export function TenantHomePage({
                       <div>
                         <p className="text-sm font-medium">
                           {isPendingReservation
-                            ? 'Reserva pendiente de confirmar'
-                            : 'Servicio en curso'}
+                            ? message('dashboard.pendingReservation')
+                            : message('dashboard.serviceInProgress')}
                         </p>
                         <p className="text-muted-foreground mt-0.5 text-xs">
                           {venue.name} · {detail}
@@ -178,13 +196,17 @@ export function TenantHomePage({
           ) : (
             <div className="flex items-center gap-2 text-sm">
               <CheckCircle2 className="text-success size-4" />
-              <p className="text-muted-foreground">No hay acciones pendientes ahora mismo.</p>
+              <p className="text-muted-foreground">{message('dashboard.noPendingActions')}</p>
             </div>
           )}
           {metrics.noShowsThisWeek > 0 ? (
             <p className="text-muted-foreground border-t pt-3 text-xs">
-              {metrics.noShowsThisWeek} no presentada{metrics.noShowsThisWeek === 1 ? '' : 's'} esta
-              semana.
+              {message(
+                metrics.noShowsThisWeek === 1
+                  ? 'dashboard.noShow.single'
+                  : 'dashboard.noShow.multiple',
+                { count: metrics.noShowsThisWeek },
+              )}
             </p>
           ) : null}
         </CardContent>
@@ -193,37 +215,52 @@ export function TenantHomePage({
         <Card className="border-primary/20 bg-primary/5">
           <CardContent className="flex flex-wrap items-center justify-between gap-4 pt-6">
             <div>
-              <p className="font-medium">Tu página pública de reservas</p>
+              <p className="font-medium">{message('dashboard.publicBooking.title')}</p>
               <p className="text-muted-foreground text-sm">
-                Comparte este enlace para que tus clientes reserven sin crear una cuenta.
+                {message('dashboard.publicBooking.description')}
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <Link
                 className="text-primary font-medium underline underline-offset-4"
                 params={{ slug: tenant.slug }}
+                rel="noreferrer"
                 target="_blank"
                 to="/reservar/$slug"
               >
-                Ver como cliente
+                {t('app.customerView')}
               </Link>
               <button
                 className="border-border rounded-md border px-3 py-2 text-sm font-medium"
                 onClick={() => {
                   const clipboard = navigator.clipboard
-                  if (!clipboard) return
+                  if (!clipboard) {
+                    setCopyFailed(true)
+                    return
+                  }
                   void clipboard
                     .writeText(publicUrl)
                     .then(() => {
                       setCopied(true)
+                      setCopyFailed(false)
                       window.setTimeout(() => setCopied(false), 2000)
                     })
-                    .catch(() => setCopied(false))
+                    .catch(() => {
+                      setCopied(false)
+                      setCopyFailed(true)
+                    })
                 }}
                 type="button"
               >
-                {copied ? 'Enlace copiado' : 'Copiar enlace'}
+                {copied ? message('dashboard.linkCopied') : message('dashboard.copyLink')}
               </button>
+              <span aria-live="polite" className="sr-only">
+                {copyFailed
+                  ? message('dashboard.copyFailed')
+                  : copied
+                    ? message('dashboard.linkCopied')
+                    : ''}
+              </span>
             </div>
           </CardContent>
         </Card>
@@ -232,9 +269,9 @@ export function TenantHomePage({
         <Card>
           <CardContent className="flex flex-wrap items-center justify-between gap-4 pt-6">
             <div>
-              <p className="font-medium">Aún no tienes ningún local</p>
+              <p className="font-medium">{message('dashboard.noVenues.title')}</p>
               <p className="text-muted-foreground text-sm">
-                Crea el primero para configurar la sala, reservas y cobros.
+                {message('dashboard.noVenues.description')}
               </p>
             </div>
             <Link
@@ -242,13 +279,13 @@ export function TenantHomePage({
               params={{ slug: tenant.slug }}
               to="/t/$slug/l/nuevo"
             >
-              Crear primer local
+              {message('dashboard.createFirstVenue')}
             </Link>
           </CardContent>
         </Card>
       ) : null}
       <p className="text-muted-foreground text-xs">
-        {t('app.tagline')} · {tenant.timezone} · Estado: {tenant.status}
+        {t('app.tagline')} · {tenant.timezone} · Estado: {t(tenantStatusKey[tenant.status])}
       </p>
     </section>
   )
