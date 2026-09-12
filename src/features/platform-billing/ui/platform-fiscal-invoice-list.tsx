@@ -16,14 +16,18 @@ import {
 } from '@doscientos/ui'
 
 import type { Locale } from '@/shared/lib/i18n/locale'
+import { createTranslator } from '@/shared/lib/i18n/messages'
 import { formatMoney } from '@/shared/lib/money/money'
 
 import type { PlatformFiscalInvoice } from '../application/get-platform-fiscal-invoices'
 
-function statusLabel(status: PlatformFiscalInvoice['status']): string {
-  return { issued: 'Emitida', pending_review: 'Pendiente de revisión', registered: 'Registrada' }[
-    status
-  ]
+function statusLabel(status: PlatformFiscalInvoice['status'], locale: Locale): string {
+  const key = {
+    issued: 'platform.status.issued',
+    pending_review: 'platform.status.pendingReview',
+    registered: 'platform.status.registered',
+  }[status] as const
+  return createTranslator(locale)(key)
 }
 
 export function PlatformFiscalInvoiceList({
@@ -37,12 +41,14 @@ export function PlatformFiscalInvoiceList({
   showTenant?: boolean
   title: string
 }) {
+  const t = createTranslator(locale)
+
   if (invoices.length === 0) {
     return (
       <DataViewState>
         <DataViewStateTitle>{title}</DataViewStateTitle>
         <DataViewStateDescription>
-          Aún no hay facturas de suscripción para mostrar.
+          {t('platform.noFiscalInvoices')}
         </DataViewStateDescription>
       </DataViewState>
     )
@@ -52,18 +58,18 @@ export function PlatformFiscalInvoiceList({
     <Card className="border-border/70">
       <CardHeader>
         <CardTitle>{title}</CardTitle>
-        <CardDescription>Documentos emitidos por la plataforma a sus restaurantes.</CardDescription>
+        <CardDescription>{t('platform.fiscalInvoiceDescription')}</CardDescription>
       </CardHeader>
       <CardContent className="px-0">
         <section aria-label={title}>
           <Table className="min-w-[680px] text-left">
             <TableHeader className="text-muted-foreground">
               <TableRow>
-                {showTenant && <TableHead>Restaurante</TableHead>}
-                <TableHead>Factura</TableHead>
-                <TableHead>Periodo</TableHead>
-                <TableHead>Total</TableHead>
-                <TableHead>Estado</TableHead>
+                {showTenant && <TableHead>{t('platform.restaurant')}</TableHead>}
+                <TableHead>{t('platform.invoice')}</TableHead>
+                <TableHead>{t('platform.period')}</TableHead>
+                <TableHead>{t('platform.total')}</TableHead>
+                <TableHead>{t('platform.status')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -71,14 +77,14 @@ export function PlatformFiscalInvoiceList({
                 <TableRow key={invoice.id}>
                   {showTenant && <TableCell>{invoice.tenantName}</TableCell>}
                   <TableCell className="font-medium">
-                    {invoice.fullNumber ?? 'Sin numerar'}
+                    {invoice.fullNumber ?? t('platform.unnumbered')}
                   </TableCell>
                   <TableCell>
                     {invoice.periodStart} — {invoice.periodEnd}
                   </TableCell>
                   <TableCell>{formatMoney(invoice.totalCents, locale)}</TableCell>
                   <TableCell>
-                    {statusLabel(invoice.status)}
+                    {statusLabel(invoice.status, locale)}
                     {invoice.reviewReason ? ` · ${invoice.reviewReason}` : ''}
                   </TableCell>
                 </TableRow>

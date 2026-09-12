@@ -7,8 +7,8 @@ import { CurrentUserSidebar } from '@/features/auth'
 import type { TenantRole } from '@/features/tenancy'
 import { resolveVenue, VenueSwitcher, type Venue } from '@/features/venues'
 import type { Locale } from '@/shared/lib/i18n/locale'
-import { createTranslator } from '@/shared/lib/i18n/messages'
 import { useLocale } from '@/shared/lib/i18n/locale-preference'
+import { createTranslator } from '@/shared/lib/i18n/messages'
 
 const navLinkClass =
   'st-saas-nav-link flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors'

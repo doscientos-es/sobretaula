@@ -12,8 +12,8 @@ import { AppShellFrame } from '@/app/app-shell-frame'
 import { CurrentUserSidebar } from '@/features/auth'
 import { getUserDestinations } from '@/features/tenancy'
 import { DEFAULT_LOCALE } from '@/shared/lib/i18n/locale'
-import { createTranslator } from '@/shared/lib/i18n/messages'
 import { useLocale } from '@/shared/lib/i18n/locale-preference'
+import { createTranslator } from '@/shared/lib/i18n/messages'
 
 export const Route = createFileRoute('/')({
   loader: async () => {

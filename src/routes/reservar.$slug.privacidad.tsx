@@ -2,10 +2,7 @@ import { createFileRoute, notFound } from '@tanstack/react-router'
 
 import { getRestaurantLegalIdentity, LegalPage } from '@/features/legal'
 import { getPublicReservationProfile } from '@/features/public-reservations'
-import {
-  LocaleProvider,
-  PUBLIC_LOCALE_STORAGE_KEY,
-} from '@/shared/lib/i18n/locale-preference'
+import { LocaleProvider, PUBLIC_LOCALE_STORAGE_KEY } from '@/shared/lib/i18n/locale-preference'
 
 export const Route = createFileRoute('/reservar/$slug/privacidad')({
   loader: async ({ params }) => {

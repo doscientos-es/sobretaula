@@ -15,17 +15,19 @@ import {
   TableRow,
 } from '@doscientos/ui'
 
+import { useLocale } from '@/shared/lib/i18n/locale-preference'
+import { createTranslator, formatMessage } from '@/shared/lib/i18n/messages'
+
 import type { PlatformSubscriptionOverview } from '../application/get-platform-billing-overview'
 
-const euro = new Intl.NumberFormat('es-ES', { currency: 'EUR', style: 'currency' })
-
-function statusLabel(status: PlatformSubscriptionOverview['status']): string {
-  return {
-    active: 'Activa',
-    canceled: 'Cancelada',
-    past_due: 'Impago',
-    trialing: 'Primer año',
-  }[status]
+function statusLabel(status: PlatformSubscriptionOverview['status'], locale: 'es' | 'ca'): string {
+  const key = {
+    active: 'platform.status.active',
+    canceled: 'platform.status.canceled',
+    past_due: 'platform.status.pastDue',
+    trialing: 'platform.status.trialing',
+  }[status] as const
+  return createTranslator(locale)(key)
 }
 
 export function PlatformBillingOverview({
@@ -33,12 +35,19 @@ export function PlatformBillingOverview({
 }: {
   subscriptions: PlatformSubscriptionOverview[]
 }) {
+  const locale = useLocale('es')
+  const t = createTranslator(locale)
+  const euro = new Intl.NumberFormat(locale === 'ca' ? 'ca-ES' : 'es-ES', {
+    currency: 'EUR',
+    style: 'currency',
+  })
+
   if (subscriptions.length === 0) {
     return (
       <DataViewState>
-        <DataViewStateTitle>Aún no hay suscripciones</DataViewStateTitle>
+        <DataViewStateTitle>{t('platform.noSubscriptions')}</DataViewStateTitle>
         <DataViewStateDescription>
-          Al crear un tenant y completar el pago aparecerá aquí su ciclo de facturación.
+          {t('platform.noSubscriptionsDescription')}
         </DataViewStateDescription>
       </DataViewState>
     )
@@ -47,21 +56,21 @@ export function PlatformBillingOverview({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Suscripciones activas</CardTitle>
-        <CardDescription>Restaurantes, facturación recurrente y estado de acceso.</CardDescription>
+        <CardTitle>{t('platform.activeSubscriptions')}</CardTitle>
+        <CardDescription>{t('platform.subscriptionsDescription')}</CardDescription>
       </CardHeader>
       <CardContent className="px-0">
-        <section aria-label="Suscripciones de tenants">
+        <section aria-label={t('platform.subscriptionsAria')}>
           <Table className="min-w-[720px] text-left">
             <TableHeader className="text-muted-foreground">
               <TableRow>
-                <TableHead>Restaurante</TableHead>
-                <TableHead>Plan neto</TableHead>
-                <TableHead>Locales</TableHead>
-                <TableHead>Total neto</TableHead>
-                <TableHead>Suscripción</TableHead>
-                <TableHead>Próximo cobro</TableHead>
-                <TableHead>Tenant</TableHead>
+                <TableHead>{t('platform.restaurant')}</TableHead>
+                <TableHead>{t('platform.netPlan')}</TableHead>
+                <TableHead>{t('platform.venues')}</TableHead>
+                <TableHead>{t('platform.netTotal')}</TableHead>
+                <TableHead>{t('platform.subscription')}</TableHead>
+                <TableHead>{t('platform.nextPayment')}</TableHead>
+                <TableHead>{t('platform.tenant')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -70,15 +79,20 @@ export function PlatformBillingOverview({
                   <TableCell className="font-medium">{subscription.tenantName}</TableCell>
                   <TableCell>
                     {subscription.planName} · {euro.format(subscription.planMonthlyNetCents / 100)}
-                    /mes + IVA
+                    {t('platform.month')}
                   </TableCell>
                   <TableCell>{subscription.venueCount}</TableCell>
-                  <TableCell>{euro.format(subscription.monthlyNetCents / 100)}/mes + IVA</TableCell>
                   <TableCell>
-                    {statusLabel(subscription.status)}
-                    {subscription.graceEndsOn ? ` · Gracia hasta ${subscription.graceEndsOn}` : ''}
+                    {euro.format(subscription.monthlyNetCents / 100)}
+                    {t('platform.month')}
                   </TableCell>
-                  <TableCell>{subscription.nextPaymentOn ?? 'Sin programar'}</TableCell>
+                  <TableCell>
+                    {statusLabel(subscription.status, locale)}
+                    {subscription.graceEndsOn
+                      ? ` · ${formatMessage(locale, 'platform.graceUntil', { date: subscription.graceEndsOn })}`
+                      : ''}
+                  </TableCell>
+                  <TableCell>{subscription.nextPaymentOn ?? t('platform.unscheduled')}</TableCell>
                   <TableCell className="capitalize">{subscription.tenantStatus}</TableCell>
                 </TableRow>
               ))}

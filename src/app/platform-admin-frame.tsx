@@ -23,6 +23,7 @@ import { type ReactNode } from 'react'
 
 import { LogoutButton, useCurrentUser, useLogout, userInitials } from '@/features/auth'
 import { useLocale } from '@/shared/lib/i18n/locale-preference'
+import { createTranslator } from '@/shared/lib/i18n/messages'
 
 import { AppShellFrame } from './app-shell-frame'
 
@@ -31,6 +32,7 @@ const navLinkClass =
 
 export function PlatformAdminFrame({ children }: { children: ReactNode }) {
   const locale = useLocale('es')
+  const t = createTranslator(locale)
   const pathname = useRouterState({ select: (state) => state.location.pathname })
   const isBillingModule = pathname === '/admin/facturacion' || pathname === '/admin/facturas'
 
@@ -44,7 +46,7 @@ export function PlatformAdminFrame({ children }: { children: ReactNode }) {
             <span className="st-platform-brand-mark lg:hidden">
               <ShieldCheck className="size-3" />
             </span>
-            <p className="st-platform-breadcrumb truncate text-xs">Superadministración</p>
+            <p className="st-platform-breadcrumb truncate text-xs">{t('platform.superAdmin')}</p>
           </div>
           <div className="lg:hidden">
             <LogoutButton />
@@ -57,11 +59,11 @@ export function PlatformAdminFrame({ children }: { children: ReactNode }) {
       mobileTabs={
         isBillingModule ? (
           <nav
-            aria-label="Navegación de facturación"
+            aria-label={t('platform.billingNavigation')}
             className="st-mobile-nav flex gap-5 overflow-x-auto px-5 py-3 text-xs font-medium lg:hidden"
           >
-            <Link to="/admin/facturacion">Suscripciones</Link>
-            <Link to="/admin/facturas">Facturas</Link>
+            <Link to="/admin/facturacion">{t('platform.subscriptions')}</Link>
+            <Link to="/admin/facturas">{t('platform.fiscalInvoices')}</Link>
           </nav>
         ) : null
       }
@@ -79,65 +81,65 @@ export function PlatformAdminFrame({ children }: { children: ReactNode }) {
               <span>SobreTaula</span>
             </Link>
 
-            <nav aria-label="Navegación de plataforma" className="mt-3 space-y-0.5">
+            <nav aria-label={t('platform.navigation')} className="mt-3 space-y-0.5">
               <Link
                 activeOptions={{ exact: true }}
                 activeProps={{ className: `${navLinkClass} st-platform-nav-link--active` }}
                 className={navLinkClass}
                 to="/admin"
               >
-                <LayoutDashboard className="size-3" /> Resumen
+                <LayoutDashboard className="size-3" /> {t('platform.summary')}
               </Link>
               <Link
                 activeProps={{ className: `${navLinkClass} st-platform-nav-link--active` }}
                 className={navLinkClass}
                 to="/admin/facturacion"
               >
-                <CreditCard className="size-3" /> Suscripciones
+                <CreditCard className="size-3" /> {t('platform.subscriptions')}
               </Link>
               <Link
                 activeProps={{ className: `${navLinkClass} st-platform-nav-link--active` }}
                 className={navLinkClass}
                 to="/admin/facturas"
               >
-                <FileText className="size-3" /> Facturas fiscales
+                <FileText className="size-3" /> {t('platform.fiscalInvoices')}
               </Link>
             </nav>
             <div className="st-platform-nav-group mt-5 pt-4">
-              <p className="st-platform-section-label px-1.5">Administración</p>
+              <p className="st-platform-section-label px-1.5">{t('platform.administration')}</p>
               <nav className="mt-2 space-y-0.5">
                 <Link
                   activeProps={{ className: `${navLinkClass} st-platform-nav-link--active` }}
                   className={navLinkClass}
                   to="/admin/tenants"
                 >
-                  <Building2 className="size-3" /> Tenants
+                  <Building2 className="size-3" /> {t('platform.tenants')}
                 </Link>
                 <Link
                   activeProps={{ className: `${navLinkClass} st-platform-nav-link--active` }}
                   className={navLinkClass}
                   to="/admin/equipo"
                 >
-                  <Users className="size-3" /> Equipo
+                  <Users className="size-3" /> {t('platform.team')}
                 </Link>
                 <Link
                   activeProps={{ className: `${navLinkClass} st-platform-nav-link--active` }}
                   className={navLinkClass}
                   to="/admin/auditoria"
                 >
-                  <ScrollText className="size-3" /> Auditoría
+                  <ScrollText className="size-3" /> {t('platform.audit')}
                 </Link>
               </nav>
             </div>
             <div className="st-platform-nav-group mt-5 pt-4">
-              <p className="st-platform-section-label px-1.5">Configuración</p>
+              <p className="st-platform-section-label px-1.5">{t('platform.settings')}</p>
               <nav className="mt-2">
                 <Link
                   activeProps={{ className: `${navLinkClass} st-platform-nav-link--active` }}
                   className={navLinkClass}
                   to="/admin/ajustes"
                 >
-                  <Settings2 className="size-3" /> Ajustes fiscales
+                  <Settings2 className="size-3" /> {t('platform.fiscalSettings')}
                 </Link>
               </nav>
             </div>
@@ -154,11 +156,13 @@ export function PlatformAdminFrame({ children }: { children: ReactNode }) {
 
 function PlatformUserMenu() {
   const user = useCurrentUser()
+  const locale = useLocale('es')
+  const t = createTranslator(locale)
   const navigate = useNavigate()
   const { pending: logoutPending, signOut } = useLogout()
 
-  const displayName = user?.displayName || 'Usuario actual'
-  const email = user?.email || 'Sin email disponible'
+  const displayName = user?.displayName || t('platform.currentUser')
+  const email = user?.email || t('platform.noEmail')
 
   return (
     <footer className="st-platform-user-menu mt-auto flex shrink-0 items-center gap-2 pt-3">
@@ -174,30 +178,30 @@ function PlatformUserMenu() {
         offset={8}
         placement="top end"
         trigger={
-          <Button aria-label="Opciones de cuenta" size="icon" variant="ghost">
+          <Button aria-label={t('platform.accountOptions')} size="icon" variant="ghost">
             <EllipsisVertical aria-hidden="true" className="size-4" />
           </Button>
         }
       >
         <DropdownMenuItem
           onPress={() => void navigate({ to: '/admin/equipo' })}
-          textValue="Equipo de plataforma"
+          textValue={t('platform.platformTeam')}
         >
-          <Users className="size-3.5" /> Equipo de plataforma
+          <Users className="size-3.5" /> {t('platform.platformTeam')}
         </DropdownMenuItem>
         <DropdownMenuItem
           onPress={() => void navigate({ to: '/admin/ajustes' })}
-          textValue="Ajustes fiscales"
+          textValue={t('platform.fiscalSettings')}
         >
-          <Settings2 className="size-3.5" /> Ajustes fiscales
+          <Settings2 className="size-3.5" /> {t('platform.fiscalSettings')}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
           isDisabled={logoutPending}
           onPress={() => void signOut()}
-          textValue="Salir"
+          textValue={t('platform.exit')}
         >
-          <LogOut className="size-3.5" /> Salir
+          <LogOut className="size-3.5" /> {t('platform.exit')}
         </DropdownMenuItem>
       </DropdownMenu>
     </footer>
