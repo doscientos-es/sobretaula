@@ -16,7 +16,7 @@ import {
 } from '@doscientos/ui'
 
 import { useLocale } from '@/shared/lib/i18n/locale-preference'
-import { createTranslator, formatMessage } from '@/shared/lib/i18n/messages'
+import { createTranslator, formatMessage, type MessageKey } from '@/shared/lib/i18n/messages'
 
 import type { PlatformSubscriptionOverview } from '../application/get-platform-billing-overview'
 
@@ -26,7 +26,7 @@ function statusLabel(status: PlatformSubscriptionOverview['status'], locale: 'es
     canceled: 'platform.status.canceled',
     past_due: 'platform.status.pastDue',
     trialing: 'platform.status.trialing',
-  }[status] as const
+  }[status] as MessageKey
   return createTranslator(locale)(key)
 }
 

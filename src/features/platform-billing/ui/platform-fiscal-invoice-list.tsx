@@ -16,7 +16,7 @@ import {
 } from '@doscientos/ui'
 
 import type { Locale } from '@/shared/lib/i18n/locale'
-import { createTranslator } from '@/shared/lib/i18n/messages'
+import { createTranslator, type MessageKey } from '@/shared/lib/i18n/messages'
 import { formatMoney } from '@/shared/lib/money/money'
 
 import type { PlatformFiscalInvoice } from '../application/get-platform-fiscal-invoices'
@@ -26,7 +26,7 @@ function statusLabel(status: PlatformFiscalInvoice['status'], locale: Locale): s
     issued: 'platform.status.issued',
     pending_review: 'platform.status.pendingReview',
     registered: 'platform.status.registered',
-  }[status] as const
+  }[status] as MessageKey
   return createTranslator(locale)(key)
 }
 
@@ -47,9 +47,7 @@ export function PlatformFiscalInvoiceList({
     return (
       <DataViewState>
         <DataViewStateTitle>{title}</DataViewStateTitle>
-        <DataViewStateDescription>
-          {t('platform.noFiscalInvoices')}
-        </DataViewStateDescription>
+        <DataViewStateDescription>{t('platform.noFiscalInvoices')}</DataViewStateDescription>
       </DataViewState>
     )
   }

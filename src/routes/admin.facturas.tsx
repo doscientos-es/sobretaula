@@ -21,9 +21,7 @@ function PlatformFiscalInvoicesRoute() {
       <PageHeader className="border-border/70 border-b pb-6">
         <div>
           <PageHeaderTitle>{t('platform.fiscalInvoicesTitle')}</PageHeaderTitle>
-          <PageHeaderDescription>
-            {t('platform.fiscalInvoicesDescription')}
-          </PageHeaderDescription>
+          <PageHeaderDescription>{t('platform.fiscalInvoicesDescription')}</PageHeaderDescription>
         </div>
       </PageHeader>
       <PlatformFiscalInvoiceList

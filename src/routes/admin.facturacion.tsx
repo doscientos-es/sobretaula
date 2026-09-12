@@ -21,9 +21,7 @@ function PlatformBillingRoute() {
       <PageHeader className="border-border/70 border-b pb-6">
         <div>
           <PageHeaderTitle>{t('platform.billingTitle')}</PageHeaderTitle>
-          <PageHeaderDescription>
-            {t('platform.billingDescription')}
-          </PageHeaderDescription>
+          <PageHeaderDescription>{t('platform.billingDescription')}</PageHeaderDescription>
         </div>
       </PageHeader>
       <PlatformBillingOverview subscriptions={subscriptions} />

@@ -37,13 +37,13 @@ const es = {
   'platform.platformTeam': 'Equipo de plataforma',
   'platform.exit': 'Salir',
   'platform.billingTitle': 'Suscripciones y cobros',
-  'platform.billingDescription': 'Visión operativa de planes, locales facturables y próximos cobros.',
+  'platform.billingDescription':
+    'Visión operativa de planes, locales facturables y próximos cobros.',
   'platform.noSubscriptions': 'Aún no hay suscripciones',
   'platform.noSubscriptionsDescription':
     'Al crear un tenant y completar el pago aparecerá aquí su ciclo de facturación.',
   'platform.activeSubscriptions': 'Suscripciones activas',
-  'platform.subscriptionsDescription':
-    'Restaurantes, facturación recurrente y estado de acceso.',
+  'platform.subscriptionsDescription': 'Restaurantes, facturación recurrente y estado de acceso.',
   'platform.subscriptionsAria': 'Suscripciones de tenants',
   'platform.restaurant': 'Restaurante',
   'platform.netPlan': 'Plan neto',
@@ -271,7 +271,8 @@ const ca: Record<MessageKey, string> = {
   'platform.platformTeam': 'Equip de plataforma',
   'platform.exit': 'Surt',
   'platform.billingTitle': 'Subscripcions i cobraments',
-  'platform.billingDescription': 'Visió operativa de plans, locals facturables i propers cobraments.',
+  'platform.billingDescription':
+    'Visió operativa de plans, locals facturables i propers cobraments.',
   'platform.noSubscriptions': 'Encara no hi ha subscripcions',
   'platform.noSubscriptionsDescription':
     'Quan creïs un tenant i completis el pagament, aquí hi apareixerà el seu cicle de facturació.',
