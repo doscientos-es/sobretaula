@@ -4,10 +4,7 @@ import {
   getPublicReservation,
   PublicReservationManagementPage,
 } from '@/features/public-reservations'
-import {
-  LocaleProvider,
-  PUBLIC_LOCALE_STORAGE_KEY,
-} from '@/shared/lib/i18n/locale-preference'
+import { LocaleProvider, PUBLIC_LOCALE_STORAGE_KEY } from '@/shared/lib/i18n/locale-preference'
 
 export const Route = createFileRoute('/reserva/$token')({
   loader: ({ params }) => getPublicReservation({ data: { token: params.token } }),

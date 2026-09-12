@@ -8,6 +8,7 @@ import type { TenantRole } from '@/features/tenancy'
 import { resolveVenue, VenueSwitcher, type Venue } from '@/features/venues'
 import type { Locale } from '@/shared/lib/i18n/locale'
 import { createTranslator } from '@/shared/lib/i18n/messages'
+import { useLocale } from '@/shared/lib/i18n/locale-preference'
 
 const navLinkClass =
   'st-saas-nav-link flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors'
@@ -27,7 +28,8 @@ export function WorkerFrame({
   venues: readonly Venue[]
   role?: TenantRole
 }) {
-  const t = createTranslator(locale)
+  const effectiveLocale = useLocale(locale)
+  const t = createTranslator(effectiveLocale)
   const params = useParams({ strict: false })
   const activeVenue = resolveVenue(venues, params.venue ?? null)
   const venueParams = activeVenue ? { slug, venue: activeVenue.slug } : null
@@ -47,7 +49,7 @@ export function WorkerFrame({
         </div>
       }
       headerClassName="st-saas-header flex h-11 items-center justify-between px-5 sm:px-6"
-      locale={locale}
+      locale={effectiveLocale}
       mainClassName="st-saas-main min-w-0 flex-1"
       mobileTabs={
         <nav
@@ -125,11 +127,11 @@ export function WorkerFrame({
           </nav>
           <VenueSwitcher
             activeVenueSlug={activeVenue?.slug ?? null}
-            locale={locale}
+            locale={effectiveLocale}
             tenantSlug={slug}
             venues={venues}
           />
-          <CurrentUserSidebar locale={locale} />
+          <CurrentUserSidebar locale={effectiveLocale} />
         </>
       }
       sidebarClassName="st-saas-sidebar hidden w-56 p-3 lg:flex lg:h-svh lg:flex-col"

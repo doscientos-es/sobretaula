@@ -36,22 +36,22 @@ export const Route = createFileRoute('/t/$slug/l/$venue/tpv')({
       getMenu({ data: { tenantId: tenant.id, venueId: venue.id } }),
       canManage
         ? Promise.all([
-          getCashRegister({ data: { tenantId: tenant.id, venueId: venue.id } }),
-          listClosedCashRegisters({ data: { tenantId: tenant.id, venueId: venue.id } }),
-          getSalesReport({
-            data: {
-              from: startOfDay.toISOString(),
-              tenantId: tenant.id,
-              to: now.toISOString(),
-              venueId: venue.id,
-            },
-          }),
-        ])
+            getCashRegister({ data: { tenantId: tenant.id, venueId: venue.id } }),
+            listClosedCashRegisters({ data: { tenantId: tenant.id, venueId: venue.id } }),
+            getSalesReport({
+              data: {
+                from: startOfDay.toISOString(),
+                tenantId: tenant.id,
+                to: now.toISOString(),
+                venueId: venue.id,
+              },
+            }),
+          ])
         : Promise.resolve(undefined),
     ])
     const sessionId =
       context.tenantMembership.role !== 'host' &&
-        board.sessions.some((session) => session.id === deps.sessionId)
+      board.sessions.some((session) => session.id === deps.sessionId)
         ? deps.sessionId
         : undefined
     const account = sessionId
@@ -86,14 +86,14 @@ function PosTerminalRoute() {
         : {})}
       {...(canManage && cashHistory && report
         ? {
-          managementWorkspace: (
-            <PosTerminalManagementWorkspace
-              history={cashHistory}
-              register={cashRegister ?? null}
-              report={report}
-            />
-          ),
-        }
+            managementWorkspace: (
+              <PosTerminalManagementWorkspace
+                history={cashHistory}
+                register={cashRegister ?? null}
+                report={report}
+              />
+            ),
+          }
         : {})}
       slug={Route.useParams().slug}
       venue={venue.slug}

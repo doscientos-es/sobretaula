@@ -36,11 +36,7 @@ function TenantPlatformFiscalInvoicesRoute() {
           Tu historial de pagos, no incluye las facturas que emites a tus clientes.
         </PageHeaderDescription>
       </PageHeader>
-      <PlatformFiscalInvoiceList
-        invoices={invoices}
-        locale={locale}
-        title="Historial de pagos"
-      />
+      <PlatformFiscalInvoiceList invoices={invoices} locale={locale} title="Historial de pagos" />
     </section>
   )
 }
