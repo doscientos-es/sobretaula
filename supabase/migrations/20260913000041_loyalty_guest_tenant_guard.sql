@@ -1,6 +1,12 @@
 create index if not exists guests_tenant_id_idx
   on public.guests (tenant_id, id);
 
+create index if not exists loyalty_accounts_tenant_points_idx
+  on public.loyalty_accounts (tenant_id, points desc, guest_id asc);
+
+create index if not exists loyalty_transactions_tenant_created_idx
+  on public.loyalty_transactions (tenant_id, created_at desc, id asc);
+
 create or replace function public.adjust_loyalty_points(p_tenant_id uuid, p_guest_id uuid, p_points integer, p_reason text)
 returns void language plpgsql security invoker set search_path=public as $$
 begin
