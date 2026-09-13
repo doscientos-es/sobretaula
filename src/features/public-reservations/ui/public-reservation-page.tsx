@@ -19,13 +19,13 @@ import { LanguageSwitcher } from '@/shared/lib/i18n/language-switcher'
 import { useLocale } from '@/shared/lib/i18n/locale-preference'
 import { formatMessage, createTranslator } from '@/shared/lib/i18n/messages'
 
+import { publicReservationFailure } from '../application/public-reservation-error'
 import {
   createPublicReservation,
   getPublicReservationAvailability,
   publicReservationInput,
   type PublicReservationProfile,
 } from '../application/public-reservations'
-import { publicReservationFailure } from '../application/public-reservation-error'
 import { zonedLocalToIso } from '../domain/zoned-time'
 
 function localDateKey(date: Date, timeZone: string): string {

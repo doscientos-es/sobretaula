@@ -4,6 +4,12 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogRoot,
+  DialogTitle,
   Field,
   FieldLabel,
   Input,
@@ -68,6 +74,9 @@ export function TipsPage({
   const feedback = useFormFeedback()
   const [result, setResult] = useState<Awaited<ReturnType<typeof closeTipsPeriod>> | null>(null)
   const [editingEntryId, setEditingEntryId] = useState<string | null>(null)
+  const editingEntry = overview.entries.find((entry) => entry.id === editingEntryId) ?? null
+  const [editAmount, setEditAmount] = useState('')
+  const [editNote, setEditNote] = useState('')
   const [selectedTipDate, setSelectedTipDate] = useState(() =>
     new Date().toISOString().slice(0, 10),
   )
@@ -119,26 +128,26 @@ export function TipsPage({
       feedback.setError('No se ha podido cerrar el periodo.')
     }
   }
-  async function editEntry(entry: Overview['entries'][number]) {
-    const amount = window.prompt(
-      'Importe del cierre (€)',
-      (Number(entry.amount_cents) / 100).toFixed(2),
-    )
-    if (amount === null) return
-    const note = window.prompt('Nota (opcional)', entry.note ?? '')
-    if (note === null) return
+  function openEdit(entry: Overview['entries'][number]) {
+    setEditAmount((Number(entry.amount_cents) / 100).toFixed(2))
+    setEditNote(entry.note ?? '')
     setEditingEntryId(entry.id)
+  }
+  async function editEntry(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!editingEntry) return
     try {
       await updateTipEntry({
         data: {
           tenantId,
           venueId,
-          entryId: entry.id,
-          amountCents: Math.round(Number(amount.replace(',', '.')) * 100),
-          note,
+          entryId: editingEntry.id,
+          amountCents: Math.round(Number(editAmount.replace(',', '.')) * 100),
+          note: editNote,
         },
       })
       feedback.setSuccess('Cierre actualizado y registrado en el historial.')
+      setEditingEntryId(null)
       onDone()
     } catch {
       feedback.setError('No se ha podido actualizar el cierre.')
@@ -231,6 +240,51 @@ export function TipsPage({
           </CardContent>
         </Card>
       </div>
+      <DialogRoot
+        onOpenChange={(open) => !open && setEditingEntryId(null)}
+        open={editingEntry !== null}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Editar cierre diario</DialogTitle>
+            <DialogDescription>
+              Corrige el importe o la nota del {editingEntry?.tip_date}. El cambio quedará
+              registrado en el historial.
+            </DialogDescription>
+          </DialogHeader>
+          <form className="grid gap-4" onSubmit={(event) => void editEntry(event)}>
+            <Field>
+              <FieldLabel htmlFor="edit-tip-amount">Total del bote (€)</FieldLabel>
+              <Input
+                id="edit-tip-amount"
+                min="0"
+                onChange={(event) => setEditAmount(event.target.value)}
+                required
+                step="0.01"
+                type="number"
+                value={editAmount}
+              />
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="edit-tip-note">Nota (opcional)</FieldLabel>
+              <Input
+                id="edit-tip-note"
+                maxLength={500}
+                onChange={(event) => setEditNote(event.target.value)}
+                value={editNote}
+              />
+            </Field>
+            <DialogFooter>
+              <Button onClick={() => setEditingEntryId(null)} type="button" variant="outline">
+                Cancelar
+              </Button>
+              <Button disabled={feedback.pending} type="submit">
+                Guardar cambios
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </DialogRoot>
       <Card>
         <CardHeader>
           <CardTitle>Cerrar periodo y repartir</CardTitle>
@@ -358,7 +412,7 @@ export function TipsPage({
                       <Button
                         aria-label={`Editar cierre del ${entry.tip_date}`}
                         disabled={editingEntryId === entry.id}
-                        onClick={() => void editEntry(entry)}
+                        onClick={() => openEdit(entry)}
                         size="icon"
                         type="button"
                         variant="ghost"
