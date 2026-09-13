@@ -344,7 +344,7 @@ function TenantSuspendedNotice({
 }
 
 function TenantLayout() {
-  const { billingStatus, membership, tenant, venues } = Route.useLoaderData()
+  const { tenant } = Route.useLoaderData()
   return (
     <LocaleProvider defaultLocale={tenant.defaultLocale}>
       <TenantLayoutContent />

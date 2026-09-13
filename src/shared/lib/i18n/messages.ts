@@ -246,6 +246,11 @@ const es = {
   'settings.account.description': 'Identidad con la que has iniciado sesión.',
   'settings.account.email': 'Correo electrónico',
   'settings.account.noEmail': 'No disponible',
+  'onboarding.language.label': 'Idioma predeterminado',
+  'onboarding.language.description':
+    'Se usará como idioma inicial del restaurante y de las pantallas de trabajo.',
+  'onboarding.language.spanish': 'Español',
+  'onboarding.language.catalan': 'Catalán',
 } as const
 
 export type MessageKey = keyof typeof es
@@ -497,6 +502,11 @@ const ca: Record<MessageKey, string> = {
   'settings.account.description': 'Identitat amb què has iniciat sessió.',
   'settings.account.email': 'Correu electrònic',
   'settings.account.noEmail': 'No disponible',
+  'onboarding.language.label': 'Idioma predeterminat',
+  'onboarding.language.description':
+    'S’utilitzarà com a idioma inicial del restaurant i de les pantalles de treball.',
+  'onboarding.language.spanish': 'Castellà',
+  'onboarding.language.catalan': 'Català',
 }
 
 const messages: Record<Locale, Record<MessageKey, string>> = { ca, es }

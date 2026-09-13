@@ -14,12 +14,20 @@ import {
 import { Building2, CircleCheck } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 
+import { SUPPORTED_LOCALES, type Locale } from '@/shared/lib/i18n/locale'
+import { useLocale, useLocalePreference } from '@/shared/lib/i18n/locale-preference'
+import { createTranslator } from '@/shared/lib/i18n/messages'
+
 import { tenantOnboardingErrorMessage } from '../application/onboarding-error'
 import { tenantSlugCandidate } from '../application/onboarding-schema'
 import { provisionTenantOnboarding } from '../application/provision-tenant-onboarding'
 
 export function TenantOnboardingPage() {
+  const interfaceLocale = useLocale('es')
+  const { setLocale } = useLocalePreference()
+  const t = createTranslator(interfaceLocale)
   const feedback = useFormFeedback()
+  const [selectedLocale, setSelectedLocale] = useState<Locale | null>(null)
   const [name, setName] = useState('')
   const [slug, setSlug] = useState('')
   const [slugEdited, setSlugEdited] = useState(false)
@@ -30,6 +38,7 @@ export function TenantOnboardingPage() {
   const [city, setCity] = useState('')
   const [postalCode, setPostalCode] = useState('')
   const [createdTenant, setCreatedTenant] = useState<{ slug: string } | null>(null)
+  const defaultLocale = selectedLocale ?? interfaceLocale
 
   function changeName(value: string) {
     setName(value)
@@ -45,7 +54,7 @@ export function TenantOnboardingPage() {
         data: {
           addressLine,
           city,
-          defaultLocale: 'es',
+          defaultLocale,
           email,
           legalName,
           name,
@@ -55,6 +64,7 @@ export function TenantOnboardingPage() {
           timezone: 'Europe/Madrid',
         },
       })
+      setLocale(defaultLocale)
       setCreatedTenant(tenant)
     } catch (error) {
       feedback.setError(tenantOnboardingErrorMessage(error))
@@ -138,6 +148,26 @@ export function TenantOnboardingPage() {
                     />
                   </Field>
                 </div>
+                <Field>
+                  <FieldLabel htmlFor="tenant-locale">{t('onboarding.language.label')}</FieldLabel>
+                  <select
+                    className="border-input bg-background min-h-10 w-full rounded-md border px-3 text-sm"
+                    id="tenant-locale"
+                    onChange={(event) => {
+                      const nextLocale = event.target.value
+                      if (SUPPORTED_LOCALES.includes(nextLocale as Locale)) {
+                        setSelectedLocale(nextLocale as Locale)
+                      }
+                    }}
+                    value={defaultLocale}
+                  >
+                    <option value="es">{t('onboarding.language.spanish')}</option>
+                    <option value="ca">{t('onboarding.language.catalan')}</option>
+                  </select>
+                  <p className="text-muted-foreground text-xs leading-5">
+                    {t('onboarding.language.description')}
+                  </p>
+                </Field>
                 <div className="space-y-1 pt-1">
                   <h2 className="text-sm font-semibold">2. Datos de facturación</h2>
                   <p className="text-muted-foreground text-sm">
