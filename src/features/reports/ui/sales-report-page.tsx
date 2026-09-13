@@ -1,4 +1,5 @@
 import {
+  Button,
   Card,
   CardContent,
   CardHeader,
@@ -33,7 +34,7 @@ export function SalesReportPage({
     void loadRange(fromValue, toValue).then(setReport)
   const euro = (cents: number) => `${(cents / 100).toFixed(2)} €`
   return (
-    <section className="space-y-6">
+    <section className="space-y-4">
       <PageHeader>
         <div>
           <PageHeaderTitle>Informes de ventas</PageHeaderTitle>
@@ -43,64 +44,80 @@ export function SalesReportPage({
         </div>
       </PageHeader>
       <Card>
-        <CardContent className="flex flex-wrap items-end gap-3 pt-6">
-          <Field>
-            <FieldLabel htmlFor="report-from">Desde</FieldLabel>
+        <CardContent className="flex flex-wrap items-end gap-2 py-3">
+          <Field className="min-w-36">
+            <FieldLabel className="text-xs" htmlFor="report-from">
+              Desde
+            </FieldLabel>
             <Input
+              className="h-9"
               id="report-from"
               onChange={(e) => setFrom(e.target.value)}
               type="date"
               value={from}
             />
           </Field>
-          <Field>
-            <FieldLabel htmlFor="report-to">Hasta</FieldLabel>
-            <Input id="report-to" onChange={(e) => setTo(e.target.value)} type="date" value={to} />
+          <Field className="min-w-36">
+            <FieldLabel className="text-xs" htmlFor="report-to">
+              Hasta
+            </FieldLabel>
+            <Input
+              className="h-9"
+              id="report-to"
+              onChange={(e) => setTo(e.target.value)}
+              type="date"
+              value={to}
+            />
           </Field>
-          <button
-            className="border-input h-10 rounded-md border px-3 text-sm"
+          <Button
             onClick={() => onRange(`${from}T00:00:00.000Z`, `${to}T23:59:59.999Z`)}
+            size="sm"
             type="button"
+            variant="outline"
           >
             Actualizar
-          </button>
+          </Button>
         </CardContent>
       </Card>
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-3 md:grid-cols-3">
         <Card>
-          <CardHeader>
+          <CardHeader className="px-4 py-3">
             <CardTitle>Ventas</CardTitle>
           </CardHeader>
-          <CardContent className="text-2xl font-semibold">{euro(report.grossCents)}</CardContent>
+          <CardContent className="px-4 pb-4 text-xl font-semibold">
+            {euro(report.grossCents)}
+          </CardContent>
         </Card>
         <Card>
-          <CardHeader>
+          <CardHeader className="px-4 py-3">
             <CardTitle>IVA</CardTitle>
           </CardHeader>
-          <CardContent className="text-2xl font-semibold">{euro(report.vatCents)}</CardContent>
+          <CardContent className="px-4 pb-4 text-xl font-semibold">
+            {euro(report.vatCents)}
+          </CardContent>
         </Card>
         <Card>
-          <CardHeader>
+          <CardHeader className="px-4 py-3">
             <CardTitle>Ticket medio</CardTitle>
           </CardHeader>
-          <CardContent className="text-2xl font-semibold">
+          <CardContent className="px-4 pb-4 text-xl font-semibold">
             {euro(report.ticketAverageCents)}
           </CardContent>
         </Card>
         <Card>
-          <CardHeader>
+          <CardHeader className="px-4 py-3">
             <CardTitle>Propinas</CardTitle>
           </CardHeader>
-          <CardContent className="text-2xl font-semibold">
+          <CardContent className="px-4 pb-4 text-xl font-semibold">
             {euro(report.financial.totalTipsCents)}
           </CardContent>
         </Card>
       </div>
       <Card>
-        <CardHeader>
+        <CardHeader className="px-4 py-3">
           <CardTitle>Ventas por método</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-4 pb-4">
           <ul className="space-y-2 text-sm">
             {Object.entries(report.byMethod).map(([method, amount]) => (
               <li className="flex justify-between" key={method}>
@@ -112,10 +129,10 @@ export function SalesReportPage({
         </CardContent>
       </Card>
       <Card>
-        <CardHeader>
+        <CardHeader className="px-4 py-3">
           <CardTitle>Conciliación y cierres</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3 text-sm">
+        <CardContent className="space-y-3 px-4 pb-4 text-sm">
           <p>
             {report.financial.closedRegisters.length} cierres ·{' '}
             {report.financial.mixedPaymentBatches} pagos mixtos ·{' '}

@@ -26,6 +26,7 @@ import {
   type ReservationEvent,
 } from '../application/reservations'
 import { reservationStatusLabel } from '../domain/reservation-labels'
+import type { ReservationAgendaSearch } from './reservation-page'
 
 function canMarkNoShow(startsAt: string): boolean {
   return Date.now() - new Date(startsAt).getTime() >= 15 * 60_000
@@ -67,19 +68,31 @@ function describeEventChanges(changes: string): string | null {
 }
 
 export function ReservationAgendaCard({
+  agendaSearch,
   locale,
+  onSearchChange,
   tenantId,
   timezone,
   venueId,
+  refreshToken = 0,
 }: {
+  agendaSearch?: ReservationAgendaSearch | undefined
   locale: Locale
+  onSearchChange?: ((search: ReservationAgendaSearch) => void) | undefined
   tenantId: string
   timezone: string
   venueId: string
+  refreshToken?: number
 }) {
   const feedback = useFormFeedback()
   const { setError } = feedback
-  const [agendaDate, setAgendaDate] = useState(() => new Date().toISOString().slice(0, 10))
+  const [agendaDate, setAgendaDate] = useState(
+    () => agendaSearch?.date ?? new Date().toISOString().slice(0, 10),
+  )
+  const [query, setQuery] = useState(() => agendaSearch?.query ?? '')
+  const [statusFilter, setStatusFilter] = useState<NonNullable<ReservationAgendaSearch['status']>>(
+    () => agendaSearch?.status ?? 'all',
+  )
   const [agenda, setAgenda] = useState<ReservationAgendaItem[]>([])
   const [eventsByReservation, setEventsByReservation] = useState<
     Record<string, ReservationEvent[]>
@@ -99,12 +112,29 @@ export function ReservationAgendaCard({
   const [editingPartySize, setEditingPartySize] = useState(1)
 
   const visibleAgenda = agenda.filter((item) => {
+    const normalizedQuery = query.trim().toLocaleLowerCase(locale)
+    if (
+      normalizedQuery &&
+      ![item.guestName, item.guestPhone].some((value) =>
+        value?.toLocaleLowerCase(locale).includes(normalizedQuery),
+      )
+    )
+      return false
+    if (statusFilter && statusFilter !== 'all' && item.status !== statusFilter) return false
     if (depositFilter === 'all') return true
     if (!item.deposit) return false
     if (depositFilter === 'pending') return item.deposit.status === 'pending'
     if (depositFilter === 'paid') return item.deposit.status === 'paid'
     return ['failed', 'partially_refunded'].includes(item.deposit.status)
   })
+
+  function updateSearch(next: Partial<ReservationAgendaSearch>) {
+    onSearchChange?.({
+      date: next.date ?? agendaDate,
+      query: next.query ?? query,
+      status: next.status ?? statusFilter,
+    })
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -122,7 +152,11 @@ export function ReservationAgendaCard({
     return () => {
       cancelled = true
     }
-  }, [agendaDate, agendaRefresh, setError, tenantId, venueId])
+  }, [agendaDate, agendaRefresh, refreshToken, setError, tenantId, venueId])
+
+  useEffect(() => {
+    if (agendaSearch?.date && agendaSearch.date !== agendaDate) setAgendaDate(agendaSearch.date)
+  }, [agendaSearch?.date, agendaDate])
 
   useEffect(() => {
     const interval = window.setInterval(() => {
@@ -251,6 +285,7 @@ export function ReservationAgendaCard({
             onChange={(event) => {
               setAgendaLoading(true)
               setAgendaDate(event.target.value)
+              updateSearch({ date: event.target.value })
             }}
           />
           <div className="mt-2 flex gap-2">
@@ -263,6 +298,7 @@ export function ReservationAgendaCard({
                 onClick={() => {
                   setAgendaLoading(true)
                   setAgendaDate(option.value)
+                  updateSearch({ date: option.value })
                 }}
                 size="sm"
                 type="button"
@@ -278,6 +314,42 @@ export function ReservationAgendaCard({
             ? 'Cargando agenda…'
             : `${visibleAgenda.length} reserva${visibleAgenda.length === 1 ? '' : 's'}`}
         </output>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field>
+            <FieldLabel htmlFor="agenda-query">Buscar cliente</FieldLabel>
+            <Input
+              id="agenda-query"
+              onChange={(event) => {
+                setQuery(event.target.value)
+                updateSearch({ query: event.target.value })
+              }}
+              placeholder="Nombre o teléfono"
+              value={query}
+            />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="agenda-status">Estado</FieldLabel>
+            <select
+              className="border-border rounded-md border bg-transparent px-3 py-2 text-sm"
+              id="agenda-status"
+              onChange={(event) => {
+                const value = (event.target.value || 'all') as NonNullable<
+                  ReservationAgendaSearch['status']
+                >
+                setStatusFilter(value)
+                updateSearch({ status: value })
+              }}
+              value={statusFilter}
+            >
+              <option value="all">Todos</option>
+              <option value="pending">Pendientes</option>
+              <option value="confirmed">Confirmadas</option>
+              <option value="seated">Sentadas</option>
+              <option value="cancelled">Canceladas</option>
+              <option value="no_show">No presentadas</option>
+            </select>
+          </Field>
+        </div>
         <label className="text-muted-foreground flex items-center gap-2 text-sm">
           Depósito{' '}
           <select

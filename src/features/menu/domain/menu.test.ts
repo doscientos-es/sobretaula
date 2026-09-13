@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   buildMenuSections,
+  filterMenuSections,
   formatVatRate,
   localizedText,
   type MenuCategory,
@@ -73,5 +74,45 @@ describe('formatVatRate', () => {
     expect(formatVatRate(1000, 'es')).toBe('10 %')
     expect(formatVatRate(550, 'es')).toBe('5,5 %')
     expect(formatVatRate(0, 'es')).toBe('0 %')
+  })
+})
+
+describe('filterMenuSections', () => {
+  const sections = buildMenuSections({ categories, items, locale: 'es' })
+
+  it('keeps the matching category context when searching for a dish or category', () => {
+    expect(
+      filterMenuSections(sections, { locale: 'es', query: 'negro' }).map((section) => ({
+        category: section.category.id,
+        items: section.items.map((entry) => entry.id),
+      })),
+    ).toEqual([{ category: 'cat-1', items: ['item-1'] }])
+
+    expect(
+      filterMenuSections(sections, { locale: 'es', query: 'postres' })[0]?.items.map(
+        (entry) => entry.id,
+      ),
+    ).toEqual(['item-3'])
+  })
+
+  it('combines the search with visibility and station filters', () => {
+    const sectionsWithRetiredItem = buildMenuSections({
+      categories,
+      items: [
+        ...items,
+        { ...item('item-5', 'cat-2', 'Tarta'), isActive: false, kitchenStation: 'bar' },
+      ],
+      locale: 'es',
+    })
+    const filtered = filterMenuSections(sectionsWithRetiredItem, {
+      isActive: false,
+      kitchenStation: 'bar',
+      locale: 'es',
+      query: '',
+    })
+
+    expect(filtered.flatMap((section) => section.items).map((entry) => entry.id)).toEqual([
+      'item-5',
+    ])
   })
 })

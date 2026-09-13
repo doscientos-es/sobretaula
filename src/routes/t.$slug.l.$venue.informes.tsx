@@ -1,3 +1,4 @@
+import { Tabs, TabsContent, TabsList, TabsPanels, TabsTrigger } from '@doscientos/ui'
 import { createFileRoute, notFound } from '@tanstack/react-router'
 
 import { listRecommendationDecisions } from '@/features/ai-operations'
@@ -41,21 +42,37 @@ export const Route = createFileRoute('/t/$slug/l/$venue/informes')({
 function ReportRoute() {
   const { report, benchmark, recommendationHistory, tenant, venue } = Route.useLoaderData()
   return (
-    <>
-      <SalesReportPage
-        report={report}
-        onRange={(from, to) =>
-          getSalesReport({ data: { tenantId: tenant.id, venueId: venue.id, from, to } })
-        }
-      />
-      <ProfitCockpit
-        report={report}
-        tenantId={tenant.id}
-        venueId={venue.id}
-        recommendationHistory={recommendationHistory}
-      />
-      <ProductSalesSummary products={report.productSummary} />
-      <VenueBenchmarkCard benchmark={benchmark} />
-    </>
+    <Tabs className="space-y-4" defaultSelectedKey="ventas">
+      <TabsList aria-label="Secciones de informes" className="max-w-full overflow-x-auto">
+        <TabsTrigger id="ventas">Ventas</TabsTrigger>
+        <TabsTrigger id="rentabilidad">Rentabilidad</TabsTrigger>
+        <TabsTrigger id="productos">Productos</TabsTrigger>
+        <TabsTrigger id="locales">Locales</TabsTrigger>
+      </TabsList>
+      <TabsPanels>
+        <TabsContent id="ventas">
+          <SalesReportPage
+            report={report}
+            onRange={(from, to) =>
+              getSalesReport({ data: { tenantId: tenant.id, venueId: venue.id, from, to } })
+            }
+          />
+        </TabsContent>
+        <TabsContent id="rentabilidad">
+          <ProfitCockpit
+            report={report}
+            tenantId={tenant.id}
+            venueId={venue.id}
+            recommendationHistory={recommendationHistory}
+          />
+        </TabsContent>
+        <TabsContent id="productos">
+          <ProductSalesSummary products={report.productSummary} />
+        </TabsContent>
+        <TabsContent id="locales">
+          <VenueBenchmarkCard benchmark={benchmark} />
+        </TabsContent>
+      </TabsPanels>
+    </Tabs>
   )
 }

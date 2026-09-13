@@ -20,6 +20,7 @@ export {
   type ReservationTermsVersion,
 } from './application/reservations'
 export { ReservationPage } from './ui/reservation-page'
+export type { ReservationAgendaSearch } from './ui/reservation-page'
 export type { ReservationService } from './application/reservations'
 export { reservationStatusLabel, reservationStatusLabels } from './domain/reservation-labels'
 export type {

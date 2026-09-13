@@ -29,7 +29,6 @@ import { ArrowLeft, Check, FileText, Store, TriangleAlert, Users } from 'lucide-
 import type { ReactNode } from 'react'
 
 import { TenantAdminFrame } from '@/app/app-frame'
-import { tenantRouteState } from '@/app/tenant-route-loader'
 import { WorkerFrame } from '@/app/worker-frame'
 import { getTenantBillingStatus, TenantBillingNotice } from '@/features/platform-billing'
 import { RedsysSubscriptionButton } from '@/features/platform-billing/ui/redsys-subscription-button'
@@ -123,7 +122,6 @@ export const Route = createFileRoute('/t/$slug')({
   component: TenantLayout,
   errorComponent: TenantRouteError,
   notFoundComponent: TenantNotFound,
-  ...tenantRouteState,
 })
 
 type StepStatus = 'done' | 'active' | 'upcoming'

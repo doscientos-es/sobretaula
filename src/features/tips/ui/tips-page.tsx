@@ -27,6 +27,21 @@ const formValue = (form: FormData, name: string) => {
   const value = form.get(name)
   return typeof value === 'string' ? value : ''
 }
+const isoDate = (date: Date) => date.toISOString().slice(0, 10)
+const addDays = (date: Date, days: number) => {
+  const result = new Date(date)
+  result.setDate(result.getDate() + days)
+  return result
+}
+const quickPeriod = (kind: 'month' | 'week' | 'last') => {
+  const today = new Date()
+  const to = new Date(today)
+  to.setDate(to.getDate() - 1)
+  const from = new Date(to)
+  if (kind === 'month') (from.setMonth(from.getMonth() - 1), from.setDate(from.getDate() + 1))
+  if (kind === 'week') from.setDate(from.getDate() - 6)
+  return { from: kind === 'last' ? '' : isoDate(from), to: kind === 'last' ? '' : isoDate(to) }
+}
 export function TipsPage({
   overview,
   tenantId,
@@ -42,6 +57,13 @@ export function TipsPage({
 }) {
   const feedback = useFormFeedback()
   const [result, setResult] = useState<Awaited<ReturnType<typeof closeTipsPeriod>> | null>(null)
+  const lastClosedTo = overview.periods[0]?.to_date ?? null
+  function setPeriod(from: string, to: string) {
+    const form = document.querySelector<HTMLFormElement>('#close-tips-form')
+    if (!form) return
+    ;(form.elements.namedItem('from') as HTMLInputElement).value = from
+    ;(form.elements.namedItem('to') as HTMLInputElement).value = to
+  }
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const fd = new FormData(event.currentTarget)
@@ -138,9 +160,56 @@ export function TipsPage({
           <CardTitle>Cerrar periodo y repartir</CardTitle>
         </CardHeader>
         <CardContent>
-          <form className="grid gap-3 sm:grid-cols-3" onSubmit={(e) => void close(e)}>
-            <Input aria-label="Desde" name="from" required type="date" />
-            <Input aria-label="Hasta" name="to" required type="date" />
+          <div className="mb-4 flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                const p = quickPeriod('month')
+                setPeriod(p.from, p.to)
+              }}
+            >
+              Último mes
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                const p = quickPeriod('week')
+                setPeriod(p.from, p.to)
+              }}
+            >
+              Última semana
+            </Button>
+            {lastClosedTo ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  const p = quickPeriod('last')
+                  setPeriod(
+                    isoDate(addDays(new Date(`${lastClosedTo}T00:00:00`), 1)),
+                    isoDate(addDays(new Date(), -1)),
+                  )
+                }}
+              >
+                Desde la última vez · {lastClosedTo}
+              </Button>
+            ) : null}
+          </div>
+          <form
+            id="close-tips-form"
+            className="grid gap-3 sm:grid-cols-3"
+            onSubmit={(e) => void close(e)}
+          >
+            <Field>
+              <FieldLabel htmlFor="tips-from">Desde</FieldLabel>
+              <Input id="tips-from" aria-label="Desde" name="from" required type="date" />
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="tips-to">Hasta</FieldLabel>
+              <Input id="tips-to" aria-label="Hasta" name="to" required type="date" />
+            </Field>
             <Button disabled={feedback.pending} type="submit">
               Calcular y cerrar
             </Button>
@@ -148,6 +217,11 @@ export function TipsPage({
           {result && (
             <div className="mt-5 overflow-x-auto">
               <p className="mb-2 font-medium">Total repartido: {euro(result.totalCents)}</p>
+              {result.skippedPaidDates.length ? (
+                <p className="text-muted-foreground mb-3 text-sm">
+                  Se han omitido propinas ya repartidas: {result.skippedPaidDates.join(', ')}.
+                </p>
+              ) : null}
               <table className="w-full text-left text-sm">
                 <thead>
                   <tr className="border-b">
@@ -184,7 +258,12 @@ export function TipsPage({
                     Registrado por {entry.recordedBy} · {dateTime(entry.created_at)}
                   </span>
                 </span>
-                <span className="font-medium">{euro(Number(entry.amount_cents))}</span>
+                <span className="flex items-center gap-2 font-medium">
+                  {entry.paid_at ? (
+                    <span className="text-muted-foreground text-xs font-normal">Repartida</span>
+                  ) : null}
+                  {euro(Number(entry.amount_cents))}
+                </span>
               </li>
             ))}
           </ul>

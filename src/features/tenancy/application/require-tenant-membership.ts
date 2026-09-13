@@ -5,7 +5,7 @@ import type { AuthPrincipal } from '@/features/auth'
 import { authMiddleware } from '@/features/auth/infrastructure/server/auth-middleware'
 import { createRequestSupabaseClient } from '@/shared/lib/supabase/server/create-server-client'
 
-import { TENANT_ROLES, type TenantRole } from '../domain/tenant'
+import { isTenantOperational, TENANT_ROLES, type TenantRole } from '../domain/tenant'
 
 const tenantMembershipInput = z.object({ tenantId: z.string().uuid() })
 
@@ -73,6 +73,8 @@ export const operationalTenantMiddleware = createMiddleware({ type: 'function' }
       ])
     if (error || subscriptionError || !tenant) throw new Response('Forbidden', { status: 403 })
     if (tenant.status === 'suspended') throw new Response('Tenant suspended', { status: 423 })
+    if (!isTenantOperational(tenant.status))
+      throw new Response('Payment method required', { status: 402 })
     if (subscription?.status === 'trialing' && !subscription.payment_method_id) {
       throw new Response('Payment method required', { status: 402 })
     }

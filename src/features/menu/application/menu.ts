@@ -20,7 +20,9 @@ import {
   updateMenuItemInput,
 } from './menu-schema'
 
-const importMenuCsvInput = menuTenantInput.extend({ csv: z.string().min(1).max(1_000_000) })
+const importMenuCsvInput = menuTenantInput.extend({
+  csv: z.string().min(1).max(10_000_000),
+})
 
 export interface MenuCatalog {
   categories: MenuCategory[]
@@ -309,61 +311,16 @@ export const importMenuCsv = createServerFn({ method: 'POST' })
       throw new Response('Invalid CSV', { status: 422 })
     }
     const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
-    const { data: existingCategories, error: categoryError } = await supabase
-      .from('menu_categories')
-      .select('id, name_i18n')
-      .eq('tenant_id', data.tenantId)
-    if (categoryError) throw new Error(`menu_import_categories_load_failed:${categoryError.code}`)
-    const categoryIds = new Map(
-      (existingCategories ?? []).map((category) => [
-        String((category.name_i18n as { es?: string } | null)?.es ?? '')
-          .trim()
-          .toLowerCase(),
-        category.id as string,
-      ]),
-    )
-    let categoriesCreated = 0
-    let itemsCreated = 0
-    for (const row of preview.rows) {
-      const categoryKey = row.category.toLowerCase()
-      let categoryId = categoryIds.get(categoryKey)
-      if (!categoryId) {
-        const created = await supabase
-          .from('menu_categories')
-          .insert({
-            name_i18n: { es: row.category },
-            position: categoryIds.size,
-            tenant_id: data.tenantId,
-          })
-          .select('id')
-          .single()
-        if (created.error || !created.data)
-          throw new Error(`menu_import_category_failed:${created.error?.code ?? 'unknown'}`)
-        categoryId = created.data.id as string
-        categoryIds.set(categoryKey, categoryId)
-        categoriesCreated += 1
-      }
-      const createdItem = await supabase
-        .from('menu_items')
-        .insert({
-          category_id: categoryId,
-          description_i18n: row.descriptionEs ? { es: row.descriptionEs } : {},
-          name_i18n: { es: row.nameEs },
-          price_cents: row.priceCents,
-          sku: row.sku ?? null,
-          tenant_id: data.tenantId,
-          vat_rate_bps: row.vatRateBps,
-        })
-        .select('id')
-        .single()
-      if (createdItem.error || !createdItem.data) {
-        if (createdItem.error?.code === '23505')
-          throw new Response('Duplicate SKU', { status: 409 })
-        throw new Error(`menu_import_item_failed:${createdItem.error?.code ?? 'unknown'}`)
-      }
-      itemsCreated += 1
+    const { data: result, error } = await supabase.rpc('import_menu_catalog', {
+      p_rows: preview.rows,
+      p_tenant_id: data.tenantId,
+    })
+    if (error) {
+      if (error.code === '23505' || error.message.includes('menu_import_duplicate_sku'))
+        throw new Response('Duplicate SKU', { status: 409 })
+      throw new Error(`menu_import_atomic_failed:${error.code ?? 'unknown'}`)
     }
-    return { categoriesCreated, itemsCreated }
+    return result as { categoriesCreated: number; itemsCreated: number }
   })
 
 /** Price, VAT and availability changes; names are fixed once the item is in use. */

@@ -1,98 +1,223 @@
-# SobreTaula · Tareas restantes del plan de 90 días
+# SobreTaula · Plan técnico de 90 días
 
-Última revisión: 2026-09-13.
+Estado: activo. Última revisión: 2026-09-13.
 
-Este es el backlog ejecutable restante para convertir la base actual en un
-producto vendible para restaurantes independientes con sala. Una tarea solo se
-marca como completada cuando tiene código, pruebas proporcionales y evidencia
-reproducible. La validación externa, los pilotos y la operación sobre el
-proyecto Supabase autorizado no se pueden sustituir por tests locales.
+Objetivo: convertir la base actual en un producto vendible y operable para un
+restaurante independiente con sala. El alcance termina en un servicio completo
+con reserva, sala, TPV, cocina, cobro, caja, fichaje y exportación, con
+seguridad, accesibilidad y recuperación demostrables.
 
-## Orden de ejecución
+Este documento es el backlog ejecutable. Una tarea solo se marca como hecha
+cuando tiene código, pruebas proporcionales y evidencia reproducible. Una
+migración, una pantalla o un test unitario no equivalen por sí solos a
+validación integrada, piloto, aprobación legal ni despliegue remoto.
 
-### P0 · Producto demostrable y seguro
+## Estado de partida y límites
 
-- [~] **P0.1 · Activación del local.** El onboarding cubre identidad fiscal,
-  local, idioma y zona horaria; la gestión de equipo durante la preparación
-  también está disponible. Falta cerrar turnos, zonas, carta, impuestos y
-  checklist de primer servicio en un único recorrido.
-- [ ] **P0.2 · Reservas internas.** CRUD de turnos y reglas, duración por
-      grupo, límites por intervalo, cierres/bloques con impacto y agenda con
-      filtros persistidos en URL.
-- [ ] **P0.3 · Flujo único de servicio.** Smoke reproducible de reserva,
-      llegada, mesa, comanda, cocina, cuenta, cobro, limpieza y caja.
-- [ ] **P0.4 · Seguridad verificable.** Suite aislada para RLS por tenant,
-      local y rol; carreras e idempotencia de reservas, mesas, comandas, pagos y
-      cierres; nunca contra datos reales.
-- [ ] **P0.5 · Operación observable.** Auditoría legible, estados de red,
-      cola offline visible, recuperación de sesión y runbook de backup/restore.
-      El runbook está documentado en `docs/operational-recovery-runbook.md`;
-      faltan ejecutar el restore y guardar evidencia en un entorno autorizado.
+- Ya existe base de tenancy/Auth/roles, plano y servicio, reservas públicas e
+  internas, cuenta, TPV, cocina/barra, pagos mixtos, caja, facturación en modo
+  test, fichaje, inventario parcial, carta pública, outbox de email y runbook
+  de recuperación.
+- El checkout real es `internal/projects/sobretaula`; esta carpeta contiene
+  documentación de trabajo. No se crean fixtures ni otro proyecto Supabase.
+- Hardware de impresión, cajón y datáfono queda fuera. El cobro de tarjeta se
+  registra manualmente desde navegador/tablet mientras no se decida una
+  integración concreta.
+- VERI*FACTU puede operar en pruebas; producción queda bloqueada hasta la
+  configuración fiscal, certificado y aprobación de asesoría.
+- SMS/WhatsApp no se activan sin proveedor, coste, consentimiento y política
+  de privacidad aprobados.
 
-### P1 · Ventaja de sala
+## Calendario de 90 días
 
-- [ ] **P1.1 · Vista Ahora.** Llegadas, retrasos, walk-ins, espera, mesas que
-      requieren atención, limpieza, bloqueos y carga de cocina en una prioridad
-      accionable.
-- [ ] **P1.2 · KDS completo.** Batches por estación, prioridades, reimpresión
-      web segura, estados de preparación y trazabilidad por línea.
-- [ ] **P1.3 · Handover operativo.** Entrega viva e histórica por área,
-      diferencias respecto a la entrega anterior y uso medible.
-- [ ] **P1.4 · Experiencia tablet/móvil.** Prueba de teclado, foco, contraste,
-      objetivos táctiles y estados de carga/error/offline en los flujos críticos.
+### Días 1–7 · Baseline, seguridad y contrato vendible
 
-### P1 · Economía, fiscalidad y equipo
+- Congelar módulos incluidos, roles, límites, precio y claims comerciales;
+  reflejarlo en `project-design.md` y el catálogo de módulos.
+- Reproducir el flujo en entorno aislado y crear una matriz de journeys: alta,
+  primer local, reserva, llegada, mesa, comanda, cocina, cuenta, cobro,
+  ticket, limpieza, caja, fichaje y exportación.
+- Preparar fixtures anonimizados y `E2E_STORAGE_STATE`; prohibido usar datos
+  reales para RLS, concurrencia, carga o humo mutante.
+- Auditar RLS de tenant/local/rol, Storage, vistas y funciones; no depender de
+  `user_metadata`, comprobar `USING`/`WITH CHECK` y restringir funciones
+  privilegiadas.
+- Normalizar numeración futura de migraciones y comprobar historial antes de
+  aplicar cualquier migración autorizada.
 
-- [ ] **P1.5 · Cuenta completa.** División por persona/producto/porcentaje/
-      importe, movimientos entre sesiones y reapertura controlada. El dominio,
-      la UI y la integración con `record_single_payment_with_allocations` están
-      preparados; falta aplicar la migración autorizada, validar la semántica
-      de reparto en base de datos y ejecutar el flujo integrado con datos de
-      prueba.
-- [ ] **P1.6 · Caja y exportaciones.** La caja ofrece histórico y CSV con
-      desglose por método; fichaje ofrece informe y CSV por rango. Falta la
-      validación contable del arqueo, el formato definitivo para gestoría y la
-      revisión externa de jornada.
-- [ ] **P1.7 · Propinas y coste laboral.** Reglas por local, cálculo por tiempo
-      trabajado, redondeo explicado y resumen semanal accionable.
-- [ ] **P1.8 · Fiscalidad.** VERI*FACTU extremo a extremo, errores accionables,
-      certificados y aprobación de asesoría antes de activar producción.
-- [ ] **P1.9 · Privacidad laboral y clientes.** Retención, anonimización,
-      exportación, permisos de datos sensibles y formato de inspección.
+Salida: matriz de riesgos, fixture reproducible, contrato comercial congelado,
+CI básica verde y gates externos con propietario y fecha.
 
-### P2 · Activación comercial y ecosistema
+### Días 8–14 · Activación del restaurante
 
-- [~] **P2.1 · Importación.** Carta, categorías, clientes y reservas futuras ya
-  tienen CSV con plantilla, arrastrar/soltar, límite de tamaño, preview,
-  validación y feedback; faltan modificadores, persistencia atómica por carga y
-  una prueba integrada de importación.
-- [~] **P2.2 · Reserva pública vendible.** Reserva, gestión por token,
-  `no-store`, caducidad, rate limit, condiciones versionadas y lista de
-  espera están implementados; el header `no-store` está verificado por HTTP
-  local. Falta humo de sobreventa y validación remota de retención/privacidad.
-- [~] **P2.3 · Comunicaciones.** Confirmaciones y recordatorios por email están
-  activos mediante outbox/worker; faltan rebotes y reenvío manual. SMS/WhatsApp
-  siguen desactivados hasta aprobar proveedor y consentimiento.
-- [~] **P2.4 · Integraciones mínimas.** Hay carta pública, checkout de pedidos
-  online y contratos de pago; faltan exportación contable, widget/canales
-  externos y validación con los pilotos.
-- [ ] **P2.5 · Pilotos de pago.** Tres restaurantes independientes, diez
-      servicios observados por restaurante, formación, soporte, métricas y
-      conversión a pago.
+- Convertir onboarding en un recorrido único: identidad fiscal, local,
+  idioma/zona horaria, roles, zonas, mesas/plano, impuestos, carta, turnos y
+  checklist del primer servicio.
+- Añadir progreso, dependencias, reanudación, estados vacío/error/offline y
+  validación server-side; no publicar reservas si falta capacidad o turnos.
+- Terminar importación de productos, modificadores y precios con preview,
+  errores por fila, límite de tamaño y persistencia atómica por carga.
+- Propagar branding por tenant a reservas, documentos y emails; no convertirlo
+  en tema global.
 
-## Gates que no puede cerrar el código por sí solo
+Salida: un owner pasa de cuenta vacía a primer servicio configurado sin ayuda
+técnica, conservando evidencia de ruta y permisos.
 
-- Asesoría fiscal para VERI*FACTU.
-- Asesoría laboral para jornada, conservación y exportación.
-- Política aprobada de privacidad/retención/anonimización.
-- Entorno seguro separado para RLS, carreras y smoke.
-- Proveedor y consentimiento de SMS/WhatsApp.
-- Tres restaurantes piloto y evidencia de uso real.
+### Días 15–24 · Reservas internas y públicas
 
-## Definición de terminado
+- Cerrar CRUD de turnos, intervalos, duración por grupo, antelación, límites,
+  áreas, cierres y bloqueos, con impacto sobre reservas existentes.
+- Usar un motor transaccional único para crear, editar, cancelar, asignar,
+  recolocar y liberar capacidad; cubrir DST, doble clic, reintentos y
+  `operation_id`/dedupe.
+- Completar agenda día/semana/turno con lista, cronología y plano; filtros,
+  búsqueda y vista persistidos en URL.
+- Verificar reserva pública, token, `no-store`, expiración, rate limit,
+  condiciones versionadas, cancelación/modificación, lista de espera y email.
+- Deshabilitar o guiar el formulario cuando no haya turnos; dar valor accesible
+  a “Momento” y no revelar mesas ni PII.
 
-El plan de 90 días queda terminado cuando un restaurante piloto puede completar
-un servicio completo desde SobreTaula, incluyendo reserva, sala, comanda,
-preparación, cobro, ticket, caja, cierre, fichaje y exportación, con permisos,
-auditoría, recuperación y accesibilidad demostrados. No se incluyen hardware
-propio ni un marketplace de reservas.
+Salida: host gestiona excepciones sin doble reserva; una persona anónima solo
+puede reservar y gestionar su propia reserva.
+
+### Días 25–35 · Flujo de sala y cocina
+
+- Hacer reproducible el flujo Ahora: llegadas, retrasos, walk-ins, espera,
+  no-show, mesa, traslado/unión, bloqueo, limpieza y handover.
+- Cerrar TPV con cuenta, catálogo, modificadores, notas, disponibilidad,
+  precios/IVA/destino congelados y anulaciones auditadas.
+- Completar KDS por estación: batches, prioridad, estados, tiempos,
+  reimpresión web con permiso y trazabilidad por línea; reintentos sin duplicar.
+- Verificar realtime, estado de red, cola offline visible y recuperación de
+  sesión; operaciones que requieren estado actual siguen online.
+- Corregir boundaries: mensaje operativo, ID de soporte, reintento, carga y sin
+  permiso; nunca exponer JSON de Zod.
+
+Salida: sala sabe qué está listo, bloqueado, pendiente de limpiar o requiere
+atención.
+
+### Días 36–46 · Cuenta, cobro, caja y documentos
+
+- Aplicar tras revisión la migración de asignación de líneas a pagos; validar
+  división por persona/producto/porcentaje/importe y movimientos entre sesiones.
+- Cerrar descuentos, invitaciones, anulaciones, reapertura y correcciones con
+  permiso, motivo, límites fiscales y auditoría.
+- Verificar efectivo, tarjeta manual, transferencia, vale, propina, pagos
+  mixtos, devoluciones, idempotencia y conciliación por método.
+- Verificar apertura/fondo, entradas/salidas, arqueo, diferencia, cierre,
+  reimpresión web y factura simplificada/completa/rectificativa.
+- Mantener VERI*FACTU en test; probar certificado, adaptador, outbox, reintento
+  y cadena sin secretos en cliente.
+
+Salida: una mesa se cobra y documenta una sola vez; caja concilia y cada
+corrección deja rastro.
+
+### Días 47–57 · Fichaje, propinas, privacidad y exportaciones
+
+- Verificar terminal/PIN, pausas, cambios de centro, offline personal, límites
+  de intentos, eventos inmutables y portal individual.
+- Cerrar bote diario y periodos flexibles: total contado al final del día,
+  participantes, minutos trabajados, reparto proporcional, redondeo explicado
+  y ajustes auditados.
+- Implementar CSV/JSON consistentes para ventas, caja, pagos, facturas,
+  fichajes, propinas, reservas y clientes; incluir versión, zona horaria,
+  filtros, encabezados estables y permisos.
+- Definir retención, anonimización y acceso a alergias/notas; separar operación
+  de marketing. Validar formatos con gestoría y asesoría laboral.
+
+Salida: owner/manager descarga un paquete interpretable, sujeto a aprobación
+externa de formato y conservación.
+
+### Días 58–68 · Robustez, accesibilidad y observabilidad
+
+- Suite aislada de RLS por tenant, local, rol, anónimo y Storage; carreras de
+  reserva, mesa, comanda, pago, caja, factura y fichaje.
+- Revisar índices y consultas críticas con medición; ejecutar advisors y
+  comprobar `security_invoker` en vistas cuando aplique.
+- Pruebas WCAG 2.2 AA: teclado, foco, lector de pantalla, contraste, targets,
+  zoom, reduced motion y no depender del color, en móvil y tablet.
+- Añadir loading/empty/error/offline/sin permiso en módulos críticos; quitar
+  navegación duplicada de escritorio y conservar lista accesible del plano.
+- Completar auditoría legible, correlación de operaciones, health/readiness,
+  alertas de outbox y runbook de backup/restore; ejecutar restore autorizado.
+
+Salida: fallos reproducibles, recuperables y atribuibles, sin pruebas de
+seguridad sobre datos reales.
+
+### Días 69–80 · Piloto controlado y certificación local
+
+- Preparar tenant piloto separado, datos del restaurante y formación de owner,
+  jefe de sala, camarero y cocina.
+- Ejecutar shadow mode y dos servicios controlados; medir tiempos, incidencias,
+  doble cobro, pérdida de comanda, reserva duplicada, arqueo, exportación y
+  accesibilidad.
+- Recoger aceptación por journey con severidad P0/P1/P2; repetir cada caso
+  corregido antes de considerarlo validado.
+- Preparar expediente de certificación local: identidad fiscal, dirección,
+  series, certificado digital, adaptador fiscal, responsable, cierre y soporte.
+  La aprobación pertenece al restaurante y su asesoría, no al test local.
+
+Salida: acta de piloto, incidencias críticas cerradas o bloqueadas
+explícitamente y expediente listo para revisión externa.
+
+### Días 81–90 · Release candidate y decisión de venta
+
+- Repetir smoke E2E completo y guardar logs, capturas, exportaciones, IDs de
+  operación y resultados de accesibilidad.
+- Ejecutar `pnpm quality`, `pnpm build`, tests unitarios/integración y E2E
+  autenticado; verificar rutas, idiomas, emails, 404, permisos y `no-store`.
+- Verificar Preview y producción solo con autorización, migración revisada y
+  evidencia remota; un build local no es un release.
+- Publicar límites: hardware fuera, VERI*FACTU test/prod, mensajería, soporte,
+  recuperación y formato de exportación.
+- Decidir `GO`, `GO limitado` o `NO-GO` según la matriz de gates.
+
+Salida: release candidate vendible para el segmento definido, con pendientes
+externos y rollback/soporte documentados.
+
+## Matriz de gates y evidencias
+
+| Gate | Tipo    | Requisito                                      | Evidencia de cierre               | Bloquea           |
+| ---- | ------- | ---------------------------------------------- | --------------------------------- | ----------------- |
+| I1   | Interno | Activación y carta/turnos configurables        | E2E aislado + artefactos          | Piloto            |
+| I2   | Interno | Reserva-sala-TPV-cocina-caja-fichaje           | Smoke sin duplicados              | Venta limitada    |
+| I3   | Interno | RLS, idempotencia, auditoría y restore         | Suite aislada + restore           | Datos reales      |
+| I4   | Interno | Exportaciones y accesibilidad                  | Fixtures, CSV/JSON, revisión AA   | Piloto            |
+| X1   | Externo | Asesoría fiscal: IVA, series, VERI*FACTU, AEAT | Aprobación escrita                | Fiscalidad prod   |
+| X2   | Externo | Asesoría laboral: jornada y conservación       | Criterio escrito                  | Fichaje comercial |
+| X3   | Externo | Privacidad, retención y anonimización          | Política aprobada/publicada       | Escala            |
+| X4   | Externo | Piloto independiente                           | Acta de dos servicios             | GO general        |
+| X5   | Externo | Supabase remoto autorizado                     | Migraciones, RLS y logs remotos   | Producción        |
+| X6   | Externo | Proveedor + consentimiento SMS/WhatsApp        | Configuración + entrega           | SMS/WhatsApp      |
+| X7   | Externo | Certificación local del restaurante            | Fiscal, certificado y responsable | VERI*FACTU prod   |
+
+Los gates X no se cierran con mocks, tests locales, una Preview, una migración
+existente ni una pantalla funcional. Si falla uno, queda `bloqueado` con causa,
+propietario y siguiente acción; no se rebaja silenciosamente el alcance.
+
+## Backlog priorizado
+
+- [~] **P0.1 Activación:** onboarding base y equipo disponibles; falta recorrido
+  único con turnos, zonas, carta, impuestos y primer servicio.
+- [ ] **P0.2 Reservas internas:** turnos, reglas, bloques, agenda y motor único.
+- [ ] **P0.3 Flujo diario:** smoke reserva → sala → TPV → cocina → cobro → caja.
+- [ ] **P0.4 Seguridad:** RLS, carreras, idempotencia, auditoría y restore aislado.
+- [ ] **P1.1 Sala/cocina:** Ahora, KDS completo, handover y tablet/móvil.
+- [~] **P1.2 Cuenta/caja:** dominio preparado; falta migración autorizada y humo.
+- [ ] **P1.3 Fichaje/propinas:** cierre laboral, reparto por tiempo y exportación.
+- [ ] **P1.4 Fiscalidad:** VERI*FACTU E2E en test; prod solo tras X1/X7.
+- [ ] **P1.5 Privacidad/exportaciones:** retención, anonimización y formatos.
+- [~] **P2.1 Importación:** CSV base; faltan productos, modificadores, atomicidad
+  y prueba integrada.
+- [~] **P2.2 Reserva pública:** flujo y emails implementados; faltan humo,
+  retención/privacidad y validación remota.
+- [ ] **P2.3 Comunicaciones:** rebotes y reenvío manual; SMS/WhatsApp tras X6.
+
+## Definition of Done
+
+El plan termina cuando un restaurante piloto completa dos servicios controlados
+desde la reserva hasta el cierre de caja, fichaje y exportación, sin P0/P1
+abiertos, con permisos y auditoría demostrados, accesibilidad revisada,
+recuperación ensayada y gates externos registrados por separado. La aprobación
+fiscal, laboral, de privacidad, del piloto y del Supabase remoto debe figurar
+como evidencia independiente.

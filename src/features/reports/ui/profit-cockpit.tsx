@@ -1,13 +1,7 @@
-import { Card, CardContent, CardHeader, CardTitle, MetricCard } from '@doscientos/ui'
+import { Button, Card, CardContent, CardHeader, CardTitle, MetricCard } from '@doscientos/ui'
 import { AlertTriangle, CheckCircle2, Euro, Scale } from 'lucide-react'
-import { useState } from 'react'
 
-import {
-  answerOperationsQuestion,
-  decideRecommendation,
-  explainProfitability,
-  type listRecommendationDecisions,
-} from '@/features/ai-operations'
+import { decideRecommendation, type listRecommendationDecisions } from '@/features/ai-operations'
 import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
 
 import { exportSalesReportCsv, type getSalesReport } from '../application/reports'
@@ -29,19 +23,6 @@ export function ProfitCockpit({
   const reload = useLoaderReload()
   const euro = (cents: number) => `${(cents / 100).toFixed(2)} €`
   const confidence = { high: 'Alta', medium: 'Media', low: 'Baja' }[profit.confidence]
-  const insight = explainProfitability({
-    period: `${profit.period.from} – ${profit.period.to}`,
-    salesCents: profit.netSalesCents,
-    marginPercent: profit.netSalesCents
-      ? (profit.estimatedContributionCents / profit.netSalesCents) * 100
-      : 0,
-    foodCostCents: profit.foodCostCents,
-    wasteCostCents: profit.wasteCostCents,
-    laborCostCents: profit.laborCostCents,
-    laborCostAvailable: profit.laborCostAvailable,
-  })
-  const [question, setQuestion] = useState('')
-  const [questionAnswer, setQuestionAnswer] = useState(insight)
   const decisions = Array.isArray(recommendationHistory)
     ? recommendationHistory
     : (recommendationHistory?.items ?? [])
@@ -57,30 +38,28 @@ export function ProfitCockpit({
     URL.revokeObjectURL(link.href)
   }
   return (
-    <section aria-labelledby="profit-cockpit-title" className="space-y-4">
-      <div>
-        <h2 className="text-xl font-semibold" id="profit-cockpit-title">
-          Profit Cockpit
-        </h2>
-        <p className="text-muted-foreground text-sm">
-          Dónde estás ganando y dónde se está escapando el margen.
-        </p>
+    <section aria-labelledby="profit-cockpit-title" className="space-y-3">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2 className="text-xl font-semibold" id="profit-cockpit-title">
+            Rentabilidad
+          </h2>
+          <p className="text-muted-foreground text-sm">
+            Dónde estás ganando y dónde se está escapando el margen.
+          </p>
+        </div>
         {tenantId && venueId ? (
-          <button
-            className="mt-2 rounded-md border px-3 py-2 text-sm"
-            onClick={() => void downloadCsv()}
-            type="button"
-          >
+          <Button onClick={() => void downloadCsv()} size="sm" type="button" variant="outline">
             Descargar CSV para gestoría
-          </button>
+          </Button>
         ) : null}
       </div>
       {decisions.length ? (
         <Card>
-          <CardHeader>
+          <CardHeader className="px-4 py-3">
             <CardTitle>Decisiones recientes</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2 text-sm">
+          <CardContent className="space-y-2 px-4 pb-4 text-sm">
             {decisions.map((decision) => (
               <div
                 className="flex flex-wrap justify-between gap-2 border-b pb-2 last:border-0"
@@ -102,7 +81,7 @@ export function ProfitCockpit({
           </CardContent>
         </Card>
       ) : null}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           description="Ventas netas del periodo"
           icon={<Euro />}
@@ -136,10 +115,10 @@ export function ProfitCockpit({
         />
       </div>
       <Card>
-        <CardHeader>
+        <CardHeader className="px-4 py-3">
           <CardTitle>Prioridades económicas</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-3 px-4 pb-4">
           <p className="text-muted-foreground text-xs">
             Confianza del cálculo: {confidence}. El periodo y los costes usados son trazables en el
             informe.
@@ -157,10 +136,9 @@ export function ProfitCockpit({
                   <br />
                   <span className="text-muted-foreground">{recommendation.detail}</span>
                   {tenantId && venueId && recommendation.kind !== 'healthy' && (
-                    <span className="mt-2 flex gap-2">
+                    <span className="mt-2 flex flex-wrap gap-2">
                       {(['accepted', 'ignored', 'snoozed'] as const).map((status) => (
-                        <button
-                          className="rounded border px-2 py-1 text-xs"
+                        <Button
                           key={status}
                           onClick={() => {
                             void decideRecommendation({
@@ -177,66 +155,21 @@ export function ProfitCockpit({
                               },
                             }).then(() => reload())
                           }}
+                          size="xs"
                           type="button"
+                          variant={status === 'accepted' ? 'default' : 'outline'}
                         >
                           {status === 'accepted'
                             ? 'Aceptar'
                             : status === 'ignored'
                               ? 'Ignorar'
                               : 'Posponer'}
-                        </button>
+                        </Button>
                       ))}
                     </span>
                   )}
                 </span>
               </li>
-            ))}
-          </ul>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle>Lectura de dirección</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <div className="flex gap-2">
-            <input
-              aria-label="Pregunta sobre el periodo"
-              className="border-input min-w-0 flex-1 rounded-md border px-3 py-2 text-sm"
-              onChange={(event) => setQuestion(event.target.value)}
-              placeholder="¿Por qué ha bajado el margen?"
-              value={question}
-            />
-            <button
-              className="bg-primary text-primary-foreground rounded-md px-3 py-2 text-sm"
-              onClick={() =>
-                setQuestionAnswer(
-                  answerOperationsQuestion(question, {
-                    period: `${profit.period.from} – ${profit.period.to}`,
-                    salesCents: profit.netSalesCents,
-                    marginPercent: profit.netSalesCents
-                      ? (profit.estimatedContributionCents / profit.netSalesCents) * 100
-                      : 0,
-                    foodCostCents: profit.foodCostCents,
-                    wasteCostCents: profit.wasteCostCents,
-                    laborCostCents: profit.laborCostCents,
-                    laborCostAvailable: profit.laborCostAvailable,
-                  }),
-                )
-              }
-              type="button"
-            >
-              Consultar
-            </button>
-          </div>
-          <p className="text-sm">{questionAnswer.answer}</p>
-          <p className="text-muted-foreground text-xs">
-            Periodo: {questionAnswer.period} · Confianza: {questionAnswer.confidence}. Fuentes:{' '}
-            {questionAnswer.sources.join(', ')}.
-          </p>
-          <ul className="list-disc pl-5 text-sm">
-            {questionAnswer.actions.map((action) => (
-              <li key={action}>{action}</li>
             ))}
           </ul>
         </CardContent>

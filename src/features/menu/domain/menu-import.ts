@@ -5,6 +5,9 @@ export interface MenuImportRow {
   priceCents: number
   sku?: string
   vatRateBps: number
+  modifierGroup?: string
+  modifierName?: string
+  modifierPriceDeltaCents?: number
 }
 
 export interface MenuImportError {
@@ -57,11 +60,14 @@ export function previewMenuCsv(csv: string): MenuImportPreview {
   if (lines.length === 0) return { errors: [{ message: 'empty_file', row: 1 }], rows: [] }
   const firstLine = lines[0] ?? ''
   const delimiter = firstLine.includes(';') ? ';' : ','
-  const headers = parseCsvLine(firstLine, delimiter).map((header) => header.toLowerCase())
+  const headers = parseCsvLine(firstLine, delimiter).map((header) => header.trim().toLowerCase())
   const required = ['categoria', 'nombre', 'precio', 'iva']
   const missing = required.filter((header) => !headers.includes(header))
   if (missing.length)
-    return { errors: [{ message: `missing_columns:${missing.join(',')}`, row: 1 }], rows: [] }
+    return {
+      errors: [{ message: `missing_columns:${missing.join(',')}`, row: 1 }],
+      rows: [],
+    }
   const index = (name: string) => headers.indexOf(name)
   const rows: MenuImportRow[] = []
   const errors: MenuImportError[] = []
@@ -73,6 +79,10 @@ export function previewMenuCsv(csv: string): MenuImportPreview {
       const category = cells[index('categoria')]?.trim()
       const nameEs = cells[index('nombre')]?.trim()
       const sku = cells[index('sku')]?.trim() || undefined
+      const modifierGroup = cells[index('grupo_modificador')]?.trim() || undefined
+      const modifierName = cells[index('modificador')]?.trim() || undefined
+      if ((modifierGroup && !modifierName) || (!modifierGroup && modifierName))
+        throw new Error('modifier_group_and_name_required')
       if (!category || !nameEs) throw new Error('category_and_name_required')
       if (sku && skus.has(sku)) throw new Error('duplicate_sku')
       const price = numberValue(cells[index('precio')] ?? '', row, 'price')
@@ -88,9 +98,20 @@ export function previewMenuCsv(csv: string): MenuImportPreview {
       const descriptionEs = cells[index('descripcion')]?.trim()
       if (descriptionEs) parsedRow.descriptionEs = descriptionEs
       if (sku) parsedRow.sku = sku
+      if (modifierGroup && modifierName) {
+        parsedRow.modifierGroup = modifierGroup
+        parsedRow.modifierName = modifierName
+        const supplement = cells[index('suplemento')]?.trim()
+        parsedRow.modifierPriceDeltaCents = supplement
+          ? Math.round(numberValue(supplement, row, 'modifier_price') * 100)
+          : 0
+      }
       rows.push(parsedRow)
     } catch (error) {
-      errors.push({ message: error instanceof Error ? error.message : 'invalid_row', row })
+      errors.push({
+        message: error instanceof Error ? error.message : 'invalid_row',
+        row,
+      })
     }
   }
   return { errors, rows }

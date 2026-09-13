@@ -60,6 +60,13 @@ export interface MenuSection {
   items: MenuItem[]
 }
 
+export interface MenuSectionFilters {
+  isActive?: boolean | undefined
+  kitchenStation?: KitchenStation | undefined
+  locale: Locale
+  query: string
+}
+
 /** Active categories ordered by position and name, each with its items by name. */
 export function buildMenuSections({
   categories,
@@ -86,6 +93,34 @@ export function buildMenuSections({
         localizedText(left.nameI18n, locale).localeCompare(localizedText(right.nameI18n, locale)),
       ),
   }))
+}
+
+/** Filters visible menu sections without losing the category context of a matching dish. */
+export function filterMenuSections(
+  sections: readonly MenuSection[],
+  { isActive, kitchenStation, locale, query }: MenuSectionFilters,
+): MenuSection[] {
+  const normalizedQuery = query.trim().toLocaleLowerCase(locale)
+  const hasItemFilters = isActive !== undefined || kitchenStation !== undefined
+
+  return sections.flatMap((section) => {
+    const categoryMatches = localizedText(section.category.nameI18n, locale)
+      .toLocaleLowerCase(locale)
+      .includes(normalizedQuery)
+    const items = section.items.filter((item) => {
+      const itemMatches = localizedText(item.nameI18n, locale)
+        .toLocaleLowerCase(locale)
+        .includes(normalizedQuery)
+      return (
+        (categoryMatches || itemMatches) &&
+        (isActive === undefined || item.isActive === isActive) &&
+        (kitchenStation === undefined || (item.kitchenStation ?? 'general') === kitchenStation)
+      )
+    })
+    const keepEmptyCategory = Boolean(normalizedQuery) && categoryMatches && !hasItemFilters
+
+    return items.length > 0 || keepEmptyCategory ? [{ ...section, items }] : []
+  })
 }
 
 /** VAT rates are stored as basis points: 1000 bps → "10 %", 550 bps → "5,5 %". */

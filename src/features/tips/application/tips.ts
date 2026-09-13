@@ -28,7 +28,10 @@ export const getTipsOverview = createServerFn({ method: 'GET' })
     const [entries, periods, auditEvents] = await Promise.all([
       db
         .from('tip_pool_entries')
-        .select('id, tip_date, amount_cents, note, created_by, created_at', { count: 'exact' })
+        .select(
+          'id, tip_date, amount_cents, note, created_by, created_at, paid_at, paid_period_id',
+          { count: 'exact' },
+        )
         .eq('tenant_id', data.tenantId)
         .eq('venue_id', data.venueId)
         .order('tip_date', { ascending: false })
@@ -128,7 +131,7 @@ export const closeTipsPeriod = createServerFn({ method: 'POST' })
     const [entries, periods, members, profiles, events] = await Promise.all([
       db
         .from('tip_pool_entries')
-        .select('tip_date, amount_cents')
+        .select('id, tip_date, amount_cents, paid_at, paid_period_id')
         .eq('tenant_id', data.tenantId)
         .eq('venue_id', data.venueId)
         .gte('tip_date', data.from)
@@ -157,6 +160,7 @@ export const closeTipsPeriod = createServerFn({ method: 'POST' })
       throw new Error('tips_close_load_failed')
     const openEntries = (entries.data ?? []).filter(
       (entry) =>
+        !entry.paid_at &&
         !(periods.data ?? []).some(
           (period) => entry.tip_date >= period.from_date && entry.tip_date <= period.to_date,
         ),
@@ -179,14 +183,33 @@ export const closeTipsPeriod = createServerFn({ method: 'POST' })
         minutes: workedMinutes(byEmployee.get(m.user_id as string) ?? []),
       })),
     )
-    const { error } = await db.from('tip_pool_periods').insert({
-      tenant_id: data.tenantId,
-      venue_id: data.venueId,
-      from_date: data.from,
-      to_date: data.to,
-      total_cents: totalCents,
-      closed_by: context.tenantMembership.userId,
-    })
-    if (error) throw new Error(`tips_close_failed:${error.code}`)
-    return { totalCents, distribution }
+    const { data: period, error } = await db
+      .from('tip_pool_periods')
+      .insert({
+        tenant_id: data.tenantId,
+        venue_id: data.venueId,
+        from_date: data.from,
+        to_date: data.to,
+        total_cents: totalCents,
+        closed_by: context.tenantMembership.userId,
+      })
+      .select('id')
+      .single()
+    if (error || !period) throw new Error(`tips_close_failed:${error?.code ?? 'unknown'}`)
+    const { error: paidError } = await db
+      .from('tip_pool_entries')
+      .update({ paid_at: new Date().toISOString(), paid_period_id: period.id })
+      .eq('tenant_id', data.tenantId)
+      .eq('venue_id', data.venueId)
+      .gte('tip_date', data.from)
+      .lte('tip_date', data.to)
+      .is('paid_at', null)
+    if (paidError) throw new Error(`tips_mark_paid_failed:${paidError.code}`)
+    return {
+      totalCents,
+      distribution,
+      skippedPaidDates: (entries.data ?? [])
+        .filter((entry) => entry.paid_at)
+        .map((entry) => entry.tip_date),
+    }
   })

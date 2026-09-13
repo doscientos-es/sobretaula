@@ -42,6 +42,14 @@
   background: var(--background);
 }
 
+/* Keep generic borders as quiet as the card surfaces. Explicit border-color
+ * utilities (for focus, validation and status states) still take precedence. */
+*,
+*::before,
+*::after {
+  border-color: var(--border);
+}
+
 body {
   min-width: 320px;
   min-height: 100vh;

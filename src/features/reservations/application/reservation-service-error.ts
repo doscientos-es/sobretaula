@@ -23,6 +23,8 @@ export function reservationServiceErrorMessage(error: unknown): string {
 
   if (status === 401 || message.includes('Unauthenticated'))
     return 'Tu sesión ha caducado. Inicia sesión de nuevo antes de configurar el turno.'
+  if (status === 402 || message.includes('Payment method required'))
+    return 'El restaurante todavía no está activo. Completa la configuración de facturación antes de crear turnos.'
   if (status === 403 || message.includes('Forbidden') || message.includes(':42501'))
     return 'Solo las personas propietarias o responsables pueden configurar turnos. Pídeles acceso o que creen el turno.'
   if (message.includes('reservation_service_create_failed:23505'))

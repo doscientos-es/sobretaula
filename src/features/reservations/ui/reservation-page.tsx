@@ -53,6 +53,8 @@ export function ReservationPage({
   locale,
   timezone,
   terms,
+  agendaSearch,
+  onAgendaSearchChange,
 }: {
   services: readonly ReservationService[]
   tenantId: string
@@ -60,6 +62,8 @@ export function ReservationPage({
   locale: Locale
   timezone: string
   terms: readonly ReservationTermsVersion[]
+  agendaSearch?: ReservationAgendaSearch
+  onAgendaSearchChange?: (search: ReservationAgendaSearch) => void
 }) {
   const feedback = useFormFeedback()
   const [serviceName, setServiceName] = useState('Comida')
@@ -83,6 +87,7 @@ export function ReservationPage({
   )
   const [reservationFileName, setReservationFileName] = useState('')
   const [isDraggingReservations, setIsDraggingReservations] = useState(false)
+  const [agendaRefreshToken, setAgendaRefreshToken] = useState(0)
 
   async function loadReservationFile(file: File | undefined) {
     if (!file) return
@@ -196,7 +201,8 @@ export function ReservationPage({
       setGuestName('')
       setGuestPhone('')
       setStartsAt('')
-      reload()
+      setAgendaRefreshToken((value) => value + 1)
+      onAgendaSearchChange?.({ date: startsAt.slice(0, 10), query: '', status: 'all' })
     } catch {
       feedback.setError('No hay disponibilidad para esta petición.')
     }
@@ -215,148 +221,169 @@ export function ReservationPage({
           </PageHeaderDescription>
         </div>
       </PageHeader>
-      <Card className="max-w-xl">
-        <CardHeader>
-          <CardTitle>Condiciones de reserva</CardTitle>
-          <CardDescription>
-            Escribe las normas que verá una persona antes de confirmar una reserva: cancelaciones,
-            retrasos, grupos o pagos. Al publicar se aplicarán a las próximas reservas; las ya
-            aceptadas conservarán la versión que aceptaron.
-          </CardDescription>
-          <CardDescription>
-            {terms[0]
-              ? `Versión activa: ${terms[0].version}. Publica de nuevo solo si necesitas cambiar las condiciones.`
-              : 'Aún no hay condiciones publicadas. Completa el título y el texto para activarlas en las reservas online.'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form className="grid gap-3" onSubmit={(event) => void publishTerms(event)}>
-            <Field>
-              <FieldLabel htmlFor="reservation-terms-title">Título</FieldLabel>
-              <Input
-                id="reservation-terms-title"
-                onChange={(event) => setTermsTitle(event.target.value)}
-                required
-                value={termsTitle}
+      {services.length > 0 ? (
+        <ReservationAgendaCard
+          {...(agendaSearch ? { agendaSearch } : {})}
+          locale={locale}
+          {...(onAgendaSearchChange ? { onSearchChange: onAgendaSearchChange } : {})}
+          refreshToken={agendaRefreshToken}
+          tenantId={tenantId}
+          timezone={timezone}
+          venueId={venueId}
+        />
+      ) : null}
+      <details className="group">
+        <summary className="text-muted-foreground hover:text-foreground flex cursor-pointer list-none items-center gap-2 text-sm font-medium [&::-webkit-details-marker]:hidden">
+          <span className="text-lg leading-none transition-transform group-open:rotate-45">+</span>
+          Configuración secundaria: condiciones, importación y turnos
+        </summary>
+        <div className="mt-4 grid gap-6">
+          <Card className="max-w-xl">
+            <CardHeader>
+              <CardTitle>Condiciones de reserva</CardTitle>
+              <CardDescription>
+                Escribe las normas que verá una persona antes de confirmar una reserva:
+                cancelaciones, retrasos, grupos o pagos. Al publicar se aplicarán a las próximas
+                reservas; las ya aceptadas conservarán la versión que aceptaron.
+              </CardDescription>
+              <CardDescription>
+                {terms[0]
+                  ? `Versión activa: ${terms[0].version}. Publica de nuevo solo si necesitas cambiar las condiciones.`
+                  : 'Aún no hay condiciones publicadas. Completa el título y el texto para activarlas en las reservas online.'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form className="grid gap-3" onSubmit={(event) => void publishTerms(event)}>
+                <Field>
+                  <FieldLabel htmlFor="reservation-terms-title">Título</FieldLabel>
+                  <Input
+                    id="reservation-terms-title"
+                    onChange={(event) => setTermsTitle(event.target.value)}
+                    required
+                    value={termsTitle}
+                  />
+                  <FieldDescription>
+                    Se mostrará como encabezado de las condiciones.
+                  </FieldDescription>
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="reservation-terms-body">Texto</FieldLabel>
+                  <Textarea
+                    className="min-h-28"
+                    id="reservation-terms-body"
+                    onChange={(event) => setTermsBody(event.target.value)}
+                    required
+                    value={termsBody}
+                  />
+                  <FieldDescription>
+                    Incluye solo normas que apliquéis realmente. Puedes modificarlo más adelante:
+                    cada publicación crea una nueva versión.
+                  </FieldDescription>
+                </Field>
+                <Button disabled={feedback.pending} type="submit">
+                  Publicar nueva versión
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+          <Card className="max-w-xl">
+            <CardHeader>
+              <CardTitle>Importar reservas futuras</CardTitle>
+              <CardDescription>
+                Suelta un CSV o selecciónalo. Se validará automáticamente y cada fila se comprobará
+                contra la disponibilidad real antes de crearla. Columnas: turno, fecha_hora y
+                comensales. Opcionales: nombre y telefono.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-3">
+              <label
+                aria-label="Seleccionar archivo CSV de reservas"
+                className={`grid min-h-24 cursor-pointer place-items-center rounded-lg border-2 border-dashed px-4 py-4 text-center text-sm ${isDraggingReservations ? 'border-primary bg-primary/10' : 'border-muted-foreground/30 hover:border-primary/60'}`}
+                onDragEnter={(event) => {
+                  event.preventDefault()
+                  setIsDraggingReservations(true)
+                }}
+                onDragLeave={(event) => {
+                  event.preventDefault()
+                  setIsDraggingReservations(false)
+                }}
+                onDragOver={(event) => event.preventDefault()}
+                onDrop={dropReservations}
+                htmlFor="reservation-csv-file"
+              >
+                <span>
+                  <strong>{reservationFileName || 'Suelta el CSV aquí'}</strong>
+                  <br />
+                  <span className="text-muted-foreground">
+                    {reservationFileName
+                      ? 'Archivo cargado · puedes reemplazarlo'
+                      : 'o haz clic para buscarlo'}
+                  </span>
+                </span>
+                <input
+                  accept=".csv,text/csv"
+                  aria-label="Archivo CSV de reservas"
+                  className="sr-only"
+                  id="reservation-csv-file"
+                  onChange={(event) => void loadReservationFile(event.target.files?.[0])}
+                  type="file"
+                />
+              </label>
+              <textarea
+                aria-label="CSV de reservas futuras"
+                className="min-h-24 w-full rounded-md border px-3 py-2 font-mono text-xs"
+                onChange={(event) => {
+                  setReservationCsv(event.target.value)
+                  setReservationFileName('')
+                  setReservationPreview(null)
+                }}
+                placeholder="turno;fecha_hora;comensales;nombre;telefono"
+                value={reservationCsv}
               />
-              <FieldDescription>Se mostrará como encabezado de las condiciones.</FieldDescription>
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="reservation-terms-body">Texto</FieldLabel>
-              <Textarea
-                className="min-h-28"
-                id="reservation-terms-body"
-                onChange={(event) => setTermsBody(event.target.value)}
-                required
-                value={termsBody}
-              />
-              <FieldDescription>
-                Incluye solo normas que apliquéis realmente. Puedes modificarlo más adelante: cada
-                publicación crea una nueva versión.
-              </FieldDescription>
-            </Field>
-            <Button disabled={feedback.pending} type="submit">
-              Publicar nueva versión
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-      <Card className="max-w-xl">
-        <CardHeader>
-          <CardTitle>Importar reservas futuras</CardTitle>
-          <CardDescription>
-            Suelta un CSV o selecciónalo. Se validará automáticamente y cada fila se comprobará
-            contra la disponibilidad real antes de crearla. Columnas: turno, fecha_hora y
-            comensales. Opcionales: nombre y telefono.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-3">
-          <label
-            aria-label="Seleccionar archivo CSV de reservas"
-            className={`grid min-h-24 cursor-pointer place-items-center rounded-lg border-2 border-dashed px-4 py-4 text-center text-sm ${isDraggingReservations ? 'border-primary bg-primary/10' : 'border-muted-foreground/30 hover:border-primary/60'}`}
-            onDragEnter={(event) => {
-              event.preventDefault()
-              setIsDraggingReservations(true)
-            }}
-            onDragLeave={(event) => {
-              event.preventDefault()
-              setIsDraggingReservations(false)
-            }}
-            onDragOver={(event) => event.preventDefault()}
-            onDrop={dropReservations}
-            htmlFor="reservation-csv-file"
-          >
-            <span>
-              <strong>{reservationFileName || 'Suelta el CSV aquí'}</strong>
-              <br />
-              <span className="text-muted-foreground">
-                {reservationFileName
-                  ? 'Archivo cargado · puedes reemplazarlo'
-                  : 'o haz clic para buscarlo'}
-              </span>
-            </span>
-            <input
-              accept=".csv,text/csv"
-              aria-label="Archivo CSV de reservas"
-              className="sr-only"
-              id="reservation-csv-file"
-              onChange={(event) => void loadReservationFile(event.target.files?.[0])}
-              type="file"
-            />
-          </label>
-          <textarea
-            aria-label="CSV de reservas futuras"
-            className="min-h-24 w-full rounded-md border px-3 py-2 font-mono text-xs"
-            onChange={(event) => {
-              setReservationCsv(event.target.value)
-              setReservationFileName('')
-              setReservationPreview(null)
-            }}
-            placeholder="turno;fecha_hora;comensales;nombre;telefono"
-            value={reservationCsv}
-          />
-          <div className="flex flex-wrap gap-2">
-            <Button
-              disabled={!reservationCsv.trim() || feedback.pending}
-              onClick={() => setReservationPreview(previewReservationCsv(reservationCsv))}
-              type="button"
-              variant="outline"
-            >
-              Validar CSV
-            </Button>
-            <Button
-              disabled={
-                !reservationPreview || reservationPreview.errors.length > 0 || feedback.pending
-              }
-              onClick={() => {
-                if (!reservationPreview || reservationPreview.errors.length) return
-                feedback.setPending()
-                void importReservationCsv({ data: { csv: reservationCsv, tenantId, venueId } })
-                  .then((result) => {
-                    feedback.setSuccess(`${result.imported} reservas importadas.`)
-                    setReservationCsv('')
-                    setReservationFileName('')
-                    setReservationPreview(null)
-                    reload()
-                  })
-                  .catch(() => feedback.setError('No se han podido importar las reservas.'))
-              }}
-              type="button"
-            >
-              Confirmar importación
-            </Button>
-          </div>
-          {reservationPreview ? (
-            <output className="text-sm">
-              {reservationPreview.rows.length} filas válidas · {reservationPreview.errors.length}{' '}
-              errores
-              {reservationPreview.errors.length
-                ? ` (${reservationPreview.errors.map((item) => `fila ${item.row}: ${item.message}`).join('; ')})`
-                : ''}
-            </output>
-          ) : null}
-        </CardContent>
-      </Card>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  disabled={!reservationCsv.trim() || feedback.pending}
+                  onClick={() => setReservationPreview(previewReservationCsv(reservationCsv))}
+                  type="button"
+                  variant="outline"
+                >
+                  Validar CSV
+                </Button>
+                <Button
+                  disabled={
+                    !reservationPreview || reservationPreview.errors.length > 0 || feedback.pending
+                  }
+                  onClick={() => {
+                    if (!reservationPreview || reservationPreview.errors.length) return
+                    feedback.setPending()
+                    void importReservationCsv({ data: { csv: reservationCsv, tenantId, venueId } })
+                      .then((result) => {
+                        feedback.setSuccess(`${result.imported} reservas importadas.`)
+                        setReservationCsv('')
+                        setReservationFileName('')
+                        setReservationPreview(null)
+                        reload()
+                      })
+                      .catch(() => feedback.setError('No se han podido importar las reservas.'))
+                  }}
+                  type="button"
+                >
+                  Confirmar importación
+                </Button>
+              </div>
+              {reservationPreview ? (
+                <output className="text-sm">
+                  {reservationPreview.rows.length} filas válidas ·{' '}
+                  {reservationPreview.errors.length} errores
+                  {reservationPreview.errors.length
+                    ? ` (${reservationPreview.errors.map((item) => `fila ${item.row}: ${item.message}`).join('; ')})`
+                    : ''}
+                </output>
+              ) : null}
+            </CardContent>
+          </Card>
+        </div>
+      </details>
       {services.length === 0 || editingServiceId ? (
         <Card className="max-w-xl">
           <CardHeader>
@@ -574,14 +601,14 @@ export function ReservationPage({
               </form>
             </CardContent>
           </Card>
-          <ReservationAgendaCard
-            locale={locale}
-            tenantId={tenantId}
-            timezone={timezone}
-            venueId={venueId}
-          />
         </>
       )}
     </section>
   )
+}
+
+export interface ReservationAgendaSearch {
+  date?: string
+  query?: string
+  status?: 'all' | 'pending' | 'confirmed' | 'seated' | 'cancelled' | 'no_show'
 }

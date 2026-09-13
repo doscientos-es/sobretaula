@@ -6,10 +6,10 @@ export function ProductSalesSummary({
 }) {
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="px-4 py-3">
         <CardTitle>Productos vendidos</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-4 pb-4">
         <ul className="space-y-2 text-sm">
           {products.map((product) => (
             <li className="flex justify-between" key={product.name}>

@@ -265,20 +265,29 @@ export function TenantHomePage({
                     : 'Mesas, zonas, productos y precios para el equipo.'}
                 </p>
                 {venues[0] && (
-                  <Link
-                    className="text-primary mt-2 inline-block text-xs font-medium underline underline-offset-4"
-                    params={{ slug: tenant.slug, venue: venues[0].slug }}
-                    to="/t/$slug/l/$venue/plano"
-                  >
-                    Abrir plano
-                  </Link>
+                  <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
+                    <Link
+                      className="text-primary inline-block text-xs font-medium underline underline-offset-4"
+                      params={{ slug: tenant.slug, venue: venues[0].slug }}
+                      to="/t/$slug/l/$venue/plano"
+                    >
+                      Abrir plano
+                    </Link>
+                    <Link
+                      className="text-primary inline-block text-xs font-medium underline underline-offset-4"
+                      params={{ slug: tenant.slug }}
+                      to="/t/$slug/carta"
+                    >
+                      Preparar carta
+                    </Link>
+                  </div>
                 )}
               </div>
             </li>
             <li className="border-border/70 bg-surface-subtle flex items-start gap-2.5 rounded-xl border px-3 py-2.5 shadow-[var(--ui-shadow-hairline)]">
               <span
                 aria-hidden="true"
-                className="bg-primary/10 text-primary grid size-6 shrink-0 place-items-center rounded-full text-xs font-semibold"
+                className={`${setupStatus.hasReservations ? 'bg-success/15 text-success' : 'bg-primary/10 text-primary'} grid size-6 shrink-0 place-items-center rounded-full text-xs font-semibold`}
               >
                 {setupStatus.hasReservations ? '✓' : '3'}
               </span>
@@ -303,7 +312,7 @@ export function TenantHomePage({
             <li className="border-border/70 bg-surface-subtle flex items-start gap-2.5 rounded-xl border px-3 py-2.5 shadow-[var(--ui-shadow-hairline)]">
               <span
                 aria-hidden="true"
-                className="bg-primary/10 text-primary grid size-6 shrink-0 place-items-center rounded-full text-xs font-semibold"
+                className={`${setupStatus.hasTeam ? 'bg-success/15 text-success' : 'bg-primary/10 text-primary'} grid size-6 shrink-0 place-items-center rounded-full text-xs font-semibold`}
               >
                 {setupStatus.hasTeam ? '✓' : '4'}
               </span>

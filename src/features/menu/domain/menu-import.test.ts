@@ -3,6 +3,21 @@ import { describe, expect, it } from 'vitest'
 import { previewMenuCsv } from './menu-import'
 
 describe('previewMenuCsv', () => {
+  it('parses optional modifier columns and rejects incomplete pairs', () => {
+    const valid = previewMenuCsv(
+      'categoria;nombre;precio;iva;grupo_modificador;modificador;suplemento\nEntrantes;Carne;12;10;Punto;Poco hecho;1,5',
+    )
+    expect(valid.errors).toEqual([])
+    expect(valid.rows[0]).toMatchObject({
+      modifierGroup: 'Punto',
+      modifierName: 'Poco hecho',
+      modifierPriceDeltaCents: 150,
+    })
+    expect(
+      previewMenuCsv('categoria;nombre;precio;iva;grupo_modificador\nEntrantes;Carne;12;10;Punto')
+        .errors[0]?.message,
+    ).toBe('modifier_group_and_name_required')
+  })
   it('supports semicolon exports, decimal commas and quoted cells', () => {
     const result = previewMenuCsv(
       'categoria;nombre;precio;iva;descripcion\nEntrantes;"Croquetas; caseras";8,5;10;Para compartir',

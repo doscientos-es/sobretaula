@@ -4,10 +4,15 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  Button,
   PageHeader,
   PageHeaderDescription,
   PageHeaderTitle,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectList,
+  SelectTrigger,
+  SelectValue,
   Table,
   TableBody,
   TableHead,
@@ -19,11 +24,16 @@ import { useState } from 'react'
 
 import type { Locale } from '@/shared/lib/i18n/locale'
 import { createTranslator } from '@/shared/lib/i18n/messages'
-import { parsePriceToCents } from '@/shared/lib/money/money'
 import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
 
-import { createMenuItem, type MenuCatalog } from '../application/menu'
-import { buildMenuSections, localizedText } from '../domain/menu'
+import type { MenuCatalog } from '../application/menu'
+import {
+  buildMenuSections,
+  filterMenuSections,
+  localizedText,
+  type KitchenStation,
+} from '../domain/menu'
+import { InlineMenuItemRow } from './inline-menu-item-row'
 import { MenuForms } from './menu-forms'
 import { MenuItemRow } from './menu-item-row'
 
@@ -43,8 +53,24 @@ export function MenuPage({
     items: catalog.items,
     locale,
   })
-
   const reload = useLoaderReload()
+  const [query, setQuery] = useState('')
+  const [visibility, setVisibility] = useState<'all' | 'active' | 'inactive'>('all')
+  const [station, setStation] = useState<KitchenStation | 'all'>('all')
+  const visibleSections = filterMenuSections(sections, {
+    isActive: visibility === 'all' ? undefined : visibility === 'active',
+    kitchenStation: station === 'all' ? undefined : station,
+    locale,
+    query,
+  })
+  const visibleItems = visibleSections.reduce((count, section) => count + section.items.length, 0)
+  const hasFilters = Boolean(query.trim()) || visibility !== 'all' || station !== 'all'
+
+  function clearFilters() {
+    setQuery('')
+    setVisibility('all')
+    setStation('all')
+  }
 
   return (
     <section className="space-y-6">
@@ -55,139 +81,143 @@ export function MenuPage({
             Mantén tus platos, precios e IVA preparados para que sala pueda cobrar con fluidez.
           </PageHeaderDescription>
         </div>
+        <MenuForms categories={catalog.categories} onDone={reload} tenantId={tenantId} />
       </PageHeader>
-      <div className="grid gap-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Buscar y filtrar</CardTitle>
+          <CardDescription>
+            {hasFilters
+              ? `${visibleItems} ${visibleItems === 1 ? 'plato encontrado' : 'platos encontrados'}`
+              : `${catalog.items.length} ${catalog.items.length === 1 ? 'plato en carta' : 'platos en carta'}`}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-3 md:grid-cols-3">
+          <Input
+            aria-label="Buscar platos o categorías"
+            className="md:col-span-1"
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Buscar platos o categorías…"
+            value={query}
+          />
+          <Select
+            aria-label="Filtrar por visibilidad"
+            onSelectionChange={(key) => setVisibility(String(key) as typeof visibility)}
+            selectedKey={visibility}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectList>
+                <SelectItem id="all">Todos los platos</SelectItem>
+                <SelectItem id="active">A la venta</SelectItem>
+                <SelectItem id="inactive">Retirados</SelectItem>
+              </SelectList>
+            </SelectContent>
+          </Select>
+          <Select
+            aria-label="Filtrar por estación"
+            onSelectionChange={(key) => setStation(String(key) as typeof station)}
+            selectedKey={station}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectList>
+                <SelectItem id="all">Todas las estaciones</SelectItem>
+                <SelectItem id="general">General</SelectItem>
+                <SelectItem id="hot">Caliente</SelectItem>
+                <SelectItem id="cold">Frío</SelectItem>
+                <SelectItem id="bar">Barra</SelectItem>
+                <SelectItem id="dessert">Postres</SelectItem>
+              </SelectList>
+            </SelectContent>
+          </Select>
+          {hasFilters ? (
+            <button
+              className="text-primary w-fit text-sm font-medium hover:underline md:col-start-3"
+              onClick={clearFilters}
+              type="button"
+            >
+              Limpiar filtros
+            </button>
+          ) : null}
+        </CardContent>
+      </Card>
+      {sections.length === 0 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>La carta está vacía</CardTitle>
+            <CardDescription>
+              Crea la primera categoría y después añade sus platos desde la propia categoría.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      ) : visibleSections.length === 0 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>No hay coincidencias</CardTitle>
+            <CardDescription>Prueba a cambiar la búsqueda o a limpiar los filtros.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <button
+              className="text-primary text-sm font-medium hover:underline"
+              onClick={clearFilters}
+              type="button"
+            >
+              Limpiar filtros
+            </button>
+          </CardContent>
+        </Card>
+      ) : (
         <div className="space-y-6">
-          {sections.length === 0 ? (
-            <Card>
+          {visibleSections.map((section) => (
+            <Card key={section.category.id}>
               <CardHeader>
-                <CardTitle>La carta está vacía</CardTitle>
+                <CardTitle>{localizedText(section.category.nameI18n, locale)}</CardTitle>
                 <CardDescription>
-                  Crea la primera categoría con el formulario y después añade sus platos.
+                  {section.items.length === 1 ? '1 plato' : `${section.items.length} platos`}
                 </CardDescription>
               </CardHeader>
-            </Card>
-          ) : (
-            sections.map((section) => (
-              <Card key={section.category.id}>
-                <CardHeader>
-                  <CardTitle>{localizedText(section.category.nameI18n, locale)}</CardTitle>
-                  <CardDescription>
-                    {section.items.length === 1 ? '1 plato' : `${section.items.length} platos`}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Plato</TableHead>
-                        <TableHead>Precio</TableHead>
-                        <TableHead>IVA</TableHead>
-                        <TableHead>Preparación</TableHead>
-                        <TableHead>Estación</TableHead>
-                        <TableHead>
-                          <span className="sr-only">Acciones</span>
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {section.items.map((item) => (
-                        <MenuItemRow
-                          item={item}
-                          key={item.id}
-                          locale={locale}
-                          onDone={reload}
-                          tenantId={tenantId}
-                        />
-                      ))}
-                      <InlineMenuItemRow
-                        categoryId={section.category.id}
+              <CardContent className="overflow-x-auto">
+                <Table className="min-w-[55rem]">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Plato</TableHead>
+                      <TableHead>Precio</TableHead>
+                      <TableHead>IVA</TableHead>
+                      <TableHead>Preparación</TableHead>
+                      <TableHead>Estación</TableHead>
+                      <TableHead>
+                        <span className="sr-only">Acciones</span>
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {section.items.map((item) => (
+                      <MenuItemRow
+                        item={item}
+                        key={item.id}
+                        locale={locale}
                         onDone={reload}
                         tenantId={tenantId}
                       />
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            ))
-          )}
+                    ))}
+                    <InlineMenuItemRow
+                      categoryId={section.category.id}
+                      locale={locale}
+                      onDone={reload}
+                      tenantId={tenantId}
+                    />
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          ))}
         </div>
-        <MenuForms
-          categories={catalog.categories}
-          locale={locale}
-          onDone={reload}
-          tenantId={tenantId}
-        />
-      </div>
+      )}
     </section>
-  )
-}
-
-function InlineMenuItemRow({
-  categoryId,
-  onDone,
-  tenantId,
-}: {
-  categoryId: string
-  onDone: () => void
-  tenantId: string
-}) {
-  const [name, setName] = useState('')
-  const [price, setPrice] = useState('')
-  const [editing, setEditing] = useState(false)
-  const [error, setError] = useState('')
-  async function save() {
-    const priceCents = parsePriceToCents(price)
-    if (!name.trim() || priceCents === null) {
-      setError('Indica nombre y precio.')
-      return
-    }
-    try {
-      await createMenuItem({
-        data: { categoryId, nameEs: name.trim(), priceCents, tenantId, vatRateBps: 1000 },
-      })
-      setName('')
-      setPrice('')
-      setEditing(false)
-      setError('')
-      onDone()
-    } catch {
-      setError('No se ha podido guardar el plato.')
-    }
-  }
-  return (
-    <TableRow className="bg-muted/20">
-      <TableCell colSpan={5}>
-        {editing ? (
-          <div className="flex flex-wrap items-center gap-2">
-            <Input
-              aria-label="Nombre del nuevo plato"
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Nombre del plato"
-              value={name}
-            />
-            <Input
-              aria-label="Precio del nuevo plato"
-              inputMode="decimal"
-              onChange={(e) => setPrice(e.target.value)}
-              placeholder="Precio"
-              value={price}
-            />
-            <Button onClick={() => void save()} size="sm" type="button">
-              Guardar
-            </Button>
-            <Button onClick={() => setEditing(false)} size="sm" type="button" variant="ghost">
-              Cancelar
-            </Button>
-            {error && <span className="text-destructive text-xs">{error}</span>}
-          </div>
-        ) : (
-          <Button onClick={() => setEditing(true)} size="sm" type="button" variant="outline">
-            + Añadir plato a esta categoría
-          </Button>
-        )}
-      </TableCell>
-      <TableCell />
-    </TableRow>
   )
 }
