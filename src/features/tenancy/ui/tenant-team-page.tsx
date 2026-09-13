@@ -117,7 +117,12 @@ export function TenantTeamPage({
 
     void run(async () => {
       const result = await inviteTenantMember({
-        data: { email: email.trim(), name: name.trim() || undefined, role, tenantId },
+        data: {
+          email: email.trim().toLowerCase(),
+          name: name.trim() || undefined,
+          role,
+          tenantId,
+        },
       })
       setName('')
       setEmail('')

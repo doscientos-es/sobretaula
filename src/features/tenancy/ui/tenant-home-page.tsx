@@ -213,6 +213,110 @@ export function TenantHomePage({
           ) : null}
         </CardContent>
       </Card>
+      <Card>
+        <CardHeader className="border-border/70 border-b">
+          <CardTitle>Primer servicio</CardTitle>
+          <p className="text-muted-foreground text-sm">
+            Completa estas acciones para dejar el restaurante preparado.
+          </p>
+        </CardHeader>
+        <CardContent>
+          <ol className="grid gap-3 sm:grid-cols-2">
+            <li className="flex items-start gap-3 rounded-lg border p-3">
+              <span
+                aria-hidden="true"
+                className="bg-success/15 text-success grid size-6 shrink-0 place-items-center rounded-full text-xs font-semibold"
+              >
+                {venues.length > 0 ? '✓' : '1'}
+              </span>
+              <div className="min-w-0">
+                <p className="text-sm font-medium">Crea tu primer local</p>
+                <p className="text-muted-foreground mt-1 text-xs">
+                  {venues.length > 0
+                    ? 'Ya hay un local creado.'
+                    : 'Necesario para configurar la sala.'}
+                </p>
+                {venues.length === 0 && (
+                  <Link
+                    className="text-primary mt-2 inline-block text-xs font-medium underline underline-offset-4"
+                    params={{ slug: tenant.slug }}
+                    to="/t/$slug/l/nuevo"
+                  >
+                    Crear local
+                  </Link>
+                )}
+              </div>
+            </li>
+            <li className="flex items-start gap-3 rounded-lg border p-3">
+              <span
+                aria-hidden="true"
+                className="bg-primary/10 text-primary grid size-6 shrink-0 place-items-center rounded-full text-xs font-semibold"
+              >
+                2
+              </span>
+              <div className="min-w-0">
+                <p className="text-sm font-medium">Prepara plano y carta</p>
+                <p className="text-muted-foreground mt-1 text-xs">
+                  Mesas, zonas, productos y precios para el equipo.
+                </p>
+                {venues[0] && (
+                  <Link
+                    className="text-primary mt-2 inline-block text-xs font-medium underline underline-offset-4"
+                    params={{ slug: tenant.slug, venue: venues[0].slug }}
+                    to="/t/$slug/l/$venue/plano"
+                  >
+                    Abrir plano
+                  </Link>
+                )}
+              </div>
+            </li>
+            <li className="flex items-start gap-3 rounded-lg border p-3">
+              <span
+                aria-hidden="true"
+                className="bg-primary/10 text-primary grid size-6 shrink-0 place-items-center rounded-full text-xs font-semibold"
+              >
+                3
+              </span>
+              <div className="min-w-0">
+                <p className="text-sm font-medium">Configura reservas</p>
+                <p className="text-muted-foreground mt-1 text-xs">
+                  Define turnos, capacidad y condiciones del restaurante.
+                </p>
+                {venues[0] && (
+                  <Link
+                    className="text-primary mt-2 inline-block text-xs font-medium underline underline-offset-4"
+                    params={{ slug: tenant.slug, venue: venues[0].slug }}
+                    to="/t/$slug/l/$venue/reservas"
+                  >
+                    Configurar reservas
+                  </Link>
+                )}
+              </div>
+            </li>
+            <li className="flex items-start gap-3 rounded-lg border p-3">
+              <span
+                aria-hidden="true"
+                className="bg-primary/10 text-primary grid size-6 shrink-0 place-items-center rounded-full text-xs font-semibold"
+              >
+                4
+              </span>
+              <div className="min-w-0">
+                <p className="text-sm font-medium">Invita al equipo</p>
+                <p className="text-muted-foreground mt-1 text-xs">
+                  Cada persona verá solo las acciones de su rol.
+                </p>
+                <Link
+                  className="text-primary mt-2 inline-block text-xs font-medium underline underline-offset-4"
+                  params={{ slug: tenant.slug }}
+                  to="/t/$slug/equipo"
+                >
+                  Gestionar equipo
+                </Link>
+              </div>
+            </li>
+          </ol>
+        </CardContent>
+      </Card>
       {venues[0] ? (
         <Card className="border-primary/20 bg-primary/5">
           <CardContent className="flex flex-wrap items-center justify-between gap-4 pt-6">

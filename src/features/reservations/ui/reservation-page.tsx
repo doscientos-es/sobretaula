@@ -58,6 +58,11 @@ export function ReservationPage({
   const feedback = useFormFeedback()
   const [serviceName, setServiceName] = useState('Comida')
   const [weekday, setWeekday] = useState(1)
+  const [serviceStartsAt, setServiceStartsAt] = useState('13:00')
+  const [serviceEndsAt, setServiceEndsAt] = useState('16:00')
+  const [serviceSlotMinutes, setServiceSlotMinutes] = useState(15)
+  const [serviceMaxCovers, setServiceMaxCovers] = useState(20)
+  const [serviceMaxReservations, setServiceMaxReservations] = useState(6)
   const [serviceId, setServiceId] = useState(services[0]?.id ?? '')
   const [guestName, setGuestName] = useState('')
   const [guestPhone, setGuestPhone] = useState('')
@@ -68,16 +73,24 @@ export function ReservationPage({
 
   async function configureService(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (serviceEndsAt <= serviceStartsAt) {
+      feedback.setError('La hora de cierre debe ser posterior a la de apertura.')
+      return
+    }
+    if (serviceSlotMinutes < 5 || serviceSlotMinutes > 120) {
+      feedback.setError('El intervalo debe estar entre 5 y 120 minutos.')
+      return
+    }
     feedback.setPending()
     try {
       await createReservationService({
         data: {
-          endsAtTime: '16:00',
-          maxCoversPerSlot: 20,
-          maxReservationsPerSlot: 6,
+          endsAtTime: serviceEndsAt,
+          maxCoversPerSlot: serviceMaxCovers,
+          maxReservationsPerSlot: serviceMaxReservations,
           name: serviceName,
-          slotMinutes: 15,
-          startsAtTime: '13:00',
+          slotMinutes: serviceSlotMinutes,
+          startsAtTime: serviceStartsAt,
           tenantId,
           venueId,
           weekday,
@@ -216,6 +229,66 @@ export function ReservationPage({
                   ))}
                 </select>
               </Field>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field>
+                  <FieldLabel htmlFor="service-starts-at">Apertura del turno</FieldLabel>
+                  <Input
+                    id="service-starts-at"
+                    onChange={(event) => setServiceStartsAt(event.target.value)}
+                    required
+                    type="time"
+                    value={serviceStartsAt}
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="service-ends-at">Cierre del turno</FieldLabel>
+                  <Input
+                    id="service-ends-at"
+                    onChange={(event) => setServiceEndsAt(event.target.value)}
+                    required
+                    type="time"
+                    value={serviceEndsAt}
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="service-slot-minutes">Intervalo entre reservas</FieldLabel>
+                  <Input
+                    id="service-slot-minutes"
+                    max={120}
+                    min={5}
+                    onChange={(event) => setServiceSlotMinutes(Number(event.target.value))}
+                    required
+                    type="number"
+                    value={serviceSlotMinutes}
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="service-max-covers">
+                    Cubiertos máximos por intervalo
+                  </FieldLabel>
+                  <Input
+                    id="service-max-covers"
+                    min={1}
+                    onChange={(event) => setServiceMaxCovers(Number(event.target.value))}
+                    required
+                    type="number"
+                    value={serviceMaxCovers}
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="service-max-reservations">
+                    Reservas máximas por intervalo
+                  </FieldLabel>
+                  <Input
+                    id="service-max-reservations"
+                    min={1}
+                    onChange={(event) => setServiceMaxReservations(Number(event.target.value))}
+                    required
+                    type="number"
+                    value={serviceMaxReservations}
+                  />
+                </Field>
+              </div>
               <FormFeedback pendingLabel="Creando turno…" state={feedback.state} />
               <Button disabled={feedback.pending} type="submit">
                 Crear turno
@@ -225,6 +298,33 @@ export function ReservationPage({
         </Card>
       ) : (
         <>
+          <Card>
+            <CardHeader>
+              <CardTitle>Turnos configurados</CardTitle>
+              <CardDescription>
+                Estas reglas determinan cuándo se aceptan reservas y cuánta capacidad se ofrece.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ul className="grid gap-3 sm:grid-cols-2">
+                {services.map((service) => (
+                  <li className="rounded-lg border p-4" key={service.id}>
+                    <p className="font-medium">{service.name}</p>
+                    <p className="text-muted-foreground mt-1 text-sm">
+                      {weekdays[service.weekday]} · {service.startsAtTime.slice(0, 5)}–
+                      {service.endsAtTime.slice(0, 5)}
+                    </p>
+                    <p className="text-muted-foreground mt-2 text-xs">
+                      Cada {service.slotMinutes} min ·{' '}
+                      {service.maxCoversPerSlot ?? 'Aforo flexible'} cubiertos ·{' '}
+                      {service.maxReservationsPerSlot ?? 'Reservas flexibles'} reservas por
+                      intervalo
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
           <Card className="max-w-xl">
             <CardHeader>
               <CardTitle>Nueva reserva</CardTitle>
