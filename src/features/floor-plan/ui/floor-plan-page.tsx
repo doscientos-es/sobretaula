@@ -983,7 +983,10 @@ export function FloorPlanPage({
                 {activeVersion.widthCm / 100} m × {activeVersion.heightCm / 100} m ·{' '}
                 {placements.length} mesas
               </CardDescription>
-              <div className="flex items-center gap-2 pt-2" aria-label="Controles de zoom">
+              <div
+                className="flex flex-wrap items-center gap-2 pt-2"
+                aria-label="Controles de zoom"
+              >
                 <Button
                   aria-label="Alejar plano"
                   disabled={zoom <= 1}
