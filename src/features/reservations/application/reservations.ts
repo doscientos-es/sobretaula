@@ -35,6 +35,7 @@ const reservationInput = venueInput.extend({
   partySize: z.number().int().min(1).max(50),
   serviceId: z.string().uuid(),
   startsAt: z.string().datetime({ offset: true }),
+  operationId: z.string().uuid(),
 })
 const reservationsDateInput = venueInput.extend({ date: z.string().date() })
 const rescheduleReservationInput = venueInput.extend({
@@ -387,6 +388,28 @@ export const createReservation = createServerFn({ method: 'POST' })
   .handler(async ({ context, data }) => {
     requireReservationEditor(context.tenantMembership.role)
     const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    const existingOperation = await supabase
+      .from('reservations')
+      .select('id')
+      .eq('tenant_id', data.tenantId)
+      .eq('last_operation_id', data.operationId)
+      .maybeSingle()
+    if (existingOperation.error) throw new Error('reservation_operation_lookup_failed')
+    if (existingOperation.data) {
+      const existingAssignment = await supabase
+        .from('reservation_tables')
+        .select('table_id')
+        .eq('tenant_id', data.tenantId)
+        .eq('reservation_id', existingOperation.data.id)
+        .limit(1)
+        .maybeSingle()
+      if (existingAssignment.error || !existingAssignment.data)
+        throw new Error('reservation_operation_assignment_missing')
+      return {
+        reservationId: existingOperation.data.id as string,
+        tableId: existingAssignment.data.table_id as string,
+      }
+    }
     const requestedStartsAt = new Date(data.startsAt)
     const { data: service, error: serviceError } = await supabase
       .from('services')
@@ -530,6 +553,7 @@ export const createReservation = createServerFn({ method: 'POST' })
         created_by: context.tenantMembership.userId,
         ends_at: availability.endsAt.toISOString(),
         guest_id: guestId,
+        last_operation_id: data.operationId,
         party_size: data.partySize,
         source: 'staff',
         starts_at: requestedStartsAt.toISOString(),
@@ -539,6 +563,29 @@ export const createReservation = createServerFn({ method: 'POST' })
       })
       .select('id')
       .single()
+    if (reservationError?.code === '23505') {
+      const concurrentReservation = await supabase
+        .from('reservations')
+        .select('id')
+        .eq('tenant_id', data.tenantId)
+        .eq('last_operation_id', data.operationId)
+        .maybeSingle()
+      if (concurrentReservation.error || !concurrentReservation.data)
+        throw new Error('reservation_operation_lookup_failed')
+      const concurrentAssignment = await supabase
+        .from('reservation_tables')
+        .select('table_id')
+        .eq('tenant_id', data.tenantId)
+        .eq('reservation_id', concurrentReservation.data.id)
+        .limit(1)
+        .maybeSingle()
+      if (concurrentAssignment.error || !concurrentAssignment.data)
+        throw new Error('reservation_operation_assignment_missing')
+      return {
+        reservationId: concurrentReservation.data.id as string,
+        tableId: concurrentAssignment.data.table_id as string,
+      }
+    }
     if (reservationError || !reservation) {
       throw new Error(`reservation_create_failed:${reservationError?.code ?? 'unknown'}`)
     }
@@ -550,7 +597,12 @@ export const createReservation = createServerFn({ method: 'POST' })
       tenant_id: data.tenantId,
     })
     if (assignmentError) {
-      await supabase.from('reservations').delete().eq('id', reservation.id)
+      await supabase
+        .from('reservations')
+        .delete()
+        .eq('id', reservation.id)
+        .eq('tenant_id', data.tenantId)
+        .eq('venue_id', data.venueId)
       if (assignmentError.code === '23P01') throw new Response('Table unavailable', { status: 409 })
       throw new Error(`reservation_assignment_create_failed:${assignmentError.code}`)
     }
@@ -594,6 +646,7 @@ export const importReservationCsv = createServerFn({ method: 'POST' })
             guestName: row.guestName,
             ...(row.guestPhone ? { guestPhone: row.guestPhone } : {}),
             partySize: row.partySize,
+            operationId: crypto.randomUUID(),
             serviceId,
             startsAt: row.startsAt,
             tenantId: data.tenantId,

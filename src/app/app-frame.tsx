@@ -97,43 +97,7 @@ export function TenantAdminFrame({
       headerClassName="st-saas-header flex h-11 items-center justify-between px-5 sm:px-6"
       locale={effectiveLocale}
       mainClassName="st-saas-main min-w-0 flex-1"
-      mobileTabs={
-        activeVenue ? (
-          <nav
-            aria-label={t('app.venueNavigation')}
-            className={`st-mobile-nav flex gap-5 overflow-x-auto px-5 py-3 text-xs font-medium lg:hidden ${navigationLocked ? 'opacity-60' : ''}`}
-          >
-            <Link
-              onClick={handleLockedNavigation}
-              params={{ slug, venue: activeVenue.slug }}
-              to="/t/$slug/l/$venue/tpv"
-            >
-              {t('nav.tpv')}
-            </Link>
-            <Link
-              onClick={handleLockedNavigation}
-              params={{ slug, venue: activeVenue.slug }}
-              to="/t/$slug/l/$venue/plano"
-            >
-              {t('nav.floorPlan')}
-            </Link>
-            <Link
-              onClick={handleLockedNavigation}
-              params={{ slug, venue: activeVenue.slug }}
-              to="/t/$slug/l/$venue/servicio"
-            >
-              {t('nav.service')}
-            </Link>
-            <Link
-              onClick={handleLockedNavigation}
-              params={{ slug, venue: activeVenue.slug }}
-              to="/t/$slug/l/$venue/reservas"
-            >
-              {t('nav.reservations')}
-            </Link>
-          </nav>
-        ) : null
-      }
+      mobileTabs={null}
       sidebar={
         <>
           <Link

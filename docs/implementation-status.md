@@ -506,6 +506,9 @@ cancelación; no se insertaron ni consultaron datos operativos.
 - La importación CSV dispone de preview y errores por fila para clientes y
   reservas. La importación no fuerza una escritura parcial: las filas inválidas
   se muestran antes de ejecutar el alta.
+- La carta admite productos y modificadores desde CSV y dispone del RPC
+  transaccional `import_menu_catalog`; la migración remota y el humo integrado
+  siguen pendientes de autorización y evidencia.
 - Existen rutas operativas para pedidos online, documentos de compras,
   fidelización, tarjetas regalo y propinas. Sus listados principales usan
   paginación server-side y filtros o conteos cuando corresponde.

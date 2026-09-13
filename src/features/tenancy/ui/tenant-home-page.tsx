@@ -331,6 +331,27 @@ export function TenantHomePage({
               </div>
             </li>
           </ol>
+          {venues[0] &&
+          setupStatus.hasFloorPlan &&
+          setupStatus.hasMenu &&
+          setupStatus.hasReservations &&
+          setupStatus.hasTeam ? (
+            <div className="border-success/30 bg-success/5 mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border px-3 py-3">
+              <div>
+                <p className="text-sm font-medium">Todo listo para abrir el servicio</p>
+                <p className="text-muted-foreground mt-1 text-xs">
+                  El equipo, la carta, el plano y las reservas ya están preparados.
+                </p>
+              </div>
+              <Link
+                className="bg-primary text-primary-foreground rounded-md px-3 py-2 text-sm font-medium"
+                params={{ slug: tenant.slug, venue: venues[0].slug }}
+                to="/t/$slug/l/$venue/tpv"
+              >
+                Empezar servicio
+              </Link>
+            </div>
+          ) : null}
         </CardContent>
       </Card>
       {venues[0] ? (

@@ -9,6 +9,7 @@ import {
   PageHeaderDescription,
   PageHeaderTitle,
 } from '@doscientos/ui'
+import { Link } from '@tanstack/react-router'
 import { RefreshCw } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
@@ -41,11 +42,15 @@ export function ServicePage({
   plan,
   tenantId,
   venueId,
+  tenantSlug,
+  venueSlug,
 }: {
   board: ServiceBoard
   plan: FloorPlanData
   tenantId: string
   venueId: string
+  tenantSlug: string
+  venueSlug: string
 }) {
   const [selectedTableIds, setSelectedTableIds] = useState<readonly string[]>([])
   const [serviceView, setServiceView] = useState<'plan' | 'list'>('plan')
@@ -456,6 +461,13 @@ export function ServicePage({
                   Esta zona no tiene una versión de plano activa. Activa un layout desde el
                   diseñador para poder operar sus mesas.
                 </p>
+                <Link
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 mt-4 inline-flex items-center justify-center rounded-md px-3 py-2 text-sm font-medium"
+                  params={{ slug: tenantSlug, venue: venueSlug }}
+                  to="/t/$slug/l/$venue/plano"
+                >
+                  Abrir diseñador de planos
+                </Link>
               </CardContent>
             </Card>
           )}

@@ -66,11 +66,7 @@ import {
 import { inspectTableGroupPresetAvailability } from '../domain/table-group-presets'
 import { FloorPlanCanvas } from './floor-plan-canvas'
 import { FloorPlanEventTemplates, type EventTemplateValues } from './floor-plan-event-templates'
-import {
-  FloorPlanSetupCard,
-  type FloorPlanPreviewDevice,
-  type FloorPlanSetupValues,
-} from './floor-plan-setup-card'
+import type { FloorPlanPreviewDevice } from './floor-plan-setup-card'
 
 function readLockedIds(lockStorageKey: string | undefined): string[] {
   if (!lockStorageKey || typeof window === 'undefined') return []
@@ -111,12 +107,31 @@ export function FloorPlanPage({
   const [gridSize, setGridSize] = useState(DEFAULT_GRID_SIZE_CM)
   const [minimumAisleCm, setMinimumAisleCm] = useState(90)
   const [selectedAreaId, setSelectedAreaId] = useState(data.areas[0]?.id)
+  const [initializing, setInitializing] = useState(false)
   const activeArea = data.areas.find((area) => area.id === selectedAreaId) ?? data.areas[0]
   const activePresets = data.tableGroupPresets.filter((preset) => preset.areaId === activeArea?.id)
   const activeVersion = activeArea
     ? (selectFloorPlanVersion(data.versions, activeArea.id) ??
       data.versions.find((version) => version.areaId === activeArea.id))
     : undefined
+  useEffect(() => {
+    if (data.areas.length > 0 || initializing) return
+    setInitializing(true)
+    void createInitialFloorPlan({
+      data: {
+        areaName: 'Sala principal',
+        floorNumber: 0,
+        heightCm: 600,
+        outdoorOpen: true,
+        spaceType: 'indoor',
+        tenantId,
+        venueId,
+        widthCm: 800,
+      },
+    })
+      .then(() => reload())
+      .catch(() => feedback.setError('No se ha podido preparar el plano inicial.'))
+  }, [data.areas.length, feedback, initializing, reload, tenantId, venueId])
   const lockStorageKey = activeVersion
     ? `sobretaula:floor-plan-locks:${activeVersion.id}`
     : undefined
@@ -286,15 +301,30 @@ export function FloorPlanPage({
           return guides
         })
     : []
-  async function createPlan(values: FloorPlanSetupValues) {
-    await createInitialFloorPlan({
-      data: {
-        ...values,
-        tenantId,
-        venueId,
-      },
-    })
-    reload()
+  async function createArea() {
+    const areaName = window.prompt('Nombre de la nueva planta o zona', 'Terraza')?.trim()
+    if (!areaName) return
+    feedback.setPending()
+    try {
+      await createInitialFloorPlan({
+        data: {
+          areaName,
+          floorNumber: null,
+          heightCm: 600,
+          outdoorOpen: true,
+          spaceType: areaName.toLocaleLowerCase().includes('terraza')
+            ? 'outdoor_terrace'
+            : 'indoor',
+          tenantId,
+          venueId,
+          widthCm: 800,
+        },
+      })
+      feedback.setSuccess(`${areaName} preparada.`)
+      reload()
+    } catch {
+      feedback.setError('No se ha podido crear la nueva zona.')
+    }
   }
 
   async function createTable(event: FormEvent<HTMLFormElement>) {
@@ -748,13 +778,36 @@ export function FloorPlanPage({
         templates={data.eventLayoutTemplates ?? []}
       />
       {!activeVersion ? (
-        <FloorPlanSetupCard
-          onCreate={createPlan}
-          previewDevice={previewDevice}
-          setPreviewDevice={setPreviewDevice}
-        />
+        <Card className="border-dashed">
+          <CardContent className="flex min-h-48 items-center justify-center text-center">
+            <p className="text-muted-foreground text-sm">
+              Preparando un espacio estándar de restaurante para que puedas editarlo…
+            </p>
+          </CardContent>
+        </Card>
       ) : (
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_18rem]">
+          <div
+            className="flex items-center gap-2 overflow-x-auto lg:col-span-2"
+            role="tablist"
+            aria-label="Plantas y zonas"
+          >
+            {data.areas.map((area) => (
+              <Button
+                key={area.id}
+                aria-selected={area.id === activeArea?.id}
+                onClick={() => switchArea(area.id)}
+                role="tab"
+                type="button"
+                variant={area.id === activeArea?.id ? 'default' : 'outline'}
+              >
+                {area.name}
+              </Button>
+            ))}
+            <Button onClick={() => void createArea()} type="button" variant="outline">
+              + Añadir planta o zona
+            </Button>
+          </div>
           <FloorPlanCanvas
             activeArea={activeArea}
             activeVersion={activeVersion}

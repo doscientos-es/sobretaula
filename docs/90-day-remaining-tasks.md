@@ -199,7 +199,10 @@ propietario y siguiente acción; no se rebaja silenciosamente el alcance.
 
 - [~] **P0.1 Activación:** onboarding base y equipo disponibles; falta recorrido
   único con turnos, zonas, carta, impuestos y primer servicio.
-- [ ] **P0.2 Reservas internas:** turnos, reglas, bloques, agenda y motor único.
+- [~] **P0.2 Reservas internas:** CRUD de turnos y agenda con búsqueda, estado,
+  reprogramación, historial, filtros persistidos en URL e idempotencia de
+  creación preparados; faltan bloques con impacto, reglas por área, cerrar
+  todas las transiciones en un motor único y validar concurrencia remotamente.
 - [ ] **P0.3 Flujo diario:** smoke reserva → sala → TPV → cocina → cobro → caja.
 - [ ] **P0.4 Seguridad:** RLS, carreras, idempotencia, auditoría y restore aislado.
 - [ ] **P1.1 Sala/cocina:** Ahora, KDS completo, handover y tablet/móvil.
@@ -207,8 +210,8 @@ propietario y siguiente acción; no se rebaja silenciosamente el alcance.
 - [ ] **P1.3 Fichaje/propinas:** cierre laboral, reparto por tiempo y exportación.
 - [ ] **P1.4 Fiscalidad:** VERI*FACTU E2E en test; prod solo tras X1/X7.
 - [ ] **P1.5 Privacidad/exportaciones:** retención, anonimización y formatos.
-- [~] **P2.1 Importación:** CSV base; faltan productos, modificadores, atomicidad
-  y prueba integrada.
+- [~] **P2.1 Importación:** CSV con productos y modificadores, preview, errores por
+  fila y RPC atómico preparados; falta aplicar la migración y prueba integrada.
 - [~] **P2.2 Reserva pública:** flujo y emails implementados; faltan humo,
   retención/privacidad y validación remota.
 - [ ] **P2.3 Comunicaciones:** rebotes y reenvío manual; SMS/WhatsApp tras X6.

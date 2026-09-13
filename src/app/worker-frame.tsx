@@ -51,29 +51,7 @@ export function WorkerFrame({
       headerClassName="st-saas-header flex h-11 items-center justify-between px-5 sm:px-6"
       locale={effectiveLocale}
       mainClassName="st-saas-main min-w-0 flex-1"
-      mobileTabs={
-        <nav
-          aria-label={t('app.venueOperations')}
-          className="st-mobile-nav flex gap-5 overflow-x-auto px-5 py-3 text-xs font-medium lg:hidden"
-        >
-          {venueParams && (
-            <>
-              <Link params={venueParams} to="/t/$slug/l/$venue/tpv">
-                {t('nav.tpv')}
-              </Link>
-              <Link params={venueParams} to="/t/$slug/l/$venue/plano">
-                {t('nav.floorPlan')}
-              </Link>
-              <Link params={venueParams} to="/t/$slug/l/$venue/servicio">
-                {t('nav.service')}
-              </Link>
-              <Link params={venueParams} to="/t/$slug/l/$venue/reservas">
-                {t('nav.reservations')}
-              </Link>
-            </>
-          )}
-        </nav>
-      }
+      mobileTabs={null}
       sidebar={
         <>
           <Link

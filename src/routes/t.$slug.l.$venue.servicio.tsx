@@ -29,6 +29,16 @@ export const Route = createFileRoute('/t/$slug/l/$venue/servicio')({
 
 function ServiceRoute() {
   const { board, plan, tenant, venue } = Route.useLoaderData()
+  const { slug: tenantSlug, venue: venueSlug } = Route.useParams()
 
-  return <ServicePage board={board} plan={plan} tenantId={tenant.id} venueId={venue.id} />
+  return (
+    <ServicePage
+      board={board}
+      plan={plan}
+      tenantId={tenant.id}
+      venueId={venue.id}
+      tenantSlug={tenantSlug}
+      venueSlug={venueSlug}
+    />
+  )
 }

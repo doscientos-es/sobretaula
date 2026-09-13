@@ -75,6 +75,7 @@ export function ReservationAgendaCard({
   timezone,
   venueId,
   refreshToken = 0,
+  onNewReservation,
 }: {
   agendaSearch?: ReservationAgendaSearch | undefined
   locale: Locale
@@ -83,6 +84,7 @@ export function ReservationAgendaCard({
   timezone: string
   venueId: string
   refreshToken?: number
+  onNewReservation?: () => void
 }) {
   const feedback = useFormFeedback()
   const { setError } = feedback
@@ -254,6 +256,7 @@ export function ReservationAgendaCard({
       <CardHeader>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <CardTitle>Agenda</CardTitle>
+          {onNewReservation ? <Button onClick={onNewReservation}>Nueva reserva</Button> : null}
           <Button
             disabled={agendaLoading}
             onClick={() => {
