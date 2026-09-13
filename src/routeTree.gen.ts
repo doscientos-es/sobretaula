@@ -30,6 +30,7 @@ import { Route as EsperaTokenRouteImport } from './routes/espera.$token'
 import { Route as LegalCondicionesSaasRouteImport } from './routes/legal.condiciones-saas'
 import { Route as LegalCookiesRouteImport } from './routes/legal.cookies'
 import { Route as LegalPrivacidadRouteImport } from './routes/legal.privacidad'
+import { Route as MenuSlugRouteImport } from './routes/menu.$slug'
 import { Route as ReservaTokenRouteImport } from './routes/reserva.$token'
 import { Route as ReservarSlugRouteImport } from './routes/reservar.$slug'
 import { Route as TSlugRouteImport } from './routes/t.$slug'
@@ -62,8 +63,10 @@ import { Route as TSlugLVenueComunicacionesRouteImport } from './routes/t.$slug.
 import { Route as TSlugLVenueFichajeRouteImport } from './routes/t.$slug.l.$venue.fichaje'
 import { Route as TSlugLVenueFichajeTerminalRouteImport } from './routes/t.$slug.l.$venue.fichaje-terminal'
 import { Route as TSlugLVenueInformesRouteImport } from './routes/t.$slug.l.$venue.informes'
+import { Route as TSlugLVenuePedidosOnlineRouteImport } from './routes/t.$slug.l.$venue.pedidos-online'
 import { Route as TSlugLVenuePlanoRouteImport } from './routes/t.$slug.l.$venue.plano'
 import { Route as TSlugLVenueProductosRouteImport } from './routes/t.$slug.l.$venue.productos'
+import { Route as TSlugLVenuePropinasRouteImport } from './routes/t.$slug.l.$venue.propinas'
 import { Route as TSlugLVenueReservasRouteImport } from './routes/t.$slug.l.$venue.reservas'
 import { Route as TSlugLVenueServicioRouteImport } from './routes/t.$slug.l.$venue.servicio'
 import { Route as TSlugLVenueTpvRouteImport } from './routes/t.$slug.l.$venue.tpv'
@@ -172,6 +175,11 @@ const LegalCookiesRoute = LegalCookiesRouteImport.update({
 const LegalPrivacidadRoute = LegalPrivacidadRouteImport.update({
   id: '/legal/privacidad',
   path: '/legal/privacidad',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MenuSlugRoute = MenuSlugRouteImport.update({
+  id: '/menu/$slug',
+  path: '/menu/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReservaTokenRoute = ReservaTokenRouteImport.update({
@@ -340,6 +348,12 @@ const TSlugLVenueInformesRoute = TSlugLVenueInformesRouteImport.update({
   path: '/informes',
   getParentRoute: () => TSlugLVenueRoute,
 } as any)
+const TSlugLVenuePedidosOnlineRoute =
+  TSlugLVenuePedidosOnlineRouteImport.update({
+    id: '/pedidos-online',
+    path: '/pedidos-online',
+    getParentRoute: () => TSlugLVenueRoute,
+  } as any)
 const TSlugLVenuePlanoRoute = TSlugLVenuePlanoRouteImport.update({
   id: '/plano',
   path: '/plano',
@@ -348,6 +362,11 @@ const TSlugLVenuePlanoRoute = TSlugLVenuePlanoRouteImport.update({
 const TSlugLVenueProductosRoute = TSlugLVenueProductosRouteImport.update({
   id: '/productos',
   path: '/productos',
+  getParentRoute: () => TSlugLVenueRoute,
+} as any)
+const TSlugLVenuePropinasRoute = TSlugLVenuePropinasRouteImport.update({
+  id: '/propinas',
+  path: '/propinas',
   getParentRoute: () => TSlugLVenueRoute,
 } as any)
 const TSlugLVenueReservasRoute = TSlugLVenueReservasRouteImport.update({
@@ -393,6 +412,7 @@ export interface FileRoutesByFullPath {
   '/legal/condiciones-saas': typeof LegalCondicionesSaasRoute
   '/legal/cookies': typeof LegalCookiesRoute
   '/legal/privacidad': typeof LegalPrivacidadRoute
+  '/menu/$slug': typeof MenuSlugRoute
   '/reserva/$token': typeof ReservaTokenRoute
   '/reservar/$slug': typeof ReservarSlugRouteWithChildren
   '/t/$slug': typeof TSlugRouteWithChildren
@@ -425,8 +445,10 @@ export interface FileRoutesByFullPath {
   '/t/$slug/l/$venue/fichaje': typeof TSlugLVenueFichajeRoute
   '/t/$slug/l/$venue/fichaje-terminal': typeof TSlugLVenueFichajeTerminalRoute
   '/t/$slug/l/$venue/informes': typeof TSlugLVenueInformesRoute
+  '/t/$slug/l/$venue/pedidos-online': typeof TSlugLVenuePedidosOnlineRoute
   '/t/$slug/l/$venue/plano': typeof TSlugLVenuePlanoRoute
   '/t/$slug/l/$venue/productos': typeof TSlugLVenueProductosRoute
+  '/t/$slug/l/$venue/propinas': typeof TSlugLVenuePropinasRoute
   '/t/$slug/l/$venue/reservas': typeof TSlugLVenueReservasRoute
   '/t/$slug/l/$venue/servicio': typeof TSlugLVenueServicioRoute
   '/t/$slug/l/$venue/tpv': typeof TSlugLVenueTpvRoute
@@ -453,6 +475,7 @@ export interface FileRoutesByTo {
   '/legal/condiciones-saas': typeof LegalCondicionesSaasRoute
   '/legal/cookies': typeof LegalCookiesRoute
   '/legal/privacidad': typeof LegalPrivacidadRoute
+  '/menu/$slug': typeof MenuSlugRoute
   '/reserva/$token': typeof ReservaTokenRoute
   '/reservar/$slug': typeof ReservarSlugRouteWithChildren
   '/admin': typeof AdminIndexRoute
@@ -483,8 +506,10 @@ export interface FileRoutesByTo {
   '/t/$slug/l/$venue/fichaje': typeof TSlugLVenueFichajeRoute
   '/t/$slug/l/$venue/fichaje-terminal': typeof TSlugLVenueFichajeTerminalRoute
   '/t/$slug/l/$venue/informes': typeof TSlugLVenueInformesRoute
+  '/t/$slug/l/$venue/pedidos-online': typeof TSlugLVenuePedidosOnlineRoute
   '/t/$slug/l/$venue/plano': typeof TSlugLVenuePlanoRoute
   '/t/$slug/l/$venue/productos': typeof TSlugLVenueProductosRoute
+  '/t/$slug/l/$venue/propinas': typeof TSlugLVenuePropinasRoute
   '/t/$slug/l/$venue/reservas': typeof TSlugLVenueReservasRoute
   '/t/$slug/l/$venue/servicio': typeof TSlugLVenueServicioRoute
   '/t/$slug/l/$venue/tpv': typeof TSlugLVenueTpvRoute
@@ -513,6 +538,7 @@ export interface FileRoutesById {
   '/legal/condiciones-saas': typeof LegalCondicionesSaasRoute
   '/legal/cookies': typeof LegalCookiesRoute
   '/legal/privacidad': typeof LegalPrivacidadRoute
+  '/menu/$slug': typeof MenuSlugRoute
   '/reserva/$token': typeof ReservaTokenRoute
   '/reservar/$slug': typeof ReservarSlugRouteWithChildren
   '/t/$slug': typeof TSlugRouteWithChildren
@@ -545,8 +571,10 @@ export interface FileRoutesById {
   '/t/$slug/l/$venue/fichaje': typeof TSlugLVenueFichajeRoute
   '/t/$slug/l/$venue/fichaje-terminal': typeof TSlugLVenueFichajeTerminalRoute
   '/t/$slug/l/$venue/informes': typeof TSlugLVenueInformesRoute
+  '/t/$slug/l/$venue/pedidos-online': typeof TSlugLVenuePedidosOnlineRoute
   '/t/$slug/l/$venue/plano': typeof TSlugLVenuePlanoRoute
   '/t/$slug/l/$venue/productos': typeof TSlugLVenueProductosRoute
+  '/t/$slug/l/$venue/propinas': typeof TSlugLVenuePropinasRoute
   '/t/$slug/l/$venue/reservas': typeof TSlugLVenueReservasRoute
   '/t/$slug/l/$venue/servicio': typeof TSlugLVenueServicioRoute
   '/t/$slug/l/$venue/tpv': typeof TSlugLVenueTpvRoute
@@ -576,6 +604,7 @@ export interface FileRouteTypes {
     | '/legal/condiciones-saas'
     | '/legal/cookies'
     | '/legal/privacidad'
+    | '/menu/$slug'
     | '/reserva/$token'
     | '/reservar/$slug'
     | '/t/$slug'
@@ -608,8 +637,10 @@ export interface FileRouteTypes {
     | '/t/$slug/l/$venue/fichaje'
     | '/t/$slug/l/$venue/fichaje-terminal'
     | '/t/$slug/l/$venue/informes'
+    | '/t/$slug/l/$venue/pedidos-online'
     | '/t/$slug/l/$venue/plano'
     | '/t/$slug/l/$venue/productos'
+    | '/t/$slug/l/$venue/propinas'
     | '/t/$slug/l/$venue/reservas'
     | '/t/$slug/l/$venue/servicio'
     | '/t/$slug/l/$venue/tpv'
@@ -636,6 +667,7 @@ export interface FileRouteTypes {
     | '/legal/condiciones-saas'
     | '/legal/cookies'
     | '/legal/privacidad'
+    | '/menu/$slug'
     | '/reserva/$token'
     | '/reservar/$slug'
     | '/admin'
@@ -666,8 +698,10 @@ export interface FileRouteTypes {
     | '/t/$slug/l/$venue/fichaje'
     | '/t/$slug/l/$venue/fichaje-terminal'
     | '/t/$slug/l/$venue/informes'
+    | '/t/$slug/l/$venue/pedidos-online'
     | '/t/$slug/l/$venue/plano'
     | '/t/$slug/l/$venue/productos'
+    | '/t/$slug/l/$venue/propinas'
     | '/t/$slug/l/$venue/reservas'
     | '/t/$slug/l/$venue/servicio'
     | '/t/$slug/l/$venue/tpv'
@@ -695,6 +729,7 @@ export interface FileRouteTypes {
     | '/legal/condiciones-saas'
     | '/legal/cookies'
     | '/legal/privacidad'
+    | '/menu/$slug'
     | '/reserva/$token'
     | '/reservar/$slug'
     | '/t/$slug'
@@ -727,8 +762,10 @@ export interface FileRouteTypes {
     | '/t/$slug/l/$venue/fichaje'
     | '/t/$slug/l/$venue/fichaje-terminal'
     | '/t/$slug/l/$venue/informes'
+    | '/t/$slug/l/$venue/pedidos-online'
     | '/t/$slug/l/$venue/plano'
     | '/t/$slug/l/$venue/productos'
+    | '/t/$slug/l/$venue/propinas'
     | '/t/$slug/l/$venue/reservas'
     | '/t/$slug/l/$venue/servicio'
     | '/t/$slug/l/$venue/tpv'
@@ -751,6 +788,7 @@ export interface RootRouteChildren {
   LegalCondicionesSaasRoute: typeof LegalCondicionesSaasRoute
   LegalCookiesRoute: typeof LegalCookiesRoute
   LegalPrivacidadRoute: typeof LegalPrivacidadRoute
+  MenuSlugRoute: typeof MenuSlugRoute
   ReservaTokenRoute: typeof ReservaTokenRoute
   ReservarSlugRoute: typeof ReservarSlugRouteWithChildren
   TSlugRoute: typeof TSlugRouteWithChildren
@@ -908,6 +946,13 @@ declare module '@tanstack/react-router' {
       path: '/legal/privacidad'
       fullPath: '/legal/privacidad'
       preLoaderRoute: typeof LegalPrivacidadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/menu/$slug': {
+      id: '/menu/$slug'
+      path: '/menu/$slug'
+      fullPath: '/menu/$slug'
+      preLoaderRoute: typeof MenuSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reserva/$token': {
@@ -1134,6 +1179,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TSlugLVenueInformesRouteImport
       parentRoute: typeof TSlugLVenueRoute
     }
+    '/t/$slug/l/$venue/pedidos-online': {
+      id: '/t/$slug/l/$venue/pedidos-online'
+      path: '/pedidos-online'
+      fullPath: '/t/$slug/l/$venue/pedidos-online'
+      preLoaderRoute: typeof TSlugLVenuePedidosOnlineRouteImport
+      parentRoute: typeof TSlugLVenueRoute
+    }
     '/t/$slug/l/$venue/plano': {
       id: '/t/$slug/l/$venue/plano'
       path: '/plano'
@@ -1146,6 +1198,13 @@ declare module '@tanstack/react-router' {
       path: '/productos'
       fullPath: '/t/$slug/l/$venue/productos'
       preLoaderRoute: typeof TSlugLVenueProductosRouteImport
+      parentRoute: typeof TSlugLVenueRoute
+    }
+    '/t/$slug/l/$venue/propinas': {
+      id: '/t/$slug/l/$venue/propinas'
+      path: '/propinas'
+      fullPath: '/t/$slug/l/$venue/propinas'
+      preLoaderRoute: typeof TSlugLVenuePropinasRouteImport
       parentRoute: typeof TSlugLVenueRoute
     }
     '/t/$slug/l/$venue/reservas': {
@@ -1227,8 +1286,10 @@ interface TSlugLVenueRouteChildren {
   TSlugLVenueFichajeRoute: typeof TSlugLVenueFichajeRoute
   TSlugLVenueFichajeTerminalRoute: typeof TSlugLVenueFichajeTerminalRoute
   TSlugLVenueInformesRoute: typeof TSlugLVenueInformesRoute
+  TSlugLVenuePedidosOnlineRoute: typeof TSlugLVenuePedidosOnlineRoute
   TSlugLVenuePlanoRoute: typeof TSlugLVenuePlanoRoute
   TSlugLVenueProductosRoute: typeof TSlugLVenueProductosRoute
+  TSlugLVenuePropinasRoute: typeof TSlugLVenuePropinasRoute
   TSlugLVenueReservasRoute: typeof TSlugLVenueReservasRoute
   TSlugLVenueServicioRoute: typeof TSlugLVenueServicioRoute
   TSlugLVenueTpvRoute: typeof TSlugLVenueTpvRoute
@@ -1244,8 +1305,10 @@ const TSlugLVenueRouteChildren: TSlugLVenueRouteChildren = {
   TSlugLVenueFichajeRoute: TSlugLVenueFichajeRoute,
   TSlugLVenueFichajeTerminalRoute: TSlugLVenueFichajeTerminalRoute,
   TSlugLVenueInformesRoute: TSlugLVenueInformesRoute,
+  TSlugLVenuePedidosOnlineRoute: TSlugLVenuePedidosOnlineRoute,
   TSlugLVenuePlanoRoute: TSlugLVenuePlanoRoute,
   TSlugLVenueProductosRoute: TSlugLVenueProductosRoute,
+  TSlugLVenuePropinasRoute: TSlugLVenuePropinasRoute,
   TSlugLVenueReservasRoute: TSlugLVenueReservasRoute,
   TSlugLVenueServicioRoute: TSlugLVenueServicioRoute,
   TSlugLVenueTpvRoute: TSlugLVenueTpvRoute,
@@ -1304,6 +1367,7 @@ const rootRouteChildren: RootRouteChildren = {
   LegalCondicionesSaasRoute: LegalCondicionesSaasRoute,
   LegalCookiesRoute: LegalCookiesRoute,
   LegalPrivacidadRoute: LegalPrivacidadRoute,
+  MenuSlugRoute: MenuSlugRoute,
   ReservaTokenRoute: ReservaTokenRoute,
   ReservarSlugRoute: ReservarSlugRouteWithChildren,
   TSlugRoute: TSlugRouteWithChildren,

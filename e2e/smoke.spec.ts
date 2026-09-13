@@ -21,6 +21,15 @@ test.describe('authenticated restaurant smoke', () => {
     '/t/la-fonda-demo/l/principal/plano',
     '/t/la-fonda-demo/l/principal/servicio',
     '/t/la-fonda-demo/l/principal/reservas',
+    '/t/la-fonda-demo/l/principal/bloques',
+    '/t/la-fonda-demo/l/principal/caja',
+    '/t/la-fonda-demo/l/principal/clientes',
+    '/t/la-fonda-demo/l/principal/comunicaciones',
+    '/t/la-fonda-demo/l/principal/fichaje',
+    '/t/la-fonda-demo/l/principal/fichaje-terminal',
+    '/t/la-fonda-demo/l/principal/informes',
+    '/t/la-fonda-demo/l/principal/productos',
+    '/t/la-fonda-demo/l/principal/propinas',
     '/t/la-fonda-demo/facturacion',
     '/t/la-fonda-demo/facturas',
     '/t/la-fonda-demo/comunicaciones',
@@ -32,6 +41,8 @@ test.describe('authenticated restaurant smoke', () => {
       await page.goto(path)
       await expect(page.getByText('Something went wrong!')).toHaveCount(0)
       await expect(page.getByText('No se ha podido cargar esta pantalla')).toHaveCount(0)
+      await expect(page.locator('body')).not.toContainText(/"venueId"/)
+      await expect(page.getByRole('button', { name: /hide error/i })).toHaveCount(0)
       await expect(page.locator('body')).not.toBeEmpty()
     })
   }
@@ -43,5 +54,20 @@ test.describe('authenticated restaurant smoke', () => {
     await expect(menuButton).toBeVisible()
     await menuButton.focus()
     await expect(menuButton).toBeFocused()
+  })
+
+  test('desktop navigation uses the persistent sidebar without a menu trigger', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 900 })
+    await page.goto('/t/la-fonda-demo')
+    await expect(page.locator('[data-slot="app-shell-sidebar"]')).toBeVisible()
+    await expect(page.getByRole('button', { name: /abrir menú de navegación/i })).toBeHidden()
+  })
+
+  test('product screen exposes inventory and recipe context', async ({ page }) => {
+    await page.goto('/t/la-fonda-demo/l/principal/productos')
+    await expect(page.getByRole('heading', { name: 'Ingredientes e inventario' })).toBeVisible()
+    await expect(page.getByText(/stock actual/i)).toBeVisible()
   })
 })

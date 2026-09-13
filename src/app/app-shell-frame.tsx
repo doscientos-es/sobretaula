@@ -54,7 +54,7 @@ export function AppShellFrame({
               trigger={
                 <Button
                   aria-label={t('common.openNavigation')}
-                  className="shrink-0 lg:hidden"
+                  className="st-mobile-menu-trigger shrink-0 lg:hidden"
                   size="icon"
                   variant="ghost"
                 >

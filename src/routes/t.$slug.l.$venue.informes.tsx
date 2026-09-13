@@ -1,23 +1,41 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, notFound } from '@tanstack/react-router'
 
+import { getVenueBenchmark, VenueBenchmarkCard } from '@/features/multi-venue'
 import { getSalesReport } from '@/features/reports'
 import { ProductSalesSummary } from '@/features/reports/ui/product-sales-summary'
+import { ProfitCockpit } from '@/features/reports/ui/profit-cockpit'
 import { SalesReportPage } from '@/features/reports/ui/sales-report-page'
+import { loadVenueRouteContext } from '@/features/venues'
 export const Route = createFileRoute('/t/$slug/l/$venue/informes')({
-  loader: ({ context }) =>
-    getSalesReport({
+  loader: async ({ params }) => {
+    const routeContext = await loadVenueRouteContext(params.slug, params.venue)
+    if (!routeContext) throw notFound()
+    const { tenant, venue } = routeContext
+    const benchmark = await getVenueBenchmark({
       data: {
-        tenantId: context.tenant.id,
-        venueId: context.venue.id,
+        tenantId: tenant.id,
         from: new Date(Date.now() - 86400000).toISOString(),
         to: new Date().toISOString(),
       },
-    }),
+    })
+    return {
+      benchmark,
+      report: await getSalesReport({
+        data: {
+          tenantId: tenant.id,
+          venueId: venue.id,
+          from: new Date(Date.now() - 86400000).toISOString(),
+          to: new Date().toISOString(),
+        },
+      }),
+      tenant,
+      venue,
+    }
+  },
   component: ReportRoute,
 })
 function ReportRoute() {
-  const { tenant, venue } = Route.useRouteContext()
-  const report = Route.useLoaderData()
+  const { report, benchmark, tenant, venue } = Route.useLoaderData()
   return (
     <>
       <SalesReportPage
@@ -26,7 +44,9 @@ function ReportRoute() {
           getSalesReport({ data: { tenantId: tenant.id, venueId: venue.id, from, to } })
         }
       />
+      <ProfitCockpit report={report} tenantId={tenant.id} venueId={venue.id} />
       <ProductSalesSummary products={report.productSummary} />
+      <VenueBenchmarkCard benchmark={benchmark} />
     </>
   )
 }

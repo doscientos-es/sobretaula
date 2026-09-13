@@ -12,6 +12,7 @@ import { Link, useNavigate, useParams } from '@tanstack/react-router'
 import {
   CalendarDays,
   ConciergeBell,
+  Coins,
   ExternalLink,
   FileText,
   LayoutDashboard,
@@ -239,6 +240,18 @@ export function TenantAdminFrame({
                 <FileText className="size-3" />
                 {t('nav.invoices')}
               </Link>
+              {activeVenue && (
+                <Link
+                  onClick={handleLockedNavigation}
+                  to="/t/$slug/l/$venue/propinas"
+                  params={{ slug, venue: activeVenue.slug }}
+                  activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
+                  className={navLinkClass}
+                >
+                  <Coins className="size-3" />
+                  Propinas
+                </Link>
+              )}
               <Link
                 to="/t/$slug/comunicaciones"
                 params={{ slug }}

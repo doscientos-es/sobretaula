@@ -17,8 +17,13 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react'
 
 import {
   getTimekeepingAdvancedReport,
+  createWorkforceShift,
+  saveWorkforceAvailability,
+  createWorkforceAbsence,
+  updateWorkforceShiftStatus,
   recordTimeEvent,
   saveTimekeepingHoliday,
+  saveTimekeepingRate,
   saveTimekeepingTerm,
   saveTimekeepingVenueAssignments,
   setMyTimekeepingPin,
@@ -31,6 +36,7 @@ import {
   enqueueTimekeepingOperation,
   flushTimekeepingOperations,
 } from '../application/timekeeping-offline-operations'
+import { recommendStaffing } from '../domain/staffing-recommendation'
 import { allowedNextEvent, type TimeEventType } from '../domain/timekeeping'
 
 const labels: Record<TimeEventType, string> = {
@@ -269,6 +275,14 @@ function TimekeepingManagement({
   const [reportTo, setReportTo] = useState(() => new Date().toISOString().slice(0, 10))
   const currentTerm = management.terms.find((term) => term.employeeId === employeeId)
   const today = new Date().toISOString().slice(0, 10)
+  const [expectedCovers, setExpectedCovers] = useState(86)
+  const [currentStaff, setCurrentStaff] = useState(4)
+  const staffing = recommendStaffing({
+    expectedCovers,
+    currentStaff,
+    coversPerStaff: 18,
+    minimumStaff: 2,
+  })
 
   async function saveTerm(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -294,6 +308,27 @@ function TimekeepingManagement({
       onSaved()
     } catch {
       feedback.setError('No se han podido guardar las condiciones.')
+    }
+  }
+
+  async function saveRate(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const values = new FormData(event.currentTarget)
+    feedback.setPending()
+    try {
+      await saveTimekeepingRate({
+        data: {
+          effectiveFrom: formText(values, 'rateEffectiveFrom'),
+          employeeId,
+          hourlyCostCents: Math.round(Number(formText(values, 'hourlyCostEuros')) * 100),
+          tenantId,
+          venueId,
+        },
+      })
+      feedback.setSuccess('Coste horario guardado.')
+      onSaved()
+    } catch {
+      feedback.setError('No se ha podido guardar el coste horario.')
     }
   }
 
@@ -333,6 +368,88 @@ function TimekeepingManagement({
       onSaved()
     } catch {
       feedback.setError('No se han podido actualizar los centros del empleado.')
+    }
+  }
+
+  async function saveShift(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const values = new FormData(event.currentTarget)
+    feedback.setPending()
+    try {
+      await createWorkforceShift({
+        data: {
+          employeeId,
+          endsAt: new Date(formText(values, 'shiftEndsAt')).toISOString(),
+          note: formText(values, 'shiftNote') || undefined,
+          startsAt: new Date(formText(values, 'shiftStartsAt')).toISOString(),
+          tenantId,
+          venueId,
+        },
+      })
+      feedback.setSuccess('Turno guardado en borrador.')
+      onSaved()
+    } catch (error) {
+      feedback.setError(
+        error instanceof Error && error.message.includes('overlap')
+          ? 'El empleado ya tiene un turno solapado.'
+          : 'No se ha podido guardar el turno.',
+      )
+    }
+  }
+
+  async function changeShiftStatus(shiftId: string, status: 'published' | 'cancelled') {
+    feedback.setPending()
+    try {
+      await updateWorkforceShiftStatus({ data: { shiftId, status, tenantId, venueId } })
+      feedback.setSuccess(status === 'published' ? 'Turno publicado.' : 'Turno cancelado.')
+      onSaved()
+    } catch {
+      feedback.setError('No se ha podido actualizar el turno.')
+    }
+  }
+
+  async function saveAvailability(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const values = new FormData(event.currentTarget)
+    feedback.setPending()
+    try {
+      await saveWorkforceAvailability({
+        data: {
+          available: true,
+          employeeId,
+          endsAt: formText(values, 'availabilityEndsAt'),
+          startsAt: formText(values, 'availabilityStartsAt'),
+          tenantId,
+          venueId,
+          weekday: Number(formText(values, 'availabilityWeekday')),
+        },
+      })
+      feedback.setSuccess('Disponibilidad guardada.')
+      onSaved()
+    } catch {
+      feedback.setError('No se ha podido guardar la disponibilidad.')
+    }
+  }
+
+  async function saveAbsence(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const values = new FormData(event.currentTarget)
+    feedback.setPending()
+    try {
+      await createWorkforceAbsence({
+        data: {
+          employeeId,
+          endsAt: formText(values, 'absenceEndsAt'),
+          reason: formText(values, 'absenceReason'),
+          startsAt: formText(values, 'absenceStartsAt'),
+          tenantId,
+          venueId,
+        },
+      })
+      feedback.setSuccess('Ausencia registrada para aprobación.')
+      onSaved()
+    } catch {
+      feedback.setError('No se ha podido registrar la ausencia.')
     }
   }
 
@@ -472,6 +589,44 @@ function TimekeepingManagement({
           <p className="text-muted-foreground text-sm">No hay empleados activos configurables.</p>
         )}
         {management.employees.length > 0 && (
+          <form
+            className="grid gap-4 border-t pt-5 md:grid-cols-3"
+            onSubmit={(event) => void saveRate(event)}
+          >
+            <Field>
+              <FieldLabel htmlFor="hourly-cost">Coste horario para el restaurante (€)</FieldLabel>
+              <Input
+                defaultValue={(
+                  (management.rates.find((rate) => rate.employeeId === employeeId)
+                    ?.hourlyCostCents ?? 0) / 100
+                ).toFixed(2)}
+                id="hourly-cost"
+                min={0}
+                name="hourlyCostEuros"
+                step="0.01"
+                type="number"
+              />
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="rate-effective-from">Vigente desde</FieldLabel>
+              <Input
+                defaultValue={
+                  management.rates.find((rate) => rate.employeeId === employeeId)?.effectiveFrom ??
+                  today
+                }
+                id="rate-effective-from"
+                name="rateEffectiveFrom"
+                type="date"
+              />
+            </Field>
+            <div className="flex items-end">
+              <Button disabled={feedback.pending} type="submit" variant="outline">
+                Guardar coste horario
+              </Button>
+            </div>
+          </form>
+        )}
+        {management.employees.length > 0 && (
           <div className="space-y-3 border-t pt-5">
             <div>
               <p className="font-medium">Centros del empleado</p>
@@ -507,6 +662,191 @@ function TimekeepingManagement({
             </Button>
           </div>
         )}
+        {management.employees.length > 0 && (
+          <div className="space-y-4 border-t pt-5">
+            <div>
+              <p className="font-medium">Próximos turnos</p>
+              <p className="text-muted-foreground text-sm">
+                Los turnos se guardan inicialmente como borrador para revisión del responsable.
+              </p>
+            </div>
+            <form className="grid gap-3 md:grid-cols-3" onSubmit={(event) => void saveShift(event)}>
+              <Field>
+                <FieldLabel htmlFor="shift-start">Inicio</FieldLabel>
+                <Input id="shift-start" name="shiftStartsAt" required type="datetime-local" />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="shift-end">Fin</FieldLabel>
+                <Input id="shift-end" name="shiftEndsAt" required type="datetime-local" />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="shift-note">Nota</FieldLabel>
+                <Input id="shift-note" name="shiftNote" placeholder="Zona o servicio" />
+              </Field>
+              <Button className="md:col-span-3" disabled={feedback.pending} type="submit">
+                Añadir turno
+              </Button>
+            </form>
+            {management.shifts.length > 0 ? (
+              <ul className="space-y-2 text-sm">
+                {management.shifts.slice(0, 10).map((shift) => (
+                  <li
+                    className="flex flex-wrap justify-between gap-2 rounded-md border p-3"
+                    key={shift.id}
+                  >
+                    <span>
+                      {management.employees.find((employee) => employee.userId === shift.employeeId)
+                        ?.displayName ?? 'Empleado'}
+                    </span>
+                    <span className="text-muted-foreground">
+                      {new Date(shift.startsAt).toLocaleString('es-ES')} →{' '}
+                      {new Date(shift.endsAt).toLocaleTimeString('es-ES', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}{' '}
+                      · {shift.status}
+                    </span>
+                    {shift.status === 'draft' && (
+                      <Button
+                        disabled={feedback.pending}
+                        onClick={() => void changeShiftStatus(shift.id, 'published')}
+                        size="sm"
+                        type="button"
+                      >
+                        Publicar
+                      </Button>
+                    )}
+                    {shift.status !== 'cancelled' && (
+                      <Button
+                        disabled={feedback.pending}
+                        onClick={() => void changeShiftStatus(shift.id, 'cancelled')}
+                        size="sm"
+                        type="button"
+                        variant="outline"
+                      >
+                        Cancelar
+                      </Button>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-muted-foreground text-sm">No hay turnos próximos.</p>
+            )}
+          </div>
+        )}
+        {management.employees.length > 0 && (
+          <div className="space-y-4 border-t pt-5">
+            <div>
+              <p className="font-medium">Disponibilidad y ausencias</p>
+              <p className="text-muted-foreground text-sm">
+                Configura cuándo puede trabajar la persona seleccionada y registra ausencias para
+                bloquear publicaciones.
+              </p>
+            </div>
+            <form
+              className="grid gap-3 md:grid-cols-4"
+              onSubmit={(event) => void saveAvailability(event)}
+            >
+              <Field>
+                <FieldLabel htmlFor="availability-weekday">Día</FieldLabel>
+                <select
+                  className="border-input h-10 rounded-md border bg-transparent px-3"
+                  id="availability-weekday"
+                  name="availabilityWeekday"
+                  defaultValue="1"
+                >
+                  <option value="1">Lunes</option>
+                  <option value="2">Martes</option>
+                  <option value="3">Miércoles</option>
+                  <option value="4">Jueves</option>
+                  <option value="5">Viernes</option>
+                  <option value="6">Sábado</option>
+                  <option value="0">Domingo</option>
+                </select>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="availability-start">Desde</FieldLabel>
+                <Input
+                  id="availability-start"
+                  name="availabilityStartsAt"
+                  required
+                  type="time"
+                  defaultValue="09:00"
+                />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="availability-end">Hasta</FieldLabel>
+                <Input
+                  id="availability-end"
+                  name="availabilityEndsAt"
+                  required
+                  type="time"
+                  defaultValue="18:00"
+                />
+              </Field>
+              <div className="flex items-end">
+                <Button disabled={feedback.pending} type="submit">
+                  Guardar disponibilidad
+                </Button>
+              </div>
+            </form>
+            <form
+              className="grid gap-3 md:grid-cols-4"
+              onSubmit={(event) => void saveAbsence(event)}
+            >
+              <Input aria-label="Inicio de ausencia" name="absenceStartsAt" required type="date" />
+              <Input aria-label="Fin de ausencia" name="absenceEndsAt" required type="date" />
+              <Input
+                aria-label="Motivo de ausencia"
+                name="absenceReason"
+                placeholder="Vacaciones, baja…"
+                required
+              />
+              <Button disabled={feedback.pending} type="submit" variant="outline">
+                Registrar ausencia
+              </Button>
+            </form>
+          </div>
+        )}
+        <div className="space-y-4 border-t pt-5">
+          <div>
+            <p className="font-medium">Recomendación de plantilla</p>
+            <p className="text-muted-foreground text-sm">
+              Ajusta la previsión del servicio para detectar exceso o falta de personal.
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field>
+              <FieldLabel htmlFor="staffing-covers">Cubiertos previstos</FieldLabel>
+              <Input
+                id="staffing-covers"
+                min={0}
+                onChange={(event) => setExpectedCovers(Number(event.target.value))}
+                type="number"
+                value={expectedCovers}
+              />
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="staffing-current">Personas previstas</FieldLabel>
+              <Input
+                id="staffing-current"
+                min={0}
+                onChange={(event) => setCurrentStaff(Number(event.target.value))}
+                type="number"
+                value={currentStaff}
+              />
+            </Field>
+          </div>
+          <p className="bg-muted/20 rounded-md border p-3 text-sm">
+            {staffing.reason}{' '}
+            {staffing.delta > 0
+              ? `Faltan ${staffing.delta}.`
+              : staffing.delta < 0
+                ? `Sobran ${Math.abs(staffing.delta)}.`
+                : ''}
+          </p>
+        </div>
         <form
           className="grid gap-4 border-t pt-5 md:grid-cols-[auto_1fr_auto]"
           onSubmit={(event) => void saveHoliday(event)}

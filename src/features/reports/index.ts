@@ -1,4 +1,6 @@
 export { exportSalesReportCsv, getSalesReport } from './application/reports'
 export { aggregateSales, summarizeProducts } from './domain/sales-report'
+export { calculateProfitability } from './domain/profitability'
 export { ProductSalesSummary } from './ui/product-sales-summary'
+export { ProfitCockpit } from './ui/profit-cockpit'
 export { SalesReportPage } from './ui/sales-report-page'

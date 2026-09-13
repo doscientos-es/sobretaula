@@ -17,7 +17,7 @@ import {
   SelectValue,
   useFormFeedback,
 } from '@doscientos/ui'
-import { useState, type FormEvent } from 'react'
+import { useRef, useState, type FormEvent } from 'react'
 
 import type { Locale } from '@/shared/lib/i18n/locale'
 import { formatMoney, parsePriceToCents } from '@/shared/lib/money/money'
@@ -41,6 +41,17 @@ export const PAYMENT_METHOD_LABEL: Record<PaymentMethod, string> = {
 
 const SPLIT_OPTIONS = [2, 3, 4, 5, 6] as const
 
+function paymentErrorMessage(error: unknown, fallback: string) {
+  const message = error instanceof Error ? error.message : ''
+  if (error instanceof Response && error.status === 422)
+    return 'El cobro supera el pendiente de la cuenta.'
+  if (message.includes('payment_exceeds_balance'))
+    return 'El cobro supera el pendiente de la cuenta.'
+  if (message.includes('payment_session_not_open'))
+    return 'La cuenta ya no está abierta. Actualiza la pantalla.'
+  return fallback
+}
+
 /** Totals of the account plus the charge form with equal-part splitting. */
 export function AccountPayments({
   account,
@@ -59,6 +70,7 @@ export function AccountPayments({
 }) {
   const { payments, session, totals } = account
   const feedback = useFormFeedback()
+  const singlePaymentOperationId = useRef<string | null>(null)
   const [method, setMethod] = useState<PaymentMethod>('cash')
   const [mixedMethodA, setMixedMethodA] = useState<PaymentMethod>('cash')
   const [mixedMethodB, setMixedMethodB] = useState<PaymentMethod>('card')
@@ -107,14 +119,20 @@ export function AccountPayments({
       data: {
         amountCents,
         method,
+        operationId: (singlePaymentOperationId.current ??= crypto.randomUUID()),
         sessionId: session.id,
         tenantId,
         ...(tipCents > 0 ? { tipCents } : {}),
         venueId,
       },
     })
-      .then(() => onDone())
-      .catch(() => feedback.setError('No se ha podido registrar el cobro.'))
+      .then(() => {
+        singlePaymentOperationId.current = null
+        onDone()
+      })
+      .catch((error: unknown) =>
+        feedback.setError(paymentErrorMessage(error, 'No se ha podido registrar el cobro.')),
+      )
   }
 
   function refund(paymentId: string, amountCents: number) {
@@ -179,7 +197,9 @@ export function AccountPayments({
         feedback.setSuccess('Pago mixto registrado.')
         onDone()
       })
-      .catch(() => feedback.setError('No se ha podido registrar el pago mixto.'))
+      .catch((error: unknown) =>
+        feedback.setError(paymentErrorMessage(error, 'No se ha podido registrar el pago mixto.')),
+      )
   }
 
   function discount(event: FormEvent<HTMLFormElement>) {

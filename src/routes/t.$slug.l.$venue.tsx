@@ -12,30 +12,18 @@ import {
 import { createFileRoute, Link, notFound, Outlet, useParams } from '@tanstack/react-router'
 
 import { tenantRouteState } from '@/app/tenant-route-loader'
-import { getTenantBySlug, requireTenantRouteAccess } from '@/features/tenancy'
-import { getTenantVenues, resolveVenue } from '@/features/venues'
+import { requireTenantRouteAccess } from '@/features/tenancy'
+import { loadVenueRouteContext } from '@/features/venues'
 import { DEFAULT_LOCALE } from '@/shared/lib/i18n/locale'
 import { createTranslator } from '@/shared/lib/i18n/messages'
-import { parseVenueSlug } from '@/shared/lib/tenant/venue-slug'
 
-/**
- * Resolves the addressed local once so every child route works with an id the
- * server has already validated against the caller's access.
- */
+/** Validates the local addressed by the URL before rendering its nested routes. */
 export const Route = createFileRoute('/t/$slug/l/$venue')({
   beforeLoad: async ({ context, params }) => {
     requireTenantRouteAccess(context.tenantMembership.role, 'operations')
-    const venueSlug = parseVenueSlug(params.venue)
-    if (!venueSlug) throw notFound()
-
-    const tenant = await getTenantBySlug({ data: { slug: params.slug } })
-    if (!tenant) throw notFound()
-
-    const venues = await getTenantVenues({ data: { tenantId: tenant.id } })
-    const venue = resolveVenue(venues, venueSlug)
-    if (!venue) throw notFound()
-
-    return { tenant, venue }
+    const routeContext = await loadVenueRouteContext(params.slug, params.venue)
+    if (!routeContext) throw notFound()
+    return routeContext
   },
   component: VenueLayout,
   errorComponent: VenueRouteError,

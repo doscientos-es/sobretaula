@@ -11,6 +11,7 @@ import {
   Input,
   useFormFeedback,
 } from '@doscientos/ui'
+import { RefreshCw } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 import { cancelReservation, markReservationNoShow } from '@/features/service'
@@ -85,7 +86,7 @@ export function ReservationAgendaCard({
   >({})
   const [expandedReservationId, setExpandedReservationId] = useState<string | null>(null)
   const [historyEventFilter, setHistoryEventFilter] = useState('all')
-  const [agendaLoading, setAgendaLoading] = useState(false)
+  const [agendaLoading, setAgendaLoading] = useState(true)
   const [agendaRefresh, setAgendaRefresh] = useState(0)
   const [depositFilter, setDepositFilter] = useState<'all' | 'pending' | 'paid' | 'attention'>(
     'all',
@@ -132,6 +133,8 @@ export function ReservationAgendaCard({
   }, [])
 
   async function cancelAgendaReservation(reservationId: string) {
+    if (feedback.pending) return
+    feedback.setPending()
     try {
       const reason = transitionReason.trim() || undefined
       await cancelReservation({ data: { reservationId, reason, tenantId, venueId } })
@@ -139,6 +142,7 @@ export function ReservationAgendaCard({
       setTransitionReason('')
       setAgendaLoading(true)
       setAgendaRefresh((value) => value + 1)
+      feedback.setSuccess('Reserva cancelada. La agenda se ha actualizado.')
     } catch {
       feedback.setError('No se ha podido cancelar la reserva.')
     }
@@ -162,6 +166,8 @@ export function ReservationAgendaCard({
   }
 
   async function markAgendaNoShow(reservationId: string) {
+    if (feedback.pending) return
+    feedback.setPending()
     try {
       const reason = transitionReason.trim() || undefined
       await markReservationNoShow({ data: { reservationId, reason, tenantId, venueId } })
@@ -169,6 +175,7 @@ export function ReservationAgendaCard({
       setTransitionReason('')
       setAgendaLoading(true)
       setAgendaRefresh((value) => value + 1)
+      feedback.setSuccess('Reserva marcada como no presentada. La agenda se ha actualizado.')
     } catch {
       feedback.setError('No se ha podido marcar como no presentada.')
     }
@@ -180,6 +187,8 @@ export function ReservationAgendaCard({
       feedback.setError('Indica una fecha y hora válidas.')
       return
     }
+    if (feedback.pending) return
+    feedback.setPending()
     try {
       await rescheduleReservation({
         data: {
@@ -194,6 +203,7 @@ export function ReservationAgendaCard({
       setAgendaDate(editingStartsAt.slice(0, 10))
       setAgendaLoading(true)
       setAgendaRefresh((value) => value + 1)
+      feedback.setSuccess('Hora de la reserva actualizada.')
     } catch (error) {
       feedback.setError(
         error instanceof Response && error.status === 409
@@ -206,7 +216,7 @@ export function ReservationAgendaCard({
   }
 
   return (
-    <Card>
+    <Card aria-busy={agendaLoading || feedback.pending}>
       <CardHeader>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <CardTitle>Agenda</CardTitle>
@@ -220,7 +230,11 @@ export function ReservationAgendaCard({
             type="button"
             variant="outline"
           >
-            Actualizar agenda
+            <RefreshCw
+              aria-hidden="true"
+              className={`mr-2 size-3.5 ${agendaLoading ? 'animate-spin motion-reduce:animate-none' : ''}`}
+            />
+            {agendaLoading ? 'Actualizando…' : 'Actualizar agenda'}
           </Button>
         </div>
         <CardDescription>Reservas del día seleccionado en este local.</CardDescription>

@@ -9,7 +9,12 @@ import {
 import { localizedText } from '@/shared/lib/i18n/localized-text'
 import { createRequestSupabaseClient } from '@/shared/lib/supabase/server/create-server-client'
 
-import { computeAccountTotals, type AccountTotals } from '../domain/account'
+import {
+  canAdvanceOrderItemStatus,
+  computeAccountTotals,
+  type AccountTotals,
+  type OrderItemStatus,
+} from '../domain/account'
 import {
   loadAccount,
   type AccountData,
@@ -237,25 +242,23 @@ export const addOrderItem = createServerFn({ method: 'POST' })
       return replacement ? { ...line, ingredient_id: replacement.ingredient_id as string } : line
     })
     if (recipeLines.length > 0) {
-      const { error: inventoryError } = await supabase.from('inventory_movements').insert(
-        recipeLines.map((line) => ({
-          tenant_id: data.tenantId,
-          venue_id: data.venueId,
+      const { error: inventoryError } = await supabase.rpc('record_inventory_sale', {
+        p_lines: recipeLines.map((line) => ({
           ingredient_id: line.ingredient_id,
-          kind: 'sale',
           quantity:
-            -Number(line.quantity) * data.quantity * (1 + Number(line.waste_percent ?? 0) / 100),
-          reason: `Consumo de comanda ${order.id}`,
-          created_by: context.tenantMembership.userId,
+            Number(line.quantity) * data.quantity * (1 + Number(line.waste_percent ?? 0) / 100),
         })),
-      )
+        p_reason: `Consumo de comanda ${order.id}`,
+        p_tenant_id: data.tenantId,
+        p_venue_id: data.venueId,
+      })
       if (inventoryError) {
         await supabase
           .from('order_items')
           .delete()
           .eq('id', item.id as string)
         await supabase.from('orders').delete().eq('id', order.id)
-        throw new Error(`inventory_sale_failed:${inventoryError.code}`)
+        throw new Error(`inventory_sale_failed:${inventoryError.code}:${inventoryError.message}`)
       }
     }
     return { orderItemId: item.id as string }
@@ -334,6 +337,8 @@ export const updateOrderItemStatus = createServerFn({ method: 'POST' })
       .eq('orders.session_id', sessionId)
       .single()
     if (lookupError || !item) throw new Response('Not found', { status: 404 })
+    if (!canAdvanceOrderItemStatus(item.status as OrderItemStatus, data.status))
+      throw new Response('Invalid order item status transition', { status: 409 })
     const { error } = await supabase
       .from('order_items')
       .update({ status: data.status })
@@ -437,20 +442,24 @@ export const recordPayment = createServerFn({ method: 'POST' })
     if (data.amountCents > balanceCents)
       throw new Response('Payment exceeds balance', { status: 422 })
 
-    const { data: payment, error } = await supabase
-      .from('payments')
-      .insert({
-        amount_cents: data.amountCents,
-        created_by: context.tenantMembership.userId,
-        method: data.method,
-        session_id: sessionId,
-        tip_cents: data.tipCents ?? 0,
-        tenant_id: data.tenantId,
-      })
-      .select('id')
-      .single()
-    if (error || !payment) throw new Error(`account_payment_failed:${error?.code ?? 'unknown'}`)
-    return { balanceCents: balanceCents - data.amountCents, paymentId: payment.id as string }
+    const { data: paymentRows, error } = await supabase.rpc('record_single_payment', {
+      p_amount_cents: data.amountCents,
+      p_method: data.method,
+      p_operation_id: data.operationId,
+      p_session_id: sessionId,
+      p_tenant_id: data.tenantId,
+      p_tip_cents: data.tipCents ?? 0,
+      p_venue_id: data.venueId,
+    })
+    if (error || !paymentRows?.[0]) {
+      if (error?.message.includes('payment_exceeds_balance'))
+        throw new Response('Payment exceeds balance', { status: 422 })
+      throw new Error(`account_payment_failed:${error?.code ?? 'unknown'}`)
+    }
+    return {
+      balanceCents: Number(paymentRows[0].balance_cents ?? balanceCents - data.amountCents),
+      paymentId: paymentRows[0].payment_id as string,
+    }
   })
 
 /** Records two or more payment methods atomically as one idempotent batch. */

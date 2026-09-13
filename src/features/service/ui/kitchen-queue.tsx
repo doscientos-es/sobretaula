@@ -1,5 +1,5 @@
 import { Button, Card, CardContent, CardHeader, CardTitle } from '@doscientos/ui'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 
 import { updateOrderItemStatus } from '@/features/account/application/account'
 
@@ -27,6 +27,11 @@ export function KitchenQueue({
   const active = tickets.filter(
     (ticket) => ticket.status !== 'served' && ticket.status !== 'cancelled',
   )
+  const stations = useMemo(
+    () => ['all', ...new Set(active.map((ticket) => ticket.station))],
+    [active],
+  )
+  const [station, setStation] = useState('all')
   const [pendingId, setPendingId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   async function advance(ticket: KitchenTicket, status: KitchenTicket['status']) {
@@ -50,39 +55,55 @@ export function KitchenQueue({
         <CardTitle>Cocina y barra</CardTitle>
       </CardHeader>
       <CardContent className="grid gap-3 md:grid-cols-2">
-        {active.length === 0 ? (
+        <fieldset className="flex flex-wrap gap-2 md:col-span-2">
+          <legend className="sr-only">Filtrar estación</legend>
+          {stations.map((candidate) => (
+            <Button
+              key={candidate}
+              size="sm"
+              type="button"
+              variant={station === candidate ? 'secondary' : 'outline'}
+              onClick={() => setStation(candidate)}
+            >
+              {candidate === 'all' ? 'Todas' : candidate}
+            </Button>
+          ))}
+        </fieldset>
+        {active.filter((ticket) => station === 'all' || ticket.station === station).length === 0 ? (
           <p className="text-muted-foreground text-sm">No hay platos pendientes.</p>
         ) : (
-          active.map((ticket) => {
-            const next = nextStatus[ticket.status]
-            return (
-              <div className="rounded-lg border p-3" key={ticket.id}>
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="font-medium">
-                      {ticket.quantity} × {ticket.name}
-                    </p>
-                    <p className="text-muted-foreground text-xs">
-                      {ticket.station} · {ticket.status}
-                    </p>
-                    {ticket.notes && (
-                      <p className="text-muted-foreground text-xs">{ticket.notes}</p>
+          active
+            .filter((ticket) => station === 'all' || ticket.station === station)
+            .map((ticket) => {
+              const next = nextStatus[ticket.status]
+              return (
+                <div className="rounded-lg border p-3" key={ticket.id}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="font-medium">
+                        {ticket.quantity} × {ticket.name}
+                      </p>
+                      <p className="text-muted-foreground text-xs">
+                        {ticket.station} · {ticket.status}
+                      </p>
+                      {ticket.notes && (
+                        <p className="text-muted-foreground text-xs">{ticket.notes}</p>
+                      )}
+                    </div>
+                    {next && (
+                      <Button
+                        disabled={pendingId === ticket.id}
+                        size="sm"
+                        type="button"
+                        onClick={() => void advance(ticket, next)}
+                      >
+                        Marcar {next}
+                      </Button>
                     )}
                   </div>
-                  {next && (
-                    <Button
-                      disabled={pendingId === ticket.id}
-                      size="sm"
-                      type="button"
-                      onClick={() => void advance(ticket, next)}
-                    >
-                      Marcar {next}
-                    </Button>
-                  )}
                 </div>
-              </div>
-            )
-          })
+              )
+            })
         )}
         {error && (
           <p className="text-destructive text-sm" role="alert">

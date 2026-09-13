@@ -6,6 +6,36 @@ export interface InventoryMinimum {
   ingredientId: string
   minimum: number
 }
+export interface RecipeStockLine {
+  ingredientId: string
+  quantity: number
+}
+
+export function calculateRecipeAvailability(
+  stock: Readonly<Record<string, number>>,
+  recipes: Readonly<Record<string, readonly RecipeStockLine[]>>,
+) {
+  return Object.fromEntries(
+    Object.entries(recipes).map(([menuItemId, lines]) => {
+      if (lines.length === 0) return [menuItemId, { maxPortions: null, limitingIngredientIds: [] }]
+      const capacities = lines.map((line) =>
+        Math.max(0, Math.floor((stock[line.ingredientId] ?? 0) / line.quantity)),
+      )
+      const maxPortions = Math.min(...capacities)
+      return [
+        menuItemId,
+        {
+          maxPortions,
+          limitingIngredientIds: lines
+            .filter(
+              (line) => Math.floor((stock[line.ingredientId] ?? 0) / line.quantity) === maxPortions,
+            )
+            .map((line) => line.ingredientId),
+        },
+      ]
+    }),
+  )
+}
 export function calculateStock(
   movements: readonly InventoryMovement[],
 ): Readonly<Record<string, number>> {

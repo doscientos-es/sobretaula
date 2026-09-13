@@ -1,10 +1,33 @@
 import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 
+import type { Locale } from '@/shared/lib/i18n/locale'
 import { createAnonSupabaseClient } from '@/shared/lib/supabase/server/create-server-client'
 
 import type { LocalizedText } from '../domain/menu'
 import type { MenuCatalog } from './menu'
+
+export interface PublicMenuContext {
+  tenantId: string
+  venueId: string
+  locale: Locale
+}
+
+export const getPublicMenuContext = createServerFn({ method: 'GET' })
+  .validator(z.object({ slug: z.string().min(1).max(100) }))
+  .handler(async ({ data }): Promise<PublicMenuContext> => {
+    const { data: rows, error } = await createAnonSupabaseClient().rpc(
+      'public_reservation_profile',
+      {
+        p_slug: data.slug,
+      },
+    )
+    const row = (
+      rows as Array<{ tenant_id: string; venue_id: string; default_locale: Locale }> | null
+    )?.[0]
+    if (error || !row) throw new Error(`public_menu_context_failed:${error?.code ?? 'not_found'}`)
+    return { tenantId: row.tenant_id, venueId: row.venue_id, locale: row.default_locale }
+  })
 
 export const getPublicMenu = createServerFn({ method: 'GET' })
   .validator(

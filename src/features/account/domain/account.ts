@@ -7,6 +7,16 @@ export type KitchenStation = (typeof KITCHEN_STATIONS)[number]
 export const ORDER_ITEM_STATUSES = ['pending', 'preparing', 'ready', 'served', 'cancelled'] as const
 export type OrderItemStatus = (typeof ORDER_ITEM_STATUSES)[number]
 
+export function canAdvanceOrderItemStatus(from: OrderItemStatus, to: OrderItemStatus): boolean {
+  if (from === 'cancelled' || from === 'served') return false
+  return (
+    (from === 'pending' && to === 'preparing') ||
+    (from === 'preparing' && to === 'ready') ||
+    (from === 'ready' && to === 'served') ||
+    to === 'cancelled'
+  )
+}
+
 /** A line already charged to the table: the menu price was frozen when added. */
 export interface AccountLine {
   id: string

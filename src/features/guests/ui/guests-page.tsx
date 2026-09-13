@@ -28,6 +28,7 @@ import {
   toggleGuestTag,
   type GuestSummary,
 } from '../application/guests'
+import { classifyGuest } from '../domain/guest-segments'
 
 export function GuestsPage({ tenantId, venueId }: { tenantId: string; venueId: string }) {
   const [query, setQuery] = useState('')
@@ -44,6 +45,7 @@ export function GuestsPage({ tenantId, venueId }: { tenantId: string; venueId: s
   const [reloadToken, setReloadToken] = useState(0)
   const [tags, setTags] = useState<Array<{ id: string; label: string }>>([])
   const [attribute, setAttribute] = useState('')
+  const [now] = useState(() => Date.now())
   useEffect(() => {
     void getGuestTags({ data: { tenantId } })
       .then(setTags)
@@ -127,6 +129,17 @@ export function GuestsPage({ tenantId, venueId }: { tenantId: string; venueId: s
                       </p>
                     </div>
                     <span className="text-muted-foreground text-sm">
+                      <span className="bg-primary/10 text-primary mr-2 rounded-full px-2 py-0.5 text-xs">
+                        {classifyGuest({
+                          visits: guest.visits,
+                          spendCents: guest.spendCents,
+                          daysSinceLastVisit: guest.history[0]
+                            ? Math.floor(
+                                (now - new Date(guest.history[0].createdAt).getTime()) / 86400000,
+                              )
+                            : 999,
+                        })}
+                      </span>
                       {guest.reservations} reservas · {guest.visits} visitas ·{' '}
                       {(guest.spendCents / 100).toFixed(2)} €
                     </span>

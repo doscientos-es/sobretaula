@@ -39,7 +39,7 @@ export function CashRegisterPage({
   onDone,
 }: {
   register: Awaited<ReturnType<typeof getCashRegister>>
-  history: Awaited<ReturnType<typeof listClosedCashRegisters>>
+  history: Awaited<ReturnType<typeof listClosedCashRegisters>>['items']
   tenantId: string
   venueId: string
   onDone: () => void

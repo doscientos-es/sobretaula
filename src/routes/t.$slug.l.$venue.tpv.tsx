@@ -16,11 +16,13 @@ import {
 import { getMenu } from '@/features/menu'
 import { PosTerminalPage } from '@/features/pos'
 import { getSalesReport, ProductSalesSummary, SalesReportPage } from '@/features/reports'
-import { getServiceBoard, KitchenQueue, type ServiceBoard } from '@/features/service'
+import { KitchenQueue, type ServiceBoard } from '@/features/service'
+import { loadServiceBoard } from '@/features/service/infrastructure/server/service-board-repository'
 import { requireTenantRouteAccess } from '@/features/tenancy/application/tenant-route-access'
 import { loadVenueRouteContext } from '@/features/venues'
 import { useLocale } from '@/shared/lib/i18n/locale-preference'
 import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
+import { createRequestSupabaseClient } from '@/shared/lib/supabase/server/create-server-client'
 
 export const Route = createFileRoute('/t/$slug/l/$venue/tpv')({
   validateSearch: z.object({ sessionId: z.string().uuid().optional() }),
@@ -31,26 +33,29 @@ export const Route = createFileRoute('/t/$slug/l/$venue/tpv')({
     const routeContext = await loadVenueRouteContext(params.slug, params.venue)
     if (!routeContext) throw notFound()
     const { tenant, venue } = routeContext
+    const data = { tenantId: tenant.id, venueId: venue.id }
     const canManage = ['owner', 'manager'].includes(context.tenantMembership.role)
     const now = new Date()
     const startOfDay = new Date(now)
     startOfDay.setHours(0, 0, 0, 0)
     const [board, menu, management] = await Promise.all([
-      getServiceBoard({ data: { tenantId: tenant.id, venueId: venue.id } }),
-      getMenu({ data: { tenantId: tenant.id, venueId: venue.id } }),
+      loadServiceBoard(createRequestSupabaseClient(context.tenantMembership.accessToken), {
+        ...data,
+        now,
+      }),
+      getMenu({ data }),
       canManage
         ? Promise.all([
-            getCashRegister({ data: { tenantId: tenant.id, venueId: venue.id } }),
-            listClosedCashRegisters({ data: { tenantId: tenant.id, venueId: venue.id } }),
+            getCashRegister({ data }),
+            listClosedCashRegisters({ data }),
             getSalesReport({
               data: {
+                ...data,
                 from: startOfDay.toISOString(),
-                tenantId: tenant.id,
                 to: now.toISOString(),
-                venueId: venue.id,
               },
             }),
-          ])
+          ]).catch(() => undefined)
         : Promise.resolve(undefined),
     ])
     const sessionId =
@@ -95,7 +100,7 @@ function PosTerminalRoute() {
         ? {
             managementWorkspace: (
               <PosTerminalManagementWorkspace
-                history={cashHistory}
+                history={cashHistory.items}
                 register={cashRegister ?? null}
                 report={report}
               />
@@ -153,7 +158,7 @@ function PosTerminalManagementWorkspace({
   register,
   report,
 }: {
-  history: Awaited<ReturnType<typeof listClosedCashRegisters>>
+  history: Awaited<ReturnType<typeof listClosedCashRegisters>>['items']
   register: Awaited<ReturnType<typeof getCashRegister>>
   report: Awaited<ReturnType<typeof getSalesReport>>
 }) {

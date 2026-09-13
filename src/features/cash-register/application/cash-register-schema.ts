@@ -3,6 +3,10 @@ import { z } from 'zod'
 import { CASH_MOVEMENT_KINDS } from '../domain/cash-register'
 
 export const venueCashInput = z.object({ tenantId: z.string().uuid(), venueId: z.string().uuid() })
+export const cashHistoryInput = venueCashInput.extend({
+  page: z.number().int().min(1).default(1),
+  pageSize: z.number().int().min(1).max(100).default(25),
+})
 export const openCashRegisterInput = venueCashInput.extend({
   openingFloatCents: z.number().int().min(0).max(10_000_000),
 })

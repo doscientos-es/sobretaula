@@ -15,6 +15,22 @@ export const ALLERGENS = [
   'molluscs',
 ] as const
 export type Allergen = (typeof ALLERGENS)[number]
+export const ALLERGEN_LABELS: Record<Allergen, string> = {
+  gluten: 'gluten',
+  crustaceans: 'crustáceos',
+  eggs: 'huevos',
+  fish: 'pescado',
+  peanuts: 'cacahuetes',
+  soy: 'soja',
+  milk: 'leche',
+  nuts: 'frutos de cáscara',
+  celery: 'apio',
+  mustard: 'mostaza',
+  sesame: 'sésamo',
+  sulphites: 'sulfitos',
+  lupin: 'altramuces',
+  molluscs: 'moluscos',
+}
 export interface RecipeIngredient {
   name: string
   quantity: number

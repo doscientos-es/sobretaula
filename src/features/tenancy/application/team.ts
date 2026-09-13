@@ -4,6 +4,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 
 import { authMiddleware } from '@/features/auth/infrastructure/server/auth-middleware'
+import { paginationRange } from '@/shared/lib/pagination'
 import { isAuthEmailRateLimited } from '@/shared/lib/supabase/auth-email-rate-limit'
 import { indexProfilesByUserId } from '@/shared/lib/supabase/profile-index'
 import {
@@ -14,17 +15,19 @@ import {
 import { ASSIGNABLE_TENANT_ROLES, canAssignTeamRole } from '../domain/team'
 import { TENANT_ROLES } from '../domain/tenant'
 import { tenantMembershipMiddleware } from './require-tenant-membership'
+import { teamInvitationFormInput } from './team-invitation-input'
 
-const tenantTeamInput = z.object({ tenantId: z.string().uuid() })
+const tenantTeamInput = z.object({
+  tenantId: z.string().uuid(),
+  page: z.number().int().min(1).default(1),
+  pageSize: z.number().int().min(1).max(100).default(25),
+  search: z.string().trim().max(120).default(''),
+})
 const memberInput = tenantTeamInput.extend({ userId: z.string().uuid() })
 const assignableRoleInput = z.enum(ASSIGNABLE_TENANT_ROLES)
 const memberRoleInput = z.enum(TENANT_ROLES)
 const memberStatusInput = z.enum(['active', 'suspended'])
-const inviteInput = tenantTeamInput.extend({
-  email: z.string().trim().toLowerCase().email().max(254),
-  name: z.string().trim().min(2).max(120),
-  role: assignableRoleInput,
-})
+const inviteInput = tenantTeamInput.merge(teamInvitationFormInput)
 const updateRoleInput = memberInput.extend({ role: assignableRoleInput })
 const invitationTokenInput = z.object({ token: z.string().regex(/^[A-Za-z0-9_-]{40,128}$/) })
 
@@ -45,6 +48,10 @@ export interface TenantTeamInvitation {
 export interface TenantTeam {
   invitations: TenantTeamInvitation[]
   members: TenantTeamMember[]
+  page: number
+  pageSize: number
+  total: number
+  hasMore: boolean
 }
 
 function requireAssignableRole(
@@ -72,11 +79,26 @@ export const getTenantTeam = createServerFn({ method: 'GET' })
   .validator(tenantTeamInput)
   .handler(async ({ context, data }): Promise<TenantTeam> => {
     const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
-    const membersResult = await supabase
+    let memberUserIdsQuery = supabase.from('profiles').select('user_id')
+    if (data.search)
+      memberUserIdsQuery = memberUserIdsQuery.or(
+        `display_name.ilike.%${data.search}%,email.ilike.%${data.search}%`,
+      )
+    const matchingProfiles = data.search ? await memberUserIdsQuery : null
+    if (matchingProfiles?.error) throw new Error('tenant_team_profiles_load_failed')
+    const { from, to } = paginationRange(data)
+    let membersRequest = supabase
       .from('memberships')
-      .select('user_id, role, status')
+      .select('user_id, role, status', { count: 'exact' })
       .eq('tenant_id', data.tenantId)
       .order('created_at')
+      .range(from, to)
+    if (matchingProfiles)
+      membersRequest = membersRequest.in(
+        'user_id',
+        (matchingProfiles.data ?? []).map((row) => row.user_id),
+      )
+    const membersResult = await membersRequest
     const invitationsResult =
       context.tenantMembership.role === 'owner' || context.tenantMembership.role === 'manager'
         ? await supabase
@@ -99,6 +121,9 @@ export const getTenantTeam = createServerFn({ method: 'GET' })
     if (profilesResult.error) throw new Error('tenant_team_profiles_load_failed')
     const profilesByUserId = indexProfilesByUserId(profilesResult.data ?? [])
 
+    const total = matchingProfiles
+      ? (matchingProfiles.data ?? []).length
+      : (membersResult.count ?? (membersResult.data ?? []).length)
     return {
       invitations: (invitationsResult.data ?? []).map((invitation) => ({
         email: invitation.email,
@@ -115,6 +140,10 @@ export const getTenantTeam = createServerFn({ method: 'GET' })
           userId: member.user_id,
         }
       }),
+      page: data.page,
+      pageSize: data.pageSize,
+      total,
+      hasMore: to + 1 < total,
     }
   })
 
@@ -145,6 +174,11 @@ export const inviteTenantMember = createServerFn({ method: 'POST' })
       }
       return { kind: 'member_added' as const }
     }
+
+    if (!data.name)
+      throw new Response('tenant_invitation_name_required', {
+        status: 422,
+      })
 
     const token = randomBytes(32).toString('base64url')
     const { error: invitationError } = await request.from('invitations').upsert(

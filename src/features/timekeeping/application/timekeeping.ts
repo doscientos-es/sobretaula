@@ -7,6 +7,7 @@ import {
 } from '@/features/tenancy/application/require-tenant-membership'
 import { createRequestSupabaseClient } from '@/shared/lib/supabase/server/create-server-client'
 
+import { isEmployeeAvailable } from '../domain/availability'
 import {
   DEFAULT_TIMEKEEPING_LABOR_RULES,
   summarizeLaborTime,
@@ -15,6 +16,7 @@ import {
   type TimeEventType,
   type TimekeepingLaborRules,
 } from '../domain/timekeeping'
+import { hasShiftOverlap, type WorkforceShift } from '../domain/workforce'
 import {
   recordTimeEventInput,
   recordOfflineTimeEventInput,
@@ -22,9 +24,15 @@ import {
   terminalTimeEventInput,
   timekeepingHolidayInput,
   timekeepingInput,
+  timekeepingRateInput,
   timekeepingReportInput,
   timekeepingTermInput,
   timekeepingVenueAssignmentInput,
+  workforceShiftInput,
+  workforceShiftStatusInput,
+  workforceAvailabilityInput,
+  workforceAbsenceInput,
+  workforceAbsenceStatusInput,
 } from './timekeeping-schema'
 const middleware = [
   authMiddleware,
@@ -286,6 +294,8 @@ export const getTimekeepingConfiguration = createServerFn({ method: 'GET' })
       holidaysResult,
       assignmentsResult,
       venuesResult,
+      ratesResult,
+      shiftsResult,
     ] = await Promise.all([
       supabase
         .from('memberships')
@@ -313,6 +323,18 @@ export const getTimekeepingConfiguration = createServerFn({ method: 'GET' })
         .select('id, name')
         .eq('tenant_id', data.tenantId)
         .eq('is_active', true),
+      supabase
+        .from('timekeeping_employee_rates')
+        .select('employee_id, effective_from, hourly_cost_cents')
+        .eq('tenant_id', data.tenantId)
+        .order('effective_from', { ascending: false }),
+      supabase
+        .from('workforce_shifts')
+        .select('id, employee_id, starts_at, ends_at, status, note')
+        .eq('tenant_id', data.tenantId)
+        .eq('venue_id', data.venueId)
+        .gte('ends_at', new Date().toISOString())
+        .order('starts_at'),
     ])
     if (
       membersResult.error ||
@@ -320,7 +342,9 @@ export const getTimekeepingConfiguration = createServerFn({ method: 'GET' })
       termsResult.error ||
       holidaysResult.error ||
       assignmentsResult.error ||
-      venuesResult.error
+      venuesResult.error ||
+      (ratesResult.error && ratesResult.error.code !== '42P01') ||
+      (shiftsResult.error && shiftsResult.error.code !== '42P01')
     )
       throw new Error('timekeeping_configuration_load_failed')
     const names = new Map(
@@ -356,6 +380,25 @@ export const getTimekeepingConfiguration = createServerFn({ method: 'GET' })
         nightEndsAt: normalizeClock(term.night_ends_at as string, '06:00'),
         nightStartsAt: normalizeClock(term.night_starts_at as string, '22:00'),
       })),
+      shifts:
+        shiftsResult.error?.code === '42P01'
+          ? []
+          : (shiftsResult.data ?? []).map((shift) => ({
+              id: shift.id as string,
+              employeeId: shift.employee_id as string,
+              startsAt: shift.starts_at as string,
+              endsAt: shift.ends_at as string,
+              status: shift.status as 'draft' | 'published' | 'confirmed' | 'cancelled',
+              note: shift.note as string | null,
+            })),
+      rates:
+        ratesResult.error?.code === '42P01'
+          ? []
+          : (ratesResult.data ?? []).map((rate) => ({
+              effectiveFrom: rate.effective_from as string,
+              employeeId: rate.employee_id as string,
+              hourlyCostCents: rate.hourly_cost_cents as number,
+            })),
     }
   })
 
@@ -500,6 +543,190 @@ export const saveTimekeepingTerm = createServerFn({ method: 'POST' })
         tenant_id: data.tenantId,
       })
     if (error) throw new Error(`timekeeping_term_save_failed:${error.code}`)
+    return { saved: true }
+  })
+
+export const saveTimekeepingRate = createServerFn({ method: 'POST' })
+  .middleware(middleware)
+  .validator(timekeepingRateInput)
+  .handler(async ({ context, data }) => {
+    requireTimekeepingManager(context.tenantMembership.role)
+    const { error } = await createRequestSupabaseClient(context.tenantMembership.accessToken)
+      .from('timekeeping_employee_rates')
+      .upsert({
+        created_by: context.tenantMembership.userId,
+        effective_from: data.effectiveFrom,
+        employee_id: data.employeeId,
+        hourly_cost_cents: data.hourlyCostCents,
+        tenant_id: data.tenantId,
+      })
+    if (error) throw new Error(`timekeeping_rate_save_failed:${error.code}`)
+    return { saved: true }
+  })
+
+export const createWorkforceShift = createServerFn({ method: 'POST' })
+  .middleware(middleware)
+  .validator(workforceShiftInput)
+  .handler(async ({ context, data }) => {
+    requireTimekeepingManager(context.tenantMembership.role)
+    const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    const existing = await supabase
+      .from('workforce_shifts')
+      .select('employee_id, starts_at, ends_at, status')
+      .eq('tenant_id', data.tenantId)
+      .eq('venue_id', data.venueId)
+      .neq('status', 'cancelled')
+      .lt('starts_at', data.endsAt)
+      .gt('ends_at', data.startsAt)
+    if (existing.error) throw new Error(`workforce_shift_check_failed:${existing.error.code}`)
+    const candidate = {
+      employeeId: data.employeeId,
+      startsAt: data.startsAt,
+      endsAt: data.endsAt,
+      status: 'draft' as const,
+    }
+    const shifts = (existing.data ?? []).map((shift) => ({
+      employeeId: shift.employee_id as string,
+      startsAt: shift.starts_at as string,
+      endsAt: shift.ends_at as string,
+      status: shift.status as WorkforceShift['status'],
+    }))
+    if (hasShiftOverlap(shifts, candidate)) throw new Error('workforce_shift_overlap')
+    const { error } = await supabase.from('workforce_shifts').insert({
+      tenant_id: data.tenantId,
+      venue_id: data.venueId,
+      employee_id: data.employeeId,
+      starts_at: data.startsAt,
+      ends_at: data.endsAt,
+      note: data.note ?? null,
+      created_by: context.tenantMembership.userId,
+    })
+    if (error) throw new Error(`workforce_shift_create_failed:${error.code}`)
+    return { saved: true }
+  })
+
+export const updateWorkforceShiftStatus = createServerFn({ method: 'POST' })
+  .middleware(middleware)
+  .validator(workforceShiftStatusInput)
+  .handler(async ({ context, data }) => {
+    requireTimekeepingManager(context.tenantMembership.role)
+    const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    if (data.status === 'published') {
+      const [shiftResult, windowsResult, absencesResult] = await Promise.all([
+        supabase
+          .from('workforce_shifts')
+          .select('employee_id, starts_at, ends_at, status')
+          .eq('id', data.shiftId)
+          .eq('tenant_id', data.tenantId)
+          .eq('venue_id', data.venueId)
+          .single(),
+        supabase
+          .from('workforce_availability')
+          .select('employee_id, weekday, starts_at, ends_at, available')
+          .eq('tenant_id', data.tenantId),
+        supabase
+          .from('workforce_absences')
+          .select('employee_id, starts_at, ends_at, status')
+          .eq('tenant_id', data.tenantId)
+          .eq('status', 'approved'),
+      ])
+      if (shiftResult.error)
+        throw new Error(`workforce_shift_load_failed:${shiftResult.error.code}`)
+      if (
+        (windowsResult.error && windowsResult.error.code !== '42P01') ||
+        (absencesResult.error && absencesResult.error.code !== '42P01')
+      )
+        throw new Error('workforce_availability_load_failed')
+      const employeeId = shiftResult.data.employee_id as string
+      const windows = (windowsResult.data ?? [])
+        .filter((window) => window.employee_id === employeeId)
+        .map((window) => ({
+          weekday: window.weekday as number,
+          startsAt: String(window.starts_at).slice(0, 5),
+          endsAt: String(window.ends_at).slice(0, 5),
+          available: window.available as boolean,
+        }))
+      const absences = (absencesResult.data ?? [])
+        .filter((absence) => absence.employee_id === employeeId)
+        .map((absence) => ({
+          startsAt: absence.starts_at as string,
+          endsAt: absence.ends_at as string,
+          status: 'approved' as const,
+        }))
+      if (
+        windows.length > 0 &&
+        !isEmployeeAvailable(
+          {
+            employeeId,
+            startsAt: shiftResult.data.starts_at as string,
+            endsAt: shiftResult.data.ends_at as string,
+            status: 'draft',
+          },
+          windows,
+          absences,
+        )
+      )
+        throw new Error('workforce_shift_outside_availability')
+    }
+    const { error } = await supabase
+      .from('workforce_shifts')
+      .update({ status: data.status })
+      .eq('id', data.shiftId)
+      .eq('tenant_id', data.tenantId)
+      .eq('venue_id', data.venueId)
+    if (error) throw new Error(`workforce_shift_status_failed:${error.code}`)
+    return { saved: true }
+  })
+
+export const saveWorkforceAvailability = createServerFn({ method: 'POST' })
+  .middleware(middleware)
+  .validator(workforceAvailabilityInput)
+  .handler(async ({ context, data }) => {
+    requireTimekeepingManager(context.tenantMembership.role)
+    const { error } = await createRequestSupabaseClient(context.tenantMembership.accessToken)
+      .from('workforce_availability')
+      .upsert({
+        tenant_id: data.tenantId,
+        employee_id: data.employeeId,
+        weekday: data.weekday,
+        starts_at: data.startsAt,
+        ends_at: data.endsAt,
+        available: data.available,
+      })
+    if (error) throw new Error(`workforce_availability_save_failed:${error.code}`)
+    return { saved: true }
+  })
+
+export const createWorkforceAbsence = createServerFn({ method: 'POST' })
+  .middleware(middleware)
+  .validator(workforceAbsenceInput)
+  .handler(async ({ context, data }) => {
+    requireTimekeepingManager(context.tenantMembership.role)
+    const { error } = await createRequestSupabaseClient(context.tenantMembership.accessToken)
+      .from('workforce_absences')
+      .insert({
+        tenant_id: data.tenantId,
+        employee_id: data.employeeId,
+        starts_at: data.startsAt,
+        ends_at: data.endsAt,
+        reason: data.reason,
+        created_by: context.tenantMembership.userId,
+      })
+    if (error) throw new Error(`workforce_absence_create_failed:${error.code}`)
+    return { saved: true }
+  })
+
+export const updateWorkforceAbsenceStatus = createServerFn({ method: 'POST' })
+  .middleware(middleware)
+  .validator(workforceAbsenceStatusInput)
+  .handler(async ({ context, data }) => {
+    requireTimekeepingManager(context.tenantMembership.role)
+    const { error } = await createRequestSupabaseClient(context.tenantMembership.accessToken)
+      .from('workforce_absences')
+      .update({ status: data.status })
+      .eq('id', data.absenceId)
+      .eq('tenant_id', data.tenantId)
+    if (error) throw new Error(`workforce_absence_status_failed:${error.code}`)
     return { saved: true }
   })
 

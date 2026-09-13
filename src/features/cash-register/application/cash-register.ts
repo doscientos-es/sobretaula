@@ -5,6 +5,7 @@ import {
   operationalTenantMiddleware,
   tenantMembershipMiddleware,
 } from '@/features/tenancy/application/require-tenant-membership'
+import { paginationRange, type PaginatedResult } from '@/shared/lib/pagination'
 import { createRequestSupabaseClient } from '@/shared/lib/supabase/server/create-server-client'
 
 import {
@@ -12,6 +13,7 @@ import {
   closeCashRegisterInput,
   openCashRegisterInput,
   reconcileCashRegisterInput,
+  cashHistoryInput,
   venueCashInput,
 } from './cash-register-schema'
 
@@ -72,23 +74,32 @@ export const getCashRegister = createServerFn({ method: 'GET' })
 
 export const listClosedCashRegisters = createServerFn({ method: 'GET' })
   .middleware(secured)
-  .validator(venueCashInput)
+  .validator(cashHistoryInput)
   .handler(async ({ context, data }) => {
     requireManager(context.tenantMembership.role)
-    const { data: rows, error } = await createRequestSupabaseClient(
-      context.tenantMembership.accessToken,
-    )
+    const {
+      data: rows,
+      error,
+      count,
+    } = await createRequestSupabaseClient(context.tenantMembership.accessToken)
       .from('cash_registers')
       .select(
         'id, opened_at, closed_at, opening_float_cents, counted_cash_cents, sales_by_method, status',
+        { count: 'exact' },
       )
       .eq('tenant_id', data.tenantId)
       .eq('venue_id', data.venueId)
       .eq('status', 'closed')
       .order('closed_at', { ascending: false })
-      .limit(50)
+      .range(...(Object.values(paginationRange(data)) as [number, number]))
     if (error) throw new Error(`cash_register_history_failed:${error.code}`)
-    return rows ?? []
+    return {
+      items: rows ?? [],
+      page: data.page,
+      pageSize: data.pageSize,
+      total: count ?? 0,
+      hasMore: data.page * data.pageSize < (count ?? 0),
+    } satisfies PaginatedResult<NonNullable<typeof rows>[number]>
   })
 
 export const openCashRegister = createServerFn({ method: 'POST' })

@@ -14,7 +14,15 @@ export function PwaRuntime() {
     storageKey: `sobretaula:pwa-install-dismissed:${tenantSlug ?? 'platform'}`,
   })
 
-  useEffect(() => registerPwaServiceWorker({ scriptUrl: '/sw.js' }), [])
+  useEffect(() => {
+    if (import.meta.env.DEV) {
+      void navigator.serviceWorker?.getRegistrations().then((registrations) => {
+        for (const registration of registrations) void registration.unregister()
+      })
+      return
+    }
+    return registerPwaServiceWorker({ scriptUrl: '/sw.js' })
+  }, [])
 
   useEffect(() => {
     if (!tenantSlug) return

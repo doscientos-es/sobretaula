@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  canAdvanceOrderItemStatus,
   computeAccountTotals,
   lineGrossCents,
   lineNetCents,
@@ -8,6 +9,19 @@ import {
   type AccountLine,
   type AccountPayment,
 } from './account'
+
+describe('canAdvanceOrderItemStatus', () => {
+  it('allows the kitchen lifecycle in order', () => {
+    expect(canAdvanceOrderItemStatus('pending', 'preparing')).toBe(true)
+    expect(canAdvanceOrderItemStatus('preparing', 'ready')).toBe(true)
+    expect(canAdvanceOrderItemStatus('ready', 'served')).toBe(true)
+  })
+
+  it('rejects backwards transitions and changes after serving', () => {
+    expect(canAdvanceOrderItemStatus('ready', 'pending')).toBe(false)
+    expect(canAdvanceOrderItemStatus('served', 'ready')).toBe(false)
+  })
+})
 
 function line(overrides: Partial<AccountLine>): AccountLine {
   return {

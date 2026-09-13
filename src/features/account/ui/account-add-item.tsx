@@ -27,6 +27,15 @@ import {
   flushAccountOperations,
 } from '../application/account-offline-operations'
 
+function addItemErrorMessage(error: unknown) {
+  const message = error instanceof Error ? error.message : ''
+  if (message.includes('inventory_insufficient_stock'))
+    return 'No hay stock suficiente para apuntar este plato.'
+  if (message.includes('payment_session_not_open'))
+    return 'La cuenta ya no está abierta. Actualiza la pantalla.'
+  return 'No se ha podido apuntar el plato.'
+}
+
 /** Fast path of the waiter: pick a dish, a quantity, maybe a note, and add it. */
 export function AccountAddItem({
   locale,
@@ -130,7 +139,7 @@ export function AccountAddItem({
         setOperationId(crypto.randomUUID())
         onDone()
       })
-      .catch(() => feedback.setError('No se ha podido apuntar el plato.'))
+      .catch((error: unknown) => feedback.setError(addItemErrorMessage(error)))
   }
 
   return (

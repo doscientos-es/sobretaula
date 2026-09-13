@@ -1,3 +1,4 @@
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 
@@ -188,154 +189,158 @@ function requireManager(role: string): void {
   if (role !== 'owner' && role !== 'manager') throw new Response('Forbidden', { status: 403 })
 }
 
+export async function loadFloorPlan(
+  supabase: SupabaseClient,
+  data: z.infer<typeof venueInput>,
+): Promise<FloorPlanData> {
+  const areasResult = await supabase
+    .from('areas')
+    .select('floor_number, id, is_online_bookable, name, outdoor_open, space_type, venue_id')
+    .eq('tenant_id', data.tenantId)
+    .eq('venue_id', data.venueId)
+    .order('name')
+  if (areasResult.error) throw new Error(`floor_plan_load_failed:${areasResult.error.code}`)
+  const areaIds = (areasResult.data ?? []).map((area) => area.id)
+
+  const versionsResult = await supabase
+    .from('floor_plan_versions')
+    .select('active_from, active_to, area_id, height_cm, id, name, width_cm')
+    .eq('tenant_id', data.tenantId)
+    .in('area_id', areaIds)
+    .order('active_from', { ascending: false })
+  if (versionsResult.error) throw new Error(`floor_plan_load_failed:${versionsResult.error.code}`)
+  const versionIds = (versionsResult.data ?? []).map((version) => version.id)
+
+  const [
+    tablesResult,
+    initialPlacementsResult,
+    elementsResult,
+    presetsResult,
+    eventTemplatesResult,
+  ] = await Promise.all([
+    supabase
+      .from('tables')
+      .select('code, id')
+      .eq('tenant_id', data.tenantId)
+      .eq('venue_id', data.venueId),
+    supabase
+      .from('table_placements')
+      .select(
+        'floor_plan_version_id, height_cm, id, is_locked, rotation_deg, table_id, width_cm, x_cm, y_cm',
+      )
+      .eq('tenant_id', data.tenantId)
+      .in('floor_plan_version_id', versionIds),
+    supabase
+      .from('plan_elements')
+      .select(
+        'floor_plan_version_id, height_cm, id, kind, label, rotation_deg, width_cm, x_cm, y_cm',
+      )
+      .eq('tenant_id', data.tenantId)
+      .in('floor_plan_version_id', versionIds),
+    supabase
+      .from('table_group_presets')
+      .select('area_id, id, max_seats, name, table_ids')
+      .eq('tenant_id', data.tenantId)
+      .order('name'),
+    supabase
+      .from('event_layout_templates')
+      .select('active_from, active_to, area_ids, id, layout, name')
+      .eq('tenant_id', data.tenantId)
+      .eq('venue_id', data.venueId)
+      .order('active_from', { ascending: false }),
+  ])
+  const eventTemplatesUnavailable =
+    eventTemplatesResult.error?.code === '42P01' || eventTemplatesResult.error?.code === '42703'
+  const eventTemplates = eventTemplatesUnavailable ? [] : (eventTemplatesResult.data ?? [])
+  let placementsResult = initialPlacementsResult
+  if (placementsResult.error?.code === '42703') {
+    const legacy = await supabase
+      .from('table_placements')
+      .select('floor_plan_version_id, height_cm, id, rotation_deg, table_id, width_cm, x_cm, y_cm')
+      .eq('tenant_id', data.tenantId)
+      .in('floor_plan_version_id', versionIds)
+    placementsResult = {
+      ...legacy,
+      data: (legacy.data ?? []).map((placement) => ({ ...placement, is_locked: false })),
+    } as typeof placementsResult
+  }
+
+  const error = [
+    tablesResult.error,
+    placementsResult.error,
+    elementsResult.error,
+    presetsResult.error,
+    eventTemplatesUnavailable ? null : eventTemplatesResult.error,
+  ].find(Boolean)
+  if (error) throw new Error(`floor_plan_load_failed:${error.code}`)
+
+  const tableCodes = new Map((tablesResult.data ?? []).map((table) => [table.id, table.code]))
+
+  return {
+    areas: (areasResult.data ?? []).map((area) => ({
+      id: area.id,
+      isOnlineBookable: area.is_online_bookable,
+      name: area.name,
+      floorNumber: area.floor_number,
+      outdoorOpen: area.outdoor_open,
+      spaceType: (area.space_type ?? 'indoor') as FloorPlanData['areas'][number]['spaceType'],
+      venueId: area.venue_id,
+    })),
+    eventLayoutTemplates: eventTemplates.map((template) => ({
+      activeFrom: template.active_from,
+      activeTo: template.active_to,
+      areaIds: template.area_ids as string[],
+      id: template.id,
+      layout: template.layout as never,
+      name: template.name,
+    })),
+    elements: (elementsResult.data ?? []).map((element) => ({
+      floorPlanVersionId: element.floor_plan_version_id,
+      heightCm: element.height_cm,
+      id: element.id,
+      kind: element.kind,
+      label: element.label,
+      rotationDeg: element.rotation_deg,
+      widthCm: element.width_cm,
+      xCm: element.x_cm,
+      yCm: element.y_cm,
+    })),
+    placements: (placementsResult.data ?? []).map((placement) => ({
+      code: tableCodes.get(placement.table_id) ?? '—',
+      floorPlanVersionId: placement.floor_plan_version_id,
+      heightCm: placement.height_cm,
+      id: placement.table_id,
+      isLocked: placement.is_locked,
+      rotationDeg: placement.rotation_deg,
+      widthCm: placement.width_cm,
+      xCm: placement.x_cm,
+      yCm: placement.y_cm,
+    })),
+    tableGroupPresets: (presetsResult.data ?? []).map((preset) => ({
+      areaId: preset.area_id,
+      id: preset.id,
+      maxSeats: preset.max_seats,
+      name: preset.name,
+      tableIds: preset.table_ids as string[],
+    })),
+    versions: (versionsResult.data ?? []).map((version) => ({
+      activeFrom: version.active_from,
+      activeTo: version.active_to,
+      areaId: version.area_id,
+      heightCm: version.height_cm,
+      id: version.id,
+      name: version.name,
+      widthCm: version.width_cm,
+    })),
+  }
+}
+
 export const getFloorPlan = createServerFn({ method: 'GET' })
   .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
   .validator(venueInput)
-  .handler(async ({ context, data }): Promise<FloorPlanData> => {
-    const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
-    const areasResult = await supabase
-      .from('areas')
-      .select('floor_number, id, is_online_bookable, name, outdoor_open, space_type, venue_id')
-      .eq('tenant_id', data.tenantId)
-      .eq('venue_id', data.venueId)
-      .order('name')
-    if (areasResult.error) throw new Error(`floor_plan_load_failed:${areasResult.error.code}`)
-    const areaIds = (areasResult.data ?? []).map((area) => area.id)
-
-    const versionsResult = await supabase
-      .from('floor_plan_versions')
-      .select('active_from, active_to, area_id, height_cm, id, name, width_cm')
-      .eq('tenant_id', data.tenantId)
-      .in('area_id', areaIds)
-      .order('active_from', { ascending: false })
-    if (versionsResult.error) throw new Error(`floor_plan_load_failed:${versionsResult.error.code}`)
-    const versionIds = (versionsResult.data ?? []).map((version) => version.id)
-
-    const [
-      tablesResult,
-      initialPlacementsResult,
-      elementsResult,
-      presetsResult,
-      eventTemplatesResult,
-    ] = await Promise.all([
-      supabase
-        .from('tables')
-        .select('code, id')
-        .eq('tenant_id', data.tenantId)
-        .eq('venue_id', data.venueId),
-      supabase
-        .from('table_placements')
-        .select(
-          'floor_plan_version_id, height_cm, id, is_locked, rotation_deg, table_id, width_cm, x_cm, y_cm',
-        )
-        .eq('tenant_id', data.tenantId)
-        .in('floor_plan_version_id', versionIds),
-      supabase
-        .from('plan_elements')
-        .select(
-          'floor_plan_version_id, height_cm, id, kind, label, rotation_deg, width_cm, x_cm, y_cm',
-        )
-        .eq('tenant_id', data.tenantId)
-        .in('floor_plan_version_id', versionIds),
-      supabase
-        .from('table_group_presets')
-        .select('area_id, id, max_seats, name, table_ids')
-        .eq('tenant_id', data.tenantId)
-        .order('name'),
-      supabase
-        .from('event_layout_templates')
-        .select('active_from, active_to, area_ids, id, layout, name')
-        .eq('tenant_id', data.tenantId)
-        .eq('venue_id', data.venueId)
-        .order('active_from', { ascending: false }),
-    ])
-    const eventTemplatesUnavailable =
-      eventTemplatesResult.error?.code === '42P01' || eventTemplatesResult.error?.code === '42703'
-    const eventTemplates = eventTemplatesUnavailable ? [] : (eventTemplatesResult.data ?? [])
-    let placementsResult = initialPlacementsResult
-    if (placementsResult.error?.code === '42703') {
-      const legacy = await supabase
-        .from('table_placements')
-        .select(
-          'floor_plan_version_id, height_cm, id, rotation_deg, table_id, width_cm, x_cm, y_cm',
-        )
-        .eq('tenant_id', data.tenantId)
-        .in('floor_plan_version_id', versionIds)
-      placementsResult = {
-        ...legacy,
-        data: (legacy.data ?? []).map((placement) => ({ ...placement, is_locked: false })),
-      } as typeof placementsResult
-    }
-
-    const error = [
-      tablesResult.error,
-      placementsResult.error,
-      elementsResult.error,
-      presetsResult.error,
-      eventTemplatesUnavailable ? null : eventTemplatesResult.error,
-    ].find(Boolean)
-    if (error) throw new Error(`floor_plan_load_failed:${error.code}`)
-
-    const tableCodes = new Map((tablesResult.data ?? []).map((table) => [table.id, table.code]))
-
-    return {
-      areas: (areasResult.data ?? []).map((area) => ({
-        id: area.id,
-        isOnlineBookable: area.is_online_bookable,
-        name: area.name,
-        floorNumber: area.floor_number,
-        outdoorOpen: area.outdoor_open,
-        spaceType: (area.space_type ?? 'indoor') as FloorPlanData['areas'][number]['spaceType'],
-        venueId: area.venue_id,
-      })),
-      eventLayoutTemplates: eventTemplates.map((template) => ({
-        activeFrom: template.active_from,
-        activeTo: template.active_to,
-        areaIds: template.area_ids as string[],
-        id: template.id,
-        layout: template.layout as never,
-        name: template.name,
-      })),
-      elements: (elementsResult.data ?? []).map((element) => ({
-        floorPlanVersionId: element.floor_plan_version_id,
-        heightCm: element.height_cm,
-        id: element.id,
-        kind: element.kind,
-        label: element.label,
-        rotationDeg: element.rotation_deg,
-        widthCm: element.width_cm,
-        xCm: element.x_cm,
-        yCm: element.y_cm,
-      })),
-      placements: (placementsResult.data ?? []).map((placement) => ({
-        code: tableCodes.get(placement.table_id) ?? '—',
-        floorPlanVersionId: placement.floor_plan_version_id,
-        heightCm: placement.height_cm,
-        id: placement.table_id,
-        isLocked: placement.is_locked,
-        rotationDeg: placement.rotation_deg,
-        widthCm: placement.width_cm,
-        xCm: placement.x_cm,
-        yCm: placement.y_cm,
-      })),
-      tableGroupPresets: (presetsResult.data ?? []).map((preset) => ({
-        areaId: preset.area_id,
-        id: preset.id,
-        maxSeats: preset.max_seats,
-        name: preset.name,
-        tableIds: preset.table_ids as string[],
-      })),
-      versions: (versionsResult.data ?? []).map((version) => ({
-        activeFrom: version.active_from,
-        activeTo: version.active_to,
-        areaId: version.area_id,
-        heightCm: version.height_cm,
-        id: version.id,
-        name: version.name,
-        widthCm: version.width_cm,
-      })),
-    }
-  })
+  .handler(({ context, data }) =>
+    loadFloorPlan(createRequestSupabaseClient(context.tenantMembership.accessToken), data),
+  )
 
 export const createTableGroupPreset = createServerFn({ method: 'POST' })
   .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])

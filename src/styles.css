@@ -362,6 +362,12 @@ select:not([data-slot]):focus-visible {
   padding-bottom: 0.625rem;
 }
 
+@media (min-width: 64rem) {
+  .st-mobile-menu-trigger {
+    display: none;
+  }
+}
+
 .st-saas-brand {
   color: #24272d;
 }

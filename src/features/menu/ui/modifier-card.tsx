@@ -175,6 +175,9 @@ export function ModifierCard({
                 <FieldLabel htmlFor="modifier-replaces">
                   Sustituye ingrediente (opcional)
                 </FieldLabel>
+                <p className="text-muted-foreground text-xs">
+                  Para que el stock se descuente bien, completa también el ingrediente que consume.
+                </p>
                 <Select
                   id="modifier-replaces"
                   onSelectionChange={(key) =>
@@ -226,7 +229,19 @@ export function ModifierCard({
             </>
           ) : null}
           <FormFeedback pendingLabel="Guardando modificador…" state={feedback.state} />
-          <Button disabled={feedback.pending || !menuItemId} type="submit">
+          {Boolean(replacesIngredientId) !== Boolean(ingredientId) ? (
+            <p className="text-destructive text-xs">
+              Selecciona ambos ingredientes o deja los dos sin configurar.
+            </p>
+          ) : null}
+          <Button
+            disabled={
+              feedback.pending ||
+              !menuItemId ||
+              Boolean(replacesIngredientId) !== Boolean(ingredientId)
+            }
+            type="submit"
+          >
             Añadir modificador
           </Button>
         </form>

@@ -8,6 +8,11 @@ export const ingredientListInput = productTenantInput.extend({
   pageSize: z.number().int().min(1).max(100).default(25),
   search: z.string().trim().max(120).default(''),
 })
+export const supplierListInput = productTenantInput.extend({
+  page: z.number().int().min(1).default(1),
+  pageSize: z.number().int().min(1).max(100).default(25),
+  search: z.string().trim().max(120).default(''),
+})
 export const createIngredientInput = productTenantInput.extend({
   name: z.string().trim().min(1).max(120),
   unit: z.enum(['g', 'kg', 'ml', 'l', 'unit']),
@@ -57,6 +62,7 @@ export const supplierInput = productTenantInput.extend({
 })
 export const deliveryNoteInput = inventoryQueryInput.extend({
   supplierId: z.string().uuid(),
+  purchaseOrderId: z.string().uuid().optional(),
   reference: z.string().trim().min(1).max(120),
   receivedOn: z.string().date(),
   notes: z.string().trim().max(1000).default(''),
@@ -74,6 +80,28 @@ export const deliveryNoteInput = inventoryQueryInput.extend({
 export const receiveDeliveryNoteInput = z.object({
   tenantId: z.string().uuid(),
   deliveryNoteId: z.string().uuid(),
+})
+export const purchaseOrderInput = inventoryQueryInput.extend({
+  supplierId: z.string().uuid(),
+  notes: z.string().trim().max(1000).default(''),
+  lines: z
+    .array(
+      z.object({
+        ingredientId: z.string().uuid(),
+        quantity: z.number().positive(),
+        unitCostCents: z.number().int().min(0),
+      }),
+    )
+    .min(1)
+    .max(500),
+})
+export const purchaseOrderStatusInput = productTenantInput.extend({
+  purchaseOrderId: z.string().uuid(),
+  status: z.enum(['approved', 'sent', 'received', 'cancelled']),
+})
+export const purchaseOrderListInput = inventoryQueryInput.extend({
+  page: z.number().int().min(1).default(1),
+  pageSize: z.number().int().min(1).max(100).default(25),
 })
 
 export function requireProductEditor(role: string): void {

@@ -25,18 +25,23 @@ import {
 } from '@doscientos/ui'
 import { useEffect, useMemo, useState } from 'react'
 
+import type { DemandForecast } from '@/features/forecasting'
+
 import {
   addInventoryMovement,
   createDeliveryNote,
   createIngredient,
+  createPurchaseOrder,
   createSupplier,
   listIngredients,
   receiveDeliveryNote,
   replaceRecipe,
   type getInventory,
+  type listPurchaseOrders,
   type listSuppliers,
 } from '../application/product'
 import { ALLERGENS, calculateRecipeCost } from '../domain/product-costing'
+import { buildPurchaseRecommendation } from '../domain/purchase-recommendation'
 
 const ALLERGEN_LABELS: Record<(typeof ALLERGENS)[number], string> = {
   gluten: 'Gluten',
@@ -63,6 +68,8 @@ export function ProductPage({
   venueId,
   onDone,
   suppliers,
+  forecast,
+  purchaseOrders,
 }: {
   ingredients: Awaited<ReturnType<typeof listIngredients>>
   stock: Awaited<ReturnType<typeof getInventory>>
@@ -71,6 +78,8 @@ export function ProductPage({
   venueId: string
   onDone: () => void
   suppliers: Awaited<ReturnType<typeof listSuppliers>>
+  forecast: DemandForecast
+  purchaseOrders: Awaited<ReturnType<typeof listPurchaseOrders>>
 }) {
   const feedback = useFormFeedback()
   const [ingredientList, setIngredientList] = useState(ingredients)
@@ -78,12 +87,60 @@ export function ProductPage({
   const [ingredientSearch, setIngredientSearch] = useState('')
   const [ingredientPage, setIngredientPage] = useState(ingredients.page)
   const ingredientItems = ingredientList.items
+  const purchaseRecommendations = useMemo(
+    () =>
+      ingredientItems
+        .map((ingredient) =>
+          buildPurchaseRecommendation({
+            ingredientId: ingredient.id,
+            ingredientName: ingredient.name,
+            stock: stock.stock[ingredient.id] ?? 0,
+            minimumStock: ingredient.minimumStock,
+            forecastDemand: forecast.ingredientDemand[ingredient.id] ?? 0,
+            unitCostCents: ingredient.costCentsPerUnit,
+          }),
+        )
+        .filter((recommendation) => recommendation.quantity > 0),
+    [forecast.ingredientDemand, ingredientItems, stock.stock],
+  )
   const [supplierId, setSupplierId] = useState('')
   const [supplierName, setSupplierName] = useState('')
   const [deliveryReference, setDeliveryReference] = useState('')
   const [deliveryQuantity, setDeliveryQuantity] = useState('')
   const [deliveryCost, setDeliveryCost] = useState('')
   const [deliveryIngredientId, setDeliveryIngredientId] = useState('')
+  const [purchaseOrderId, setPurchaseOrderId] = useState('')
+  async function createRecommendedPurchase(
+    recommendation: (typeof purchaseRecommendations)[number],
+  ) {
+    const selectedSupplierId = supplierId || suppliers.items[0]?.id
+    if (!selectedSupplierId) {
+      feedback.setError('Crea o selecciona un proveedor antes de generar el pedido.')
+      return
+    }
+    feedback.setPending()
+    try {
+      await createPurchaseOrder({
+        data: {
+          tenantId,
+          venueId,
+          supplierId: selectedSupplierId,
+          notes: `Generado desde previsión: ${recommendation.reason}`,
+          lines: [
+            {
+              ingredientId: recommendation.ingredientId,
+              quantity: recommendation.quantity,
+              unitCostCents: recommendation.unitCostCents,
+            },
+          ],
+        },
+      })
+      feedback.setSuccess(`Pedido creado para ${recommendation.ingredientName}.`)
+      onDone()
+    } catch {
+      feedback.setError('No se ha podido crear el pedido recomendado.')
+    }
+  }
   async function receiveDelivery(event: React.FormEvent) {
     event.preventDefault()
     if (feedback.pending || !deliveryIngredientId) return
@@ -99,6 +156,7 @@ export function ProductPage({
           tenantId,
           venueId,
           supplierId: selectedSupplierId,
+          purchaseOrderId: purchaseOrderId || undefined,
           reference: deliveryReference,
           receivedOn: new Date().toISOString().slice(0, 10),
           lines: [
@@ -205,6 +263,57 @@ export function ProductPage({
   }
   return (
     <section className="space-y-6">
+      <Card className="border-warning/30 bg-warning/5">
+        <CardHeader>
+          <CardTitle>Compras recomendadas</CardTitle>
+          <p className="text-muted-foreground text-sm">
+            Productos por debajo del stock mínimo configurado.
+          </p>
+        </CardHeader>
+        <CardContent>
+          {purchaseRecommendations.length === 0 ? (
+            <p className="text-muted-foreground text-sm">No hay compras urgentes.</p>
+          ) : (
+            <ul className="grid gap-2 text-sm sm:grid-cols-2">
+              {purchaseRecommendations.map((recommendation) => (
+                <li
+                  className="flex justify-between gap-3 rounded-md border p-2"
+                  key={recommendation.ingredientId}
+                >
+                  <span>{recommendation.ingredientName}</span>
+                  <div className="flex items-center gap-2">
+                    <strong>{recommendation.quantity} unidades</strong>
+                    <Button
+                      onClick={() => void createRecommendedPurchase(recommendation)}
+                      size="sm"
+                      type="button"
+                    >
+                      Crear pedido
+                    </Button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Previsión de demanda</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-wrap gap-4 text-sm">
+          <span>
+            <strong>{forecast.expectedCovers}</strong> cubiertos previstos
+          </span>
+          <span>
+            <strong>{(forecast.expectedSalesCents / 100).toFixed(2)} €</strong> de ventas estimadas
+          </span>
+          <span className="text-muted-foreground">
+            Confianza {forecast.confidence} ·{' '}
+            {forecast.sources.join(' · ') || 'sin datos históricos'}
+          </span>
+        </CardContent>
+      </Card>
       <Card>
         <CardHeader>
           <CardTitle>Ingredientes e inventario</CardTitle>
@@ -343,6 +452,42 @@ export function ProductPage({
               setRecipeQuantity('')
             }}
           >
+            <Field>
+              <FieldLabel htmlFor="delivery-purchase-order">Pedido relacionado</FieldLabel>
+              <Select
+                id="delivery-purchase-order"
+                onSelectionChange={(key) => {
+                  const id = String(key) === 'none' ? '' : String(key)
+                  setPurchaseOrderId(id)
+                  const order = purchaseOrders.items.find((candidate) => candidate.id === id)
+                  if (!order) return
+                  setSupplierId(order.supplierId)
+                  const line = order.lines[0]
+                  if (line) {
+                    setDeliveryIngredientId(line.ingredientId)
+                    setDeliveryQuantity(String(line.quantity))
+                    setDeliveryCost(String(line.unitCostCents))
+                  }
+                }}
+                selectedKey={purchaseOrderId || 'none'}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectList>
+                    <SelectItem id="none">Sin pedido</SelectItem>
+                    {purchaseOrders.items
+                      .filter((order) => ['approved', 'sent'].includes(order.status))
+                      .map((order) => (
+                        <SelectItem id={order.id} key={order.id}>
+                          Pedido {order.id.slice(0, 8)}
+                        </SelectItem>
+                      ))}
+                  </SelectList>
+                </SelectContent>
+              </Select>
+            </Field>
             <Field>
               <FieldLabel htmlFor="recipe-ingredient">Ingrediente</FieldLabel>
               <Select
@@ -544,7 +689,7 @@ export function ProductPage({
                 <SelectContent>
                   <SelectList>
                     <SelectItem id="new">Nuevo proveedor…</SelectItem>
-                    {suppliers.map((supplier) => (
+                    {suppliers.items.map((supplier) => (
                       <SelectItem id={supplier.id} key={supplier.id}>
                         {supplier.name}
                       </SelectItem>
@@ -708,6 +853,25 @@ export function ProductPage({
               })}
             </TableBody>
           </Table>
+          {Object.keys(stock.recipeAvailability).length > 0 ? (
+            <div className="mt-5 border-t pt-4">
+              <h3 className="font-medium">Capacidad de venta por receta</h3>
+              <ul className="mt-2 grid gap-2 sm:grid-cols-2">
+                {menuItems.map((item) => {
+                  const availability = stock.recipeAvailability[item.id]
+                  if (!availability) return null
+                  return (
+                    <li className="bg-muted/30 rounded-lg p-3 text-sm" key={item.id}>
+                      <span className="font-medium">{item.name}</span> ·{' '}
+                      {availability.maxPortions === null
+                        ? 'sin receta configurada'
+                        : `${availability.maxPortions} raciones disponibles`}
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
+          ) : null}
         </CardContent>
       </Card>
     </section>

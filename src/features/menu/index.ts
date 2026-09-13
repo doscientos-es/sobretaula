@@ -6,7 +6,7 @@ export {
   getMenu,
   updateMenuItem,
 } from './application/menu'
-export { getPublicMenu } from './application/public-menu'
+export { getPublicMenu, getPublicMenuContext } from './application/public-menu'
 export { setMenuChannelPrice } from './application/channel-prices'
 export type { MenuCatalog } from './application/menu'
 export { buildMenuSections, formatVatRate, localizedText } from './domain/menu'

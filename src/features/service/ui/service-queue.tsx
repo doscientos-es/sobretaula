@@ -48,11 +48,11 @@ function reservationTableLabel(
   return labels.length > 0 ? labels.join(', ') : 'Sin mesa'
 }
 
-function reservationTiming(startsAt: string, now: Date): { label: string; tone: string } {
+function reservationTiming(startsAt: string, now: Date): { label: string; className: string } {
   const minutes = (new Date(startsAt).getTime() - now.getTime()) / 60_000
-  if (minutes < -15) return { label: 'Retrasada', tone: 'text-destructive' }
-  if (minutes <= 30) return { label: 'Llega ahora', tone: 'text-amber-700' }
-  return { label: 'Próxima', tone: 'text-muted-foreground' }
+  if (minutes < -15) return { className: 'bg-destructive/10 text-destructive', label: 'Retrasada' }
+  if (minutes <= 30) return { className: 'bg-warning/10 text-amber-700', label: 'Llega ahora' }
+  return { className: 'bg-muted text-muted-foreground', label: 'Próxima' }
 }
 
 function canMarkNoShow(startsAt: string, now: Date): boolean {
@@ -110,7 +110,12 @@ export function ServiceQueue({
         new Date(left.startsAt).getTime() - new Date(right.startsAt).getTime(),
     )
 
-  async function run(action: () => Promise<unknown>, message: string, onSuccess?: () => void) {
+  async function run(
+    action: () => Promise<unknown>,
+    message: string,
+    success: string,
+    onSuccess?: () => void,
+  ) {
     if (feedback.pending) return
     if (!isOnline) {
       feedback.setError('Sin conexión: recupera la red antes de modificar la sala.')
@@ -120,6 +125,7 @@ export function ServiceQueue({
     try {
       await action()
       onSuccess?.()
+      feedback.setSuccess(success)
       onDone()
     } catch {
       feedback.setError(message)
@@ -165,6 +171,7 @@ export function ServiceQueue({
           },
         }),
       'No se ha podido anotar la espera.',
+      'Grupo añadido a la lista de espera.',
       () => {
         setGuestName('')
         setGuestPhone('')
@@ -214,7 +221,7 @@ export function ServiceQueue({
   }
 
   return (
-    <Card>
+    <Card aria-busy={feedback.pending}>
       <CardHeader>
         <CardTitle>Puerta</CardTitle>
         <CardDescription>Reservas de las próximas 12 horas y lista de espera.</CardDescription>
@@ -247,66 +254,65 @@ export function ServiceQueue({
             <p className="text-muted-foreground text-sm">No hay reservas en las próximas horas.</p>
           ) : (
             <ul className="space-y-2 text-sm">
-              {reservations.map((reservation) => (
-                <li
-                  key={reservation.id}
-                  className="flex items-start justify-between gap-3 rounded-lg border p-3"
-                >
-                  <span className="min-w-0">
-                    <span className="block font-medium">
-                      {describeTime(reservation.startsAt)} · {reservation.guestName ?? 'Sin nombre'}
-                    </span>
-                    <span className="text-muted-foreground block text-xs">
-                      {reservation.partySize} pax ·{' '}
-                      {reservation.guestPhone ? (
-                        <a
-                          className="text-primary underline underline-offset-2"
-                          href={`tel:${reservation.guestPhone}`}
-                        >
-                          {reservation.guestPhone}
-                        </a>
-                      ) : (
-                        'Sin teléfono'
-                      )}{' '}
-                      · Mesa {reservationTableLabel(reservation, board)}
-                    </span>
-                  </span>
-                  <output
-                    aria-label={`Estado: ${reservationTiming(reservation.startsAt, now).label}`}
-                    className={`shrink-0 text-xs font-medium ${reservationTiming(reservation.startsAt, now).tone}`}
+              {reservations.map((reservation) => {
+                const timing = reservationTiming(reservation.startsAt, now)
+                return (
+                  <li
+                    key={reservation.id}
+                    className="flex items-start justify-between gap-3 rounded-lg border p-3 transition-colors hover:bg-muted/40"
                   >
-                    {reservationTiming(reservation.startsAt, now).label}
-                  </output>
-                  <span className="flex max-w-full shrink flex-wrap justify-end gap-2">
-                    <Button
-                      disabled={feedback.pending}
-                      onClick={() =>
-                        isOnline
-                          ? isOnline
-                            ? void run(
-                                () =>
-                                  seatReservation({
-                                    data: {
-                                      reservationId: reservation.id,
-                                      tenantId,
-                                      venueId,
-                                    },
-                                  }),
-                                'No se ha podido sentar la reserva.',
-                              )
-                            : transitionReservationOffline('no-show', reservation.id)
-                          : seatReservationOffline(reservation.id)
-                      }
-                      type="button"
+                    <span className="min-w-0">
+                      <span className="block font-medium">
+                        {describeTime(reservation.startsAt)} · {reservation.guestName ?? 'Sin nombre'}
+                      </span>
+                      <span className="text-muted-foreground block text-xs">
+                        {reservation.partySize} pax ·{' '}
+                        {reservation.guestPhone ? (
+                          <a
+                            className="text-primary underline underline-offset-2"
+                            href={`tel:${reservation.guestPhone}`}
+                          >
+                            {reservation.guestPhone}
+                          </a>
+                        ) : (
+                          'Sin teléfono'
+                        )}{' '}
+                        · Mesa {reservationTableLabel(reservation, board)}
+                      </span>
+                    </span>
+                    <output
+                      aria-label={`Estado: ${timing.label}`}
+                      className={`shrink-0 rounded-full px-2 py-1 text-xs font-medium ${timing.className}`}
                     >
-                      Sentar
-                    </Button>
-                    <Button
-                      disabled={feedback.pending || !canMarkNoShow(reservation.startsAt, now)}
-                      onClick={() =>
-                        window.confirm('¿Marcar esta reserva como no presentada?')
-                          ? isOnline
-                            ? void run(
+                      {timing.label}
+                    </output>
+                    <span className="flex max-w-full shrink flex-wrap justify-end gap-2">
+                      <Button
+                        disabled={feedback.pending}
+                        onClick={() => {
+                          if (!isOnline) {
+                            seatReservationOffline(reservation.id)
+                            return
+                          }
+                          void run(
+                            () =>
+                              seatReservation({
+                                data: { reservationId: reservation.id, tenantId, venueId },
+                              }),
+                            'No se ha podido sentar la reserva.',
+                            'Reserva sentada. La mesa ya está en servicio.',
+                          )
+                        }}
+                        type="button"
+                      >
+                        Sentar
+                      </Button>
+                      <Button
+                        disabled={feedback.pending || !canMarkNoShow(reservation.startsAt, now)}
+                        onClick={() =>
+                          window.confirm('¿Marcar esta reserva como no presentada?')
+                            ? isOnline
+                              ? void run(
                                 () =>
                                   markReservationNoShow({
                                     data: {
@@ -316,20 +322,21 @@ export function ServiceQueue({
                                     },
                                   }),
                                 'No se ha podido marcar como no presentada.',
+                                'Reserva marcada como no presentada.',
                               )
-                            : transitionReservationOffline('cancel', reservation.id)
-                          : undefined
-                      }
-                      type="button"
-                      variant="outline"
-                    >
-                      No-show
-                    </Button>
-                    <Button
-                      disabled={feedback.pending}
-                      onClick={() =>
-                        window.confirm('¿Cancelar esta reserva y liberar su mesa?')
-                          ? void run(
+                              : transitionReservationOffline('no-show', reservation.id)
+                            : undefined
+                        }
+                        type="button"
+                        variant="outline"
+                      >
+                        No-show
+                      </Button>
+                      <Button
+                        disabled={feedback.pending}
+                        onClick={() =>
+                          window.confirm('¿Cancelar esta reserva y liberar su mesa?')
+                            ? void run(
                               () =>
                                 cancelReservation({
                                   data: {
@@ -339,7 +346,9 @@ export function ServiceQueue({
                                   },
                                 }),
                               'No se ha podido cancelar la reserva.',
+                              'Reserva cancelada y mesa liberada.',
                             )
+                            : transitionReservationOffline('cancel', reservation.id)
                           : undefined
                       }
                       type="button"
@@ -348,142 +357,145 @@ export function ServiceQueue({
                       Cancelar
                     </Button>
                   </span>
-                </li>
-              ))}
-            </ul>
+                  </li>
+          )
+          })}
+        </ul>
           )}
-        </div>
-        <div className="space-y-2 border-t pt-6">
-          <h3 className="text-sm font-medium">Lista de espera</h3>
-          {board.waitlist.length === 0 ? (
-            <p className="text-muted-foreground text-sm">Nadie esperando.</p>
-          ) : (
-            <ul className="space-y-2 text-sm">
-              {board.waitlist.map((entry) => (
-                <li key={entry.id} className="flex flex-wrap items-center justify-between gap-3">
-                  <span>
-                    {`${entry.guestName ?? 'Sin nombre'} · ${entry.partySize} pax`}
-                    {entry.guestPhone ? (
-                      <a className="ml-2 underline" href={`tel:${entry.guestPhone}`}>
-                        {entry.guestPhone}
-                      </a>
-                    ) : null}
-                    {entry.estimatedWaitMinutes !== null ? (
-                      <span className="text-muted-foreground ml-2">
-                        {entry.estimatedWaitMinutes} min
-                      </span>
-                    ) : null}
-                  </span>
-                  <span className="flex flex-wrap gap-2">
-                    <Button
-                      disabled={feedback.pending || selectedTableIds.length === 0}
-                      onClick={() =>
-                        isOnline
-                          ? void run(
-                              () =>
-                                seatWaitlistEntry({
-                                  data: {
-                                    tableIds: [...selectedTableIds],
-                                    tenantId,
-                                    venueId,
-                                    waitlistEntryId: entry.id,
-                                  },
-                                }),
-                              'Esas mesas no sirven para este grupo.',
-                            )
-                          : seatWaitlistOffline(entry.id)
-                      }
-                      type="button"
-                    >
-                      Sentar
-                    </Button>
-                    <Button
-                      disabled={feedback.pending}
-                      onClick={() =>
-                        isOnline
-                          ? void run(
-                              () =>
-                                removeFromWaitlist({
-                                  data: {
-                                    tenantId,
-                                    venueId,
-                                    waitlistEntryId: entry.id,
-                                  },
-                                }),
-                              'No se ha podido quitar de la lista.',
-                            )
-                          : removeWaitlistOffline(entry.id)
-                      }
-                      type="button"
-                    >
-                      Quitar
-                    </Button>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-        <form className="grid gap-3 border-t pt-6" onSubmit={addWaiting}>
-          <Field>
-            <FieldLabel htmlFor="waitlist-name">Nombre (opcional)</FieldLabel>
-            <Input
-              id="waitlist-name"
-              onChange={(event) => setGuestName(event.target.value)}
-              value={guestName}
-            />
-          </Field>
-          <Field>
-            <FieldLabel htmlFor="waitlist-phone">Teléfono (opcional)</FieldLabel>
-            <Input
-              autoComplete="tel"
-              id="waitlist-phone"
-              inputMode="tel"
-              onChange={(event) => setGuestPhone(event.target.value)}
-              value={guestPhone}
-            />
-          </Field>
-          <Field>
-            <FieldLabel htmlFor="waitlist-party">Comensales</FieldLabel>
-            <Input
-              id="waitlist-party"
-              min={1}
-              onChange={(event) => setPartySize(Number(event.target.value))}
-              required
-              type="number"
-              value={partySize}
-            />
-          </Field>
-          <Field>
-            <FieldLabel htmlFor="waitlist-wait">Espera estimada (minutos, opcional)</FieldLabel>
-            <Input
-              id="waitlist-wait"
-              inputMode="numeric"
-              max={480}
-              min={0}
-              onChange={(event) => setEstimatedWait(event.target.value)}
-              type="number"
-              value={estimatedWait}
-            />
-          </Field>
-          <Field>
-            <FieldLabel htmlFor="waitlist-requested-at">
-              Fecha y hora preferida (opcional)
-            </FieldLabel>
-            <Input
-              id="waitlist-requested-at"
-              min={new Date().toISOString().slice(0, 16)}
-              onChange={(event) => setRequestedAt(event.target.value)}
-              type="datetime-local"
-              value={requestedAt}
-            />
-          </Field>
-          <Button disabled={feedback.pending} type="submit">
-            Anotar en la lista
-          </Button>
-        </form>
-        <FormFeedback pendingLabel="Actualizando la puerta…" state={feedback.state} />
-      </CardContent>
-    </Card>
+      </div>
+      <div className="space-y-2 border-t pt-6">
+        <h3 className="text-sm font-medium">Lista de espera</h3>
+        {board.waitlist.length === 0 ? (
+          <p className="text-muted-foreground text-sm">Nadie esperando.</p>
+        ) : (
+          <ul className="space-y-2 text-sm">
+            {board.waitlist.map((entry) => (
+              <li key={entry.id} className="flex flex-wrap items-center justify-between gap-3">
+                <span>
+                  {`${entry.guestName ?? 'Sin nombre'} · ${entry.partySize} pax`}
+                  {entry.guestPhone ? (
+                    <a className="ml-2 underline" href={`tel:${entry.guestPhone}`}>
+                      {entry.guestPhone}
+                    </a>
+                  ) : null}
+                  {entry.estimatedWaitMinutes !== null ? (
+                    <span className="text-muted-foreground ml-2">
+                      {entry.estimatedWaitMinutes} min
+                    </span>
+                  ) : null}
+                </span>
+                <span className="flex flex-wrap gap-2">
+                  <Button
+                    disabled={feedback.pending || selectedTableIds.length === 0}
+                    onClick={() =>
+                      isOnline
+                        ? void run(
+                          () =>
+                            seatWaitlistEntry({
+                              data: {
+                                tableIds: [...selectedTableIds],
+                                tenantId,
+                                venueId,
+                                waitlistEntryId: entry.id,
+                              },
+                            }),
+                          'Esas mesas no sirven para este grupo.',
+                          'Grupo de espera sentado. La mesa ya está en servicio.',
+                        )
+                        : seatWaitlistOffline(entry.id)
+                    }
+                    type="button"
+                  >
+                    Sentar
+                  </Button>
+                  <Button
+                    disabled={feedback.pending}
+                    onClick={() =>
+                      isOnline
+                        ? void run(
+                          () =>
+                            removeFromWaitlist({
+                              data: {
+                                tenantId,
+                                venueId,
+                                waitlistEntryId: entry.id,
+                              },
+                            }),
+                          'No se ha podido quitar de la lista.',
+                          'Grupo retirado de la lista de espera.',
+                        )
+                        : removeWaitlistOffline(entry.id)
+                    }
+                    type="button"
+                  >
+                    Quitar
+                  </Button>
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+      <form className="grid gap-3 border-t pt-6" onSubmit={addWaiting}>
+        <Field>
+          <FieldLabel htmlFor="waitlist-name">Nombre (opcional)</FieldLabel>
+          <Input
+            id="waitlist-name"
+            onChange={(event) => setGuestName(event.target.value)}
+            value={guestName}
+          />
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="waitlist-phone">Teléfono (opcional)</FieldLabel>
+          <Input
+            autoComplete="tel"
+            id="waitlist-phone"
+            inputMode="tel"
+            onChange={(event) => setGuestPhone(event.target.value)}
+            value={guestPhone}
+          />
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="waitlist-party">Comensales</FieldLabel>
+          <Input
+            id="waitlist-party"
+            min={1}
+            onChange={(event) => setPartySize(Number(event.target.value))}
+            required
+            type="number"
+            value={partySize}
+          />
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="waitlist-wait">Espera estimada (minutos, opcional)</FieldLabel>
+          <Input
+            id="waitlist-wait"
+            inputMode="numeric"
+            max={480}
+            min={0}
+            onChange={(event) => setEstimatedWait(event.target.value)}
+            type="number"
+            value={estimatedWait}
+          />
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="waitlist-requested-at">
+            Fecha y hora preferida (opcional)
+          </FieldLabel>
+          <Input
+            id="waitlist-requested-at"
+            min={new Date().toISOString().slice(0, 16)}
+            onChange={(event) => setRequestedAt(event.target.value)}
+            type="datetime-local"
+            value={requestedAt}
+          />
+        </Field>
+        <Button disabled={feedback.pending} type="submit">
+          Anotar en la lista
+        </Button>
+      </form>
+      <FormFeedback pendingLabel="Actualizando la puerta…" state={feedback.state} />
+    </CardContent>
+    </Card >
   )
 }

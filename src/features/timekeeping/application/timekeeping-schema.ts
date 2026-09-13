@@ -38,6 +38,38 @@ export const timekeepingTermInput = timekeepingInput.extend({
   nightEndsAt: z.string().regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/),
   nightStartsAt: z.string().regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/),
 })
+export const timekeepingRateInput = timekeepingInput.extend({
+  effectiveFrom: z.string().date(),
+  employeeId: z.string().uuid(),
+  hourlyCostCents: z.number().int().min(0).max(100000),
+})
+export const workforceShiftInput = timekeepingInput.extend({
+  employeeId: z.string().uuid(),
+  endsAt: z.string().datetime(),
+  startsAt: z.string().datetime(),
+  note: z.string().trim().max(500).optional(),
+})
+export const workforceShiftStatusInput = timekeepingInput.extend({
+  shiftId: z.string().uuid(),
+  status: z.enum(['draft', 'published', 'confirmed', 'cancelled']),
+})
+export const workforceAvailabilityInput = timekeepingInput.extend({
+  available: z.boolean(),
+  employeeId: z.string().uuid(),
+  endsAt: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+  startsAt: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+  weekday: z.number().int().min(0).max(6),
+})
+export const workforceAbsenceInput = timekeepingInput.extend({
+  employeeId: z.string().uuid(),
+  endsAt: z.string().date(),
+  reason: z.string().trim().min(1).max(300),
+  startsAt: z.string().date(),
+})
+export const workforceAbsenceStatusInput = timekeepingInput.extend({
+  absenceId: z.string().uuid(),
+  status: z.enum(['approved', 'rejected']),
+})
 export const timekeepingHolidayInput = timekeepingInput.extend({
   holidayDate: z.string().date(),
   label: z.string().trim().min(1).max(120),

@@ -1,25 +1,28 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, notFound } from '@tanstack/react-router'
 
 import { getCashRegister, listClosedCashRegisters } from '@/features/cash-register'
 import { CashMethodSummary } from '@/features/cash-register/ui/cash-method-summary'
 import { CashMovementForm } from '@/features/cash-register/ui/cash-movement-form'
 import { CashRegisterPage } from '@/features/cash-register/ui/cash-register-page'
 import { ClosedRegisterSummary } from '@/features/cash-register/ui/closed-register-summary'
+import { loadVenueRouteContext } from '@/features/venues'
 
 export const Route = createFileRoute('/t/$slug/l/$venue/caja')({
-  loader: async ({ context }) => {
-    const data = { tenantId: context.tenant.id, venueId: context.venue.id }
+  loader: async ({ params }) => {
+    const routeContext = await loadVenueRouteContext(params.slug, params.venue)
+    if (!routeContext) throw notFound()
+    const { tenant, venue } = routeContext
+    const data = { tenantId: tenant.id, venueId: venue.id }
     const [register, history] = await Promise.all([
       getCashRegister({ data }),
       listClosedCashRegisters({ data }),
     ])
-    return { register, history }
+    return { history, register, tenant, venue }
   },
   component: CashRoute,
 })
 function CashRoute() {
-  const { tenant, venue } = Route.useRouteContext()
-  const { register, history } = Route.useLoaderData()
+  const { history, register, tenant, venue } = Route.useLoaderData()
   const reload = () => window.location.reload()
   return (
     <>
@@ -36,12 +39,12 @@ function CashRoute() {
       )}
       <CashRegisterPage
         register={register}
-        history={history}
+        history={history.items}
         tenantId={tenant.id}
         venueId={venue.id}
         onDone={reload}
       />
-      {history.length > 0 && <ClosedRegisterSummary history={history} />}
+      {history.items.length > 0 && <ClosedRegisterSummary history={history.items} />}
     </>
   )
 }

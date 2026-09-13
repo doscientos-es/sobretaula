@@ -36,6 +36,7 @@ export const recordPaymentInput = accountSessionInput.extend({
   amountCents: z.number().int().min(1).max(1_000_000),
   method: z.enum(PAYMENT_METHODS),
   tipCents: z.number().int().min(0).max(1_000_000).optional(),
+  operationId: z.string().uuid(),
 })
 export const recordMixedPaymentInput = accountSessionInput.extend({
   lines: z

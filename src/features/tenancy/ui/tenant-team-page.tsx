@@ -9,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
   Field,
+  FieldDescription,
   FieldLabel,
   FormFeedback,
   Input,
@@ -23,20 +24,19 @@ import {
   SelectValue,
   useFormFeedback,
 } from '@doscientos/ui'
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 
 import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
-import {
-  invitationEmailRateLimitMessage,
-  isInvitationEmailRateLimited,
-} from '@/shared/lib/supabase/auth-email-rate-limit'
 
 import {
+  getTenantTeam,
   inviteTenantMember,
   suspendTenantMember,
   updateTenantMemberRole,
   type TenantTeam,
 } from '../application/team'
+import { teamErrorMessage } from '../application/team-error'
+import { teamInvitationFormError } from '../application/team-invitation-input'
 import {
   ASSIGNABLE_TENANT_ROLES,
   canManageTeamMember,
@@ -62,24 +62,6 @@ function rolesFor(viewerRole: TenantRole) {
   )
 }
 
-function teamErrorMessage(error: unknown): string {
-  if (isInvitationEmailRateLimited(error)) return invitationEmailRateLimitMessage
-  const code = error instanceof Error ? error.message : ''
-  if (code.includes('tenant_invitation_delivery_failed'))
-    return 'No se pudo enviar la invitación. Comprueba el correo e inténtalo de nuevo.'
-  if (code.includes('team_profile_lookup_failed'))
-    return 'No se pudo consultar la cuenta del trabajador. Inténtalo de nuevo.'
-  if (code.includes('tenant_invitation_save_failed:42501'))
-    return 'No tienes permisos para enviar invitaciones en este restaurante.'
-  if (code.includes('tenant_invitation_save_failed'))
-    return 'No se pudo guardar la invitación. Comprueba que el restaurante esté disponible e inténtalo de nuevo.'
-  if (code.includes('team_member_upsert_failed'))
-    return 'No se pudo incorporar la cuenta existente. Inténtalo de nuevo o usa una invitación.'
-  if (error instanceof Response && error.status === 403)
-    return 'No tienes permisos para añadir este rol.'
-  return 'No se ha podido actualizar el equipo. Revisa tus permisos e inténtalo de nuevo.'
-}
-
 /** Lets owners and managers add staff, while every team member can see who operates the venue. */
 export function TenantTeamPage({
   team,
@@ -97,6 +79,20 @@ export function TenantTeamPage({
   const [email, setEmail] = useState('')
   const [role, setRole] = useState<(typeof ASSIGNABLE_TENANT_ROLES)[number]>('waiter')
   const reload = useLoaderReload()
+  const [visibleTeam, setVisibleTeam] = useState(team)
+  const [search, setSearch] = useState('')
+  const [page, setPage] = useState(team.page)
+  useEffect(() => {
+    let active = true
+    void getTenantTeam({ data: { tenantId, page, pageSize: team.pageSize, search } }).then(
+      (result) => {
+        if (active) setVisibleTeam(result)
+      },
+    )
+    return () => {
+      active = false
+    }
+  }, [page, search, team.pageSize, tenantId])
 
   async function run(action: () => Promise<unknown>, success: string) {
     feedback.setPending()
@@ -111,8 +107,18 @@ export function TenantTeamPage({
 
   function invite(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (feedback.pending) return
+
+    const validationError = teamInvitationFormError({ email, name, role })
+    if (validationError) {
+      feedback.setError(validationError)
+      return
+    }
+
     void run(async () => {
-      const result = await inviteTenantMember({ data: { email, name, role, tenantId } })
+      const result = await inviteTenantMember({
+        data: { email: email.trim(), name: name.trim() || undefined, role, tenantId },
+      })
       setName('')
       setEmail('')
       return result
@@ -138,20 +144,30 @@ export function TenantTeamPage({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form className="grid gap-4 sm:grid-cols-4" onSubmit={invite}>
+            <form className="grid gap-4 sm:grid-cols-4" noValidate onSubmit={invite}>
               <Field>
-                <FieldLabel htmlFor="member-name">Nombre</FieldLabel>
+                <FieldLabel htmlFor="member-name">Nombre (si necesita invitación)</FieldLabel>
                 <Input
+                  autoComplete="name"
                   id="member-name"
+                  maxLength={120}
+                  name="name"
                   onChange={(e) => setName(e.target.value)}
-                  required
                   value={name}
                 />
+                <FieldDescription>
+                  Solo es necesario si esta persona aún no tiene cuenta.
+                </FieldDescription>
               </Field>
               <Field>
                 <FieldLabel htmlFor="member-email">Correo</FieldLabel>
                 <Input
+                  autoCapitalize="none"
+                  autoComplete="email"
                   id="member-email"
+                  inputMode="email"
+                  maxLength={254}
+                  name="email"
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   type="email"
@@ -191,9 +207,22 @@ export function TenantTeamPage({
       <Card>
         <CardHeader>
           <CardTitle>Personas con acceso</CardTitle>
+          <CardDescription>
+            {visibleTeam.total} personas · página {visibleTeam.page}
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          {team.members.map((member) => {
+          <Input
+            aria-label="Buscar en el equipo"
+            onChange={(event) => {
+              setPage(1)
+              setSearch(event.target.value)
+            }}
+            placeholder="Buscar por nombre o correo…"
+            type="search"
+            value={search}
+          />
+          {visibleTeam.members.map((member) => {
             const manageable = canManageTeamMember({
               actorId: viewerId,
               actorRole: viewerRole,
@@ -273,15 +302,35 @@ export function TenantTeamPage({
               </div>
             )
           })}
+          <div className="flex justify-end gap-2">
+            <Button
+              disabled={page <= 1}
+              onClick={() => setPage((current) => Math.max(1, current - 1))}
+              size="sm"
+              type="button"
+              variant="outline"
+            >
+              Anterior
+            </Button>
+            <Button
+              disabled={!visibleTeam.hasMore}
+              onClick={() => setPage((current) => current + 1)}
+              size="sm"
+              type="button"
+              variant="outline"
+            >
+              Siguiente
+            </Button>
+          </div>
         </CardContent>
       </Card>
-      {team.invitations.length > 0 && (
+      {visibleTeam.invitations.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle>Invitaciones pendientes</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            {team.invitations.map((invitation) => (
+            {visibleTeam.invitations.map((invitation) => (
               <p key={invitation.email} className="text-sm">
                 {invitation.email} · {roleLabel[invitation.role]} · caduca{' '}
                 {new Date(invitation.expiresAt).toLocaleDateString('es-ES')}

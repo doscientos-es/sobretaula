@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { calculateStock, findLowStock } from './inventory'
+import { calculateRecipeAvailability, calculateStock, findLowStock } from './inventory'
 describe('inventory', () => {
   it('derives stock from immutable movements', () => {
     expect(
@@ -18,5 +18,18 @@ describe('inventory', () => {
         { ingredientId: 'b', minimum: 5 },
       ]),
     ).toEqual(['a'])
+  })
+  it('calculates sellable portions and limiting ingredients per recipe', () => {
+    expect(
+      calculateRecipeAvailability(
+        { bread: 10, cheese: 3 },
+        {
+          sandwich: [
+            { ingredientId: 'bread', quantity: 2 },
+            { ingredientId: 'cheese', quantity: 1 },
+          ],
+        },
+      ),
+    ).toEqual({ sandwich: { maxPortions: 3, limitingIngredientIds: ['cheese'] } })
   })
 })

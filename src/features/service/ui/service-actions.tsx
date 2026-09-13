@@ -108,20 +108,20 @@ export function ServiceActions({
   const suggestedIds =
     selectedTableIds.length === 0
       ? suggestTableCombination(
-          board.tables,
-          covers,
-          areaId,
-          accessibleOnly,
-          pacingNow,
-          120,
-          areaLoads,
-        )
+        board.tables,
+        covers,
+        areaId,
+        accessibleOnly,
+        pacingNow,
+        120,
+        areaLoads,
+      )
       : undefined
   const suggestedCodes = suggestedIds
     ?.map((id) => board.tables.find((table) => table.id === id)?.code)
     .filter(Boolean)
 
-  async function run(action: () => Promise<unknown>, message: string) {
+  async function run(action: () => Promise<unknown>, message: string, success = 'Sala actualizada.') {
     if (feedback.pending) return
     if (!isOnline) {
       feedback.setError('Sin conexión: recupera la red antes de modificar la sala.')
@@ -130,6 +130,7 @@ export function ServiceActions({
     feedback.setPending()
     try {
       await action()
+      feedback.setSuccess(success)
       onDone()
     } catch {
       feedback.setError(message)
@@ -162,7 +163,7 @@ export function ServiceActions({
   }
 
   return (
-    <Card>
+    <Card aria-busy={feedback.pending}>
       <CardHeader>
         <CardTitle>Acciones de sala</CardTitle>
         <CardDescription>
@@ -278,6 +279,7 @@ export function ServiceActions({
         )}
       </CardHeader>
       <CardContent className="space-y-6">
+        <FormFeedback pendingLabel="Actualizando sala…" state={feedback.state} />
         <form className="grid gap-3" onSubmit={walkIn}>
           <Field>
             <FieldLabel htmlFor="walk-in-covers">Comensales sin reserva</FieldLabel>
@@ -436,27 +438,27 @@ export function ServiceActions({
                 onClick={() =>
                   !isOnline
                     ? (enqueueServiceOperation(
-                        offlineStore,
-                        createMoveSessionOperation({
-                          sessionId,
-                          tableIds: [...selectedTableIds],
-                          tenantId,
-                          venueId,
-                        }),
-                      ),
+                      offlineStore,
+                      createMoveSessionOperation({
+                        sessionId,
+                        tableIds: [...selectedTableIds],
+                        tenantId,
+                        venueId,
+                      }),
+                    ),
                       feedback.setSuccess('Movimiento guardado para cuando vuelva la conexión.'))
                     : void run(
-                        () =>
-                          moveSession({
-                            data: {
-                              sessionId,
-                              tableIds: [...selectedTableIds],
-                              tenantId,
-                              venueId,
-                            },
-                          }),
-                        'No se puede mover la cuenta a esas mesas.',
-                      )
+                      () =>
+                        moveSession({
+                          data: {
+                            sessionId,
+                            tableIds: [...selectedTableIds],
+                            tenantId,
+                            venueId,
+                          },
+                        }),
+                      'No se puede mover la cuenta a esas mesas.',
+                    )
                 }
                 type="button"
               >
@@ -495,14 +497,14 @@ export function ServiceActions({
                   window.confirm('¿Cerrar esta cuenta y liberar sus mesas?')
                     ? !isOnline
                       ? (enqueueServiceOperation(
-                          offlineStore,
-                          createCloseSessionOperation({ sessionId, tenantId, venueId }),
-                        ),
+                        offlineStore,
+                        createCloseSessionOperation({ sessionId, tenantId, venueId }),
+                      ),
                         feedback.setSuccess('Cierre guardado para cuando vuelva la conexión.'))
                       : void run(
-                          () => closeSession({ data: { sessionId, tenantId, venueId } }),
-                          'No se ha podido cerrar. Si queda saldo pendiente, cobra la cuenta primero.',
-                        )
+                        () => closeSession({ data: { sessionId, tenantId, venueId } }),
+                        'No se ha podido cerrar. Si queda saldo pendiente, cobra la cuenta primero.',
+                      )
                     : undefined
                 }
                 type="button"
@@ -546,27 +548,27 @@ export function ServiceActions({
                   onClick={() =>
                     !isOnline
                       ? (enqueueServiceOperation(
-                          offlineStore,
-                          createMergeSessionsOperation({
-                            sourceSessionId: mergeSourceId,
-                            targetSessionId: sessionId,
-                            tenantId,
-                            venueId,
-                          }),
-                        ),
+                        offlineStore,
+                        createMergeSessionsOperation({
+                          sourceSessionId: mergeSourceId,
+                          targetSessionId: sessionId,
+                          tenantId,
+                          venueId,
+                        }),
+                      ),
                         feedback.setSuccess('Unión guardada para cuando vuelva la conexión.'))
                       : void run(
-                          () =>
-                            mergeSessions({
-                              data: {
-                                sourceSessionId: mergeSourceId,
-                                targetSessionId: sessionId,
-                                tenantId,
-                                venueId,
-                              },
-                            }),
-                          'No se han podido unir las cuentas.',
-                        )
+                        () =>
+                          mergeSessions({
+                            data: {
+                              sourceSessionId: mergeSourceId,
+                              targetSessionId: sessionId,
+                              tenantId,
+                              venueId,
+                            },
+                          }),
+                        'No se han podido unir las cuentas.',
+                      )
                   }
                   type="button"
                 >
@@ -576,7 +578,6 @@ export function ServiceActions({
             )}
           </div>
         )}
-        <FormFeedback pendingLabel="Actualizando sala…" state={feedback.state} />
       </CardContent>
     </Card>
   )

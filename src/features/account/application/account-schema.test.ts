@@ -36,11 +36,21 @@ describe('account schemas', () => {
   })
 
   it('validates payments against the supported methods', () => {
-    const parsed = recordPaymentInput.parse({ ...base, amountCents: 2550, method: 'card' })
+    const parsed = recordPaymentInput.parse({
+      ...base,
+      amountCents: 2550,
+      method: 'card',
+      operationId: 'c5b8a9d2-1234-4e5f-8a9b-0c1d2e3f4a5b',
+    })
     expect(parsed.tipCents).toBeUndefined()
 
     expect(() =>
-      recordPaymentInput.parse({ ...base, amountCents: 2550, method: 'bizum' }),
+      recordPaymentInput.parse({
+        ...base,
+        amountCents: 2550,
+        method: 'bizum',
+        operationId: 'c5b8a9d2-1234-4e5f-8a9b-0c1d2e3f4a5b',
+      }),
     ).toThrow()
     expect(() => recordPaymentInput.parse({ ...base, amountCents: 0, method: 'cash' })).toThrow()
     expect(() =>
