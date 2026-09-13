@@ -172,23 +172,55 @@ export function ModifierCard({
           {ingredients.length > 0 ? (
             <>
               <Field>
-                <FieldLabel htmlFor="modifier-replaces">Sustituye ingrediente (opcional)</FieldLabel>
-                <Select id="modifier-replaces" onSelectionChange={(key) => setReplacesIngredientId(String(key) === 'none' ? '' : String(key))} selectedKey={replacesIngredientId || 'none'}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent><SelectList>
-                    <SelectItem id="none">No sustituye ninguno</SelectItem>
-                    {ingredients.map((ingredient) => <SelectItem id={ingredient.id} key={ingredient.id}>{ingredient.name}</SelectItem>)}
-                  </SelectList></SelectContent>
+                <FieldLabel htmlFor="modifier-replaces">
+                  Sustituye ingrediente (opcional)
+                </FieldLabel>
+                <Select
+                  id="modifier-replaces"
+                  onSelectionChange={(key) =>
+                    setReplacesIngredientId(String(key) === 'none' ? '' : String(key))
+                  }
+                  selectedKey={replacesIngredientId || 'none'}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectList>
+                      <SelectItem id="none">No sustituye ninguno</SelectItem>
+                      {ingredients.map((ingredient) => (
+                        <SelectItem id={ingredient.id} key={ingredient.id}>
+                          {ingredient.name}
+                        </SelectItem>
+                      ))}
+                    </SelectList>
+                  </SelectContent>
                 </Select>
               </Field>
               <Field>
-                <FieldLabel htmlFor="modifier-ingredient">Ingrediente que consume (opcional)</FieldLabel>
-                <Select id="modifier-ingredient" onSelectionChange={(key) => setIngredientId(String(key) === 'none' ? '' : String(key))} selectedKey={ingredientId || 'none'}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent><SelectList>
-                    <SelectItem id="none">Sin sustitución de stock</SelectItem>
-                    {ingredients.map((ingredient) => <SelectItem id={ingredient.id} key={ingredient.id}>{ingredient.name}</SelectItem>)}
-                  </SelectList></SelectContent>
+                <FieldLabel htmlFor="modifier-ingredient">
+                  Ingrediente que consume (opcional)
+                </FieldLabel>
+                <Select
+                  id="modifier-ingredient"
+                  onSelectionChange={(key) =>
+                    setIngredientId(String(key) === 'none' ? '' : String(key))
+                  }
+                  selectedKey={ingredientId || 'none'}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectList>
+                      <SelectItem id="none">Sin sustitución de stock</SelectItem>
+                      {ingredients.map((ingredient) => (
+                        <SelectItem id={ingredient.id} key={ingredient.id}>
+                          {ingredient.name}
+                        </SelectItem>
+                      ))}
+                    </SelectList>
+                  </SelectContent>
                 </Select>
               </Field>
             </>

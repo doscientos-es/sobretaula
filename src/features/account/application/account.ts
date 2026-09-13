@@ -120,7 +120,9 @@ export const addOrderItem = createServerFn({ method: 'POST' })
     const { data: options, error: optionsError } = modifierOptionIds.length
       ? await supabase
           .from('menu_modifier_options')
-          .select('group_id, id, ingredient_id, is_active, name_i18n, price_delta_cents, replaces_ingredient_id')
+          .select(
+            'group_id, id, ingredient_id, is_active, name_i18n, price_delta_cents, replaces_ingredient_id',
+          )
           .eq('tenant_id', data.tenantId)
           .in('id', modifierOptionIds)
       : { data: [], error: null }
@@ -225,9 +227,7 @@ export const addOrderItem = createServerFn({ method: 'POST' })
       const replacement = (options ?? []).find(
         (option) => option.replaces_ingredient_id === line.ingredient_id && option.ingredient_id,
       )
-      return replacement
-        ? { ...line, ingredient_id: replacement.ingredient_id as string }
-        : line
+      return replacement ? { ...line, ingredient_id: replacement.ingredient_id as string } : line
     })
     if (recipeLines.length > 0) {
       const { error: inventoryError } = await supabase.from('inventory_movements').insert(

@@ -62,6 +62,29 @@ export function PublicMenuPage({ catalog, locale }: { catalog: MenuCatalog; loca
                     </span>
                   ))}
                 </div>
+                {item.modifierGroups?.length ? (
+                  <div className="mt-3 border-t pt-3 text-sm">
+                    <p className="font-medium">Opciones disponibles</p>
+                    {item.modifierGroups.map((group) => (
+                      <div className="mt-1" key={group.id}>
+                        <span className="text-muted-foreground">
+                          {localizedText(group.nameI18n, locale)}:{' '}
+                        </span>
+                        {group.options
+                          .filter((option) => option.isActive)
+                          .map((option, index) => (
+                            <span key={option.id}>
+                              {index > 0 ? ', ' : ''}
+                              {localizedText(option.nameI18n, locale)}
+                              {option.allergens?.length
+                                ? ` (contiene ${option.allergens.join(', ')})`
+                                : ''}
+                            </span>
+                          ))}
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
               </article>
             ))}
           </CardContent>

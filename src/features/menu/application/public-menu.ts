@@ -63,7 +63,26 @@ export const getPublicMenu = createServerFn({ method: 'GET' })
         allergenReasons: row.allergen_reasons ?? {},
         isVegan: Boolean(row.is_vegan),
         modifierGroups: Array.isArray(row.modifier_groups)
-          ? (row.modifier_groups as NonNullable<MenuCatalog['items'][number]['modifierGroups']>)
+          ? (row.modifier_groups as Array<Record<string, unknown>>).map((group) => ({
+              id: String(group.id),
+              isActive: Boolean(group.is_active),
+              nameI18n: group.name_i18n as LocalizedText,
+              options: (Array.isArray(group.options) ? group.options : []).map((option) => {
+                const value = option as Record<string, unknown>
+                return {
+                  id: String(value.id),
+                  isActive: Boolean(value.is_active),
+                  nameI18n: value.name_i18n as LocalizedText,
+                  position: Number(value.position ?? 0),
+                  priceDeltaCents: Number(value.price_delta_cents ?? 0),
+                  allergens: Array.isArray(value.allergens) ? (value.allergens as string[]) : [],
+                  isVegan: Boolean(value.is_vegan),
+                }
+              }),
+              position: Number(group.position ?? 0),
+              selectionMin: Number(group.selection_min ?? 0),
+              selectionMax: Number(group.selection_max ?? 1),
+            }))
           : [],
       })),
     }
