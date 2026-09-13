@@ -25,6 +25,7 @@ test.describe('authenticated restaurant smoke', () => {
     '/t/la-fonda-demo/facturas',
     '/t/la-fonda-demo/comunicaciones',
     '/t/la-fonda-demo/equipo',
+    '/t/la-fonda-demo/ajustes',
     '/t/la-fonda-demo/suscripcion/facturas',
   ]) {
     test(`${path} does not render an error boundary`, async ({ page }) => {

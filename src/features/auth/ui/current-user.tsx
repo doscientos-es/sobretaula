@@ -1,41 +1,41 @@
-import { Avatar, AvatarFallback, Button, DropdownMenu, DropdownMenuItem } from "@doscientos/ui";
-import { useNavigate, useParams } from "@tanstack/react-router";
-import { EllipsisVertical, LogOut, Settings2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Avatar, AvatarFallback, Button, DropdownMenu, DropdownMenuItem } from '@doscientos/ui'
+import { useNavigate, useParams } from '@tanstack/react-router'
+import { EllipsisVertical, LogOut, Settings2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
 
-import { DEFAULT_LOCALE, type Locale } from "@/shared/lib/i18n/locale";
-import { createTranslator } from "@/shared/lib/i18n/messages";
+import { DEFAULT_LOCALE, type Locale } from '@/shared/lib/i18n/locale'
+import { createTranslator } from '@/shared/lib/i18n/messages'
 
-import { getCurrentUser, type CurrentUser } from "../application/authentication";
-import { useLogout } from "./logout-button";
+import { getCurrentUser, type CurrentUser } from '../application/authentication'
+import { useLogout } from './logout-button'
 
 export function userInitials(displayName: string): string {
-  const words = displayName.trim().split(/\s+/).filter(Boolean);
+  const words = displayName.trim().split(/\s+/).filter(Boolean)
   return words.length > 1
-    ? `${words.at(0)?.at(0) ?? ""}${words.at(-1)?.at(0) ?? ""}`.toUpperCase()
-    : displayName.trim().slice(0, 2).toUpperCase();
+    ? `${words.at(0)?.at(0) ?? ''}${words.at(-1)?.at(0) ?? ''}`.toUpperCase()
+    : displayName.trim().slice(0, 2).toUpperCase()
 }
 
 export function useCurrentUser() {
-  const [user, setUser] = useState<CurrentUser | null>(null);
+  const [user, setUser] = useState<CurrentUser | null>(null)
 
   useEffect(() => {
     void getCurrentUser()
       .then(setUser)
-      .catch(() => undefined);
-  }, []);
+      .catch(() => undefined)
+  }, [])
 
-  return user;
+  return user
 }
 
 /** Compact identity shown at the bottom of authenticated sidebars. */
 export function CurrentUserSidebar({ locale = DEFAULT_LOCALE }: { locale?: Locale }) {
-  const t = createTranslator(locale);
-  const user = useCurrentUser();
-  const { pending: logoutPending, signOut } = useLogout();
-  const navigate = useNavigate();
-  const params = useParams({ strict: false });
-  const displayName = user?.displayName ?? t("app.account");
+  const t = createTranslator(locale)
+  const user = useCurrentUser()
+  const { pending: logoutPending, signOut } = useLogout()
+  const navigate = useNavigate()
+  const params = useParams({ strict: false })
+  const displayName = user?.displayName ?? t('app.account')
 
   return (
     <footer className="st-saas-user-menu border-border/70 sticky bottom-0 z-10 mt-auto flex shrink-0 items-center gap-2 border-t px-1.5 pt-3 pb-1">
@@ -53,7 +53,7 @@ export function CurrentUserSidebar({ locale = DEFAULT_LOCALE }: { locale?: Local
         offset={8}
         placement="top end"
         trigger={
-          <Button aria-label={t("common.accountActions")} size="icon" variant="ghost">
+          <Button aria-label={t('common.accountActions')} size="icon" variant="ghost">
             <EllipsisVertical aria-hidden="true" className="size-4" />
           </Button>
         }
@@ -61,21 +61,21 @@ export function CurrentUserSidebar({ locale = DEFAULT_LOCALE }: { locale?: Local
         <DropdownMenuItem
           onPress={() =>
             void (params.slug
-              ? navigate({ to: "/t/$slug/ajustes", params: { slug: params.slug } })
-              : navigate({ to: "/ajustes" }))
+              ? navigate({ to: '/t/$slug/ajustes', params: { slug: params.slug } })
+              : navigate({ to: '/ajustes' }))
           }
-          textValue={t("common.settings")}
+          textValue={t('common.settings')}
         >
-          <Settings2 className="size-3.5" /> {t("common.settings")}
+          <Settings2 className="size-3.5" /> {t('common.settings')}
         </DropdownMenuItem>
         <DropdownMenuItem
           isDisabled={logoutPending}
           onPress={() => void signOut()}
-          textValue={t("common.logout")}
+          textValue={t('common.logout')}
         >
-          <LogOut className="size-3.5" /> {t("common.logout")}
+          <LogOut className="size-3.5" /> {t('common.logout')}
         </DropdownMenuItem>
       </DropdownMenu>
     </footer>
-  );
+  )
 }
