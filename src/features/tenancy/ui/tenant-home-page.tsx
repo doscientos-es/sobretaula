@@ -216,16 +216,16 @@ export function TenantHomePage({
           ) : null}
         </CardContent>
       </Card>
-      <Card>
-        <CardHeader className="border-border/70 border-b">
-          <CardTitle>Primer servicio</CardTitle>
+      <Card className="border-border/70">
+        <CardHeader className="border-border/70 border-b px-4 py-3.5">
+          <CardTitle className="text-base">Primer servicio</CardTitle>
           <p className="text-muted-foreground text-sm">
             Completa estas acciones para dejar el restaurante preparado.
           </p>
         </CardHeader>
-        <CardContent>
-          <ol className="grid gap-3 sm:grid-cols-2">
-            <li className="flex items-start gap-3 rounded-lg border p-3">
+        <CardContent className="p-4 pt-3">
+          <ol className="grid gap-2.5 sm:grid-cols-2">
+            <li className="border-border/70 bg-surface-subtle flex items-start gap-2.5 rounded-xl border px-3 py-2.5 shadow-[var(--ui-shadow-hairline)]">
               <span
                 aria-hidden="true"
                 className="bg-success/15 text-success grid size-6 shrink-0 place-items-center rounded-full text-xs font-semibold"
@@ -250,7 +250,7 @@ export function TenantHomePage({
                 )}
               </div>
             </li>
-            <li className="flex items-start gap-3 rounded-lg border p-3">
+            <li className="border-border/70 bg-surface-subtle flex items-start gap-2.5 rounded-xl border px-3 py-2.5 shadow-[var(--ui-shadow-hairline)]">
               <span
                 aria-hidden="true"
                 className={`${setupStatus.hasFloorPlan && setupStatus.hasMenu ? 'bg-success/15 text-success' : 'bg-primary/10 text-primary'} grid size-6 shrink-0 place-items-center rounded-full text-xs font-semibold`}
@@ -275,7 +275,7 @@ export function TenantHomePage({
                 )}
               </div>
             </li>
-            <li className="flex items-start gap-3 rounded-lg border p-3">
+            <li className="border-border/70 bg-surface-subtle flex items-start gap-2.5 rounded-xl border px-3 py-2.5 shadow-[var(--ui-shadow-hairline)]">
               <span
                 aria-hidden="true"
                 className="bg-primary/10 text-primary grid size-6 shrink-0 place-items-center rounded-full text-xs font-semibold"
@@ -300,7 +300,7 @@ export function TenantHomePage({
                 )}
               </div>
             </li>
-            <li className="flex items-start gap-3 rounded-lg border p-3">
+            <li className="border-border/70 bg-surface-subtle flex items-start gap-2.5 rounded-xl border px-3 py-2.5 shadow-[var(--ui-shadow-hairline)]">
               <span
                 aria-hidden="true"
                 className="bg-primary/10 text-primary grid size-6 shrink-0 place-items-center rounded-full text-xs font-semibold"

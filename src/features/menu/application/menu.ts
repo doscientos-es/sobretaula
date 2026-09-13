@@ -2,10 +2,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 
 import { authMiddleware } from '@/features/auth/infrastructure/server/auth-middleware'
-import {
-  operationalTenantMiddleware,
-  tenantMembershipMiddleware,
-} from '@/features/tenancy/application/require-tenant-membership'
+import { tenantMembershipMiddleware } from '@/features/tenancy/application/require-tenant-membership'
 import { createRequestSupabaseClient } from '@/shared/lib/supabase/server/create-server-client'
 
 import type { LocalizedText, MenuCategory, MenuItem, MenuModifierOption } from '../domain/menu'
@@ -40,7 +37,7 @@ function localizedDescription(descriptionEs?: string, descriptionCa?: string): L
 
 /** Whole catalog of the tenant: the carta is shared by every venue. */
 export const getMenu = createServerFn({ method: 'GET' })
-  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .middleware([authMiddleware, tenantMembershipMiddleware])
   .validator(menuTenantInput)
   .handler(async ({ context, data }): Promise<MenuCatalog> => {
     const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
@@ -165,7 +162,7 @@ export const getMenu = createServerFn({ method: 'GET' })
   })
 
 export const createModifierGroup = createServerFn({ method: 'POST' })
-  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .middleware([authMiddleware, tenantMembershipMiddleware])
   .validator(createModifierGroupInput)
   .handler(async ({ context, data }) => {
     requireMenuEditor(context.tenantMembership.role)
@@ -196,7 +193,7 @@ export const createModifierGroup = createServerFn({ method: 'POST' })
   })
 
 export const createModifierOption = createServerFn({ method: 'POST' })
-  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .middleware([authMiddleware, tenantMembershipMiddleware])
   .validator(createModifierOptionInput)
   .handler(async ({ context, data }) => {
     requireMenuEditor(context.tenantMembership.role)
@@ -227,7 +224,7 @@ export const createModifierOption = createServerFn({ method: 'POST' })
   })
 
 export const createMenuCategory = createServerFn({ method: 'POST' })
-  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .middleware([authMiddleware, tenantMembershipMiddleware])
   .validator(createMenuCategoryInput)
   .handler(async ({ context, data }) => {
     requireMenuEditor(context.tenantMembership.role)
@@ -247,7 +244,7 @@ export const createMenuCategory = createServerFn({ method: 'POST' })
   })
 
 export const createMenuItem = createServerFn({ method: 'POST' })
-  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .middleware([authMiddleware, tenantMembershipMiddleware])
   .validator(createMenuItemInput)
   .handler(async ({ context, data }) => {
     requireMenuEditor(context.tenantMembership.role)
@@ -300,7 +297,7 @@ export const createMenuItem = createServerFn({ method: 'POST' })
   })
 
 export const importMenuCsv = createServerFn({ method: 'POST' })
-  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .middleware([authMiddleware, tenantMembershipMiddleware])
   .validator(importMenuCsvInput)
   .handler(async ({ context, data }) => {
     requireMenuEditor(context.tenantMembership.role)
@@ -368,7 +365,7 @@ export const importMenuCsv = createServerFn({ method: 'POST' })
 
 /** Price, VAT and availability changes; names are fixed once the item is in use. */
 export const updateMenuItem = createServerFn({ method: 'POST' })
-  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .middleware([authMiddleware, tenantMembershipMiddleware])
   .validator(updateMenuItemInput)
   .handler(async ({ context, data }) => {
     requireMenuEditor(context.tenantMembership.role)

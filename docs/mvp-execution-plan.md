@@ -1,6 +1,6 @@
 # Plan ejecutable para completar el MVP ampliado
 
-Estado: activo. Última revisión: 2026-09-10.
+Estado: activo. Última revisión: 2026-09-13.
 
 Este backlog convierte `client-mvp-petition.md`, `project-design.md`,
 `mvp-roadmap.md`, `reservations-completion-plan.md` y los ADR en entregas que
@@ -17,8 +17,9 @@ Esta sección prevalece sobre las dependencias históricas de este backlog.
 - Se mantienen los roles existentes. Host y waiter operan mesas y anulan líneas
   no cobradas con motivo; owner y manager aplican descuentos, devoluciones,
   arqueo, cierre y ajustes financieros.
-- Se encolan de forma idempotente servicio, comandas y efectivo cuando no hay
-  red. Los cobros de tarjeta requieren confirmación online.
+- Se encolan de forma idempotente las operaciones compatibles de servicio y las
+  altas de comandas cuando no hay red. Los cobros, movimientos de caja y demás
+  operaciones que requieren estado actual se mantienen online.
 - La reserva web se confirma automáticamente conforme a reglas del restaurante.
   No hay depósito por defecto; owner y manager pueden configurarlo para grupos.
   Cambio o cancelación pública se permite hasta dos horas antes inicialmente.
@@ -36,20 +37,23 @@ Esta sección prevalece sobre las dependencias históricas de este backlog.
 ## Diagnóstico de partida
 
 - Base disponible: tenancy, Auth y roles; plano y servicio; reservas internas y
-  públicas parciales; agenda diaria; clientes básicos; cuenta, pagos simples y
-  facturación en modo test; outbox de correo y depósitos modelados.
+  públicas; agenda diaria; clientes, cuenta, TPV, pagos, caja y facturación en
+  modo test; outbox de correo y depósitos modelados.
 - Brechas de producto: el TPV unificado cubre cuenta, comandas, cola, cobro
   manual y mixto, caja, conciliación, informe financiero y reimpresión web;
   quedan validación formal del fichaje e inventario/escandallos de punta a punta
   de punta a punta. Hardware queda explícitamente fuera de esta fase.
 - Brechas de fiabilidad: las tres pruebas RLS están omitidas porque no se
-  conectan pruebas al único proyecto con datos reales; tampoco hay humo E2E ni
-  concurrencia real contra ese proyecto.
+  conectan pruebas al único proyecto con datos reales. El smoke E2E público ya
+  existe y es no mutante; los escenarios autenticados requieren
+  `E2E_STORAGE_STATE` de un entorno de pruebas. No hay concurrencia real contra
+  el proyecto autorizado.
 - Riesgo previo: hay prefijos de migración repetidos (por ejemplo `...00026`,
   `...00031` y `...00035`). Antes de cualquier migración, reconciliar el
   historial con el proyecto existente y normalizar versiones futuras.
-- Ámbito protegido: hay cambios locales no confirmados en `features/account`.
-  No se modifican ni se incluyen en una entrega sin confirmación de su autor.
+- Ámbito protegido: hay cambios locales no confirmados en varias features y en
+  `20260913000047_payment_line_allocations.sql`. No se modifican ni se incluyen
+  en una entrega sin confirmación de su autor.
 
 ## Reglas de ejecución
 
@@ -135,26 +139,31 @@ historial y la agenda actualizada bajo las políticas aprobadas.
       local/canal, disponibilidad, alérgenos, modificadores y destino cocina/barra.
 - [x] **E3.2 · Comanda.** Añadir/editar/anular cantidades y notas rápidamente,
       congelar precio/modificador/IVA/destino y asociar cada línea a la sesión.
-- [ ] **E3.3 · Envío fiable.** Estados enviados/recibidos/preparando/listo/
-      entregado, reenvío idempotente, cola offline y auditoría de anulaciones.
+- [x] **E3.3 · Envío fiable.** Estados de preparación, reintento idempotente,
+      cola offline de altas compatibles y auditoría de anulaciones están
+      implementados; falta el smoke operativo con datos aislados.
 
 **Salida:** camarero completa una comanda desde móvil/tablet sin duplicarla y la
 cuenta abierta refleja exactamente las líneas enviadas.
 
 ### E4 — Cocina y barra (P1)
 
-- [ ] **E4.1 · Ticket de preparación.** Modelo de batches por estación, cola en
-      pantalla, prioridades/notas, cambios de estado y trazabilidad por línea.
-- [ ] **E4.2 · KDS accesible.** Pantallas separadas por destino, filtro de turno,
-      tiempos de preparación, estados de red y reimpresión segura desde la web.
+- [~] **E4.1 · Ticket de preparación.** Cola en pantalla, estaciones, notas,
+  tiempos de preparación y cambios de estado están implementados; queda
+  completar batches y trazabilidad avanzada por línea.
+- [~] **E4.2 · KDS accesible.** La cola web está integrada en TPV y muestra
+  estados de red/errores; quedan reimpresión segura y validación de uso en
+  dispositivo de cocina.
 
 **Salida:** cocina y barra reciben solo sus partidas y sala conoce cuándo están
 listas sin comunicación paralela.
 
 ### E5 — Cuenta, cobros y documentos (P1)
 
-- [ ] **E5.1 · División y movimientos.** Dividir por persona, importe, producto
-      y porcentaje; mover líneas entre sesiones y preservar inmutabilidad/auditoría.
+- [~] **E5.1 · División y movimientos.** La división por importe y pagos mixtos
+  está implementada; la asignación explícita de líneas tiene migración local
+  preparada (`20260913000047_payment_line_allocations.sql`) pero pendiente de
+  revisión/aplicación en el proyecto autorizado.
 - [ ] **E5.2 · Ajustes controlados.** Descuentos, invitaciones, anulaciones,
       reapertura y correcciones con permiso, motivo y reglas fiscales.
 - [x] **E5.3 · Pago robusto.** Efectivo/tarjeta/transferencia/vale/propina y pago
@@ -198,10 +207,13 @@ fuera de esta fase.
 - [x] **E7.1 · Informes mínimos.** Ventas/IVA/método/producto/ticket medio,
       descuentos, propinas, pagos mixtos y cierres/arqueos por local, día y turno,
       con exportación compatible.
-- [ ] **E7.2 · Onboarding/importación.** Asistente de local, turnos, zonas,
-      mesas, carta, impuestos y equipo; importación CSV con preview y errores.
-- [ ] **E7.3 · Inventario y producto.** Existencias, movimientos, escandallos,
-      alérgenos y precios por canal, según el alcance ampliado documentado.
+- [~] **E7.2 · Onboarding/importación.** El onboarding y la gestión de equipo
+  durante la preparación están disponibles; clientes y reservas ya tienen
+  importación CSV con preview y errores. Falta completar la configuración
+  guiada de turnos/carta y la importación de producto.
+- [~] **E7.3 · Inventario y producto.** Existencias, movimientos, escandallos,
+  alérgenos, compras y precios por canal están implementados por partes;
+  falta cerrar el flujo operativo de extremo a extremo.
 
 **Salida:** propietario configura el primer servicio e interpreta los cierres y
 ventas sin intervención técnica.

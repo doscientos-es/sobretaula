@@ -1,6 +1,6 @@
 # Análisis de cumplimiento del MVP solicitado por el cliente
 
-Última revisión: 2026-09-10.
+Última revisión: 2026-09-13.
 
 Este documento contrasta [`client-mvp-petition.md`](./client-mvp-petition.md), que es la petición del cliente, con el código y las migraciones actuales. `implementation-status.md` describe capacidades internas; este documento añade el criterio de cumplimiento frente al MVP comercial.
 
@@ -49,15 +49,33 @@ reservas públicas como alcance ampliado del MVP.
 | Inventario                                    | A medias                                 | Movimientos por local, stock derivado, descuento/reposición de recetas, consulta de referencias bajo mínimo y primera pantalla por local                                                                                                                                                                   | Registrar entradas/salidas desde UI, edición de alérgenos/recetas y compras/proveedores          |
 | Facturación SaaS Sobretaula                   | A medias                                 | Planes, facturas, webhook, formulario inicial y REST preparado                                                                                                                                                                                                                                             | Capturar/cifrar token, conectar renovación automática, probar MIT, reintentos y cancelación      |
 
+## Capacidades ampliadas implementadas después de la petición inicial
+
+Estas capacidades no cambian el alcance contractual de la petición original,
+pero ya forman parte del producto local y deben reflejarse en el backlog:
+
+| Área                     | Estado actual                                                                         | Límite conocido                                                         |
+| ------------------------ | ------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| Pedidos online           | Carta pública, checkout para recoger/entregar, estados y reconciliación de pago       | Falta piloto y validación con proveedor real                            |
+| Compras e inventario     | Proveedores, pedidos, albaranes, documentos de compra, revisión y aplicación a stock  | Falta validar el flujo completo y criterios contables                   |
+| Clientes y fidelización  | Campañas, atribución, puntos, tarjetas regalo y operaciones idempotentes              | Falta política final de privacidad/retención y validación operativa     |
+| Analítica                | Previsión de demanda, costes, rentabilidad, recomendaciones e histórico de decisiones | Son ayudas operativas; no sustituyen contabilidad ni decisiones humanas |
+| Comercialización modular | Catálogo de módulos, precios, dependencias, entitlements, overrides y solicitudes     | Faltan guards/teasers completos en todas las pantallas                  |
+
 ## Tareas priorizadas para completar el MVP
 
 ### P0 — cerrar el flujo demostrable y la seguridad
 
-1. Revisar y aplicar individualmente las migraciones propias en el único proyecto Supabase autorizado, verificando el esquema sin fixtures, humo, carga ni carreras sobre datos reales.
+1. Revisar individualmente las 151 migraciones locales y compararlas con el
+   historial del único proyecto Supabase autorizado; la migración
+   `20260913000047_payment_line_allocations.sql` queda pendiente. Verificar el
+   esquema sin fixtures, humo, carga ni carreras sobre datos reales.
 2. Probar RLS, roles, concurrencia e idempotencia con dos usuarios y dos locales.
 3. Conectar el alta Redsys completa y persistir la referencia tokenizada recibida.
 4. Completar la pantalla de pago SaaS, retorno OK/KO y estado de suscripción.
-5. Añadir smoke end-to-end de: crear restaurante → configurar local → reservar → sentar → abrir cuenta → cobrar → emitir documento.
+5. Ejecutar el smoke público existente y añadir el escenario autenticado, con
+   `E2E_STORAGE_STATE` de pruebas, para: crear/configurar restaurante → reservar
+   → sentar → abrir cuenta → cobrar → emitir documento.
 
 ### P1 — mínimo operativo de TPV
 

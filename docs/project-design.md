@@ -1,7 +1,7 @@
 # SobreTaula · Diseño del producto y de la plataforma
 
 Estado: diseño aprobado para F0; implementación del MVP avanzada, pero no
-entregable aprobado. Última revisión: 2026-09-09.
+entregable aprobado. Última revisión: 2026-09-13.
 
 Este documento es la fuente de verdad del diseño. Las decisiones con coste de
 reversión alta viven en `docs/adr/`. El avance real vive en
@@ -37,19 +37,19 @@ el dedo, el producto no se usa.
 
 ### Módulos
 
-| Módulo                                      | Fase | Estado                             |
-| ------------------------------------------- | ---- | ---------------------------------- |
-| Tenancy, auth, roles, ajustes               | F1   | Alcance MVP                        |
-| Diseñador de sala                           | F2   | Alcance MVP                        |
-| Motor de reservas                           | F3   | Alcance MVP                        |
-| Vista de servicio                           | F4   | Alcance MVP                        |
-| Cuenta de mesa (simple)                     | F5   | Alcance MVP                        |
-| Facturación + VERI\*FACTU                   | F6   | Alcance MVP, modo test             |
-| TPV completo (comandas, cocina, arqueo)     | F7   | Alcance ampliado del MVP           |
-| Web pública de reservas                     | F8   | Alcance ampliado del MVP           |
-| Control horario y empleados                 | F9   | Alcance ampliado del MVP           |
-| Inventario, escandallos y carta             | F10  | Alcance ampliado del MVP           |
-| Delivery, fidelización e informes avanzados | F11  | Planificado; concretar con cliente |
+| Módulo                                     | Fase  | Estado                                                     |
+| ------------------------------------------ | ----- | ---------------------------------------------------------- |
+| Tenancy, auth, roles, ajustes              | F1    | Implementado; validación operativa pendiente               |
+| Diseñador de sala                          | F2    | Implementado; validación operativa pendiente               |
+| Motor de reservas y web pública            | F3/F8 | Núcleo implementado; gates de producto pendientes          |
+| Vista de servicio                          | F4    | Implementado; smoke autenticado pendiente                  |
+| Cuenta, TPV, cocina, caja e informes       | F5/F7 | Implementado en navegador/tablet; hardware fuera           |
+| Facturación + VERI\*FACTU                  | F6    | Modo test; producción bloqueada                            |
+| Control horario y empleados                | F9    | Indicativo; revisión legal pendiente                       |
+| Inventario, escandallos y compras          | F10   | Implementado parcialmente; validación operativa pendiente  |
+| Pedidos online                             | F11   | Flujo y estados implementados; piloto pendiente            |
+| Clientes, campañas, fidelización y regalos | F11   | Núcleo implementado; políticas y validación pendientes     |
+| Analítica, previsión y multi-local         | F11   | Núcleo implementado; validación con datos reales pendiente |
 
 La regla de escalabilidad es estructural, no aspiracional: cada módulo es un
 vertical en `src/features/<modulo>` con su dominio, aplicación, infraestructura
@@ -91,7 +91,7 @@ src/
     ui/                    un componente por archivo
     index.ts               API pública client-safe
   shared/lib/              supabase, auth, i18n, reloj, dinero
-  demos/                   fixtures deterministas
+  e2e/                     smoke no mutante y escenarios autenticados opcionales
 supabase/migrations/       SQL versionado, pequeño e incremental
 docs/                      este diseño, ADRs, estado
 ```
@@ -175,7 +175,8 @@ Contrato completo en cada cierre de tarea y en CI: `pnpm format:check`,
 controles, incluidos `typecheck`, `quality` y `build`; el detalle y las
 evidencias viven en `docs/implementation-status.md`.
 
-Desde F1 se mantienen pruebas unitarias y revisión de esquema/RLS por migración.
+La última ejecución local registrada de tests cubre 113 archivos y 400 pruebas
+correctas. Desde F1 se mantienen pruebas unitarias y revisión de esquema/RLS por migración.
 El producto usa un único proyecto Supabase con datos reales: las pruebas de
 integración RLS y concurrencia quedan omitidas para no conectarlas a producción,
 y no se ejecuta humo, fixture ni carga contra ese proyecto.

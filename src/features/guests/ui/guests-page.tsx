@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@doscientos/ui'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type DragEvent } from 'react'
 
 import {
   addGuestAllergy,
@@ -52,6 +52,24 @@ export function GuestsPage({ tenantId, venueId }: { tenantId: string; venueId: s
   const [csv, setCsv] = useState('')
   const [csvPreview, setCsvPreview] = useState<GuestImportPreview | null>(null)
   const [importing, setImporting] = useState(false)
+  const [csvFileName, setCsvFileName] = useState('')
+  const [isDraggingCsv, setIsDraggingCsv] = useState(false)
+  async function loadCsvFile(file: File | undefined) {
+    if (!file) return
+    if (!file.name.toLowerCase().endsWith('.csv') && file.type !== 'text/csv') {
+      setError('Selecciona un archivo CSV.')
+      return
+    }
+    const contents = await file.text()
+    setCsv(contents)
+    setCsvFileName(file.name)
+    setCsvPreview(previewGuestCsv(contents))
+  }
+  function dropCsv(event: DragEvent<HTMLLabelElement>) {
+    event.preventDefault()
+    setIsDraggingCsv(false)
+    void loadCsvFile(event.dataTransfer.files[0])
+  }
   useEffect(() => {
     void getGuestTags({ data: { tenantId } })
       .then(setTags)
@@ -91,15 +109,48 @@ export function GuestsPage({ tenantId, venueId }: { tenantId: string; venueId: s
         <CardHeader>
           <CardTitle>Importar clientes</CardTitle>
           <CardDescription>
-            Columnas: nombre; opcionales: telefono, email y consentimiento_marketing.
+            Suelta un CSV o selecciónalo. Se validará automáticamente antes de importar. Columnas:
+            nombre; opcionales: telefono, email y consentimiento_marketing.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3">
+          <label
+            aria-label="Seleccionar archivo CSV de clientes"
+            className={`grid min-h-24 cursor-pointer place-items-center rounded-lg border-2 border-dashed px-4 py-4 text-center text-sm ${isDraggingCsv ? 'border-primary bg-primary/10' : 'border-muted-foreground/30 hover:border-primary/60'}`}
+            onDragEnter={(event) => {
+              event.preventDefault()
+              setIsDraggingCsv(true)
+            }}
+            onDragLeave={(event) => {
+              event.preventDefault()
+              setIsDraggingCsv(false)
+            }}
+            onDragOver={(event) => event.preventDefault()}
+            onDrop={dropCsv}
+            htmlFor="guest-csv-file"
+          >
+            <span>
+              <strong>{csvFileName || 'Suelta el CSV aquí'}</strong>
+              <br />
+              <span className="text-muted-foreground">
+                {csvFileName ? 'Archivo cargado · puedes reemplazarlo' : 'o haz clic para buscarlo'}
+              </span>
+            </span>
+            <input
+              accept=".csv,text/csv"
+              aria-label="Archivo CSV de clientes"
+              className="sr-only"
+              id="guest-csv-file"
+              onChange={(event) => void loadCsvFile(event.target.files?.[0])}
+              type="file"
+            />
+          </label>
           <textarea
             aria-label="CSV de clientes"
             className="min-h-24 w-full rounded-md border px-3 py-2 font-mono text-xs"
             onChange={(event) => {
               setCsv(event.target.value)
+              setCsvFileName('')
               setCsvPreview(null)
             }}
             placeholder="nombre;telefono;email;consentimiento_marketing"

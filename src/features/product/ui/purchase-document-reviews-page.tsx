@@ -48,14 +48,14 @@ export function PurchaseDocumentReviewsPage({
   useEffect(() => {
     void Promise.all([
       listIngredients({
-        data: { tenantId, page: 1, pageSize: 100, search: '' },
+        data: { tenantId, venueId, page: 1, pageSize: 100, search: '' },
       }),
-      listSuppliers({ data: { tenantId, page: 1, pageSize: 100, search: '' } }),
+      listSuppliers({ data: { tenantId, venueId, page: 1, pageSize: 100, search: '' } }),
     ]).then(([ingredientResult, supplierResult]) => {
       setIngredients(ingredientResult.items)
       setSuppliers(supplierResult.items)
     })
-  }, [tenantId])
+  }, [tenantId, venueId])
   async function review(id: string, status: 'approved' | 'rejected') {
     try {
       await reviewPurchaseDocument({

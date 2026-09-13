@@ -199,6 +199,7 @@ export function ProductPage({
         pageSize: ingredients.pageSize,
         search: ingredientSearch,
         tenantId,
+        venueId,
       },
     })
       .then((result) => {

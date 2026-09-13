@@ -1,10 +1,14 @@
 # Modelo de datos
 
-Diseño de F0 materializado incrementalmente en `supabase/migrations/`: los 100
-ficheros SQL locales están representados en el historial del proyecto autorizado
-y no queda ninguna migración local pendiente de aplicar. Supabase registra 101
-entradas porque `is_tenant_member_compatibility` aparece dos veces por una
-reaplicación histórica; no se modifica ese historial ya aplicado.
+Última revisión: 2026-09-13.
+
+Diseño materializado incrementalmente en `supabase/migrations/`. El repositorio
+contiene actualmente 151 ficheros SQL locales. El historial del proyecto
+Supabase autorizado se revisó por MCP y llega a la migración equivalente a
+`loyalty_transaction_source_foreign_keys`; la migración local
+`20260913000047_payment_line_allocations.sql` aún no se considera aplicada.
+No se debe inferir que el esquema remoto coincide automáticamente con el árbol
+local: cada migración nueva requiere revisión y verificación individual.
 El documento conserva el contrato del modelo y se actualiza junto a cada cambio
 de esquema. Toda tabla de negocio lleva `tenant_id uuid not null` y RLS forzada
 ([ADR-0002](./adr/0002-multitenancy-rls.md)).
@@ -36,6 +40,11 @@ Convenciones: claves `uuid` con `gen_random_uuid()`; `created_at`/`updated_at`
 | `platform_fiscal_settings`           | Emisor, serie y contador propios de las facturas SaaS de SobreTaula                                       |
 | `platform_fiscal_invoices`           | Factura fiscal de SobreTaula al restaurante, con snapshots y revisión de incidencias                      |
 | `platform_fiscal_outbox`             | Entrega VERI*FACTU del emisor de plataforma; no comparte cadena con ningún tenant                         |
+
+La migración de catálogo comercial añade `module_catalog`,
+`tenant_module_overrides` y `tenant_module_requests`. Los entitlements del plan
+siguen en `plan_entitlements`; un override no sustituye la autorización por rol
+ni habilita módulos que no tengan sus dependencias resueltas.
 
 ## Identidad de tenant
 
@@ -115,8 +124,22 @@ deben añadir columnas o políticas públicas de forma aislada.
 | `orders` / `order_items`         | Líneas añadidas a la sesión, con precio congelado en el momento              |
 | `payments`                       | Cobros de la sesión, método, importe, división de cuenta                     |
 
+El alcance ampliado añade `payment_line_allocations` para asociar pagos con
+líneas de cuenta. Su migración local está pendiente de aplicar en el proyecto
+autorizado; hasta entonces la división por línea no debe anunciarse como
+disponible en ese entorno.
+
 Preparado para el TPV completo (comandas a cocina, modificadores, arqueo) sin
 cambiar estas tablas: se añaden, no se rehacen.
+
+## Operación ampliada
+
+Las migraciones posteriores incorporan, entre otras, `online_orders` y sus
+estados de pago, `purchase_orders`/`delivery_notes`, campañas de clientes,
+`loyalty_accounts`/`loyalty_transactions`, `gift_cards`/`gift_card_transactions`
+y revisiones de documentos de compras. Todas mantienen `tenant_id`, RLS y
+permisos explícitos; las tablas transaccionales continúan siendo la fuente de
+verdad de informes y recomendaciones.
 
 ## Facturación y fiscalidad
 

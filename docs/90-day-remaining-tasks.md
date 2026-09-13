@@ -12,8 +12,10 @@ proyecto Supabase autorizado no se pueden sustituir por tests locales.
 
 ### P0 · Producto demostrable y seguro
 
-- [ ] **P0.1 · Activación del local.** Asistente para local, turnos, zonas,
-      mesas, carta, impuestos, equipo y checklist de primer servicio.
+- [~] **P0.1 · Activación del local.** El onboarding cubre identidad fiscal,
+  local, idioma y zona horaria; la gestión de equipo durante la preparación
+  también está disponible. Falta cerrar turnos, zonas, carta, impuestos y
+  checklist de primer servicio en un único recorrido.
 - [ ] **P0.2 · Reservas internas.** CRUD de turnos y reglas, duración por
       grupo, límites por intervalo, cierres/bloques con impacto y agenda con
       filtros persistidos en URL.
@@ -24,6 +26,8 @@ proyecto Supabase autorizado no se pueden sustituir por tests locales.
       cierres; nunca contra datos reales.
 - [ ] **P0.5 · Operación observable.** Auditoría legible, estados de red,
       cola offline visible, recuperación de sesión y runbook de backup/restore.
+      El runbook está documentado en `docs/operational-recovery-runbook.md`;
+      faltan ejecutar el restore y guardar evidencia en un entorno autorizado.
 
 ### P1 · Ventaja de sala
 
@@ -56,15 +60,19 @@ proyecto Supabase autorizado no se pueden sustituir por tests locales.
 
 ### P2 · Activación comercial y ecosistema
 
-- [ ] **P2.1 · Importación.** CSV con preview, validación, errores por fila y
-      carga de productos, categorías, modificadores, clientes y reservas futuras.
-- [ ] **P2.2 · Reserva pública vendible.** Gestión segura de tokens, no-store,
-      caducidad/rotación, retención y humo de sobreventa/lista de espera.
-- [ ] **P2.3 · Comunicaciones.** Rebotes y reenvío manual de email; SMS/WhatsApp
-      solo con proveedor y consentimiento aprobados.
-- [ ] **P2.4 · Integraciones mínimas.** Exportación contable, widget propio,
-      Google Business Profile, un proveedor de pagos y una integración TPV elegida
-      por los pilotos.
+- [~] **P2.1 · Importación.** Clientes y reservas ya tienen CSV con preview,
+  validación y errores por fila; faltan productos/categorías/modificadores y
+  la importación transaccional completa.
+- [~] **P2.2 · Reserva pública vendible.** Reserva, gestión por token,
+  `no-store`, caducidad, rate limit, condiciones versionadas y lista de
+  espera están implementados; falta humo de sobreventa y validación de
+  retención/privacidad.
+- [~] **P2.3 · Comunicaciones.** Confirmaciones y recordatorios por email están
+  activos mediante outbox/worker; faltan rebotes y reenvío manual. SMS/WhatsApp
+  siguen desactivados hasta aprobar proveedor y consentimiento.
+- [~] **P2.4 · Integraciones mínimas.** Hay carta pública, checkout de pedidos
+  online y contratos de pago; faltan exportación contable, widget/canales
+  externos y validación con los pilotos.
 - [ ] **P2.5 · Pilotos de pago.** Tres restaurantes independientes, diez
       servicios observados por restaurante, formación, soporte, métricas y
       conversión a pago.

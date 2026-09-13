@@ -1,7 +1,26 @@
 # Estado de implementación
 
-Última actualización: 2026-09-11. Incluye la ejecución local de controles de
-calidad de esta fecha.
+Última actualización: 2026-09-13. Incluye la ejecución local de tests y la
+revisión del historial de migraciones del proyecto Supabase autorizado.
+
+## Carta: categorías y estado operativo
+
+Una **categoría** es un grupo de platos que se presenta junto en la carta y
+ayuda a ordenar la oferta: por ejemplo, «Entrantes», «Principales», «Postres»
+o «Bebidas». No es un local, una familia de inventario ni una categoría fiscal:
+pertenece al restaurante y cada plato se asocia a una categoría.
+
+La pantalla Carta permite crear categorías, platos, modificadores, precios,
+IVA y disponibilidad. Estas tareas de configuración están disponibles para
+`owner` y `manager` incluso mientras el restaurante prepara el alta; las
+acciones operativas de TPV, reservas, servicio e inventario siguen sus propias
+reglas de estado y permisos. La URL del local (`/t/:slug/l/:venue/...`) es la
+fuente del `venueId` para las pantallas que sí trabajan por local; no se debe
+ocultar ese contexto en cookies como sustituto de la URL.
+
+Comprobación remota del entorno demo (2026-09-13): `la-fonda-demo` tiene estado
+`active`. Por tanto, está operativo a nivel de tenant; esto no implica que la
+carta ya tenga categorías o platos cargados.
 
 El plan maestro de producto y UX del diseñador/operación de sala vive en
 [`room-planner-master-plan.md`](./room-planner-master-plan.md). Su primera
@@ -21,7 +40,7 @@ reproducible (comando ejecutado y su resultado).
 
 | Fase                   | Entregable                                                                  | Estado                                                                                                                                                                                                                                                                                                                  |
 | ---------------------- | --------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| F0 · Papeleo           | `project-design.md`, `data-model.md`, ADR 0001–0007                         | Hecho                                                                                                                                                                                                                                                                                                                   |
+| F0 · Papeleo           | `project-design.md`, `data-model.md`, ADR 0001–0008                         | Hecho                                                                                                                                                                                                                                                                                                                   |
 | F0 · Esqueleto         | Proyecto Start, `@doscientos/configs`, CI, `.env.example`                   | Hecho                                                                                                                                                                                                                                                                                                                   |
 | F1 · Tenancy + Auth    | Registro, onboarding, perfiles, equipo, RLS, `/t/:slug`                     | Implementado; RLS real sin evidenciar                                                                                                                                                                                                                                                                                   |
 | F1a · Gobierno global  | Dashboard, tenants, auditoría, operadores y controles de acceso             | Implementado; falta evidencia RLS dedicada                                                                                                                                                                                                                                                                              |
@@ -275,21 +294,22 @@ transforma silenciosamente en `test` ni puede emitir por accidente.
 `pnpm format:check`, `pnpm lint`, `pnpm structure:check`, `pnpm typecheck`,
 `pnpm test`, `pnpm quality`, `pnpm build`.
 
-### Última ejecución local (2026-09-11)
+### Última ejecución local (2026-09-13)
 
-La última ejecución de `pnpm quality` completa correctamente con 76 archivos y
-304 pruebas correctas. Un archivo y tres pruebas RLS siguen omitidos de forma
-deliberada para no conectarlos al proyecto con datos reales.
+La última ejecución de `pnpm test` completa correctamente con 113 archivos y
+400 pruebas. Un archivo y tres pruebas RLS siguen omitidos de forma deliberada
+para no conectarlos al proyecto con datos reales. La fecha de esta sección no
+implica que `pnpm quality` o `pnpm build` se hayan ejecutado en este ciclo.
 
 | Comando                | Resultado                                                                                    |
 | ---------------------- | -------------------------------------------------------------------------------------------- |
 | `pnpm format:check`    | Correcto                                                                                     |
 | `pnpm lint`            | Correcto                                                                                     |
 | `pnpm structure:check` | Correcto localmente; el asset de login vive en `public/` y los módulos usan nombres estándar |
-| `pnpm test`            | 76 archivos y 304 pruebas correctas; 1 archivo y 3 pruebas RLS omitidas deliberadamente      |
-| `pnpm typecheck`       | Correcto                                                                                     |
-| `pnpm quality`         | Correcto                                                                                     |
-| `pnpm build`           | Correcto; solo avisos de Vite/chunks                                                         |
+| `pnpm test`            | 113 archivos y 400 pruebas correctas; 1 archivo y 3 pruebas RLS omitidas deliberadamente     |
+| `pnpm typecheck`       | Pendiente de ejecutar en esta revisión                                                       |
+| `pnpm quality`         | Pendiente de ejecutar en esta revisión                                                       |
+| `pnpm build`           | Pendiente de ejecutar en esta revisión                                                       |
 
 Las pruebas de integración de RLS (`tenant-rls.test.ts`) permanecen omitidas:
 el producto usa un único proyecto Supabase con datos reales y no se permite
@@ -299,28 +319,24 @@ sólo un `platform_owner` puede consultar `platform_audit_log`. La evidencia de
 este control se limita hasta nuevo acuerdo a revisión de esquema y pruebas
 unitarias, sin presentar esa limitación como validación de producción.
 
-### Despliegue revisado en Supabase existente (2026-09-10)
+### Historial remoto revisado (2026-09-13)
 
-Se identificó el único proyecto autorizado de SobreTaula y se comparó su
-historial con `supabase/migrations`. Tras revisar el SQL individualmente, se
-aplicaron las piezas pendientes de compatibilidad de membresía, estados de
-línea, caja, ingredientes/recetas, inventario, precios por canal, carta pública,
-fichaje/PIN, devoluciones, descuentos, resumen de caja, alérgenos y versiones de
-receta. La función de carta pública se desplegó después de la tabla de precios
-por canal, su dependencia real. Posteriormente se desplegaron las migraciones
-de cuenta idempotente y auditoría inmutable de anulaciones (`80` y `81`), y la
-de reserva pública con comentario, constancia de privacidad y correo exclusivo
-(`82`). No se usaron fixtures ni se ejecutaron pruebas de carga, concurrencia o
-humo contra datos de producción.
+Se identificó el único proyecto autorizado de SobreTaula mediante el MCP de
+Supabase y se consultó su historial sin leer datos operativos. El historial
+remoto contiene las migraciones hasta `loyalty_transaction_source_foreign_keys`,
+equivalente a la migración local `20260913000046`. La migración local
+`20260913000047_payment_line_allocations.sql` existe en el árbol de trabajo y
+no se declara aplicada. No se usaron fixtures ni se ejecutaron pruebas de carga,
+concurrencia, humo o RLS contra datos reales.
 
-### Auditoría de cierre (2026-09-11)
+### Auditoría de cierre local (2026-09-13)
 
-Se reconciliaron los 100 ficheros locales de `supabase/migrations` con el
-historial del proyecto autorizado: no queda ninguna migración propia pendiente
-de aplicar. El historial tiene 101 entradas porque
-`is_tenant_member_compatibility` figura dos veces por una reaplicación histórica;
-no se alteró ese historial ni se ejecutó DDL innecesario. El esquema conserva RLS
-forzada en 95 tablas públicas.
+Se contaron 151 ficheros locales de `supabase/migrations` y se compararon sus
+nombres con el historial remoto consultado. No se afirma que todos estén
+aplicados: la migración local `20260913000047_payment_line_allocations.sql`
+queda pendiente de revisión/aplicación explícita. El historial conserva una
+reaparición de `is_tenant_member_compatibility`; no se alteró ni se ejecutó DDL
+remoto durante esta revisión.
 
 La base ya contiene las cuentas demo documentadas en
 [`demo-users.md`](./demo-users.md): owner, manager y waiter para
@@ -481,3 +497,29 @@ cancelación; no se insertaron ni consultaron datos operativos.
   modificar un plato; cada comanda conserva el valor histórico de ese momento.
 - Dirección también puede asignar la estación del plato desde la carta; la
   selección se congela en la línea de comanda y admite fallback a `general`.
+
+### Incrementos del 13/09/2026
+
+- El alta de tenant ya tiene asistente de onboarding con datos fiscales, locale,
+  zona horaria y primer local. El equipo puede gestionarse durante el estado de
+  preparación y las invitaciones siguen siendo de un solo uso.
+- La importación CSV dispone de preview y errores por fila para clientes y
+  reservas. La importación no fuerza una escritura parcial: las filas inválidas
+  se muestran antes de ejecutar el alta.
+- Existen rutas operativas para pedidos online, documentos de compras,
+  fidelización, tarjetas regalo y propinas. Sus listados principales usan
+  paginación server-side y filtros o conteos cuando corresponde.
+- La analítica avanzada incluye previsión de demanda, coste de ingredientes,
+  recomendaciones de rentabilidad e histórico de decisiones. Son ayudas
+  operativas, no decisiones automáticas ni garantía contable.
+- El catálogo comercial de módulos mantiene precios, dependencias, roles,
+  entitlements, overrides de plataforma y solicitudes de activación. La
+  activación efectiva debe seguir comprobándose en servidor; ocultar una ruta
+  no es una autorización.
+- Las notificaciones web push tienen preferencias y versionado de caché del
+  service worker por despliegue. El correo transaccional continúa dependiendo
+  de los secretos y del worker configurados en el entorno.
+
+Estos incrementos están cubiertos por el código local y los tests unitarios. La
+validación de flujo completo, permisos entre tenants y operación con datos de
+prueba sigue siendo un gate separado de la existencia de la ruta.

@@ -14,7 +14,7 @@ import {
   PageHeaderTitle,
   useFormFeedback,
 } from '@doscientos/ui'
-import { useState, type FormEvent } from 'react'
+import { useState, type DragEvent, type FormEvent } from 'react'
 
 import type { Locale } from '@/shared/lib/i18n/locale'
 import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
@@ -78,6 +78,26 @@ export function ReservationPage({
   const [reservationPreview, setReservationPreview] = useState<ReservationImportPreview | null>(
     null,
   )
+  const [reservationFileName, setReservationFileName] = useState('')
+  const [isDraggingReservations, setIsDraggingReservations] = useState(false)
+
+  async function loadReservationFile(file: File | undefined) {
+    if (!file) return
+    if (!file.name.toLowerCase().endsWith('.csv') && file.type !== 'text/csv') {
+      feedback.setError('Selecciona un archivo CSV.')
+      return
+    }
+    const contents = await file.text()
+    setReservationCsv(contents)
+    setReservationFileName(file.name)
+    setReservationPreview(previewReservationCsv(contents))
+  }
+
+  function dropReservations(event: DragEvent<HTMLLabelElement>) {
+    event.preventDefault()
+    setIsDraggingReservations(false)
+    void loadReservationFile(event.dataTransfer.files[0])
+  }
 
   function loadService(service: ReservationService) {
     setEditingServiceId(service.id)
@@ -225,16 +245,51 @@ export function ReservationPage({
         <CardHeader>
           <CardTitle>Importar reservas futuras</CardTitle>
           <CardDescription>
-            Columnas: turno, fecha_hora y comensales. Opcionales: nombre y telefono. Cada fila se
-            comprobará contra la disponibilidad real antes de crearla.
+            Suelta un CSV o selecciónalo. Se validará automáticamente y cada fila se comprobará
+            contra la disponibilidad real antes de crearla. Columnas: turno, fecha_hora y
+            comensales. Opcionales: nombre y telefono.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3">
+          <label
+            aria-label="Seleccionar archivo CSV de reservas"
+            className={`grid min-h-24 cursor-pointer place-items-center rounded-lg border-2 border-dashed px-4 py-4 text-center text-sm ${isDraggingReservations ? 'border-primary bg-primary/10' : 'border-muted-foreground/30 hover:border-primary/60'}`}
+            onDragEnter={(event) => {
+              event.preventDefault()
+              setIsDraggingReservations(true)
+            }}
+            onDragLeave={(event) => {
+              event.preventDefault()
+              setIsDraggingReservations(false)
+            }}
+            onDragOver={(event) => event.preventDefault()}
+            onDrop={dropReservations}
+            htmlFor="reservation-csv-file"
+          >
+            <span>
+              <strong>{reservationFileName || 'Suelta el CSV aquí'}</strong>
+              <br />
+              <span className="text-muted-foreground">
+                {reservationFileName
+                  ? 'Archivo cargado · puedes reemplazarlo'
+                  : 'o haz clic para buscarlo'}
+              </span>
+            </span>
+            <input
+              accept=".csv,text/csv"
+              aria-label="Archivo CSV de reservas"
+              className="sr-only"
+              id="reservation-csv-file"
+              onChange={(event) => void loadReservationFile(event.target.files?.[0])}
+              type="file"
+            />
+          </label>
           <textarea
             aria-label="CSV de reservas futuras"
             className="min-h-24 w-full rounded-md border px-3 py-2 font-mono text-xs"
             onChange={(event) => {
               setReservationCsv(event.target.value)
+              setReservationFileName('')
               setReservationPreview(null)
             }}
             placeholder="turno;fecha_hora;comensales;nombre;telefono"

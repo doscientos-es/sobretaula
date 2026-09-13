@@ -44,6 +44,7 @@ declare
   v_payment record;
   v_allocation jsonb;
   v_sum integer := 0;
+  v_allocated_quantity integer;
   v_item record;
 begin
   select * into v_payment from public.record_single_payment(
@@ -62,10 +63,16 @@ begin
     select oi.id, oi.quantity, o.session_id into v_item
       from public.order_items oi join public.orders o on o.id = oi.order_id
       where oi.id = (v_allocation->>'orderItemId')::uuid
-        and o.session_id = p_session_id and oi.tenant_id = p_tenant_id;
+        and o.session_id = p_session_id and oi.tenant_id = p_tenant_id
+      for update;
     if not found then raise exception 'payment_allocation_item_not_found'; end if;
     if (v_allocation->>'quantity')::integer < 1 or (v_allocation->>'quantity')::integer > v_item.quantity
       then raise exception 'invalid_payment_allocation_quantity'; end if;
+    select coalesce(sum(pla.quantity), 0) into v_allocated_quantity
+      from public.payment_line_allocations pla
+      where pla.order_item_id = v_item.id;
+    if v_allocated_quantity + (v_allocation->>'quantity')::integer > v_item.quantity
+      then raise exception 'payment_allocation_quantity_already_settled'; end if;
     if (v_allocation->>'amountCents')::integer < 1 then raise exception 'invalid_payment_allocation_amount'; end if;
     v_sum := v_sum + (v_allocation->>'amountCents')::integer;
     insert into public.payment_line_allocations(

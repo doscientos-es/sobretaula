@@ -1,6 +1,6 @@
 # ADR-0008 · Pisos, zonas y terrazas en el plano
 
-Estado: propuesta preparada para aplicar
+Estado: aceptado y aplicado en el proyecto autorizado (2026-09-13)
 
 ## Decisión
 
@@ -18,8 +18,8 @@ formatos durante el despliegue gradual.
 
 ## Seguridad
 
-La migración debe mantener RLS de tenant y permisos de owner/manager. No se
-expondrán configuraciones de terraza a usuarios de otro tenant. Cualquier
+La migración mantiene RLS de tenant y permisos de owner/manager. No se
+exponen configuraciones de terraza a usuarios de otro tenant. Cualquier
 función de activación debe ser idempotente y auditable.
 
 ## Reglas de publicación
@@ -31,6 +31,7 @@ función de activación debe ser idempotente y auditable.
 
 ## Verificación requerida
 
-Aplicar únicamente la migración propia revisada en el proyecto autorizado,
-ejecutar advisors, comprobar el esquema/RLS activo y probar en dominio un cambio
-de layout que cruce medianoche y zona horaria, sin insertar datos de prueba.
+La migración local `20260910000031_floor_plan_spaces.sql` está representada en
+el historial remoto como `floor_plan_spaces`; el esquema se consultó sin
+insertar datos de prueba. Sigue pendiente la prueba operativa de un cambio de
+layout que cruce medianoche y zona horaria, además de una revisión de advisors.

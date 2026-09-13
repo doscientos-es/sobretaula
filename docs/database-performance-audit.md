@@ -1,15 +1,19 @@
 # Auditoría de base de datos y escalabilidad
 
-Fecha: 2026-09-11
+Fecha: 2026-09-13
 
 ## Alcance y evidencia
 
-Esta revisión cubre las 100 migraciones del repositorio, las tablas de negocio,
+Esta revisión cubre los 151 ficheros de migración del repositorio, las tablas de negocio,
 las restricciones, los índices declarados, las políticas RLS y los patrones de
 acceso visibles en el código. No sustituye una auditoría de rendimiento en
-producción: el proyecto Supabase indicado por `.env` (`ddronspirdrkgfiguotr`)
-no está disponible en la conexión de herramientas de esta sesión, por lo que
-no se han ejecutado `EXPLAIN ANALYZE`, advisors ni consultas sobre datos reales.
+producción. El proyecto Supabase autorizado fue identificado y su historial de
+migraciones se consultó sin leer datos operativos; no se han ejecutado
+`EXPLAIN ANALYZE`, advisors ni consultas sobre datos reales.
+
+El árbol local contiene migraciones posteriores al último nombre reconocido en
+el historial remoto. En particular, `20260913000047_payment_line_allocations.sql`
+queda fuera de esta auditoría remota hasta que se revise y aplique explícitamente.
 
 ## Estado actual
 
@@ -19,10 +23,12 @@ La base parte de una arquitectura adecuada para un SaaS multi-restaurante:
   `venue_id`.
 - `memberships` separa identidad global de rol dentro de cada restaurante.
 - Hay índices explícitos para la mayoría de claves foráneas y para colas,
-  reservas, sesiones abiertas, auditoría, inventario y fichajes.
+  reservas, sesiones abiertas, auditoría, inventario, compras y fichajes.
 - RLS está forzada en el esquema público según la auditoría de cierre del
   proyecto.
 - Las mutaciones sensibles tienen idempotencia y varias auditorías append-only.
+- El catálogo comercial y los módulos ampliados ya tienen tablas y rutas propias;
+  todavía no hay métricas de producción suficientes para evaluar su coste.
 
 No recomiendo rediseñar las tablas ni particionar todavía. Con un MVP, añadir
 índices sin medir puede empeorar el TPV y las escrituras de reservas.

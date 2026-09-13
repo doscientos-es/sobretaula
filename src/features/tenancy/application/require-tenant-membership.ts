@@ -9,6 +9,15 @@ import { TENANT_ROLES, type TenantRole } from '../domain/tenant'
 
 const tenantMembershipInput = z.object({ tenantId: z.string().uuid() })
 
+/**
+ * Validates the tenant address without removing fields required by the server
+ * function that follows this middleware in the chain.
+ */
+export function validateTenantMembershipInput<T>(data: T): T {
+  tenantMembershipInput.parse(data)
+  return data
+}
+
 interface TenantMembership {
   accessToken: string
   role: TenantRole
@@ -17,15 +26,16 @@ interface TenantMembership {
 }
 
 export const tenantMembershipMiddleware = createMiddleware({ type: 'function' })
-  .validator(tenantMembershipInput)
+  .validator(validateTenantMembershipInput)
   .server(async ({ context, data, next }) => {
     const principal = (context as unknown as { principal?: AuthPrincipal } | undefined)?.principal
     if (!principal) throw new Response('Unauthenticated', { status: 401 })
+    const { tenantId } = tenantMembershipInput.parse(data)
 
     const { data: membership, error } = await createRequestSupabaseClient(principal.accessToken)
       .from('memberships')
       .select('role, tenant_id')
-      .eq('tenant_id', data.tenantId)
+      .eq('tenant_id', tenantId)
       .eq('user_id', principal.userId)
       .eq('status', 'active')
       .maybeSingle()

@@ -1,21 +1,23 @@
 # Plan de finalización del módulo de reservas
 
-Estado: ejecución iterativa. Última revisión: 2026-09-10.
+Estado: ejecución iterativa. Última revisión: 2026-09-13.
 
-Este es el plan de entregas verificables para completar las capacidades de
-reservas solicitadas. No declara ninguna de ellas como terminada.
+Este es el plan de entregas verificables para cerrar los gates que quedan en
+reservas. El núcleo público, la gestión por token, el email, la espera futura y
+los atributos ampliados de cliente ya existen; el documento no los considera
+validados para producción hasta completar las comprobaciones indicadas.
 
 ## 1. Base existente y brechas
 
-| Capacidad       | Existe                                                                                                   | Falta para el alcance final                                                                 |
-| --------------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| Turnos y reglas | `services`, `availability_rules`, duración y pacing                                                      | Edición, máximo de grupo y regla/horario por área                                           |
-| Disponibilidad  | Cierres, best-fit y `EXCLUDE` de mesas                                                                   | Transacción única para crear, editar y cancelar                                             |
-| Reserva interna | Alta con asignación automática, teléfono, deduplicación, agenda por fecha y reprogramación               | Detalle e historial                                                                         |
-| Operación       | Sentar lleva a `seated`; cerrar sesión a `completed`; cancelación, no-show y reprogramación desde agenda | Historial y eventos                                                                         |
-| Clientes        | Nombre, contacto, idioma, notas y alergias                                                               | Etiquetas y notas históricas creadas en `20260910000029`; falta ficha UI, búsqueda y fusión |
-| Espera          | Cola presencial en Servicio con nombre, teléfono, deduplicación, espera estimada y asignación manual     | Espera de fecha futura, oferta, aviso y caducidad                                           |
-| Cobro           | Sesión enlazada a reserva y pagos                                                                        | Condiciones, depósitos, webhook y reembolsos                                                |
+| Capacidad       | Existe                                                                             | Falta para el alcance final                                                |
+| --------------- | ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| Turnos y reglas | `services`, `availability_rules`, duración, pacing y reglas por área               | Edición/validación completa de límites y cierres en la experiencia interna |
+| Disponibilidad  | Cierres, best-fit, área, zona horaria y `EXCLUDE` de mesas                         | Evidencia de concurrencia en entorno aislado                               |
+| Reserva interna | Alta, asignación automática, deduplicación, agenda, reprogramación e historial     | Completar filtros y recorrido operativo                                    |
+| Operación       | Sentar, cancelar, no-show, espera y cierre de sesión                               | Smoke de turno completo                                                    |
+| Clientes        | Etiquetas, notas históricas, alergias, preferencias, búsqueda, fusión e historial  | Retención, exportación y permisos de datos sensibles                       |
+| Espera          | Cola presencial y futura, oferta, aceptación, caducidad y operación desde Servicio | Validación de aviso y sobreventa                                           |
+| Cobro           | Sesión enlazada a reserva y pagos                                                  | Checkout de depósitos y reembolsos con proveedor                           |
 
 Las piezas base están en `src/features/reservations`, `src/features/service` y
 las migraciones `20260908000007`, `00008` y `00016`. La cadena
@@ -199,7 +201,9 @@ devuelve errores de negocio estables (`closed`, `no_capacity`, `conflict`,
 2. Solicitar solo nombre, tamaño, fecha/hora, área opcional, email, teléfono
    opcional, comentario y aceptación de privacidad. El esquema Zod limita el
    comentario a 1.000 caracteres y la aceptación queda registrada por reserva
-   desde `20260910000082`; siguen pendientes rate limit y defensa antiabuso.
+   desde `20260910000082`. El rate limit por contacto, las condiciones
+   versionadas y la defensa antiabuso están implementados; falta validación
+   operativa y de retención.
 3. Crear con el mismo motor transaccional, `source=web`, evento, token de gestión
    y trabajo de confirmación. La respuesta no revela agenda, mesas ni PII.
 4. El enlace permite leer solo esa reserva y confirmar, cancelar o proponer un
@@ -292,8 +296,10 @@ una política `anon` general sobre `guests`, `reservations`, asignaciones o nota
 | R7      | Grupos, depósitos, webhook y reembolsos                               | Reintentos no duplican cargo, reserva o reembolso           |
 | R8      | Seguridad, accesibilidad, piloto, runbook y despliegue gradual        | Piloto aprobado y sin incidencias críticas                  |
 
-R4, R5 y R7 dependen de R1. No se expone la web ni se cobra un depósito con el
-actual flujo dividido en varias lecturas y escrituras.
+R5 y R7 siguen dependiendo de la validación completa de sus operaciones. La web
+pública y su gestión por token ya están expuestas mediante RPC/casos server-only;
+los depósitos todavía no se consideran cobrables hasta conectar y validar el
+checkout del proveedor.
 
 ## 9. Pruebas, seguridad y operación
 
@@ -326,8 +332,9 @@ actual flujo dividido en varias lecturas y escrituras.
 
 ## 10. Riesgos abiertos
 
-- El cálculo actual lee varias tablas y escribe después; es una buena base, pero
-  no basta para reservar públicamente con concurrencia.
+- La disponibilidad pública ya usa RPC transaccionales y defensas de esquema;
+  falta ejecutar concurrencia en un entorno de pruebas aislado para demostrar el
+  comportamiento bajo carrera.
 - Alergias e incidencias requieren modelo de permisos, consentimiento y retención
   revisado legalmente antes de su captación desde web.
 - Mensajería, pagos y cron requieren proveedor, coste y secretos externos; no se

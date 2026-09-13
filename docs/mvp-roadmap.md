@@ -1,11 +1,12 @@
 # SobreTaula · Hoja de ruta del MVP operativo
 
-Estado: propuesta de ejecución. Última revisión: 2026-09-10.
+Estado: hoja de ruta histórica de producto. Última revisión: 2026-09-13.
 
-Este documento convierte la tesis de producto en orden de trabajo. Es la guía
-para cualquier agente que continúe SobreTaula: no añadir funcionalidades por
-atractivo aislado; completar primero el flujo que hace que un restaurante opere
-mejor que con agenda, papel, Excel y su TPV actual.
+Este documento conserva la tesis de producto y la secuencia inicial de trabajo.
+Para elegir el siguiente trabajo prevalecen
+[`90-day-remaining-tasks.md`](./90-day-remaining-tasks.md) y
+[`mvp-execution-plan.md`](./mvp-execution-plan.md), que reflejan el estado
+actual y los últimos módulos implementados.
 
 La petición del cliente incluye además TPV, control horario, caja, cocina,
 hardware y facturación como parte del MVP. Esa diferencia con el alcance
@@ -28,9 +29,10 @@ servicio y cuentas deben referirse a la misma escena operativa.
 ## Punto de partida
 
 El diseño y la implementación actuales incluyen tenancy, roles, plano de sala,
-motor de reservas interno, vista de servicio, cuenta de mesa simple,
-facturación en modo test y facturación SaaS. El estado exacto y sus evidencias
-viven en [implementation-status.md](./implementation-status.md).
+reservas internas y públicas, servicio, TPV, cocina, caja, carta, inventario,
+control horario, clientes, pedidos online y facturación en modo test. También
+existen módulos de compras, fidelización, tarjetas regalo y analítica. El estado
+exacto y sus evidencias viven en [implementation-status.md](./implementation-status.md).
 
 No se debe interpretar «implementado» como listo para uso de producción: faltan
 pruebas contra un entorno Supabase dedicado, verificación de migraciones y la
@@ -115,8 +117,9 @@ Una funcionalidad visual no está terminada hasta que incluye:
 
 ## Secuencia de PRs
 
-Cada PR debe ser pequeño, desplegable y demostrable en el Supabase online de
-pruebas. No mezclar una capacidad nueva, una refactorización amplia y cambios
+Cada PR debe ser pequeño, desplegable y demostrable localmente; la verificación
+remota se hace solo en un entorno autorizado y sin usar datos reales como
+fixtures. No mezclar una capacidad nueva, una refactorización amplia y cambios
 visuales sin relación.
 
 | PR  | Resultado entregable                                                          | Roles de QA                 | Dependencia              |
@@ -134,10 +137,9 @@ visuales sin relación.
 | 10  | Indicadores operativos y resumen semanal                                      | owner, manager              | Eventos de PR 1–9        |
 | 11  | Integración o exportación TPV guiada por pilotos                              | owner, manager, waiter      | PR 7                     |
 
-El PR 1 es el siguiente trabajo de producto recomendado tras cerrar el
-superadmin. La página pública se diseña primero como destino móvil propio; el
-widget web se añade después reutilizando el mismo flujo, no como producto
-paralelo.
+La secuencia anterior queda como contexto: la reserva pública, el TPV y la
+administración ya tienen entregas en código. Los siguientes trabajos deben
+tomarse del backlog vivo y de sus gates externos, no de este orden original.
 
 ## Ficha obligatoria antes de iniciar un PR
 

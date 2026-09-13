@@ -24,6 +24,7 @@ import {
   type getCashRegister,
   type listClosedCashRegisters,
 } from '../application/cash-register'
+import { buildCashHistoryCsv } from '../domain/cash-export'
 import { cashDifferenceCents, expectedCashCents } from '../domain/cash-register'
 import { CashMethodSummary } from './cash-method-summary'
 
@@ -75,6 +76,24 @@ export function CashRegisterPage({
         cashSales,
       )
     : 0
+
+  function downloadCashHistory() {
+    const csv = buildCashHistoryCsv(
+      history.map((entry) => ({
+        closedAt: entry.closed_at as string | null,
+        countedCashCents: entry.counted_cash_cents as number | null,
+        openingFloatCents: entry.opening_float_cents as number | null,
+        openedAt: entry.opened_at as string | null,
+        salesByMethod: (entry.sales_by_method ?? {}) as Record<string, number>,
+        status: entry.status as string,
+      })),
+    )
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }))
+    link.download = `sobretaula-caja-${new Date().toISOString().slice(0, 10)}.csv`
+    link.click()
+    URL.revokeObjectURL(link.href)
+  }
   return (
     <section className="space-y-6">
       <PageHeader className="border-border/70 border-b pb-6">
@@ -315,7 +334,12 @@ export function CashRegisterPage({
       {history.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Histórico de cierres</CardTitle>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <CardTitle>Histórico de cierres</CardTitle>
+              <Button onClick={downloadCashHistory} size="sm" type="button" variant="outline">
+                Descargar CSV
+              </Button>
+            </div>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             {history.map((entry) => (

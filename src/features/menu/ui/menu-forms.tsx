@@ -17,7 +17,7 @@ import {
   SelectValue,
   useFormFeedback,
 } from '@doscientos/ui'
-import { useState, type FormEvent } from 'react'
+import { useState, type DragEvent, type FormEvent } from 'react'
 
 import type { Locale } from '@/shared/lib/i18n/locale'
 import { parsePriceToCents } from '@/shared/lib/money/money'
@@ -58,6 +58,8 @@ export function MenuForms({
   const [itemSku, setItemSku] = useState('')
   const [csv, setCsv] = useState('')
   const [csvPreview, setCsvPreview] = useState<MenuImportPreview | null>(null)
+  const [csvFileName, setCsvFileName] = useState('')
+  const [isDraggingCsv, setIsDraggingCsv] = useState(false)
 
   async function run(action: () => Promise<unknown>, message: string) {
     if (feedback.pending) return
@@ -120,6 +122,24 @@ export function MenuForms({
     setCsvPreview(previewMenuCsv(csv))
   }
 
+  async function loadCsvFile(file: File | undefined) {
+    if (!file) return
+    if (!file.name.toLowerCase().endsWith('.csv') && file.type !== 'text/csv') {
+      feedback.setError('Selecciona un archivo CSV.')
+      return
+    }
+    const contents = await file.text()
+    setCsv(contents)
+    setCsvFileName(file.name)
+    setCsvPreview(previewMenuCsv(contents))
+  }
+
+  function dropCsv(event: DragEvent<HTMLLabelElement>) {
+    event.preventDefault()
+    setIsDraggingCsv(false)
+    void loadCsvFile(event.dataTransfer.files[0])
+  }
+
   function importCatalog() {
     if (!csvPreview || csvPreview.errors.length || !csvPreview.rows.length) return
     void run(
@@ -164,16 +184,53 @@ export function MenuForms({
         <CardHeader>
           <CardTitle>Importar carta</CardTitle>
           <CardDescription>
-            Usa las columnas categoria, nombre, precio, iva y opcionalmente sku y descripcion.
-            Primero valida; después confirma la carga.
+            Suelta aquí un archivo CSV o selecciónalo. Verás los datos y los errores antes de
+            confirmar la carga. Columnas: categoria, nombre, precio, iva y opcionalmente sku y
+            descripcion.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3">
+          <label
+            aria-label="Seleccionar archivo CSV de carta"
+            className={`grid min-h-28 cursor-pointer place-items-center rounded-lg border-2 border-dashed px-4 py-5 text-center text-sm transition-colors ${
+              isDraggingCsv
+                ? 'border-primary bg-primary/10'
+                : 'border-muted-foreground/30 hover:border-primary/60 hover:bg-muted/40'
+            }`}
+            onDragEnter={(event) => {
+              event.preventDefault()
+              setIsDraggingCsv(true)
+            }}
+            onDragLeave={(event) => {
+              event.preventDefault()
+              setIsDraggingCsv(false)
+            }}
+            onDragOver={(event) => event.preventDefault()}
+            onDrop={dropCsv}
+            htmlFor="menu-csv-file"
+          >
+            <span>
+              <strong>{csvFileName || 'Suelta el CSV aquí'}</strong>
+              <br />
+              <span className="text-muted-foreground">
+                {csvFileName ? 'Archivo cargado · puedes reemplazarlo' : 'o haz clic para buscarlo'}
+              </span>
+            </span>
+            <input
+              accept=".csv,text/csv"
+              aria-label="Archivo CSV de carta"
+              className="sr-only"
+              id="menu-csv-file"
+              onChange={(event) => void loadCsvFile(event.target.files?.[0])}
+              type="file"
+            />
+          </label>
           <textarea
             aria-label="CSV de carta"
             className="min-h-32 w-full rounded-md border px-3 py-2 font-mono text-xs"
             onChange={(event) => {
               setCsv(event.target.value)
+              setCsvFileName('')
               setCsvPreview(null)
             }}
             placeholder="categoria;nombre;precio;iva\nEntrantes;Croquetas;8,50;10"
@@ -186,7 +243,7 @@ export function MenuForms({
               type="button"
               variant="outline"
             >
-              Validar CSV
+              Volver a validar
             </Button>
             <Button
               disabled={!csvPreview || csvPreview.errors.length > 0 || feedback.pending}
@@ -197,12 +254,54 @@ export function MenuForms({
             </Button>
           </div>
           {csvPreview ? (
-            <output className="text-sm">
-              {csvPreview.rows.length} filas válidas · {csvPreview.errors.length} errores
-              {csvPreview.errors.length
-                ? ` (${csvPreview.errors.map((error) => `fila ${error.row}: ${error.message}`).join('; ')})`
-                : ''}
-            </output>
+            <div className="grid gap-3">
+              <output className="text-sm">
+                {csvPreview.rows.length} filas válidas · {csvPreview.errors.length} errores
+                {csvPreview.errors.length
+                  ? ` (${csvPreview.errors.map((error) => `fila ${error.row}: ${error.message}`).join('; ')})`
+                  : ''}
+              </output>
+              {csvPreview.rows.length ? (
+                <div className="overflow-x-auto rounded-md border">
+                  <table className="w-full min-w-[34rem] text-left text-xs">
+                    <caption className="sr-only">Previsualización de la carta importada</caption>
+                    <thead className="bg-muted/50 text-muted-foreground">
+                      <tr>
+                        <th className="px-3 py-2 font-medium" scope="col">
+                          Categoría
+                        </th>
+                        <th className="px-3 py-2 font-medium" scope="col">
+                          Plato
+                        </th>
+                        <th className="px-3 py-2 text-right font-medium" scope="col">
+                          Precio
+                        </th>
+                        <th className="px-3 py-2 text-right font-medium" scope="col">
+                          IVA
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {csvPreview.rows.slice(0, 10).map((row, index) => (
+                        <tr className="border-t" key={`${row.nameEs}-${index}`}>
+                          <td className="px-3 py-2">{row.category}</td>
+                          <td className="px-3 py-2">{row.nameEs}</td>
+                          <td className="px-3 py-2 text-right">
+                            {(row.priceCents / 100).toFixed(2).replace('.', ',')} €
+                          </td>
+                          <td className="px-3 py-2 text-right">{row.vatRateBps / 100}%</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {csvPreview.rows.length > 10 ? (
+                    <p className="text-muted-foreground border-t px-3 py-2 text-xs">
+                      Mostrando 10 de {csvPreview.rows.length} filas válidas.
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
           ) : null}
         </CardContent>
       </Card>

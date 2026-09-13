@@ -1,6 +1,6 @@
 # Plan maestro · Planificador de sala de Sobretaula
 
-Estado: activo · Inicio: 2026-09-10
+Estado: activo · Última revisión: 2026-09-13 · Inicio: 2026-09-10
 
 Este es el plan vivo solicitado para convertir Sobretaula en el planificador de
 sala más claro y útil para restaurantes con varias zonas, pisos y terrazas.
@@ -17,7 +17,7 @@ del diseñador y su uso diario.
 
 ## Alcance por entregas
 
-### P0 · Base fiable (en curso)
+### P0 · Base fiable (implementado; validación pendiente)
 
 - [x] Revisar modelo y editor SVG existentes.
 - [x] Mantener borrador, versión activa e historial.
@@ -164,19 +164,14 @@ el servicio y latencia de sincronización.
 
 ## Siguiente trabajo ejecutable
 
-1. Extraer el lienzo en componentes accesibles y añadir selección múltiple.
-2. Completar la separación de sesiones con cuenta activa mediante distribución
+1. Completar la separación de sesiones con cuenta activa mediante distribución
    explícita de productos y pagos, preservando reservas y trazabilidad.
-3. Añadir sincronización realtime, reintentos idempotentes y modo degradado.
-4. Cubrir validaciones de layout con pruebas unitarias y de UI.
+2. Aplicar la operación transaccional del plan meteorológico de terraza y
+   documentar el CTA de cierre/traslado con sus estados de conflicto.
+3. Terminar el CRUD visual de plantillas de evento y la extracción asistida
+   desde imagen/PDF, siempre con revisión manual.
+4. Cubrir las mutaciones del plano con pruebas de interacción y smoke
+   autenticado en un entorno de pruebas aislado.
 5. Ejecutar `pnpm lint`, `pnpm typecheck`, `pnpm test` y `pnpm build`.
-6. Conectar `table_group_presets` con el diseñador y servicio: el loader del
-   plano devuelve presets, se pueden guardar desde la selección y aplicar de
-   nuevo desde la lista accesible, o eliminarlos con confirmación. Queda el
-   preflight de reservas, cuentas y capacidad antes de separar o usar una
-   combinación en servicio; Servicio ya carga los presets y deshabilita los que
-   están obsoletos, ocupados o superan su capacidad máxima. La
-   normalización local de nombres, IDs y capacidad ya está cubierta por pruebas
-   de dominio.
-   La decisión de persistencia de pisos y terrazas está documentada en
+6. Mantener la decisión de persistencia de pisos y terrazas documentada en
    [`adr/0008-pisos-y-terrazas.md`](./adr/0008-pisos-y-terrazas.md).
