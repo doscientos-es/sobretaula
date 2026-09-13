@@ -256,6 +256,18 @@ export function TenantAdminFrame({
               {activeVenue && (
                 <Link
                   onClick={handleLockedNavigation}
+                  to="/t/$slug/l/$venue/tarjetas-regalo"
+                  params={{ slug, venue: activeVenue.slug }}
+                  activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
+                  className={navLinkClass}
+                >
+                  <Gift className="size-3" />
+                  Tarjetas regalo
+                </Link>
+              )}
+              {activeVenue && (
+                <Link
+                  onClick={handleLockedNavigation}
                   to="/t/$slug/l/$venue/fidelizacion"
                   params={{ slug, venue: activeVenue.slug }}
                   activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}

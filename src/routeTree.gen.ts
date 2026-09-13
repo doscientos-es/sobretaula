@@ -70,6 +70,7 @@ import { Route as TSlugLVenueProductosRouteImport } from './routes/t.$slug.l.$ve
 import { Route as TSlugLVenuePropinasRouteImport } from './routes/t.$slug.l.$venue.propinas'
 import { Route as TSlugLVenueReservasRouteImport } from './routes/t.$slug.l.$venue.reservas'
 import { Route as TSlugLVenueServicioRouteImport } from './routes/t.$slug.l.$venue.servicio'
+import { Route as TSlugLVenueTarjetasRegaloRouteImport } from './routes/t.$slug.l.$venue.tarjetas-regalo'
 import { Route as TSlugLVenueTpvRouteImport } from './routes/t.$slug.l.$venue.tpv'
 import { Route as TSlugLVenueCuentaSessionIdRouteImport } from './routes/t.$slug.l.$venue.cuenta.$sessionId'
 
@@ -385,6 +386,12 @@ const TSlugLVenueServicioRoute = TSlugLVenueServicioRouteImport.update({
   path: '/servicio',
   getParentRoute: () => TSlugLVenueRoute,
 } as any)
+const TSlugLVenueTarjetasRegaloRoute =
+  TSlugLVenueTarjetasRegaloRouteImport.update({
+    id: '/tarjetas-regalo',
+    path: '/tarjetas-regalo',
+    getParentRoute: () => TSlugLVenueRoute,
+  } as any)
 const TSlugLVenueTpvRoute = TSlugLVenueTpvRouteImport.update({
   id: '/tpv',
   path: '/tpv',
@@ -458,6 +465,7 @@ export interface FileRoutesByFullPath {
   '/t/$slug/l/$venue/propinas': typeof TSlugLVenuePropinasRoute
   '/t/$slug/l/$venue/reservas': typeof TSlugLVenueReservasRoute
   '/t/$slug/l/$venue/servicio': typeof TSlugLVenueServicioRoute
+  '/t/$slug/l/$venue/tarjetas-regalo': typeof TSlugLVenueTarjetasRegaloRoute
   '/t/$slug/l/$venue/tpv': typeof TSlugLVenueTpvRoute
   '/t/$slug/l/$venue/': typeof TSlugLVenueIndexRoute
   '/t/$slug/l/$venue/cuenta/$sessionId': typeof TSlugLVenueCuentaSessionIdRoute
@@ -520,6 +528,7 @@ export interface FileRoutesByTo {
   '/t/$slug/l/$venue/propinas': typeof TSlugLVenuePropinasRoute
   '/t/$slug/l/$venue/reservas': typeof TSlugLVenueReservasRoute
   '/t/$slug/l/$venue/servicio': typeof TSlugLVenueServicioRoute
+  '/t/$slug/l/$venue/tarjetas-regalo': typeof TSlugLVenueTarjetasRegaloRoute
   '/t/$slug/l/$venue/tpv': typeof TSlugLVenueTpvRoute
   '/t/$slug/l/$venue': typeof TSlugLVenueIndexRoute
   '/t/$slug/l/$venue/cuenta/$sessionId': typeof TSlugLVenueCuentaSessionIdRoute
@@ -586,6 +595,7 @@ export interface FileRoutesById {
   '/t/$slug/l/$venue/propinas': typeof TSlugLVenuePropinasRoute
   '/t/$slug/l/$venue/reservas': typeof TSlugLVenueReservasRoute
   '/t/$slug/l/$venue/servicio': typeof TSlugLVenueServicioRoute
+  '/t/$slug/l/$venue/tarjetas-regalo': typeof TSlugLVenueTarjetasRegaloRoute
   '/t/$slug/l/$venue/tpv': typeof TSlugLVenueTpvRoute
   '/t/$slug/l/$venue/': typeof TSlugLVenueIndexRoute
   '/t/$slug/l/$venue/cuenta/$sessionId': typeof TSlugLVenueCuentaSessionIdRoute
@@ -653,6 +663,7 @@ export interface FileRouteTypes {
     | '/t/$slug/l/$venue/propinas'
     | '/t/$slug/l/$venue/reservas'
     | '/t/$slug/l/$venue/servicio'
+    | '/t/$slug/l/$venue/tarjetas-regalo'
     | '/t/$slug/l/$venue/tpv'
     | '/t/$slug/l/$venue/'
     | '/t/$slug/l/$venue/cuenta/$sessionId'
@@ -715,6 +726,7 @@ export interface FileRouteTypes {
     | '/t/$slug/l/$venue/propinas'
     | '/t/$slug/l/$venue/reservas'
     | '/t/$slug/l/$venue/servicio'
+    | '/t/$slug/l/$venue/tarjetas-regalo'
     | '/t/$slug/l/$venue/tpv'
     | '/t/$slug/l/$venue'
     | '/t/$slug/l/$venue/cuenta/$sessionId'
@@ -780,6 +792,7 @@ export interface FileRouteTypes {
     | '/t/$slug/l/$venue/propinas'
     | '/t/$slug/l/$venue/reservas'
     | '/t/$slug/l/$venue/servicio'
+    | '/t/$slug/l/$venue/tarjetas-regalo'
     | '/t/$slug/l/$venue/tpv'
     | '/t/$slug/l/$venue/'
     | '/t/$slug/l/$venue/cuenta/$sessionId'
@@ -1240,6 +1253,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TSlugLVenueServicioRouteImport
       parentRoute: typeof TSlugLVenueRoute
     }
+    '/t/$slug/l/$venue/tarjetas-regalo': {
+      id: '/t/$slug/l/$venue/tarjetas-regalo'
+      path: '/tarjetas-regalo'
+      fullPath: '/t/$slug/l/$venue/tarjetas-regalo'
+      preLoaderRoute: typeof TSlugLVenueTarjetasRegaloRouteImport
+      parentRoute: typeof TSlugLVenueRoute
+    }
     '/t/$slug/l/$venue/tpv': {
       id: '/t/$slug/l/$venue/tpv'
       path: '/tpv'
@@ -1312,6 +1332,7 @@ interface TSlugLVenueRouteChildren {
   TSlugLVenuePropinasRoute: typeof TSlugLVenuePropinasRoute
   TSlugLVenueReservasRoute: typeof TSlugLVenueReservasRoute
   TSlugLVenueServicioRoute: typeof TSlugLVenueServicioRoute
+  TSlugLVenueTarjetasRegaloRoute: typeof TSlugLVenueTarjetasRegaloRoute
   TSlugLVenueTpvRoute: typeof TSlugLVenueTpvRoute
   TSlugLVenueIndexRoute: typeof TSlugLVenueIndexRoute
   TSlugLVenueCuentaSessionIdRoute: typeof TSlugLVenueCuentaSessionIdRoute
@@ -1332,6 +1353,7 @@ const TSlugLVenueRouteChildren: TSlugLVenueRouteChildren = {
   TSlugLVenuePropinasRoute: TSlugLVenuePropinasRoute,
   TSlugLVenueReservasRoute: TSlugLVenueReservasRoute,
   TSlugLVenueServicioRoute: TSlugLVenueServicioRoute,
+  TSlugLVenueTarjetasRegaloRoute: TSlugLVenueTarjetasRegaloRoute,
   TSlugLVenueTpvRoute: TSlugLVenueTpvRoute,
   TSlugLVenueIndexRoute: TSlugLVenueIndexRoute,
   TSlugLVenueCuentaSessionIdRoute: TSlugLVenueCuentaSessionIdRoute,
