@@ -1,9 +1,4 @@
 import {
-  AppShell,
-  AppShellContent,
-  AppShellHeader,
-  AppShellMain,
-  AppShellSidebar,
   Button,
   DialogClose,
   DialogContent,
@@ -28,6 +23,7 @@ import {
 } from 'lucide-react'
 import { useState, type MouseEvent, type ReactNode } from 'react'
 
+import { AppShellFrame } from '@/app/app-shell-frame'
 import { CurrentUserSidebar } from '@/features/auth'
 import { resolveVenue, VenueSwitcher, type Venue } from '@/features/venues'
 import type { Locale } from '@/shared/lib/i18n/locale'
@@ -68,178 +64,35 @@ export function TenantAdminFrame({
   }
 
   return (
-    <AppShell className="st-app-frame st-saas-frame" sidebarBreakpoint="lg">
-      <AppShellSidebar className="st-saas-sidebar hidden w-56 p-3 lg:flex lg:h-svh lg:flex-col">
-        <Link
-          to="/"
-          className="st-saas-brand flex items-center gap-2 px-1.5 py-1.5 text-sm font-semibold tracking-tight"
-        >
-          <span className="st-saas-brand-mark">
-            <Utensils className="size-3.5" />
+    <AppShellFrame
+      className="st-app-frame st-saas-frame"
+      contentClassName="mx-auto max-w-7xl p-4 sm:p-6"
+      header={
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          <span className="st-saas-brand-mark lg:hidden">
+            <Utensils className="size-3" />
           </span>
-          <span className="font-semibold tracking-[-0.03em]">{t('app.name')}</span>
-        </Link>
-        <p className="st-saas-section-label mt-6 px-1.5">{t('app.restaurant')}</p>
-        <nav aria-label="Principal" className="mt-3 space-y-0.5">
+          <p className="st-saas-breadcrumb truncate text-xs">
+            {title} <span>/</span> {activeVenue?.name ?? t('app.overview')}
+          </p>
           <Link
-            to="/t/$slug"
+            aria-label={t('app.customerView')}
+            className="st-saas-preview-link inline-flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium"
             params={{ slug }}
-            activeOptions={{ exact: true }}
-            activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
-            className={navLinkClass}
+            rel="noreferrer"
+            target="_blank"
+            to="/reservar/$slug"
           >
-            <LayoutDashboard className="size-3" />
-            {t('app.overview')}
+            <ExternalLink aria-hidden="true" className="size-3.5" />
+            <span className="hidden sm:inline">{t('app.customerView')}</span>
           </Link>
-        </nav>
-        <VenueSwitcher
-          activeVenueSlug={activeVenue?.slug ?? null}
-          locale={locale}
-          tenantSlug={slug}
-          venues={venues}
-        />
-        {activeVenue && (
-          <div className="st-saas-nav-group mt-5 pt-4">
-            <p className="st-saas-section-label px-1.5">{t('app.venueOperations')}</p>
-            <nav aria-label={t('app.venueOperations')} className="mt-2 space-y-0.5">
-              <Link
-                onClick={handleLockedNavigation}
-                to="/t/$slug/l/$venue/tpv"
-                params={{ slug, venue: activeVenue.slug }}
-                activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
-                className={navLinkClass}
-              >
-                <Utensils className="size-3" />
-                TPV
-              </Link>
-              <Link
-                to="/t/$slug/l/$venue/plano"
-                params={{ slug, venue: activeVenue.slug }}
-                activeOptions={{ exact: true }}
-                activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
-                className={navLinkClass}
-                onClick={handleLockedNavigation}
-              >
-                <Map className="size-3" />
-                {t('nav.floorPlan')}
-              </Link>
-              <Link
-                to="/t/$slug/l/$venue/servicio"
-                params={{ slug, venue: activeVenue.slug }}
-                activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
-                className={navLinkClass}
-                onClick={handleLockedNavigation}
-              >
-                <ConciergeBell className="size-3" />
-                {t('nav.service')}
-              </Link>
-              <Link
-                to="/t/$slug/l/$venue/reservas"
-                params={{ slug, venue: activeVenue.slug }}
-                activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
-                className={navLinkClass}
-                onClick={handleLockedNavigation}
-              >
-                <CalendarDays className="size-3" />
-                {t('nav.reservations')}
-              </Link>
-            </nav>
-          </div>
-        )}
-        <div className="st-saas-nav-group mt-5 pt-4">
-          <p className="st-saas-section-label px-1.5">{t('app.restaurantManagement')}</p>
-          <nav aria-label={t('app.restaurantManagement')} className="mt-2 space-y-0.5">
-            <Link
-              to="/t/$slug/carta"
-              params={{ slug }}
-              activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
-              className={navLinkClass}
-              onClick={handleLockedNavigation}
-            >
-              <UtensilsCrossed className="size-3" />
-              {t('nav.menu')}
-            </Link>
-            <Link
-              to="/t/$slug/facturacion"
-              params={{ slug }}
-              activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
-              className={navLinkClass}
-              onClick={handleLockedNavigation}
-            >
-              <FileText className="size-3" />
-              {t('nav.billing')}
-            </Link>
-            <Link
-              to="/t/$slug/facturas"
-              params={{ slug }}
-              activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
-              className={navLinkClass}
-              onClick={handleLockedNavigation}
-            >
-              <FileText className="size-3" />
-              {t('nav.invoices')}
-            </Link>
-            <Link
-              to="/t/$slug/comunicaciones"
-              params={{ slug }}
-              activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
-              className={navLinkClass}
-              onClick={handleLockedNavigation}
-            >
-              <Mail className="size-3" />
-              {t('app.communications')}
-            </Link>
-            <Link
-              to="/t/$slug/equipo"
-              params={{ slug }}
-              activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
-              className={navLinkClass}
-              onClick={handleLockedNavigation}
-            >
-              <Users className="size-3" />
-              {t('app.team')}
-            </Link>
-          </nav>
         </div>
-        <div className="st-saas-nav-group mt-5 pt-4">
-          <p className="st-saas-section-label px-1.5">{t('app.account')}</p>
-          <nav className="mt-2">
-            <Link
-              to="/t/$slug/suscripcion/facturas"
-              params={{ slug }}
-              activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
-              className={navLinkClass}
-            >
-              <FileText className="size-3" />
-              {t('app.subscription')}
-            </Link>
-          </nav>
-        </div>
-        <CurrentUserSidebar locale={effectiveLocale} />
-      </AppShellSidebar>
-      <AppShellMain className="st-saas-main min-w-0 flex-1">
-        <AppShellHeader className="st-saas-header flex h-11 items-center justify-between px-5 sm:px-6">
-          <div className="flex min-w-0 flex-1 items-center gap-2">
-            <span className="st-saas-brand-mark lg:hidden">
-              <Utensils className="size-3" />
-            </span>
-            <p className="st-saas-breadcrumb truncate text-xs">
-              {title} <span>/</span> {activeVenue?.name ?? 'Visión general'}
-            </p>
-            <Link
-              aria-label="Ver la ficha pública como cliente"
-              className="st-saas-preview-link inline-flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium"
-              params={{ slug }}
-              rel="noreferrer"
-              target="_blank"
-              to="/reservar/$slug"
-            >
-              <ExternalLink aria-hidden="true" className="size-3.5" />
-              <span className="hidden sm:inline">{t('app.customerView')}</span>
-            </Link>
-          </div>
-        </AppShellHeader>
-        {activeVenue && (
+      }
+      headerClassName="st-saas-header flex h-11 items-center justify-between px-5 sm:px-6"
+      locale={effectiveLocale}
+      mainClassName="st-saas-main min-w-0 flex-1"
+      mobileTabs={
+        activeVenue ? (
           <nav
             aria-label={t('app.venueNavigation')}
             className={`st-mobile-nav flex gap-5 overflow-x-auto px-5 py-3 text-xs font-medium lg:hidden ${navigationLocked ? 'opacity-60' : ''}`}
@@ -249,59 +102,211 @@ export function TenantAdminFrame({
               params={{ slug, venue: activeVenue.slug }}
               to="/t/$slug/l/$venue/tpv"
             >
-              TPV
+              {t('nav.tpv')}
             </Link>
             <Link
               onClick={handleLockedNavigation}
               params={{ slug, venue: activeVenue.slug }}
               to="/t/$slug/l/$venue/plano"
             >
-              Plano
+              {t('nav.floorPlan')}
             </Link>
             <Link
               onClick={handleLockedNavigation}
               params={{ slug, venue: activeVenue.slug }}
               to="/t/$slug/l/$venue/servicio"
             >
-              Servicio
+              {t('nav.service')}
             </Link>
             <Link
               onClick={handleLockedNavigation}
               params={{ slug, venue: activeVenue.slug }}
               to="/t/$slug/l/$venue/reservas"
             >
-              Reservas
+              {t('nav.reservations')}
             </Link>
           </nav>
-        )}
-        <AppShellContent className="mx-auto max-w-7xl p-4 sm:p-6">{children}</AppShellContent>
-        {showPaymentDialog && (
-          <DialogRoot onOpenChange={setShowPaymentDialog} open>
-            <DialogContent className="max-w-md" showCloseButton={false}>
-              <DialogHeader>
-                <DialogTitle>{t('app.paymentRequiredTitle')}</DialogTitle>
-                <DialogDescription>{t('app.paymentRequiredDescription')}</DialogDescription>
-              </DialogHeader>
-              <DialogFooter>
-                <DialogClose asChild>
-                  <Button type="button" variant="outline">
-                    {t('app.paymentNotNow')}
-                  </Button>
-                </DialogClose>
-                <Button
-                  onPress={() => {
-                    setShowPaymentDialog(false)
-                    void navigate({ to: '/t/$slug/suscripcion/facturas', params: { slug } })
-                  }}
-                  type="button"
+        ) : null
+      }
+      sidebar={
+        <>
+          <Link
+            to="/"
+            className="st-saas-brand flex items-center gap-2 px-1.5 py-1.5 text-sm font-semibold tracking-tight"
+          >
+            <span className="st-saas-brand-mark">
+              <Utensils className="size-3.5" />
+            </span>
+            <span className="font-semibold tracking-[-0.03em]">{t('app.name')}</span>
+          </Link>
+          <p className="st-saas-section-label mt-6 px-1.5">{t('app.restaurant')}</p>
+          <nav aria-label={t('app.restaurant')} className="mt-3 space-y-0.5">
+            <Link
+              to="/t/$slug"
+              params={{ slug }}
+              activeOptions={{ exact: true }}
+              activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
+              className={navLinkClass}
+            >
+              <LayoutDashboard className="size-3" />
+              {t('app.overview')}
+            </Link>
+          </nav>
+          <VenueSwitcher
+            activeVenueSlug={activeVenue?.slug ?? null}
+            locale={effectiveLocale}
+            tenantSlug={slug}
+            venues={venues}
+          />
+          {activeVenue && (
+            <div className="st-saas-nav-group mt-5 pt-4">
+              <p className="st-saas-section-label px-1.5">{t('app.venueOperations')}</p>
+              <nav aria-label={t('app.venueOperations')} className="mt-2 space-y-0.5">
+                <Link
+                  onClick={handleLockedNavigation}
+                  to="/t/$slug/l/$venue/tpv"
+                  params={{ slug, venue: activeVenue.slug }}
+                  activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
+                  className={navLinkClass}
                 >
-                  {t('app.goToSubscription')}
+                  <Utensils className="size-3" />
+                  TPV
+                </Link>
+                <Link
+                  to="/t/$slug/l/$venue/plano"
+                  params={{ slug, venue: activeVenue.slug }}
+                  activeOptions={{ exact: true }}
+                  activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
+                  className={navLinkClass}
+                  onClick={handleLockedNavigation}
+                >
+                  <Map className="size-3" />
+                  {t('nav.floorPlan')}
+                </Link>
+                <Link
+                  to="/t/$slug/l/$venue/servicio"
+                  params={{ slug, venue: activeVenue.slug }}
+                  activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
+                  className={navLinkClass}
+                  onClick={handleLockedNavigation}
+                >
+                  <ConciergeBell className="size-3" />
+                  {t('nav.service')}
+                </Link>
+                <Link
+                  to="/t/$slug/l/$venue/reservas"
+                  params={{ slug, venue: activeVenue.slug }}
+                  activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
+                  className={navLinkClass}
+                  onClick={handleLockedNavigation}
+                >
+                  <CalendarDays className="size-3" />
+                  {t('nav.reservations')}
+                </Link>
+              </nav>
+            </div>
+          )}
+          <div className="st-saas-nav-group mt-5 pt-4">
+            <p className="st-saas-section-label px-1.5">{t('app.restaurantManagement')}</p>
+            <nav aria-label={t('app.restaurantManagement')} className="mt-2 space-y-0.5">
+              <Link
+                to="/t/$slug/carta"
+                params={{ slug }}
+                activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
+                className={navLinkClass}
+                onClick={handleLockedNavigation}
+              >
+                <UtensilsCrossed className="size-3" />
+                {t('nav.menu')}
+              </Link>
+              <Link
+                to="/t/$slug/facturacion"
+                params={{ slug }}
+                activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
+                className={navLinkClass}
+                onClick={handleLockedNavigation}
+              >
+                <FileText className="size-3" />
+                {t('nav.billing')}
+              </Link>
+              <Link
+                to="/t/$slug/facturas"
+                params={{ slug }}
+                activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
+                className={navLinkClass}
+                onClick={handleLockedNavigation}
+              >
+                <FileText className="size-3" />
+                {t('nav.invoices')}
+              </Link>
+              <Link
+                to="/t/$slug/comunicaciones"
+                params={{ slug }}
+                activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
+                className={navLinkClass}
+                onClick={handleLockedNavigation}
+              >
+                <Mail className="size-3" />
+                {t('app.communications')}
+              </Link>
+              <Link
+                to="/t/$slug/equipo"
+                params={{ slug }}
+                activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
+                className={navLinkClass}
+                onClick={handleLockedNavigation}
+              >
+                <Users className="size-3" />
+                {t('app.team')}
+              </Link>
+            </nav>
+          </div>
+          <div className="st-saas-nav-group mt-5 pt-4">
+            <p className="st-saas-section-label px-1.5">{t('app.account')}</p>
+            <nav className="mt-2">
+              <Link
+                to="/t/$slug/suscripcion/facturas"
+                params={{ slug }}
+                activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
+                className={navLinkClass}
+              >
+                <FileText className="size-3" />
+                {t('app.subscription')}
+              </Link>
+            </nav>
+          </div>
+          <CurrentUserSidebar locale={effectiveLocale} />
+        </>
+      }
+      sidebarClassName="st-saas-sidebar hidden w-56 p-3 lg:flex lg:h-svh lg:flex-col"
+    >
+      {children}
+      {showPaymentDialog && (
+        <DialogRoot onOpenChange={setShowPaymentDialog} open>
+          <DialogContent className="max-w-md" showCloseButton={false}>
+            <DialogHeader>
+              <DialogTitle>{t('app.paymentRequiredTitle')}</DialogTitle>
+              <DialogDescription>{t('app.paymentRequiredDescription')}</DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button type="button" variant="outline">
+                  {t('app.paymentNotNow')}
                 </Button>
-              </DialogFooter>
-            </DialogContent>
-          </DialogRoot>
-        )}
-      </AppShellMain>
-    </AppShell>
+              </DialogClose>
+              <Button
+                onPress={() => {
+                  setShowPaymentDialog(false)
+                  void navigate({ to: '/t/$slug/suscripcion/facturas', params: { slug } })
+                }}
+                type="button"
+              >
+                {t('app.goToSubscription')}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </DialogRoot>
+      )}
+    </AppShellFrame>
   )
 }

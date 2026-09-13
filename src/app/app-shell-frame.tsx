@@ -62,7 +62,9 @@ export function AppShellFrame({
                 </Button>
               }
             >
-              <div className="flex h-full min-h-0 flex-col overflow-y-auto p-3">{sidebar}</div>
+              <div className="st-mobile-drawer flex h-full min-h-0 flex-col overflow-y-auto p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+                {sidebar}
+              </div>
             </Drawer>
             {header}
           </div>

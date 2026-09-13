@@ -338,15 +338,28 @@ select:not([data-slot]):focus-visible {
 }
 
 .st-mobile-nav {
+  min-height: 3.25rem;
+  align-items: stretch;
   border-bottom: 1px solid var(--border);
   background: var(--background);
 }
+
 .st-mobile-nav a {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  white-space: nowrap;
   color: var(--muted-foreground);
 }
 .st-mobile-nav a:hover,
 .st-mobile-nav a[aria-current='page'] {
   color: var(--primary);
+}
+
+.st-mobile-drawer nav a {
+  min-height: 2.75rem;
+  padding-top: 0.625rem;
+  padding-bottom: 0.625rem;
 }
 
 .st-saas-brand {
