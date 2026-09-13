@@ -195,6 +195,12 @@ function PlatformUserMenu() {
         >
           <Settings2 className="size-3.5" /> {t('platform.fiscalSettings')}
         </DropdownMenuItem>
+        <DropdownMenuItem
+          onPress={() => void navigate({ to: '/ajustes' })}
+          textValue={t('common.preferences')}
+        >
+          <Settings2 className="size-3.5" /> {t('common.preferences')}
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
           isDisabled={logoutPending}

@@ -30,7 +30,6 @@ import { useState, type MouseEvent, type ReactNode } from 'react'
 
 import { CurrentUserSidebar } from '@/features/auth'
 import { resolveVenue, VenueSwitcher, type Venue } from '@/features/venues'
-import { LanguageSwitcher } from '@/shared/lib/i18n/language-switcher'
 import type { Locale } from '@/shared/lib/i18n/locale'
 import { useLocale } from '@/shared/lib/i18n/locale-preference'
 import { createTranslator } from '@/shared/lib/i18n/messages'
@@ -238,7 +237,6 @@ export function TenantAdminFrame({
               <ExternalLink aria-hidden="true" className="size-3.5" />
               <span className="hidden sm:inline">{t('app.customerView')}</span>
             </Link>
-            <LanguageSwitcher className="ml-1 shrink-0" />
           </div>
         </AppShellHeader>
         {activeVenue && (

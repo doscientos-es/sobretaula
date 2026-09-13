@@ -80,6 +80,8 @@ const es = {
   'common.languageSpanish': 'Español',
   'common.languageCatalan': 'Catalán',
   'common.logout': 'Cerrar sesión',
+  'common.settings': 'Ajustes',
+  'common.preferences': 'Preferencias',
   'common.selectVenue': 'Selecciona un local',
   'nav.floorPlan': 'Plano',
   'nav.tpv': 'TPV',
@@ -230,6 +232,20 @@ const es = {
   'invoices.title': 'Facturas',
   'invoices.empty': 'Todavía no hay facturas emitidas.',
   'invoices.env.test': 'Entorno de pruebas VERI*FACTU',
+  'settings.title': 'Ajustes',
+  'settings.description': 'Gestiona tus preferencias de cuenta y de uso de SobreTaula.',
+  'settings.preferences': 'Preferencias',
+  'settings.language.title': 'Idioma',
+  'settings.language.description': 'Elige el idioma de la aplicación en este navegador.',
+  'settings.cookies.title': 'Cookies y privacidad',
+  'settings.cookies.description':
+    'SobreTaula utiliza almacenamiento técnico imprescindible para mantener la sesión y proteger formularios.',
+  'settings.cookies.technical': 'No hay cookies analíticas ni publicitarias activas.',
+  'settings.cookies.viewPolicy': 'Consultar la política de cookies',
+  'settings.account.title': 'Cuenta',
+  'settings.account.description': 'Identidad con la que has iniciado sesión.',
+  'settings.account.email': 'Correo electrónico',
+  'settings.account.noEmail': 'No disponible',
 } as const
 
 export type MessageKey = keyof typeof es
@@ -314,6 +330,8 @@ const ca: Record<MessageKey, string> = {
   'common.languageSpanish': 'Castellà',
   'common.languageCatalan': 'Català',
   'common.logout': 'Tanca la sessió',
+  'common.settings': 'Configuració',
+  'common.preferences': 'Preferències',
   'common.selectVenue': 'Tria un local',
   'nav.floorPlan': 'Plànol',
   'nav.tpv': 'TPV',
@@ -465,6 +483,20 @@ const ca: Record<MessageKey, string> = {
   'invoices.title': 'Factures',
   'invoices.empty': 'Encara no hi ha factures emeses.',
   'invoices.env.test': 'Entorn de proves VERI*FACTU',
+  'settings.title': 'Configuració',
+  'settings.description': 'Gestiona les teves preferències de compte i d’ús de SobreTaula.',
+  'settings.preferences': 'Preferències',
+  'settings.language.title': 'Idioma',
+  'settings.language.description': 'Tria l’idioma de l’aplicació en aquest navegador.',
+  'settings.cookies.title': 'Galetes i privacitat',
+  'settings.cookies.description':
+    'SobreTaula utilitza emmagatzematge tècnic imprescindible per mantenir la sessió i protegir formularis.',
+  'settings.cookies.technical': 'No hi ha galetes analítiques ni publicitàries actives.',
+  'settings.cookies.viewPolicy': 'Consulta la política de galetes',
+  'settings.account.title': 'Compte',
+  'settings.account.description': 'Identitat amb què has iniciat sessió.',
+  'settings.account.email': 'Correu electrònic',
+  'settings.account.noEmail': 'No disponible',
 }
 
 const messages: Record<Locale, Record<MessageKey, string>> = { ca, es }

@@ -10,7 +10,6 @@ import {
 import { Menu } from 'lucide-react'
 import type { ReactNode } from 'react'
 
-import { LanguageSwitcher } from '@/shared/lib/i18n/language-switcher'
 import type { Locale } from '@/shared/lib/i18n/locale'
 import { useLocale } from '@/shared/lib/i18n/locale-preference'
 import { createTranslator } from '@/shared/lib/i18n/messages'
@@ -67,7 +66,6 @@ export function AppShellFrame({
             </Drawer>
             {header}
           </div>
-          <LanguageSwitcher className="ml-3 shrink-0" />
         </AppShellHeader>
         {mobileTabs}
         <AppShellContent className={contentClassName}>{children}</AppShellContent>

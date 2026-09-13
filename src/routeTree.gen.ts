@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ActivarCuentaRouteImport } from './routes/activar-cuenta'
 import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AjustesRouteImport } from './routes/ajustes'
 import { Route as InvitacionRouteImport } from './routes/invitacion'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
@@ -78,6 +79,11 @@ const ActivarCuentaRoute = ActivarCuentaRouteImport.update({
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AjustesRoute = AjustesRouteImport.update({
+  id: '/ajustes',
+  path: '/ajustes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InvitacionRoute = InvitacionRouteImport.update({
@@ -351,6 +357,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/activar-cuenta': typeof ActivarCuentaRoute
   '/admin': typeof AdminRouteWithChildren
+  '/ajustes': typeof AjustesRoute
   '/invitacion': typeof InvitacionRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
@@ -407,6 +414,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/activar-cuenta': typeof ActivarCuentaRoute
+  '/ajustes': typeof AjustesRoute
   '/invitacion': typeof InvitacionRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
@@ -463,6 +471,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/activar-cuenta': typeof ActivarCuentaRoute
   '/admin': typeof AdminRouteWithChildren
+  '/ajustes': typeof AjustesRoute
   '/invitacion': typeof InvitacionRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
@@ -522,6 +531,7 @@ export interface FileRouteTypes {
     | '/'
     | '/activar-cuenta'
     | '/admin'
+    | '/ajustes'
     | '/invitacion'
     | '/login'
     | '/onboarding'
@@ -578,6 +588,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/activar-cuenta'
+    | '/ajustes'
     | '/invitacion'
     | '/login'
     | '/onboarding'
@@ -633,6 +644,7 @@ export interface FileRouteTypes {
     | '/'
     | '/activar-cuenta'
     | '/admin'
+    | '/ajustes'
     | '/invitacion'
     | '/login'
     | '/onboarding'
@@ -691,6 +703,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ActivarCuentaRoute: typeof ActivarCuentaRoute
   AdminRoute: typeof AdminRouteWithChildren
+  AjustesRoute: typeof AjustesRoute
   InvitacionRoute: typeof InvitacionRoute
   LoginRoute: typeof LoginRoute
   OnboardingRoute: typeof OnboardingRoute
@@ -732,6 +745,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ajustes': {
+      id: '/ajustes'
+      path: '/ajustes'
+      fullPath: '/ajustes'
+      preLoaderRoute: typeof AjustesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/invitacion': {
@@ -1209,6 +1229,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ActivarCuentaRoute: ActivarCuentaRoute,
   AdminRoute: AdminRouteWithChildren,
+  AjustesRoute: AjustesRoute,
   InvitacionRoute: InvitacionRoute,
   LoginRoute: LoginRoute,
   OnboardingRoute: OnboardingRoute,

@@ -1,5 +1,6 @@
 import { Avatar, AvatarFallback, Button, DropdownMenu, DropdownMenuItem } from '@doscientos/ui'
-import { EllipsisVertical, LogOut } from 'lucide-react'
+import { useNavigate } from '@tanstack/react-router'
+import { EllipsisVertical, LogOut, Settings2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 import { DEFAULT_LOCALE, type Locale } from '@/shared/lib/i18n/locale'
@@ -32,7 +33,8 @@ export function CurrentUserSidebar({ locale = DEFAULT_LOCALE }: { locale?: Local
   const t = createTranslator(locale)
   const user = useCurrentUser()
   const { pending: logoutPending, signOut } = useLogout()
-  const displayName = user?.displayName ?? 'Cuenta'
+  const navigate = useNavigate()
+  const displayName = user?.displayName ?? t('app.account')
 
   return (
     <footer className="st-saas-user-menu border-border/70 sticky bottom-0 z-10 mt-auto flex shrink-0 items-center gap-2 border-t px-1.5 pt-3 pb-1">
@@ -55,6 +57,12 @@ export function CurrentUserSidebar({ locale = DEFAULT_LOCALE }: { locale?: Local
           </Button>
         }
       >
+        <DropdownMenuItem
+          onPress={() => void navigate({ to: '/ajustes' })}
+          textValue={t('common.settings')}
+        >
+          <Settings2 className="size-3.5" /> {t('common.settings')}
+        </DropdownMenuItem>
         <DropdownMenuItem
           isDisabled={logoutPending}
           onPress={() => void signOut()}
