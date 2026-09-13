@@ -35,7 +35,7 @@ import {
   updateTenantMemberRole,
   type TenantTeam,
 } from '../application/team'
-import { teamErrorMessage } from '../application/team-error'
+import { teamErrorMessage, teamInvitationSuccessMessage } from '../application/team-error'
 import { teamInvitationFormError } from '../application/team-invitation-input'
 import {
   ASSIGNABLE_TENANT_ROLES,
@@ -94,11 +94,14 @@ export function TenantTeamPage({
     }
   }, [page, search, team.pageSize, tenantId])
 
-  async function run(action: () => Promise<unknown>, success: string) {
+  async function run<Result>(
+    action: () => Promise<Result>,
+    success: string | ((result: Result) => string),
+  ) {
     feedback.setPending()
     try {
-      await action()
-      feedback.setSuccess(success)
+      const result = await action()
+      feedback.setSuccess(typeof success === 'function' ? success(result) : success)
       reload()
     } catch (error) {
       feedback.setError(teamErrorMessage(error))
@@ -115,19 +118,22 @@ export function TenantTeamPage({
       return
     }
 
-    void run(async () => {
-      const result = await inviteTenantMember({
-        data: {
-          email: email.trim().toLowerCase(),
-          name: name.trim() || undefined,
-          role,
-          tenantId,
-        },
-      })
-      setName('')
-      setEmail('')
-      return result
-    }, 'Trabajador añadido o invitación enviada.')
+    void run(
+      async () => {
+        const result = await inviteTenantMember({
+          data: {
+            email: email.trim().toLowerCase(),
+            name: name.trim() || undefined,
+            role,
+            tenantId,
+          },
+        })
+        setName('')
+        setEmail('')
+        return result
+      },
+      (result) => teamInvitationSuccessMessage(result.kind),
+    )
   }
 
   return (

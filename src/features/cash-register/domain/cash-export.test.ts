@@ -37,6 +37,6 @@ describe('cash history export', () => {
         status: 'closed',
       },
     ])
-    expect(csv.split('\n')[2]).toContain(',0,200')
+    expect(csv.split('\n')[2]).toContain('closed,200,0')
   })
 })

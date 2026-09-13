@@ -57,8 +57,9 @@ Después de restaurar, ejecutar en un entorno aislado:
    producción.
 
 El restore no se considera validado hasta conservar los identificadores de la
-ejecución, resultados y responsable. La migración remota y esta prueba siguen
-siendo un gate externo mientras no exista un proyecto autorizado conectado.
+ejecución, resultados y responsable. El proyecto Supabase autorizado ya está
+identificado para revisar el historial, pero la migración remota y esta prueba
+siguen siendo un gate externo hasta disponer de un entorno aislado de pruebas.
 
 ## 4. Evidencia mínima de cada incidente
 

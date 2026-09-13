@@ -296,20 +296,20 @@ transforma silenciosamente en `test` ni puede emitir por accidente.
 
 ### Última ejecución local (2026-09-13)
 
-La última ejecución de `pnpm test` completa correctamente con 113 archivos y
-400 pruebas. Un archivo y tres pruebas RLS siguen omitidos de forma deliberada
-para no conectarlos al proyecto con datos reales. La fecha de esta sección no
-implica que `pnpm quality` o `pnpm build` se hayan ejecutado en este ciclo.
+La última ejecución de `pnpm test` completa correctamente con 115 archivos
+aprobados y 1 omitido, y 404 pruebas correctas con 3 omitidas. Las pruebas RLS
+siguen omitidas de forma deliberada para no conectarlas al proyecto con datos
+reales.
 
 | Comando                | Resultado                                                                                    |
 | ---------------------- | -------------------------------------------------------------------------------------------- |
 | `pnpm format:check`    | Correcto                                                                                     |
 | `pnpm lint`            | Correcto                                                                                     |
 | `pnpm structure:check` | Correcto localmente; el asset de login vive en `public/` y los módulos usan nombres estándar |
-| `pnpm test`            | 113 archivos y 400 pruebas correctas; 1 archivo y 3 pruebas RLS omitidas deliberadamente     |
-| `pnpm typecheck`       | Pendiente de ejecutar en esta revisión                                                       |
-| `pnpm quality`         | Pendiente de ejecutar en esta revisión                                                       |
-| `pnpm build`           | Pendiente de ejecutar en esta revisión                                                       |
+| `pnpm test`            | 115 archivos aprobados, 1 omitido; 404 pruebas correctas y 3 omitidas                        |
+| `pnpm typecheck`       | Correcto                                                                                     |
+| `pnpm quality`         | Pendiente: el gate compuesto no terminó correctamente en esta revisión                       |
+| `pnpm build`           | Correcto localmente                                                                          |
 
 Las pruebas de integración de RLS (`tenant-rls.test.ts`) permanecen omitidas:
 el producto usa un único proyecto Supabase con datos reales y no se permite

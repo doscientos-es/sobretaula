@@ -18,6 +18,13 @@ function errorStatus(error: unknown): number | undefined {
   return typeof candidate.statusCode === 'number' ? candidate.statusCode : undefined
 }
 
+/** Describes whether an existing account was added or a new invitation was sent. */
+export function teamInvitationSuccessMessage(kind: 'member_added' | 'invitation_sent'): string {
+  return kind === 'member_added'
+    ? 'La cuenta ya existía y se ha añadido al equipo.'
+    : 'Invitación enviada. La persona deberá revisar su correo.'
+}
+
 /** Explains safe, recoverable team-management failures, including serialized server errors. */
 export function teamErrorMessage(error: unknown): string {
   if (isInvitationEmailRateLimited(error)) return invitationEmailRateLimitMessage

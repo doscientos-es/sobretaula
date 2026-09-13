@@ -56,14 +56,22 @@ export function GuestsPage({ tenantId, venueId }: { tenantId: string; venueId: s
   const [isDraggingCsv, setIsDraggingCsv] = useState(false)
   async function loadCsvFile(file: File | undefined) {
     if (!file) return
+    if (file.size > 10 * 1024 * 1024) {
+      setError('El archivo CSV no puede superar los 10 MB.')
+      return
+    }
     if (!file.name.toLowerCase().endsWith('.csv') && file.type !== 'text/csv') {
       setError('Selecciona un archivo CSV.')
       return
     }
-    const contents = await file.text()
-    setCsv(contents)
-    setCsvFileName(file.name)
-    setCsvPreview(previewGuestCsv(contents))
+    try {
+      const contents = await file.text()
+      setCsv(contents)
+      setCsvFileName(file.name)
+      setCsvPreview(previewGuestCsv(contents))
+    } catch {
+      setError('No se ha podido leer el archivo CSV.')
+    }
   }
   function dropCsv(event: DragEvent<HTMLLabelElement>) {
     event.preventDefault()
@@ -173,6 +181,7 @@ export function GuestsPage({ tenantId, venueId }: { tenantId: string; venueId: s
                 void importGuestCsv({ data: { csv, tenantId } })
                   .then(() => {
                     setCsv('')
+                    setCsvFileName('')
                     setCsvPreview(null)
                     setReloadToken((value) => value + 1)
                   })

@@ -175,8 +175,9 @@ Contrato completo en cada cierre de tarea y en CI: `pnpm format:check`,
 controles, incluidos `typecheck`, `quality` y `build`; el detalle y las
 evidencias viven en `docs/implementation-status.md`.
 
-La última ejecución local registrada de tests cubre 113 archivos y 400 pruebas
-correctas. Desde F1 se mantienen pruebas unitarias y revisión de esquema/RLS por migración.
+La última ejecución local registrada de tests cubre 115 archivos aprobados y 1
+omitido, con 404 pruebas correctas y 3 omitidas. Desde F1 se mantienen pruebas
+unitarias y revisión de esquema/RLS por migración.
 El producto usa un único proyecto Supabase con datos reales: las pruebas de
 integración RLS y concurrencia quedan omitidas para no conectarlas a producción,
 y no se ejecuta humo, fixture ni carga contra ese proyecto.

@@ -61,9 +61,13 @@ begin
   if jsonb_typeof(p_allocations) <> 'array' then raise exception 'invalid_payment_allocations'; end if;
   for v_allocation in select value from jsonb_array_elements(p_allocations) loop
     select oi.id, oi.quantity, o.session_id into v_item
-      from public.order_items oi join public.orders o on o.id = oi.order_id
+      from public.order_items oi
+      join public.orders o on o.id = oi.order_id
+      join public.table_sessions ts on ts.id = o.session_id
       where oi.id = (v_allocation->>'orderItemId')::uuid
-        and o.session_id = p_session_id and oi.tenant_id = p_tenant_id
+        and o.session_id = p_session_id
+        and ts.venue_id = p_venue_id
+        and oi.tenant_id = p_tenant_id
       for update;
     if not found then raise exception 'payment_allocation_item_not_found'; end if;
     if (v_allocation->>'quantity')::integer < 1 or (v_allocation->>'quantity')::integer > v_item.quantity

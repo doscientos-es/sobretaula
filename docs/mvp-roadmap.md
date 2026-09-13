@@ -280,8 +280,9 @@ libreta paralela ni coordinar cambios por mensajería interna.
 
 ## Fase 4 · Cuenta y cierre de mesa robustos
 
-**Objetivo:** terminar la operación de mesa sin duplicar trabajo antes de
-decidir construir un TPV completo.
+**Objetivo original:** terminar la operación de mesa sin duplicar trabajo antes
+de decidir construir un TPV completo. El TPV ya forma parte de la implementación
+actual; esta fase conserva la secuencia histórica que llevó a esa decisión.
 
 ### Trabajo, por orden
 

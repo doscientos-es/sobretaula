@@ -83,14 +83,22 @@ export function ReservationPage({
 
   async function loadReservationFile(file: File | undefined) {
     if (!file) return
+    if (file.size > 10 * 1024 * 1024) {
+      feedback.setError('El archivo CSV no puede superar los 10 MB.')
+      return
+    }
     if (!file.name.toLowerCase().endsWith('.csv') && file.type !== 'text/csv') {
       feedback.setError('Selecciona un archivo CSV.')
       return
     }
-    const contents = await file.text()
-    setReservationCsv(contents)
-    setReservationFileName(file.name)
-    setReservationPreview(previewReservationCsv(contents))
+    try {
+      const contents = await file.text()
+      setReservationCsv(contents)
+      setReservationFileName(file.name)
+      setReservationPreview(previewReservationCsv(contents))
+    } catch {
+      feedback.setError('No se ha podido leer el archivo CSV.')
+    }
   }
 
   function dropReservations(event: DragEvent<HTMLLabelElement>) {
@@ -315,6 +323,7 @@ export function ReservationPage({
                   .then((result) => {
                     feedback.setSuccess(`${result.imported} reservas importadas.`)
                     setReservationCsv('')
+                    setReservationFileName('')
                     setReservationPreview(null)
                     reload()
                   })

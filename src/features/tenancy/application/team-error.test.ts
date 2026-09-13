@@ -1,6 +1,17 @@
 import { describe, expect, it } from 'vitest'
 
-import { teamErrorMessage } from './team-error'
+import { teamErrorMessage, teamInvitationSuccessMessage } from './team-error'
+
+describe('teamInvitationSuccessMessage', () => {
+  it('distinguishes an existing account from an email invitation', () => {
+    expect(teamInvitationSuccessMessage('member_added')).toBe(
+      'La cuenta ya existía y se ha añadido al equipo.',
+    )
+    expect(teamInvitationSuccessMessage('invitation_sent')).toBe(
+      'Invitación enviada. La persona deberá revisar su correo.',
+    )
+  })
+})
 
 describe('teamErrorMessage', () => {
   it('keeps authentication recovery when the server response is serialized', () => {

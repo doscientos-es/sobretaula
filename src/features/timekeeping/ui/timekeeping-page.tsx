@@ -17,6 +17,7 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react'
 
 import {
   getTimekeepingAdvancedReport,
+  exportTimekeepingCsv,
   createWorkforceShift,
   saveWorkforceAvailability,
   createWorkforceAbsence,
@@ -475,6 +476,30 @@ function TimekeepingManagement({
     }
   }
 
+  async function downloadReportCsv() {
+    feedback.setPending()
+    try {
+      const csv = await exportTimekeepingCsv({
+        data: {
+          from: new Date(`${reportFrom}T00:00:00.000Z`).toISOString(),
+          tenantId,
+          to: new Date(`${reportTo}T23:59:59.999Z`).toISOString(),
+          venueId,
+        },
+      })
+      const link = document.createElement('a')
+      link.href = URL.createObjectURL(
+        new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' }),
+      )
+      link.download = `sobretaula-jornada-${reportFrom}-${reportTo}.csv`
+      link.click()
+      URL.revokeObjectURL(link.href)
+      feedback.setSuccess('CSV de jornada descargado.')
+    } catch {
+      feedback.setError('No se ha podido descargar el CSV de jornada.')
+    }
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -897,9 +922,19 @@ function TimekeepingManagement({
               type="date"
               value={reportTo}
             />
-            <Button disabled={feedback.pending} type="submit" variant="outline">
-              Generar informe
-            </Button>
+            <div className="flex flex-wrap gap-2 sm:col-span-3">
+              <Button disabled={feedback.pending} type="submit" variant="outline">
+                Generar informe
+              </Button>
+              <Button
+                disabled={feedback.pending}
+                onClick={() => void downloadReportCsv()}
+                type="button"
+                variant="outline"
+              >
+                Descargar CSV para gestoría
+              </Button>
+            </div>
           </form>
           {report && (
             <section aria-label="Resultado del informe laboral" className="space-y-2">

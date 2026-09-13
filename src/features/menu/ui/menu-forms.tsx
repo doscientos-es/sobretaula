@@ -124,14 +124,22 @@ export function MenuForms({
 
   async function loadCsvFile(file: File | undefined) {
     if (!file) return
+    if (file.size > 10 * 1024 * 1024) {
+      feedback.setError('El archivo CSV no puede superar los 10 MB.')
+      return
+    }
     if (!file.name.toLowerCase().endsWith('.csv') && file.type !== 'text/csv') {
       feedback.setError('Selecciona un archivo CSV.')
       return
     }
-    const contents = await file.text()
-    setCsv(contents)
-    setCsvFileName(file.name)
-    setCsvPreview(previewMenuCsv(contents))
+    try {
+      const contents = await file.text()
+      setCsv(contents)
+      setCsvFileName(file.name)
+      setCsvPreview(previewMenuCsv(contents))
+    } catch {
+      feedback.setError('No se ha podido leer el archivo CSV.')
+    }
   }
 
   function dropCsv(event: DragEvent<HTMLLabelElement>) {
@@ -142,10 +150,20 @@ export function MenuForms({
 
   function importCatalog() {
     if (!csvPreview || csvPreview.errors.length || !csvPreview.rows.length) return
-    void run(
-      () => importMenuCsv({ data: { csv, tenantId } }),
-      'No se ha podido importar la carta. No se han aplicado las filas con errores.',
-    )
+    feedback.setPending()
+    void importMenuCsv({ data: { csv, tenantId } })
+      .then(() => {
+        setCsv('')
+        setCsvFileName('')
+        setCsvPreview(null)
+        feedback.setSuccess('Carta importada correctamente.')
+        onDone()
+      })
+      .catch(() =>
+        feedback.setError(
+          'No se ha podido importar la carta. No se han aplicado las filas con errores.',
+        ),
+      )
   }
 
   return (
