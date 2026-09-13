@@ -193,14 +193,26 @@ export const inviteTenantMember = createServerFn({ method: 'POST' })
     )
     if (invitationError) throw new Error(`tenant_invitation_save_failed:${invitationError.code}`)
 
-    const { error: inviteError } = await service.auth.admin.inviteUserByEmail(data.email, {
-      data: { display_name: data.name },
-      redirectTo: invitationRedirect(token),
-    })
+    const { data: invitedUser, error: inviteError } = await service.auth.admin.inviteUserByEmail(
+      data.email,
+      {
+        data: { display_name: data.name },
+        redirectTo: invitationRedirect(token),
+      },
+    )
     if (isAuthEmailRateLimited(inviteError)) {
       throw new Response('Invitation email rate limited', { status: 429 })
     }
     if (inviteError) throw new Error('tenant_invitation_delivery_failed')
+    if (invitedUser.user) {
+      const { error: profileError } = await service
+        .from('profiles')
+        .upsert(
+          { user_id: invitedUser.user.id, display_name: data.name, email: data.email },
+          { onConflict: 'user_id' },
+        )
+      if (profileError) throw new Error(`team_profile_sync_failed:${profileError.code}`)
+    }
     return { kind: 'invitation_sent' as const }
   })
 
