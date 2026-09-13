@@ -24,6 +24,7 @@ import { createBrowserSupabaseClient } from '@/shared/lib/supabase/client'
 import { createHandoverSnapshot } from '../application/table-service'
 import {
   buildServiceHandover,
+  buildServicePulse,
   kitchenLoadState,
   kitchenStationLoadState,
   compareServiceHandover,
@@ -151,6 +152,7 @@ export function ServicePage({
       ? board.tables
       : board.tables.filter((table) => visibleTableCodes.has(table.code))
   const handover = buildServiceHandover(board, clock)
+  const pulse = buildServicePulse(board, clock)
   const activeVersionIds = new Set(
     plan.areas
       .map((area) => selectFloorPlanVersion(plan.versions, area.id)?.id)
@@ -247,6 +249,43 @@ export function ServicePage({
           Sin conexión. No ejecutes cambios en la sala hasta recuperar la red.
         </div>
       )}
+      <Card aria-label="Resumen de atención del turno">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Ahora</CardTitle>
+          <CardDescription>Lo que requiere atención antes de seguir con el servicio.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-lg border p-3">
+              <p className="text-muted-foreground text-xs">En servicio</p>
+              <p className="mt-1 text-2xl font-semibold">{pulse.activeSessions}</p>
+              <p className="text-muted-foreground text-xs">{pulse.attentionSessions} con tiempo excedido</p>
+            </div>
+            <div className="rounded-lg border p-3">
+              <p className="text-muted-foreground text-xs">Próximas llegadas</p>
+              <p className="mt-1 text-2xl font-semibold">{pulse.upcomingReservations}</p>
+              <p className="text-muted-foreground text-xs">{pulse.delayedReservations} retrasadas</p>
+            </div>
+            <div className="rounded-lg border p-3">
+              <p className="text-muted-foreground text-xs">Puerta</p>
+              <p className="mt-1 text-2xl font-semibold">{pulse.waitingParties}</p>
+              <p className="text-muted-foreground text-xs">grupos en espera</p>
+            </div>
+            <div className="rounded-lg border p-3">
+              <p className="text-muted-foreground text-xs">Disponibilidad</p>
+              <p className="mt-1 text-2xl font-semibold">{pulse.cleaningTables + pulse.blockedTables}</p>
+              <p className="text-muted-foreground text-xs">
+                {pulse.cleaningTables} por limpiar · {pulse.blockedTables} bloqueadas
+              </p>
+            </div>
+          </div>
+          {(pulse.kitchenAttention || pulse.attentionSessions > 0 || pulse.delayedReservations > 0) && (
+            <p className="border-warning/40 bg-warning/10 text-warning-foreground mt-3 rounded-lg border p-3 text-sm" role="status">
+              Prioridad: {pulse.delayedReservations > 0 ? 'revisar llegadas retrasadas' : pulse.attentionSessions > 0 ? 'revisar mesas con tiempo excedido' : 'revisar carga de cocina'}.
+            </p>
+          )}
+        </CardContent>
+      </Card>
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="space-y-6">
           {plan.areas.length > 1 && (

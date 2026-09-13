@@ -6,6 +6,7 @@ import {
   kitchenStationLoadState,
   compareServiceHandover,
   buildServiceHandover,
+  buildServicePulse,
   buildServiceTableStates,
   findSeatingConflicts,
   mergeTableIds,
@@ -45,6 +46,33 @@ const soonReservation: ServiceReservation = {
 }
 
 describe('service board', () => {
+  it('builds the actionable room pulse from the live board', () => {
+    const pulse = buildServicePulse(
+      {
+        kitchenAlertOrderCount: 2,
+        kitchenLoad: 2,
+        pacingTargetMinutes: 60,
+        reservations: [soonReservation, { ...soonReservation, id: 'late', startsAt: '2026-09-09T18:30:00.000Z' }],
+        sessions: [session],
+        tables: [
+          { ...tables[0], status: 'cleaning', covers: null, reservationId: null, sessionId: null },
+          { ...tables[1], status: 'blocked', covers: null, reservationId: null, sessionId: null },
+        ],
+        waitlist: [{ estimatedWaitMinutes: 20, guestName: 'Ana', guestPhone: null, id: 'wait-1', partySize: 2, requestedFor: '' }],
+      },
+      new Date('2026-09-09T19:00:00.000Z'),
+    )
+    expect(pulse).toEqual({
+      activeSessions: 1,
+      upcomingReservations: 1,
+      delayedReservations: 1,
+      waitingParties: 1,
+      cleaningTables: 1,
+      blockedTables: 1,
+      attentionSessions: 1,
+      kitchenAttention: false,
+    })
+  })
   it('marks tables as occupied, reserved or free', () => {
     const states = buildServiceTableStates({
       now,

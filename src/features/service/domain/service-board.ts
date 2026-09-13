@@ -111,6 +111,46 @@ export interface ServiceBoard {
   waitlist: readonly WaitlistEntry[]
 }
 
+export interface ServicePulse {
+  activeSessions: number
+  upcomingReservations: number
+  delayedReservations: number
+  waitingParties: number
+  cleaningTables: number
+  blockedTables: number
+  attentionSessions: number
+  kitchenAttention: boolean
+}
+
+/** A small, deterministic "what needs attention now" projection for the room. */
+export function buildServicePulse(board: ServiceBoard, now: Date): ServicePulse {
+  const upcomingWindow = now.getTime() + UPCOMING_RESERVATION_WINDOW_MINUTES * 60_000
+  const upcomingReservations = board.reservations.filter((reservation) => {
+    const startsAt = new Date(reservation.startsAt).getTime()
+    return Number.isFinite(startsAt) && startsAt >= now.getTime() && startsAt <= upcomingWindow
+  }).length
+  const delayedReservations = board.reservations.filter((reservation) => {
+    const startsAt = new Date(reservation.startsAt).getTime()
+    return Number.isFinite(startsAt) && startsAt < now.getTime() - 15 * 60_000
+  }).length
+  return {
+    activeSessions: board.sessions.length,
+    upcomingReservations,
+    delayedReservations,
+    waitingParties: board.waitlist.length,
+    cleaningTables: board.tables.filter((table) => table.status === 'cleaning').length,
+    blockedTables: board.tables.filter((table) => table.status === 'blocked').length,
+    attentionSessions: board.sessions.filter(
+      (session) => sessionPacingState(session, now, board.pacingTargetMinutes ?? 90) === 'attention',
+    ).length,
+    kitchenAttention:
+      kitchenLoadState(board.kitchenLoad ?? 0, board.kitchenAlertOrderCount ?? 12) === 'attention' ||
+      Object.values(
+        kitchenStationLoadState(board.kitchenLoadByStation ?? {}, board.kitchenAlertMinutes ?? 60),
+      ).some((state) => state === 'attention'),
+  }
+}
+
 export function kitchenLoadState(
   recentOrderCount: number,
   alertThreshold = 12,
