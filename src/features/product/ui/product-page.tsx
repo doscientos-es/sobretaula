@@ -223,6 +223,9 @@ export function ProductPage({
   const [ingredientId, setIngredientId] = useState('')
   const [movementQuantity, setMovementQuantity] = useState('')
   const [movementKind, setMovementKind] = useState<'purchase' | 'waste' | 'adjustment'>('purchase')
+  const [wasteReason, setWasteReason] = useState<
+    'expiry' | 'breakage' | 'overproduction' | 'return' | 'internal_consumption' | 'other'
+  >('other')
   const [reason, setReason] = useState('')
   const [menuItemId, setMenuItemId] = useState('')
   const [recipeIngredientId, setRecipeIngredientId] = useState('')
@@ -602,6 +605,7 @@ export function ProductPage({
                       venueId,
                       ingredientId,
                       kind: movementKind,
+                      ...(movementKind === 'waste' ? { wasteReason } : {}),
                       quantity: Number(movementQuantity),
                       reason,
                     },
@@ -642,6 +646,31 @@ export function ProductPage({
                 </SelectContent>
               </Select>
             </Field>
+            {movementKind === 'waste' ? (
+              <Field>
+                <FieldLabel htmlFor="movement-waste-reason">Motivo de merma</FieldLabel>
+                <Select
+                  id="movement-waste-reason"
+                  className="w-full"
+                  onSelectionChange={(key) => setWasteReason(String(key) as typeof wasteReason)}
+                  selectedKey={wasteReason}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectList>
+                      <SelectItem id="expiry">Caducidad</SelectItem>
+                      <SelectItem id="breakage">Rotura</SelectItem>
+                      <SelectItem id="overproduction">Sobreproducción</SelectItem>
+                      <SelectItem id="return">Devolución</SelectItem>
+                      <SelectItem id="internal_consumption">Consumo interno</SelectItem>
+                      <SelectItem id="other">Otro</SelectItem>
+                    </SelectList>
+                  </SelectContent>
+                </Select>
+              </Field>
+            ) : null}
             <Field>
               <FieldLabel htmlFor="movement-kind">Tipo</FieldLabel>
               <Select

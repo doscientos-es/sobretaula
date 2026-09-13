@@ -43,6 +43,7 @@ export function OnlineOrdersPage({ tenantId, venueId }: { tenantId: string; venu
     accepted: 'Aceptados',
     preparing: 'Preparando',
     ready: 'Listos',
+    completed: 'Completados',
   }
   return (
     <section className="space-y-4">
@@ -79,17 +80,20 @@ export function OnlineOrdersPage({ tenantId, venueId }: { tenantId: string; venu
                     </p>
                     <Button
                       className="mt-2"
+                      disabled={status === 'completed'}
                       onClick={() => void advance(order)}
                       size="sm"
                       type="button"
                     >
-                      {status === 'pending'
-                        ? 'Aceptar'
-                        : status === 'accepted'
-                          ? 'Enviar a cocina'
-                          : status === 'preparing'
-                            ? 'Marcar listo'
-                            : 'Completar'}
+                      {status === 'completed'
+                        ? 'Completado'
+                        : status === 'pending'
+                          ? 'Aceptar'
+                          : status === 'accepted'
+                            ? 'Enviar a cocina'
+                            : status === 'preparing'
+                              ? 'Marcar listo'
+                              : 'Completar'}
                     </Button>
                   </article>
                 ))}

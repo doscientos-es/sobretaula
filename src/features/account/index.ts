@@ -3,6 +3,7 @@ export {
   applyDiscount,
   getAccount,
   recordPayment,
+  recordGiftCardPayment,
   recordMixedPayment,
   refundPayment,
   removeOrderItem,

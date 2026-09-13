@@ -24,6 +24,7 @@ import {
   accountSessionInput,
   addOrderItemInput,
   recordPaymentInput,
+  recordGiftCardPaymentInput,
   recordMixedPaymentInput,
   refundPaymentInput,
   applyDiscountInput,
@@ -460,6 +461,25 @@ export const recordPayment = createServerFn({ method: 'POST' })
       balanceCents: Number(paymentRows[0].balance_cents ?? balanceCents - data.amountCents),
       paymentId: paymentRows[0].payment_id as string,
     }
+  })
+
+export const recordGiftCardPayment = createServerFn({ method: 'POST' })
+  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .validator(recordGiftCardPaymentInput)
+  .handler(async ({ context, data }) => {
+    requireAccountEditor(context.tenantMembership.role)
+    const { data: rows, error } = await createRequestSupabaseClient(
+      context.tenantMembership.accessToken,
+    ).rpc('record_gift_card_payment', {
+      p_amount_cents: data.amountCents,
+      p_code: data.code,
+      p_operation_id: data.operationId,
+      p_session_id: data.sessionId,
+      p_tenant_id: data.tenantId,
+      p_venue_id: data.venueId,
+    })
+    if (error || !rows?.[0]) throw new Error(`gift_card_payment_failed:${error?.code ?? 'unknown'}`)
+    return { balanceCents: Number(rows[0].balance_cents), paymentId: rows[0].payment_id as string }
   })
 
 /** Records two or more payment methods atomically as one idempotent batch. */

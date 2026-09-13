@@ -6,9 +6,14 @@ import {
   operationalTenantMiddleware,
   tenantMembershipMiddleware,
 } from '@/features/tenancy/application/require-tenant-membership'
+import { paginationRange, type PaginatedResult } from '@/shared/lib/pagination'
 import { createRequestSupabaseClient } from '@/shared/lib/supabase/server/create-server-client'
 
-const input = z.object({ tenantId: z.string().uuid() })
+const input = z.object({
+  tenantId: z.string().uuid(),
+  page: z.number().int().min(1).default(1),
+  pageSize: z.number().int().min(1).max(100).default(25),
+})
 export interface NotificationJobSummary {
   id: string
   channel: string
@@ -22,16 +27,21 @@ export interface NotificationJobSummary {
 export const getNotificationJobs = createServerFn({ method: 'GET' })
   .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
   .validator(input)
-  .handler(async ({ context, data }): Promise<NotificationJobSummary[]> => {
+  .handler(async ({ context, data }): Promise<PaginatedResult<NotificationJobSummary>> => {
+    const range = paginationRange(data)
     const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
-    const { data: jobs, error } = await supabase
+    const {
+      data: jobs,
+      error,
+      count,
+    } = await supabase
       .from('reservation_notification_jobs')
-      .select('attempts, channel, id, last_error, scheduled_for, status, type')
+      .select('attempts, channel, id, last_error, scheduled_for, status, type', { count: 'exact' })
       .eq('tenant_id', data.tenantId)
       .order('created_at', { ascending: false })
-      .limit(100)
+      .range(range.from, range.to)
     if (error) throw new Error(`notification_jobs_load_failed:${error.code}`)
-    return (jobs ?? []).map((job) => ({
+    const items = (jobs ?? []).map((job) => ({
       id: job.id,
       channel: job.channel,
       type: job.type,
@@ -40,6 +50,14 @@ export const getNotificationJobs = createServerFn({ method: 'GET' })
       scheduledFor: job.scheduled_for,
       lastError: job.last_error,
     }))
+    const total = count ?? items.length
+    return {
+      items,
+      page: data.page,
+      pageSize: data.pageSize,
+      total,
+      hasMore: data.page * data.pageSize < total,
+    }
   })
 
 export const requeueNotificationJob = createServerFn({ method: 'POST' })

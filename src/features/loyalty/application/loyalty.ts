@@ -6,6 +6,7 @@ import {
   operationalTenantMiddleware,
   tenantMembershipMiddleware,
 } from '@/features/tenancy/application/require-tenant-membership'
+import { paginationRange, type PaginatedResult } from '@/shared/lib/pagination'
 import { createRequestSupabaseClient } from '@/shared/lib/supabase/server/create-server-client'
 
 const middleware = [
@@ -14,6 +15,10 @@ const middleware = [
   operationalTenantMiddleware,
 ] as const
 const base = z.object({ tenantId: z.string().uuid() })
+const listInput = base.extend({
+  page: z.number().int().min(1).default(1),
+  pageSize: z.number().int().min(1).max(100).default(25),
+})
 
 export interface LoyaltyGuest {
   id: string
@@ -25,17 +30,24 @@ export interface LoyaltyGuest {
 
 export const listLoyaltyGuests = createServerFn({ method: 'GET' })
   .middleware(middleware)
-  .validator(base)
-  .handler(async ({ context, data }) => {
+  .validator(listInput)
+  .handler(async ({ context, data }): Promise<PaginatedResult<LoyaltyGuest>> => {
+    const range = paginationRange(data)
     const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
-    const { data: rows, error } = await supabase
+    const {
+      data: rows,
+      error,
+      count,
+    } = await supabase
       .from('loyalty_accounts')
-      .select('guest_id, points, lifetime_points, guests(full_name, email, phone)')
+      .select('guest_id, points, lifetime_points, guests(full_name, email, phone)', {
+        count: 'exact',
+      })
       .eq('tenant_id', data.tenantId)
       .order('points', { ascending: false })
-      .limit(100)
+      .range(range.from, range.to)
     if (error) throw new Error(`loyalty_load_failed:${error.code}`)
-    return (rows ?? []).map((row) => {
+    const items = (rows ?? []).map((row) => {
       const guest = row.guests as unknown as {
         full_name?: string
         email?: string | null
@@ -49,6 +61,14 @@ export const listLoyaltyGuests = createServerFn({ method: 'GET' })
         lifetimePoints: Number(row.lifetime_points),
       }
     }) satisfies LoyaltyGuest[]
+    const total = count ?? items.length
+    return {
+      items,
+      page: data.page,
+      pageSize: data.pageSize,
+      total,
+      hasMore: data.page * data.pageSize < total,
+    }
   })
 
 export const adjustLoyaltyPoints = createServerFn({ method: 'POST' })

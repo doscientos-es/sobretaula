@@ -27,18 +27,24 @@ export function NotificationJobsPage({ tenantId }: { tenantId: string }) {
   const [loadError, setLoadError] = useState(false)
   const [retryingJobId, setRetryingJobId] = useState<string | null>(null)
   const [success, setSuccess] = useState('')
+  const [page, setPage] = useState(1)
+  const [hasMore, setHasMore] = useState(false)
+  const [total, setTotal] = useState(0)
 
   const loadJobs = useCallback(async () => {
     setLoading(true)
     setLoadError(false)
     try {
-      setJobs(await getNotificationJobs({ data: { tenantId } }))
+      const result = await getNotificationJobs({ data: { tenantId, page, pageSize: 25 } })
+      setJobs(result.items)
+      setHasMore(result.hasMore)
+      setTotal(result.total)
     } catch {
       setLoadError(true)
     } finally {
       setLoading(false)
     }
-  }, [tenantId])
+  }, [page, tenantId])
 
   useEffect(() => {
     void loadJobs()
@@ -89,7 +95,7 @@ export function NotificationJobsPage({ tenantId }: { tenantId: string }) {
           <CardDescription>
             {loading
               ? t('communications.jobs.loading')
-              : formatMessage(locale, 'communications.jobs.count', { count: jobs.length })}
+              : formatMessage(locale, 'communications.jobs.count', { count: total })}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -157,6 +163,27 @@ export function NotificationJobsPage({ tenantId }: { tenantId: string }) {
           ) : (
             <p className="text-muted-foreground text-sm">{t('communications.jobs.empty')}</p>
           )}
+          {!loading && !loadError ? (
+            <div className="mt-4 flex items-center justify-between">
+              <button
+                className="text-primary text-sm underline disabled:opacity-50"
+                disabled={page === 1}
+                onClick={() => setPage((current) => current - 1)}
+                type="button"
+              >
+                Anterior
+              </button>
+              <span className="text-muted-foreground text-sm">Página {page}</span>
+              <button
+                className="text-primary text-sm underline disabled:opacity-50"
+                disabled={!hasMore}
+                onClick={() => setPage((current) => current + 1)}
+                type="button"
+              >
+                Siguiente
+              </button>
+            </div>
+          ) : null}
           {success ? (
             <output aria-live="polite" className="text-success mt-4 block text-sm font-medium">
               {success}

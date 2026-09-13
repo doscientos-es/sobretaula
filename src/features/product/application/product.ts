@@ -406,6 +406,7 @@ export const addInventoryMovement = createServerFn({ method: 'POST' })
         ingredient_id: data.ingredientId,
         kind: data.kind,
         quantity: data.quantity,
+        waste_reason: data.wasteReason ?? null,
         unit_cost_cents: data.unitCostCents ?? null,
         reason: data.reason,
         created_by: context.tenantMembership.userId,

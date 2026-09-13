@@ -10,6 +10,7 @@ import {
 } from '@doscientos/ui'
 import { Link, useNavigate, useParams } from '@tanstack/react-router'
 import {
+  BarChart3,
   CalendarDays,
   ConciergeBell,
   Coins,
@@ -19,9 +20,12 @@ import {
   LayoutDashboard,
   Mail,
   Map,
+  Package,
+  ShoppingBag,
   Utensils,
   UtensilsCrossed,
   Users,
+  UserRound,
 } from 'lucide-react'
 import { useState, type MouseEvent, type ReactNode } from 'react'
 
@@ -252,6 +256,62 @@ export function TenantAdminFrame({
                   <Coins className="size-3" />
                   Propinas
                 </Link>
+              )}
+              {activeVenue && (
+                <Link
+                  onClick={handleLockedNavigation}
+                  to="/t/$slug/l/$venue/documentos-compras"
+                  params={{ slug, venue: activeVenue.slug }}
+                  activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
+                  className={navLinkClass}
+                >
+                  <FileText className="size-3" />
+                  Revisar compras
+                </Link>
+              )}
+              {activeVenue && (
+                <>
+                  <Link
+                    onClick={handleLockedNavigation}
+                    to="/t/$slug/l/$venue/productos"
+                    params={{ slug, venue: activeVenue.slug }}
+                    activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
+                    className={navLinkClass}
+                  >
+                    <Package className="size-3" />
+                    Productos y stock
+                  </Link>
+                  <Link
+                    onClick={handleLockedNavigation}
+                    to="/t/$slug/l/$venue/informes"
+                    params={{ slug, venue: activeVenue.slug }}
+                    activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
+                    className={navLinkClass}
+                  >
+                    <BarChart3 className="size-3" />
+                    Rentabilidad
+                  </Link>
+                  <Link
+                    onClick={handleLockedNavigation}
+                    to="/t/$slug/l/$venue/clientes"
+                    params={{ slug, venue: activeVenue.slug }}
+                    activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
+                    className={navLinkClass}
+                  >
+                    <UserRound className="size-3" />
+                    Clientes
+                  </Link>
+                  <Link
+                    onClick={handleLockedNavigation}
+                    to="/t/$slug/l/$venue/pedidos-online"
+                    params={{ slug, venue: activeVenue.slug }}
+                    activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
+                    className={navLinkClass}
+                  >
+                    <ShoppingBag className="size-3" />
+                    Pedidos online
+                  </Link>
+                </>
               )}
               {activeVenue && (
                 <Link

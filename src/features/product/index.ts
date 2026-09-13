@@ -6,6 +6,16 @@ export { buildPurchaseRecommendation } from './domain/purchase-recommendation'
 export { canAdvancePurchaseOrder, validatePurchaseOrderLines } from './domain/purchase-order'
 export type { PurchaseOrderLine, PurchaseOrderStatus } from './domain/purchase-order'
 export type { DeliveryNoteLineInput } from './domain/delivery-notes'
+export { parsePurchaseDocumentExtraction } from './domain/purchase-document-extraction'
+export type {
+  ExtractedPurchaseDocument,
+  PurchaseDocumentReviewStatus,
+} from './domain/purchase-document-extraction'
+export {
+  listPurchaseDocumentReviews,
+  reviewPurchaseDocument,
+} from './application/purchase-document-reviews'
+export { PurchaseDocumentReviewsPage } from './ui/purchase-document-reviews-page'
 export {
   addInventoryMovement,
   createDeliveryNote,

@@ -49,6 +49,7 @@ import { Route as TSlugComunicacionesRouteImport } from './routes/t.$slug.comuni
 import { Route as TSlugEquipoRouteImport } from './routes/t.$slug.equipo'
 import { Route as TSlugFacturacionRouteImport } from './routes/t.$slug.facturacion'
 import { Route as TSlugFacturasRouteImport } from './routes/t.$slug.facturas'
+import { Route as ApiTTenantIdPurchaseDocumentRouteImport } from './routes/api.t.$tenantId.purchase-document'
 import { Route as ApiTTenantIdVerifactuCertificateRouteImport } from './routes/api.t.$tenantId.verifactu-certificate'
 import { Route as TSlugLVenueRouteImport } from './routes/t.$slug.l.$venue'
 import { Route as TSlugLNuevoRouteImport } from './routes/t.$slug.l.nuevo'
@@ -60,6 +61,7 @@ import { Route as TSlugLVenueBloquesRouteImport } from './routes/t.$slug.l.$venu
 import { Route as TSlugLVenueCajaRouteImport } from './routes/t.$slug.l.$venue.caja'
 import { Route as TSlugLVenueClientesRouteImport } from './routes/t.$slug.l.$venue.clientes'
 import { Route as TSlugLVenueComunicacionesRouteImport } from './routes/t.$slug.l.$venue.comunicaciones'
+import { Route as TSlugLVenueDocumentosComprasRouteImport } from './routes/t.$slug.l.$venue.documentos-compras'
 import { Route as TSlugLVenueFichajeRouteImport } from './routes/t.$slug.l.$venue.fichaje'
 import { Route as TSlugLVenueFichajeTerminalRouteImport } from './routes/t.$slug.l.$venue.fichaje-terminal'
 import { Route as TSlugLVenueFidelizacionRouteImport } from './routes/t.$slug.l.$venue.fidelizacion'
@@ -275,6 +277,12 @@ const TSlugFacturasRoute = TSlugFacturasRouteImport.update({
   path: '/facturas',
   getParentRoute: () => TSlugRoute,
 } as any)
+const ApiTTenantIdPurchaseDocumentRoute =
+  ApiTTenantIdPurchaseDocumentRouteImport.update({
+    id: '/api/t/$tenantId/purchase-document',
+    path: '/api/t/$tenantId/purchase-document',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiTTenantIdVerifactuCertificateRoute =
   ApiTTenantIdVerifactuCertificateRouteImport.update({
     id: '/api/t/$tenantId/verifactu-certificate',
@@ -332,6 +340,12 @@ const TSlugLVenueComunicacionesRoute =
   TSlugLVenueComunicacionesRouteImport.update({
     id: '/comunicaciones',
     path: '/comunicaciones',
+    getParentRoute: () => TSlugLVenueRoute,
+  } as any)
+const TSlugLVenueDocumentosComprasRoute =
+  TSlugLVenueDocumentosComprasRouteImport.update({
+    id: '/documentos-compras',
+    path: '/documentos-compras',
     getParentRoute: () => TSlugLVenueRoute,
   } as any)
 const TSlugLVenueFichajeRoute = TSlugLVenueFichajeRouteImport.update({
@@ -445,6 +459,7 @@ export interface FileRoutesByFullPath {
   '/t/$slug/facturas': typeof TSlugFacturasRoute
   '/admin/tenants/': typeof AdminTenantsIndexRoute
   '/t/$slug/': typeof TSlugIndexRoute
+  '/api/t/$tenantId/purchase-document': typeof ApiTTenantIdPurchaseDocumentRoute
   '/api/t/$tenantId/verifactu-certificate': typeof ApiTTenantIdVerifactuCertificateRoute
   '/t/$slug/l/$venue': typeof TSlugLVenueRouteWithChildren
   '/t/$slug/l/nuevo': typeof TSlugLNuevoRoute
@@ -455,6 +470,7 @@ export interface FileRoutesByFullPath {
   '/t/$slug/l/$venue/caja': typeof TSlugLVenueCajaRoute
   '/t/$slug/l/$venue/clientes': typeof TSlugLVenueClientesRoute
   '/t/$slug/l/$venue/comunicaciones': typeof TSlugLVenueComunicacionesRoute
+  '/t/$slug/l/$venue/documentos-compras': typeof TSlugLVenueDocumentosComprasRoute
   '/t/$slug/l/$venue/fichaje': typeof TSlugLVenueFichajeRoute
   '/t/$slug/l/$venue/fichaje-terminal': typeof TSlugLVenueFichajeTerminalRoute
   '/t/$slug/l/$venue/fidelizacion': typeof TSlugLVenueFidelizacionRoute
@@ -509,6 +525,7 @@ export interface FileRoutesByTo {
   '/t/$slug/facturas': typeof TSlugFacturasRoute
   '/admin/tenants': typeof AdminTenantsIndexRoute
   '/t/$slug': typeof TSlugIndexRoute
+  '/api/t/$tenantId/purchase-document': typeof ApiTTenantIdPurchaseDocumentRoute
   '/api/t/$tenantId/verifactu-certificate': typeof ApiTTenantIdVerifactuCertificateRoute
   '/t/$slug/l/nuevo': typeof TSlugLNuevoRoute
   '/t/$slug/manifest/webmanifest': typeof TSlugManifestWebmanifestRoute
@@ -518,6 +535,7 @@ export interface FileRoutesByTo {
   '/t/$slug/l/$venue/caja': typeof TSlugLVenueCajaRoute
   '/t/$slug/l/$venue/clientes': typeof TSlugLVenueClientesRoute
   '/t/$slug/l/$venue/comunicaciones': typeof TSlugLVenueComunicacionesRoute
+  '/t/$slug/l/$venue/documentos-compras': typeof TSlugLVenueDocumentosComprasRoute
   '/t/$slug/l/$venue/fichaje': typeof TSlugLVenueFichajeRoute
   '/t/$slug/l/$venue/fichaje-terminal': typeof TSlugLVenueFichajeTerminalRoute
   '/t/$slug/l/$venue/fidelizacion': typeof TSlugLVenueFidelizacionRoute
@@ -575,6 +593,7 @@ export interface FileRoutesById {
   '/t/$slug/facturas': typeof TSlugFacturasRoute
   '/admin/tenants/': typeof AdminTenantsIndexRoute
   '/t/$slug/': typeof TSlugIndexRoute
+  '/api/t/$tenantId/purchase-document': typeof ApiTTenantIdPurchaseDocumentRoute
   '/api/t/$tenantId/verifactu-certificate': typeof ApiTTenantIdVerifactuCertificateRoute
   '/t/$slug/l/$venue': typeof TSlugLVenueRouteWithChildren
   '/t/$slug/l/nuevo': typeof TSlugLNuevoRoute
@@ -585,6 +604,7 @@ export interface FileRoutesById {
   '/t/$slug/l/$venue/caja': typeof TSlugLVenueCajaRoute
   '/t/$slug/l/$venue/clientes': typeof TSlugLVenueClientesRoute
   '/t/$slug/l/$venue/comunicaciones': typeof TSlugLVenueComunicacionesRoute
+  '/t/$slug/l/$venue/documentos-compras': typeof TSlugLVenueDocumentosComprasRoute
   '/t/$slug/l/$venue/fichaje': typeof TSlugLVenueFichajeRoute
   '/t/$slug/l/$venue/fichaje-terminal': typeof TSlugLVenueFichajeTerminalRoute
   '/t/$slug/l/$venue/fidelizacion': typeof TSlugLVenueFidelizacionRoute
@@ -643,6 +663,7 @@ export interface FileRouteTypes {
     | '/t/$slug/facturas'
     | '/admin/tenants/'
     | '/t/$slug/'
+    | '/api/t/$tenantId/purchase-document'
     | '/api/t/$tenantId/verifactu-certificate'
     | '/t/$slug/l/$venue'
     | '/t/$slug/l/nuevo'
@@ -653,6 +674,7 @@ export interface FileRouteTypes {
     | '/t/$slug/l/$venue/caja'
     | '/t/$slug/l/$venue/clientes'
     | '/t/$slug/l/$venue/comunicaciones'
+    | '/t/$slug/l/$venue/documentos-compras'
     | '/t/$slug/l/$venue/fichaje'
     | '/t/$slug/l/$venue/fichaje-terminal'
     | '/t/$slug/l/$venue/fidelizacion'
@@ -707,6 +729,7 @@ export interface FileRouteTypes {
     | '/t/$slug/facturas'
     | '/admin/tenants'
     | '/t/$slug'
+    | '/api/t/$tenantId/purchase-document'
     | '/api/t/$tenantId/verifactu-certificate'
     | '/t/$slug/l/nuevo'
     | '/t/$slug/manifest/webmanifest'
@@ -716,6 +739,7 @@ export interface FileRouteTypes {
     | '/t/$slug/l/$venue/caja'
     | '/t/$slug/l/$venue/clientes'
     | '/t/$slug/l/$venue/comunicaciones'
+    | '/t/$slug/l/$venue/documentos-compras'
     | '/t/$slug/l/$venue/fichaje'
     | '/t/$slug/l/$venue/fichaje-terminal'
     | '/t/$slug/l/$venue/fidelizacion'
@@ -772,6 +796,7 @@ export interface FileRouteTypes {
     | '/t/$slug/facturas'
     | '/admin/tenants/'
     | '/t/$slug/'
+    | '/api/t/$tenantId/purchase-document'
     | '/api/t/$tenantId/verifactu-certificate'
     | '/t/$slug/l/$venue'
     | '/t/$slug/l/nuevo'
@@ -782,6 +807,7 @@ export interface FileRouteTypes {
     | '/t/$slug/l/$venue/caja'
     | '/t/$slug/l/$venue/clientes'
     | '/t/$slug/l/$venue/comunicaciones'
+    | '/t/$slug/l/$venue/documentos-compras'
     | '/t/$slug/l/$venue/fichaje'
     | '/t/$slug/l/$venue/fichaje-terminal'
     | '/t/$slug/l/$venue/fidelizacion'
@@ -821,6 +847,7 @@ export interface RootRouteChildren {
   ApiPlatformBillingReconcileRoute: typeof ApiPlatformBillingReconcileRoute
   ApiWebhooksDepositsRoute: typeof ApiWebhooksDepositsRoute
   ApiWebhooksRedsysRoute: typeof ApiWebhooksRedsysRoute
+  ApiTTenantIdPurchaseDocumentRoute: typeof ApiTTenantIdPurchaseDocumentRoute
   ApiTTenantIdVerifactuCertificateRoute: typeof ApiTTenantIdVerifactuCertificateRoute
 }
 
@@ -1106,6 +1133,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TSlugFacturasRouteImport
       parentRoute: typeof TSlugRoute
     }
+    '/api/t/$tenantId/purchase-document': {
+      id: '/api/t/$tenantId/purchase-document'
+      path: '/api/t/$tenantId/purchase-document'
+      fullPath: '/api/t/$tenantId/purchase-document'
+      preLoaderRoute: typeof ApiTTenantIdPurchaseDocumentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/t/$tenantId/verifactu-certificate': {
       id: '/api/t/$tenantId/verifactu-certificate'
       path: '/api/t/$tenantId/verifactu-certificate'
@@ -1181,6 +1215,13 @@ declare module '@tanstack/react-router' {
       path: '/comunicaciones'
       fullPath: '/t/$slug/l/$venue/comunicaciones'
       preLoaderRoute: typeof TSlugLVenueComunicacionesRouteImport
+      parentRoute: typeof TSlugLVenueRoute
+    }
+    '/t/$slug/l/$venue/documentos-compras': {
+      id: '/t/$slug/l/$venue/documentos-compras'
+      path: '/documentos-compras'
+      fullPath: '/t/$slug/l/$venue/documentos-compras'
+      preLoaderRoute: typeof TSlugLVenueDocumentosComprasRouteImport
       parentRoute: typeof TSlugLVenueRoute
     }
     '/t/$slug/l/$venue/fichaje': {
@@ -1322,6 +1363,7 @@ interface TSlugLVenueRouteChildren {
   TSlugLVenueCajaRoute: typeof TSlugLVenueCajaRoute
   TSlugLVenueClientesRoute: typeof TSlugLVenueClientesRoute
   TSlugLVenueComunicacionesRoute: typeof TSlugLVenueComunicacionesRoute
+  TSlugLVenueDocumentosComprasRoute: typeof TSlugLVenueDocumentosComprasRoute
   TSlugLVenueFichajeRoute: typeof TSlugLVenueFichajeRoute
   TSlugLVenueFichajeTerminalRoute: typeof TSlugLVenueFichajeTerminalRoute
   TSlugLVenueFidelizacionRoute: typeof TSlugLVenueFidelizacionRoute
@@ -1343,6 +1385,7 @@ const TSlugLVenueRouteChildren: TSlugLVenueRouteChildren = {
   TSlugLVenueCajaRoute: TSlugLVenueCajaRoute,
   TSlugLVenueClientesRoute: TSlugLVenueClientesRoute,
   TSlugLVenueComunicacionesRoute: TSlugLVenueComunicacionesRoute,
+  TSlugLVenueDocumentosComprasRoute: TSlugLVenueDocumentosComprasRoute,
   TSlugLVenueFichajeRoute: TSlugLVenueFichajeRoute,
   TSlugLVenueFichajeTerminalRoute: TSlugLVenueFichajeTerminalRoute,
   TSlugLVenueFidelizacionRoute: TSlugLVenueFidelizacionRoute,
@@ -1418,6 +1461,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPlatformBillingReconcileRoute: ApiPlatformBillingReconcileRoute,
   ApiWebhooksDepositsRoute: ApiWebhooksDepositsRoute,
   ApiWebhooksRedsysRoute: ApiWebhooksRedsysRoute,
+  ApiTTenantIdPurchaseDocumentRoute: ApiTTenantIdPurchaseDocumentRoute,
   ApiTTenantIdVerifactuCertificateRoute: ApiTTenantIdVerifactuCertificateRoute,
 }
 export const routeTree = rootRouteImport

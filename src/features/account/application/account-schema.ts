@@ -38,12 +38,17 @@ export const recordPaymentInput = accountSessionInput.extend({
   tipCents: z.number().int().min(0).max(1_000_000).optional(),
   operationId: z.string().uuid(),
 })
+export const recordGiftCardPaymentInput = accountSessionInput.extend({
+  amountCents: z.number().int().min(1).max(1_000_000),
+  code: z.string().trim().min(4).max(40),
+  operationId: z.string().uuid(),
+})
 export const recordMixedPaymentInput = accountSessionInput.extend({
   lines: z
     .array(
       z.object({
         amountCents: z.number().int().min(1).max(1_000_000),
-        method: z.enum(PAYMENT_METHODS),
+        method: z.enum(['cash', 'card', 'transfer', 'voucher', 'other', 'gift_card']),
         tipCents: z.number().int().min(0).max(1_000_000).default(0),
       }),
     )

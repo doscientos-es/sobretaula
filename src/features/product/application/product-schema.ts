@@ -15,14 +15,26 @@ export const supplierListInput = productTenantInput.extend({
   pageSize: z.number().int().min(1).max(100).default(25),
   search: z.string().trim().max(120).default(''),
 })
-export const createIngredientInput = productTenantInput.extend({
-  name: z.string().trim().min(1).max(120),
-  unit: z.enum(['g', 'kg', 'ml', 'l', 'unit']),
-  costCentsPerUnit: z.number().min(0).max(1_000_000),
-  allergens: z.array(z.enum(ALLERGENS)).max(14).default([]),
-  isVegan: z.boolean().default(false),
-  minimumStock: z.number().min(0).max(1_000_000).default(0),
-})
+export const createIngredientInput = productTenantInput
+  .extend({
+    name: z.string().trim().min(1).max(120),
+    unit: z.enum(['g', 'kg', 'ml', 'l', 'unit']),
+    costCentsPerUnit: z.number().min(0).max(1_000_000),
+    allergens: z.array(z.enum(ALLERGENS)).max(14).default([]),
+    isVegan: z.boolean().default(false),
+    minimumStock: z.number().min(0).max(1_000_000).default(0),
+  })
+  .superRefine((value, context) => {
+    const incompatible = value.allergens.filter((allergen) =>
+      ['crustaceans', 'eggs', 'fish', 'milk', 'molluscs'].includes(allergen),
+    )
+    if (value.isVegan && incompatible.length > 0)
+      context.addIssue({
+        code: 'custom',
+        message: 'vegan_ingredient_has_animal_allergen',
+        path: ['allergens'],
+      })
+  })
 export const recipeInput = productTenantInput.extend({
   menuItemId: z.string().uuid(),
   lines: z
@@ -46,16 +58,37 @@ export const channelPriceInput = productTenantInput.extend({
   priceCents: z.number().int().min(0).max(1_000_000),
 })
 export const inventoryQueryInput = productTenantInput.extend({ venueId: z.string().uuid() })
-export const inventoryMovementInput = inventoryQueryInput.extend({
-  ingredientId: z.string().uuid(),
-  kind: z.enum(['purchase', 'sale', 'waste', 'adjustment']),
-  quantity: z
-    .number()
-    .max(1_000_000)
-    .refine((value) => value !== 0),
-  unitCostCents: z.number().min(0).max(1_000_000).optional(),
-  reason: z.string().trim().min(2).max(200),
-})
+export const inventoryMovementInput = inventoryQueryInput
+  .extend({
+    ingredientId: z.string().uuid(),
+    kind: z.enum(['purchase', 'sale', 'waste', 'adjustment']),
+    wasteReason: z
+      .enum(['expiry', 'breakage', 'overproduction', 'return', 'internal_consumption', 'other'])
+      .optional(),
+    quantity: z
+      .number()
+      .min(-1_000_000)
+      .max(1_000_000)
+      .refine((value) => value !== 0),
+    unitCostCents: z.number().min(0).max(1_000_000).optional(),
+    reason: z.string().trim().min(2).max(200),
+  })
+  .superRefine((value, context) => {
+    if (value.kind === 'purchase' && value.quantity < 0)
+      context.addIssue({
+        code: 'custom',
+        message: 'purchase_quantity_must_be_positive',
+        path: ['quantity'],
+      })
+    if ((value.kind === 'sale' || value.kind === 'waste') && value.quantity > 0)
+      context.addIssue({
+        code: 'custom',
+        message: 'outflow_quantity_must_be_negative',
+        path: ['quantity'],
+      })
+    if (value.kind === 'waste' && !value.wasteReason)
+      context.addIssue({ code: 'custom', message: 'waste_reason_required', path: ['wasteReason'] })
+  })
 export const supplierInput = productTenantInput.extend({
   name: z.string().trim().min(1).max(160),
   taxId: z.string().trim().max(30).optional(),

@@ -14,13 +14,17 @@ export function LoyaltyPage({ tenantId }: { tenantId: string }) {
   const [points, setPoints] = useState('')
   const [reason, setReason] = useState('')
   const [feedback, setFeedback] = useState<string | null>(null)
+  const [page, setPage] = useState(1)
+  const [hasMore, setHasMore] = useState(false)
   const load = useCallback(async () => {
     try {
-      setGuests(await listLoyaltyGuests({ data: { tenantId } }))
+      const result = await listLoyaltyGuests({ data: { tenantId, page, pageSize: 25 } })
+      setGuests(result.items)
+      setHasMore(result.hasMore)
     } catch {
       setFeedback('No se ha podido cargar fidelización.')
     }
-  }, [tenantId])
+  }, [page, tenantId])
   useEffect(() => {
     void load()
   }, [load])
@@ -95,6 +99,25 @@ export function LoyaltyPage({ tenantId }: { tenantId: string }) {
           ) : (
             <p className="text-muted-foreground text-sm">Todavía no hay clientes con saldo.</p>
           )}
+          <div className="mt-4 flex items-center justify-between">
+            <Button
+              disabled={page === 1}
+              onClick={() => setPage((current) => current - 1)}
+              type="button"
+              variant="outline"
+            >
+              Anterior
+            </Button>
+            <span className="text-muted-foreground text-sm">Página {page}</span>
+            <Button
+              disabled={!hasMore}
+              onClick={() => setPage((current) => current + 1)}
+              type="button"
+              variant="outline"
+            >
+              Siguiente
+            </Button>
+          </div>
         </CardContent>
       </Card>
       {selected ? (

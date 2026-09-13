@@ -25,6 +25,7 @@ import { formatMoney, parsePriceToCents } from '@/shared/lib/money/money'
 import {
   applyDiscount,
   recordMixedPayment,
+  recordGiftCardPayment,
   recordPayment,
   refundPayment,
   type AccountView,
@@ -37,6 +38,7 @@ export const PAYMENT_METHOD_LABEL: Record<PaymentMethod, string> = {
   other: 'Otro',
   transfer: 'Transferencia',
   voucher: 'Vale',
+  gift_card: 'Tarjeta regalo',
 }
 
 const SPLIT_OPTIONS = [2, 3, 4, 5, 6] as const
@@ -72,6 +74,7 @@ export function AccountPayments({
   const feedback = useFormFeedback()
   const singlePaymentOperationId = useRef<string | null>(null)
   const [method, setMethod] = useState<PaymentMethod>('cash')
+  const [giftCardCode, setGiftCardCode] = useState('')
   const [mixedMethodA, setMixedMethodA] = useState<PaymentMethod>('cash')
   const [mixedMethodB, setMixedMethodB] = useState<PaymentMethod>('card')
   const [amountDraft, setAmountDraft] = useState((totals.balanceCents / 100).toFixed(2))
@@ -115,6 +118,28 @@ export function AccountPayments({
     }
     if (feedback.pending) return
     feedback.setPending()
+    if (method === 'gift_card') {
+      void recordGiftCardPayment({
+        data: {
+          amountCents,
+          code: giftCardCode,
+          operationId: (singlePaymentOperationId.current ??= crypto.randomUUID()),
+          sessionId: session.id,
+          tenantId,
+          venueId,
+        },
+      })
+        .then(() => {
+          singlePaymentOperationId.current = null
+          onDone()
+        })
+        .catch((error: unknown) =>
+          feedback.setError(
+            paymentErrorMessage(error, 'No se ha podido aplicar la tarjeta regalo.'),
+          ),
+        )
+      return
+    }
     void recordPayment({
       data: {
         amountCents,
@@ -271,6 +296,17 @@ export function AccountPayments({
                 value={discountDraft}
               />
             </Field>
+            {method === 'gift_card' ? (
+              <Field>
+                <FieldLabel htmlFor="gift-card-code">Código de tarjeta regalo</FieldLabel>
+                <Input
+                  id="gift-card-code"
+                  onChange={(event) => setGiftCardCode(event.target.value)}
+                  required
+                  value={giftCardCode}
+                />
+              </Field>
+            ) : null}
             <Field>
               <FieldLabel htmlFor="discount-reason">Motivo</FieldLabel>
               <Input
@@ -396,7 +432,7 @@ export function AccountPayments({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectList>
-                      {PAYMENT_METHODS.map((option) => (
+                      {PAYMENT_METHODS.filter((option) => option !== 'gift_card').map((option) => (
                         <SelectItem id={option} key={option}>
                           {PAYMENT_METHOD_LABEL[option]}
                         </SelectItem>
@@ -428,7 +464,7 @@ export function AccountPayments({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectList>
-                      {PAYMENT_METHODS.map((option) => (
+                      {PAYMENT_METHODS.filter((option) => option !== 'gift_card').map((option) => (
                         <SelectItem id={option} key={option}>
                           {PAYMENT_METHOD_LABEL[option]}
                         </SelectItem>
