@@ -44,9 +44,21 @@ reproducible (comando ejecutado y su resultado).
 - `pnpm test:e2e -- --trace=off`: **2 pasados** (flujo público publicado y
   gestión tokenizada `Cache-Control: no-store`) y **26 omitidos** por no existir
   `E2E_STORAGE_STATE` de una cuenta de pruebas no productiva.
+- `pnpm build`: correcto; genera el artefacto Vercel/Nitro local. Quedan como
+  warnings del builder la versión de Vite, el chunk principal grande y los
+  módulos `use client` de dependencias; no son una validación de despliegue.
 - La evidencia anterior no cierra I2/I3/I4 ni ningún gate X: no sustituye un
   smoke autenticado, una suite aislada de RLS, restore, piloto, asesoría o
   migración/verificación remota.
+
+### Riesgo de migraciones pendiente de autorización
+
+La carpeta `supabase/migrations` contiene colisiones de versión en
+`20260910000026`, `20260910000031`, `20260910000035`, `20260910000058`,
+`20260910000062` y `20260913000048`. Es un riesgo de aplicación, no se corrige
+renombrando archivos sin comparar antes `supabase_migrations.schema_migrations`
+del proyecto autorizado. El gate X5 conserva esta acción como pendiente del
+responsable con acceso remoto.
 
 ## Fases
 

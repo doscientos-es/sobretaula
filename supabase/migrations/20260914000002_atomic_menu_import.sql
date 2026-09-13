@@ -75,3 +75,5 @@ $$;
 
 revoke all on function public.import_menu_catalog(uuid, jsonb) from public;
 grant execute on function public.import_menu_catalog(uuid, jsonb) to authenticated;
+
+
