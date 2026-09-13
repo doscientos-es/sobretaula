@@ -1,5 +1,6 @@
 export { getTenantBySlug, tenantBySlugQuery } from './application/get-tenant-by-slug'
 export { getUserDestinations } from './application/get-user-destinations'
+export { getTenantModules } from './application/modules'
 export { getDashboardMetrics } from './application/dashboard-metrics'
 export type { DashboardMetrics } from './application/dashboard-metrics'
 export { getDashboardActions } from './domain/dashboard-actions'
@@ -34,6 +35,14 @@ export {
   TENANT_STATUSES,
 } from './domain/tenant'
 export type { PlatformRole, Tenant, TenantRole, TenantStatus } from './domain/tenant'
+export {
+  canUseModule,
+  hasModuleDependencies,
+  isModuleEnabledForRole,
+  MODULE_DEFINITIONS,
+  MODULE_KEYS,
+} from './domain/modules'
+export type { ModuleDefinition, ModuleKey } from './domain/modules'
 export {
   ASSIGNABLE_TENANT_ROLES,
   canAssignTeamRole,

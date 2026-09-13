@@ -30,7 +30,8 @@ begin
    where tenant_id = p_tenant_id and operation_id = p_operation_id
    for update;
   if found then
-    return query select v_existing.payment_id, null::integer;
+    select gc.balance_cents into balance_cents from gift_cards as gc where gc.id = v_existing.gift_card_id;
+    return query select v_existing.payment_id, balance_cents;
     return;
   end if;
 
@@ -45,7 +46,8 @@ begin
      where tenant_id = p_tenant_id and operation_id = p_operation_id
      for update;
     if not found then raise exception 'gift_card_operation_binding_missing'; end if;
-    return query select v_existing.payment_id, null::integer;
+    select gc.balance_cents into balance_cents from gift_cards as gc where gc.id = v_existing.gift_card_id;
+    return query select v_existing.payment_id, balance_cents;
     return;
   end if;
 

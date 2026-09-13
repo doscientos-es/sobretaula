@@ -66,10 +66,12 @@ export const listIngredients = createServerFn({ method: 'GET' })
         .from('ingredients')
         .select(
           'id, name, unit, cost_cents_per_unit, allergens, is_vegan, is_active, minimum_stock',
+          { count: 'exact' },
         )
         .eq('tenant_id', data.tenantId)
         .ilike('name', `%${data.search}%`)
         .order('name')
+        .order('id')
         .range(from, to)
       if (error) throw new Error(`ingredients_load_failed:${error.code}`)
       const items = (rows ?? []).map((row) => ({
@@ -111,6 +113,7 @@ export const listSuppliers = createServerFn({ method: 'GET' })
         .eq('tenant_id', data.tenantId)
         .eq('is_active', true)
         .order('name')
+        .order('id')
         .range(range.from, range.to)
       if (data.search) request = request.ilike('name', `%${data.search}%`)
       const { data: rows, error, count } = await request
@@ -549,6 +552,7 @@ export const listPurchaseOrders = createServerFn({ method: 'GET' })
         .eq('tenant_id', data.tenantId)
         .eq('venue_id', data.venueId)
         .order('created_at', { ascending: false })
+        .order('id', { ascending: false })
         .range(...(Object.values(paginationRange(data)) as [number, number]))
       if (error) throw new Error(`purchase_orders_load_failed:${error.code}`)
       const items = (rows ?? []).map((row) => ({

@@ -1,107 +1,96 @@
-import {
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  Input,
-} from "@doscientos/ui";
-import { type FormEvent, useCallback, useEffect, useState } from "react";
+import { Button, Card, CardContent, CardHeader, CardTitle, Input } from '@doscientos/ui'
+import { type FormEvent, useCallback, useEffect, useState } from 'react'
 
-import { listIngredients, listSuppliers } from "../application/product";
+import { listIngredients, listSuppliers } from '../application/product'
 import {
   applyPurchaseDocumentReview,
   getPurchaseDocumentUrl,
   listPurchaseDocumentReviews,
   reviewPurchaseDocument,
-} from "../application/purchase-document-reviews";
+} from '../application/purchase-document-reviews'
 export function PurchaseDocumentReviewsPage({
   tenantId,
   venueId,
 }: {
-  tenantId: string;
-  venueId: string;
+  tenantId: string
+  venueId: string
 }) {
   const [rows, setRows] = useState<
-    Awaited<ReturnType<typeof listPurchaseDocumentReviews>>["items"]
-  >([]);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
+    Awaited<ReturnType<typeof listPurchaseDocumentReviews>>['items']
+  >([])
+  const [page, setPage] = useState(1)
+  const [hasMore, setHasMore] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [uploading, setUploading] = useState(false)
   const [ingredients, setIngredients] = useState<
-    Awaited<ReturnType<typeof listIngredients>>["items"]
-  >([]);
-  const [suppliers, setSuppliers] = useState<
-    Awaited<ReturnType<typeof listSuppliers>>["items"]
-  >([]);
-  const [supplierId, setSupplierId] = useState("");
-  const [reference, setReference] = useState("");
-  const [receivedOn, setReceivedOn] = useState(
-    new Date().toISOString().slice(0, 10),
-  );
-  const [mappings, setMappings] = useState<Record<string, string>>({});
+    Awaited<ReturnType<typeof listIngredients>>['items']
+  >([])
+  const [suppliers, setSuppliers] = useState<Awaited<ReturnType<typeof listSuppliers>>['items']>([])
+  const [supplierId, setSupplierId] = useState('')
+  const [reference, setReference] = useState('')
+  const [receivedOn, setReceivedOn] = useState(new Date().toISOString().slice(0, 10))
+  const [mappings, setMappings] = useState<Record<string, string>>({})
   const load = useCallback(async () => {
     try {
       const result = await listPurchaseDocumentReviews({
         data: { tenantId, venueId, page, pageSize: 25 },
-      });
-      setRows(result.items);
-      setHasMore(result.hasMore);
-      setError(null);
+      })
+      setRows(result.items)
+      setHasMore(result.hasMore)
+      setError(null)
     } catch {
-      setError("No se han podido cargar las revisiones.");
+      setError('No se han podido cargar las revisiones.')
     }
-  }, [page, tenantId, venueId]);
+  }, [page, tenantId, venueId])
   useEffect(() => {
-    void load();
-  }, [load]);
+    void load()
+  }, [load])
   useEffect(() => {
     void Promise.all([
       listIngredients({
-        data: { tenantId, page: 1, pageSize: 100, search: "" },
+        data: { tenantId, page: 1, pageSize: 100, search: '' },
       }),
-      listSuppliers({ data: { tenantId, page: 1, pageSize: 100, search: "" } }),
+      listSuppliers({ data: { tenantId, page: 1, pageSize: 100, search: '' } }),
     ]).then(([ingredientResult, supplierResult]) => {
-      setIngredients(ingredientResult.items);
-      setSuppliers(supplierResult.items);
-    });
-  }, [tenantId]);
-  async function review(id: string, status: "approved" | "rejected") {
+      setIngredients(ingredientResult.items)
+      setSuppliers(supplierResult.items)
+    })
+  }, [tenantId])
+  async function review(id: string, status: 'approved' | 'rejected') {
     try {
       await reviewPurchaseDocument({
         data: { tenantId, venueId, documentId: id, status },
-      });
-      await load();
+      })
+      await load()
     } catch {
-      setError("No se ha podido guardar la revisión.");
+      setError('No se ha podido guardar la revisión.')
     }
   }
   async function upload(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const file = form.get("file");
-    if (!(file instanceof File) || file.size === 0) return;
-    setUploading(true);
-    setError(null);
-    form.set("venueId", venueId);
+    event.preventDefault()
+    const form = new FormData(event.currentTarget)
+    const file = form.get('file')
+    if (!(file instanceof File) || file.size === 0) return
+    setUploading(true)
+    setError(null)
+    form.set('venueId', venueId)
     try {
       const response = await fetch(`/api/t/${tenantId}/purchase-document`, {
-        method: "POST",
+        method: 'POST',
         body: form,
-        credentials: "same-origin",
-      });
-      if (!response.ok) throw new Error();
-      event.currentTarget.reset();
-      await load();
+        credentials: 'same-origin',
+      })
+      if (!response.ok) throw new Error()
+      event.currentTarget.reset()
+      await load()
     } catch {
-      setError("No se ha podido subir el documento.");
+      setError('No se ha podido subir el documento.')
     } finally {
-      setUploading(false);
+      setUploading(false)
     }
   }
   async function apply(row: (typeof rows)[number]) {
-    if (!supplierId || !reference || !receivedOn) return;
+    if (!supplierId || !reference || !receivedOn) return
     try {
       await applyPurchaseDocumentReview({
         data: {
@@ -113,15 +102,13 @@ export function PurchaseDocumentReviewsPage({
           receivedOn,
           mappings: row.extraction.lines.map((_, lineIndex) => ({
             lineIndex,
-            ingredientId: mappings[`${row.id}:${lineIndex}`] ?? "",
+            ingredientId: mappings[`${row.id}:${lineIndex}`] ?? '',
           })),
         },
-      });
-      await load();
+      })
+      await load()
     } catch {
-      setError(
-        "No se ha podido aplicar el documento. Revisa proveedor y mapeos.",
-      );
+      setError('No se ha podido aplicar el documento. Revisa proveedor y mapeos.')
     }
   }
   return (
@@ -134,10 +121,7 @@ export function PurchaseDocumentReviewsPage({
           className="mb-5 flex flex-wrap items-end gap-3"
           onSubmit={(event) => void upload(event)}
         >
-          <label
-            className="grid gap-1 text-sm"
-            htmlFor="purchase-document-file"
-          >
+          <label className="grid gap-1 text-sm" htmlFor="purchase-document-file">
             Documento PDF o imagen
             <Input
               accept="application/pdf,image/jpeg,image/png,image/webp"
@@ -148,7 +132,7 @@ export function PurchaseDocumentReviewsPage({
             />
           </label>
           <Button disabled={uploading} type="submit">
-            {uploading ? "Subiendo…" : "Subir para revisar"}
+            {uploading ? 'Subiendo…' : 'Subir para revisar'}
           </Button>
         </form>
         {error ? <p className="text-destructive text-sm">{error}</p> : null}
@@ -167,12 +151,8 @@ export function PurchaseDocumentReviewsPage({
                         void (async () => {
                           const result = await getPurchaseDocumentUrl({
                             data: { tenantId, venueId, documentId: row.id },
-                          });
-                          window.open(
-                            result.url,
-                            "_blank",
-                            "noopener,noreferrer",
-                          );
+                          })
+                          window.open(result.url, '_blank', 'noopener,noreferrer')
                         })()
                       }
                       type="button"
@@ -181,10 +161,10 @@ export function PurchaseDocumentReviewsPage({
                     </button>
                   ) : (
                     row.fileName
-                  )}{" "}
+                  )}{' '}
                   · {row.extraction.lines.length} líneas · {row.status}
                 </span>
-                {row.status === "approved" && row.extraction.lines.length ? (
+                {row.status === 'approved' && row.extraction.lines.length ? (
                   <div className="grid w-full gap-2 rounded-md border p-3 text-sm">
                     <div className="flex flex-wrap gap-2">
                       <select
@@ -232,7 +212,7 @@ export function PurchaseDocumentReviewsPage({
                               [`${row.id}:${lineIndex}`]: event.target.value,
                             }))
                           }
-                          value={mappings[`${row.id}:${lineIndex}`] ?? ""}
+                          value={mappings[`${row.id}:${lineIndex}`] ?? ''}
                         >
                           <option value="">Ingrediente…</option>
                           {ingredients.map((ingredient) => (
@@ -243,26 +223,18 @@ export function PurchaseDocumentReviewsPage({
                         </select>
                       </label>
                     ))}
-                    <Button
-                      onClick={() => void apply(row)}
-                      size="sm"
-                      type="button"
-                    >
+                    <Button onClick={() => void apply(row)} size="sm" type="button">
                       Crear albarán y aplicar
                     </Button>
                   </div>
                 ) : null}
-                {row.status === "needs_review" ? (
+                {row.status === 'needs_review' ? (
                   <span className="flex gap-2">
-                    <Button
-                      onClick={() => void review(row.id, "approved")}
-                      size="sm"
-                      type="button"
-                    >
+                    <Button onClick={() => void review(row.id, 'approved')} size="sm" type="button">
                       Aprobar extracción
                     </Button>
                     <Button
-                      onClick={() => void review(row.id, "rejected")}
+                      onClick={() => void review(row.id, 'rejected')}
                       size="sm"
                       type="button"
                       variant="outline"
@@ -275,9 +247,7 @@ export function PurchaseDocumentReviewsPage({
             ))}
           </ul>
         ) : (
-          <p className="text-muted-foreground text-sm">
-            No hay documentos pendientes.
-          </p>
+          <p className="text-muted-foreground text-sm">No hay documentos pendientes.</p>
         )}
         {!error ? (
           <div className="mt-4 flex items-center justify-between">
@@ -302,5 +272,5 @@ export function PurchaseDocumentReviewsPage({
         ) : null}
       </CardContent>
     </Card>
-  );
+  )
 }

@@ -1,45 +1,37 @@
-import {
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  Input,
-} from "@doscientos/ui";
-import { useCallback, useEffect, useState } from "react";
+import { Button, Card, CardContent, CardHeader, CardTitle, Input } from '@doscientos/ui'
+import { useCallback, useEffect, useState } from 'react'
 
 import {
   adjustLoyaltyPoints,
   listLoyaltyGuests,
   redeemLoyaltyPoints,
   type LoyaltyGuest,
-} from "../application/loyalty";
+} from '../application/loyalty'
 
 export function LoyaltyPage({ tenantId }: { tenantId: string }) {
-  const [guests, setGuests] = useState<LoyaltyGuest[]>([]);
-  const [selected, setSelected] = useState<LoyaltyGuest | null>(null);
-  const [points, setPoints] = useState("");
-  const [reason, setReason] = useState("");
-  const [feedback, setFeedback] = useState<string | null>(null);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(false);
+  const [guests, setGuests] = useState<LoyaltyGuest[]>([])
+  const [selected, setSelected] = useState<LoyaltyGuest | null>(null)
+  const [points, setPoints] = useState('')
+  const [reason, setReason] = useState('')
+  const [feedback, setFeedback] = useState<string | null>(null)
+  const [page, setPage] = useState(1)
+  const [hasMore, setHasMore] = useState(false)
   const load = useCallback(async () => {
     try {
       const result = await listLoyaltyGuests({
         data: { tenantId, page, pageSize: 25 },
-      });
-      setGuests(result.items);
-      setHasMore(result.hasMore);
+      })
+      setGuests(result.items)
+      setHasMore(result.hasMore)
     } catch {
-      setFeedback("No se ha podido cargar fidelización.");
+      setFeedback('No se ha podido cargar fidelización.')
     }
-  }, [page, tenantId]);
+  }, [page, tenantId])
   useEffect(() => {
-    void load();
-  }, [load]);
+    void load()
+  }, [load])
   async function save() {
-    if (!selected || !reason.trim() || !Number.isInteger(Number(points)))
-      return;
+    if (!selected || !reason.trim() || !Number.isInteger(Number(points))) return
     try {
       await adjustLoyaltyPoints({
         data: {
@@ -48,24 +40,19 @@ export function LoyaltyPage({ tenantId }: { tenantId: string }) {
           points: Number(points),
           reason,
         },
-      });
-      setFeedback("Saldo actualizado y auditado.");
-      setPoints("");
-      setReason("");
-      setSelected(null);
-      await load();
+      })
+      setFeedback('Saldo actualizado y auditado.')
+      setPoints('')
+      setReason('')
+      setSelected(null)
+      await load()
     } catch {
-      setFeedback("No se ha podido actualizar el saldo.");
+      setFeedback('No se ha podido actualizar el saldo.')
     }
   }
   async function redeem() {
-    if (
-      !selected ||
-      !reason.trim() ||
-      !Number.isInteger(Number(points)) ||
-      Number(points) <= 0
-    )
-      return;
+    if (!selected || !reason.trim() || !Number.isInteger(Number(points)) || Number(points) <= 0)
+      return
     try {
       await redeemLoyaltyPoints({
         data: {
@@ -74,14 +61,14 @@ export function LoyaltyPage({ tenantId }: { tenantId: string }) {
           points: Number(points),
           reward: reason,
         },
-      });
-      setFeedback("Recompensa canjeada y auditada.");
-      setPoints("");
-      setReason("");
-      setSelected(null);
-      await load();
+      })
+      setFeedback('Recompensa canjeada y auditada.')
+      setPoints('')
+      setReason('')
+      setSelected(null)
+      await load()
     } catch {
-      setFeedback("No hay puntos suficientes o no se ha podido canjear.");
+      setFeedback('No hay puntos suficientes o no se ha podido canjear.')
     }
   }
   return (
@@ -92,12 +79,9 @@ export function LoyaltyPage({ tenantId }: { tenantId: string }) {
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground text-sm">
-            Convierte cada visita en recurrencia: 1 punto por euro y ajustes
-            siempre auditados.
+            Convierte cada visita en recurrencia: 1 punto por euro y ajustes siempre auditados.
           </p>
-          {feedback ? (
-            <output className="mt-2 block text-sm">{feedback}</output>
-          ) : null}
+          {feedback ? <output className="mt-2 block text-sm">{feedback}</output> : null}
         </CardContent>
       </Card>
       <Card>
@@ -117,11 +101,7 @@ export function LoyaltyPage({ tenantId }: { tenantId: string }) {
                   </div>
                   <div className="flex items-center gap-3">
                     <strong>{guest.points} puntos</strong>
-                    <Button
-                      onClick={() => setSelected(guest)}
-                      size="sm"
-                      type="button"
-                    >
+                    <Button onClick={() => setSelected(guest)} size="sm" type="button">
                       Ajustar
                     </Button>
                   </div>
@@ -129,9 +109,7 @@ export function LoyaltyPage({ tenantId }: { tenantId: string }) {
               ))}
             </ul>
           ) : (
-            <p className="text-muted-foreground text-sm">
-              Todavía no hay clientes con saldo.
-            </p>
+            <p className="text-muted-foreground text-sm">Todavía no hay clientes con saldo.</p>
           )}
           <div className="mt-4 flex items-center justify-between">
             <Button
@@ -176,23 +154,15 @@ export function LoyaltyPage({ tenantId }: { tenantId: string }) {
             <Button onClick={() => void save()} type="button">
               Guardar ajuste
             </Button>
-            <Button
-              onClick={() => void redeem()}
-              type="button"
-              variant="outline"
-            >
+            <Button onClick={() => void redeem()} type="button" variant="outline">
               Canjear recompensa
             </Button>
-            <Button
-              onClick={() => setSelected(null)}
-              type="button"
-              variant="outline"
-            >
+            <Button onClick={() => setSelected(null)} type="button" variant="outline">
               Cancelar
             </Button>
           </CardContent>
         </Card>
       ) : null}
     </section>
-  );
+  )
 }
