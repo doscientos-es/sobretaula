@@ -259,43 +259,43 @@ export function FloorPlanPage({
   }
   const layoutIssues = activeVersion
     ? [
-      ...validateLayout(placements, activeVersion),
-      ...findNarrowPassages(placements, minimumAisleCm).map((passage) => ({
-        code: 'narrow_passage' as const,
-        placementId: passage.firstPlacementId,
-        relatedPlacementId: passage.secondPlacementId,
-      })),
-    ]
+        ...validateLayout(placements, activeVersion),
+        ...findNarrowPassages(placements, minimumAisleCm).map((passage) => ({
+          code: 'narrow_passage' as const,
+          placementId: passage.firstPlacementId,
+          relatedPlacementId: passage.secondPlacementId,
+        })),
+      ]
     : []
   const blockedAccesses = findBlockedAccesses(placements, elements)
   const selectedPlacement = placements.find((item) => item.id === selectedId)
   const alignmentGuides = selectedPlacement
     ? placements
-      .filter((item) => item.id !== selectedPlacement.id)
-      .flatMap((item) => {
-        const guides: Array<{ axis: 'x' | 'y'; value: number }> = []
-        const selectedX = [
-          selectedPlacement.xCm,
-          selectedPlacement.xCm + selectedPlacement.widthCm / 2,
-          selectedPlacement.xCm + selectedPlacement.widthCm,
-        ]
-        const selectedY = [
-          selectedPlacement.yCm,
-          selectedPlacement.yCm + selectedPlacement.heightCm / 2,
-          selectedPlacement.yCm + selectedPlacement.heightCm,
-        ]
-        const otherX = [item.xCm, item.xCm + item.widthCm / 2, item.xCm + item.widthCm]
-        const otherY = [item.yCm, item.yCm + item.heightCm / 2, item.yCm + item.heightCm]
-        const xMatch = otherX.find((candidate) =>
-          selectedX.some((value) => Math.abs(value - candidate) <= gridSize / 2),
-        )
-        const yMatch = otherY.find((candidate) =>
-          selectedY.some((value) => Math.abs(value - candidate) <= gridSize / 2),
-        )
-        if (xMatch !== undefined) guides.push({ axis: 'x', value: xMatch })
-        if (yMatch !== undefined) guides.push({ axis: 'y', value: yMatch })
-        return guides
-      })
+        .filter((item) => item.id !== selectedPlacement.id)
+        .flatMap((item) => {
+          const guides: Array<{ axis: 'x' | 'y'; value: number }> = []
+          const selectedX = [
+            selectedPlacement.xCm,
+            selectedPlacement.xCm + selectedPlacement.widthCm / 2,
+            selectedPlacement.xCm + selectedPlacement.widthCm,
+          ]
+          const selectedY = [
+            selectedPlacement.yCm,
+            selectedPlacement.yCm + selectedPlacement.heightCm / 2,
+            selectedPlacement.yCm + selectedPlacement.heightCm,
+          ]
+          const otherX = [item.xCm, item.xCm + item.widthCm / 2, item.xCm + item.widthCm]
+          const otherY = [item.yCm, item.yCm + item.heightCm / 2, item.yCm + item.heightCm]
+          const xMatch = otherX.find((candidate) =>
+            selectedX.some((value) => Math.abs(value - candidate) <= gridSize / 2),
+          )
+          const yMatch = otherY.find((candidate) =>
+            selectedY.some((value) => Math.abs(value - candidate) <= gridSize / 2),
+          )
+          if (xMatch !== undefined) guides.push({ axis: 'x', value: xMatch })
+          if (yMatch !== undefined) guides.push({ axis: 'y', value: yMatch })
+          return guides
+        })
     : []
   const viewBox = activeVersion
     ? `${Math.max(0, Math.min(activeVersion.widthCm * (1 - 1 / zoom), (activeVersion.widthCm * (1 - 1 / zoom)) / 2 + pan.x)).toFixed(2)} ${Math.max(0, Math.min(activeVersion.heightCm * (1 - 1 / zoom), (activeVersion.heightCm * (1 - 1 / zoom)) / 2 + pan.y)).toFixed(2)} ${(activeVersion.widthCm / zoom).toFixed(2)} ${(activeVersion.heightCm / zoom).toFixed(2)}`
@@ -362,7 +362,7 @@ export function FloorPlanPage({
       candidates.reduce(
         (best, candidate) =>
           Math.abs(value - candidate) <= gridSize / 2 &&
-            Math.abs(value - candidate) < Math.abs(value - best)
+          Math.abs(value - candidate) < Math.abs(value - best)
             ? candidate
             : best,
         value,
@@ -563,22 +563,22 @@ export function FloorPlanPage({
     const target =
       axis === 'right' || axis === 'bottom'
         ? Math.max(
-          ...selected.map((item) =>
-            axis === 'right' ? item.xCm + item.widthCm : item.yCm + item.heightCm,
-          ),
-        )
+            ...selected.map((item) =>
+              axis === 'right' ? item.xCm + item.widthCm : item.yCm + item.heightCm,
+            ),
+          )
         : Math.min(...selected.map((item) => (axis === 'x' ? item.xCm : item.yCm)))
     const next = placements.map((item) =>
       selectedIds.includes(item.id)
         ? {
-          ...item,
-          [axis === 'x' || axis === 'right' ? 'xCm' : 'yCm']:
-            axis === 'right'
-              ? target - item.widthCm
-              : axis === 'bottom'
-                ? target - item.heightCm
-                : target,
-        }
+            ...item,
+            [axis === 'x' || axis === 'right' ? 'xCm' : 'yCm']:
+              axis === 'right'
+                ? target - item.widthCm
+                : axis === 'bottom'
+                  ? target - item.heightCm
+                  : target,
+          }
         : item,
     )
     if (
@@ -983,7 +983,10 @@ export function FloorPlanPage({
                 {activeVersion.widthCm / 100} m × {activeVersion.heightCm / 100} m ·{' '}
                 {placements.length} mesas
               </CardDescription>
-              <div className="flex flex-wrap items-center gap-2 pt-2" aria-label="Controles de zoom">
+              <div
+                className="flex flex-wrap items-center gap-2 pt-2"
+                aria-label="Controles de zoom"
+              >
                 <Button
                   aria-label="Alejar plano"
                   disabled={zoom <= 1}
@@ -1048,7 +1051,7 @@ export function FloorPlanPage({
                   Ajuste automático activo:{' '}
                   {alignmentGuides.some((guide) => guide.axis === 'x') ? 'alineación vertical' : ''}
                   {alignmentGuides.some((guide) => guide.axis === 'x') &&
-                    alignmentGuides.some((guide) => guide.axis === 'y')
+                  alignmentGuides.some((guide) => guide.axis === 'y')
                     ? ' y '
                     : ''}
                   {alignmentGuides.some((guide) => guide.axis === 'y')
@@ -1148,7 +1151,7 @@ export function FloorPlanPage({
                       y:
                         current.y -
                         ((event.clientY - start.y) / bounds.height) *
-                        (activeVersion.heightCm / zoom),
+                          (activeVersion.heightCm / zoom),
                     }))
                     panPointer.current = { ...start, x: event.clientX, y: event.clientY }
                   }}
