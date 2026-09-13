@@ -1,37 +1,37 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from '@playwright/test'
 
-test("public reservation page renders an intentional empty state", async ({ page }) => {
-  await page.goto("/reservar/la-fonda-demo");
-  await expect(page.getByRole("heading", { name: "La Fonda Demo" })).toBeVisible();
-  await expect(page.getByText(/todavía no ha publicado ningún turno/i).first()).toBeVisible();
-  await expect(page.getByRole("button", { name: "Reservar mesa" })).toHaveCount(0);
-});
+test('public reservation page renders an intentional empty state', async ({ page }) => {
+  await page.goto('/reservar/la-fonda-demo')
+  await expect(page.getByRole('heading', { name: 'La Fonda Demo' })).toBeVisible()
+  await expect(page.getByText(/todavía no ha publicado ningún turno/i).first()).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Reservar mesa' })).toHaveCount(0)
+})
 
-test.describe("authenticated restaurant smoke", () => {
+test.describe('authenticated restaurant smoke', () => {
   test.skip(
     !process.env.E2E_STORAGE_STATE,
-    "Requires E2E_STORAGE_STATE from a non-production test account",
-  );
+    'Requires E2E_STORAGE_STATE from a non-production test account',
+  )
 
-  test.use({ storageState: process.env.E2E_STORAGE_STATE });
+  test.use({ storageState: process.env.E2E_STORAGE_STATE })
 
   for (const path of [
-    "/t/la-fonda-demo",
-    "/t/la-fonda-demo/l/principal/tpv",
-    "/t/la-fonda-demo/l/principal/plano",
-    "/t/la-fonda-demo/l/principal/servicio",
-    "/t/la-fonda-demo/l/principal/reservas",
-    "/t/la-fonda-demo/facturacion",
-    "/t/la-fonda-demo/facturas",
-    "/t/la-fonda-demo/comunicaciones",
-    "/t/la-fonda-demo/equipo",
-    "/t/la-fonda-demo/suscripcion/facturas",
+    '/t/la-fonda-demo',
+    '/t/la-fonda-demo/l/principal/tpv',
+    '/t/la-fonda-demo/l/principal/plano',
+    '/t/la-fonda-demo/l/principal/servicio',
+    '/t/la-fonda-demo/l/principal/reservas',
+    '/t/la-fonda-demo/facturacion',
+    '/t/la-fonda-demo/facturas',
+    '/t/la-fonda-demo/comunicaciones',
+    '/t/la-fonda-demo/equipo',
+    '/t/la-fonda-demo/suscripcion/facturas',
   ]) {
     test(`${path} does not render an error boundary`, async ({ page }) => {
-      await page.goto(path);
-      await expect(page.getByText("Something went wrong!")).toHaveCount(0);
-      await expect(page.getByText("No se ha podido cargar esta pantalla")).toHaveCount(0);
-      await expect(page.locator("body")).not.toBeEmpty();
-    });
+      await page.goto(path)
+      await expect(page.getByText('Something went wrong!')).toHaveCount(0)
+      await expect(page.getByText('No se ha podido cargar esta pantalla')).toHaveCount(0)
+      await expect(page.locator('body')).not.toBeEmpty()
+    })
   }
-});
+})

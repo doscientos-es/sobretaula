@@ -5,8 +5,8 @@ import {
   getReservationTerms,
   ReservationPage,
 } from '@/features/reservations'
-import { useLocale } from '@/shared/lib/i18n/locale-preference'
 import { loadVenueRouteContext } from '@/features/venues'
+import { useLocale } from '@/shared/lib/i18n/locale-preference'
 
 export const Route = createFileRoute('/t/$slug/l/$venue/reservas')({
   loader: async ({ params }) => {

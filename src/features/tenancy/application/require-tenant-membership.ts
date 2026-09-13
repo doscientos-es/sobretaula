@@ -51,13 +51,25 @@ export const operationalTenantMiddleware = createMiddleware({ type: 'function' }
       .tenantMembership
     if (!tenantMembership) throw new Response('Unauthenticated', { status: 401 })
 
-    const { data: tenant, error } = await createRequestSupabaseClient(tenantMembership.accessToken)
-      .from('tenants')
-      .select('status')
-      .eq('id', tenantMembership.tenantId)
-      .single()
-    if (error || !tenant) throw new Response('Forbidden', { status: 403 })
+    const supabase = createRequestSupabaseClient(tenantMembership.accessToken)
+    const [{ data: tenant, error }, { data: subscription, error: subscriptionError }] =
+      await Promise.all([
+        supabase
+          .from('tenants')
+          .select('status')
+          .eq('id', tenantMembership.tenantId)
+          .single(),
+        supabase
+          .from('subscriptions')
+          .select('payment_method_id, status')
+          .eq('tenant_id', tenantMembership.tenantId)
+          .maybeSingle(),
+      ])
+    if (error || subscriptionError || !tenant) throw new Response('Forbidden', { status: 403 })
     if (tenant.status === 'suspended') throw new Response('Tenant suspended', { status: 423 })
+    if (subscription?.status === 'trialing' && !subscription.payment_method_id) {
+      throw new Response('Payment method required', { status: 402 })
+    }
     return next()
   },
 )

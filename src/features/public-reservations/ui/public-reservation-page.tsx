@@ -96,6 +96,7 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
   const [availableSlots, setAvailableSlots] = useState<string[]>([])
   const [alternativeSlots, setAlternativeSlots] = useState<string[]>([])
   const [availabilityLoading, setAvailabilityLoading] = useState(false)
+  const [availabilityError, setAvailabilityError] = useState(false)
   const availabilityRequestRef = useRef(0)
   const service = profile.services.find((candidate) => candidate.id === serviceId)
   const dates = useMemo(
@@ -111,6 +112,7 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
     setTime('')
     setAlternativeSlots([])
     setAvailableSlots([])
+    setAvailabilityError(false)
     setAvailabilityLoading(false)
   }
 
@@ -120,6 +122,7 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
     setDate(value)
     setTime('')
     setAlternativeSlots([])
+    setAvailabilityError(false)
     if (!value || !service) {
       setAvailableSlots([])
       return
@@ -156,7 +159,10 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
         )
       }
     } catch {
-      if (requestId === availabilityRequestRef.current) setAvailableSlots([])
+      if (requestId === availabilityRequestRef.current) {
+        setAvailableSlots([])
+        setAvailabilityError(true)
+      }
     } finally {
       if (requestId === availabilityRequestRef.current) setAvailabilityLoading(false)
     }
@@ -369,7 +375,9 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                         </option>
                       ))}
                     </select>
-                    {date && !availabilityLoading && availableSlots.length === 0 ? (
+                    {date && !availabilityLoading && availabilityError ? (
+                      <p className="mt-2 text-xs text-[#c34d3e]">{t('public.availabilityFailed')}</p>
+                    ) : date && !availabilityLoading && availableSlots.length === 0 ? (
                       <p className="mt-2 text-xs text-[#c34d3e]">
                         {areaId ? t('public.noSlotsInArea') : t('public.noSlots')}
                       </p>

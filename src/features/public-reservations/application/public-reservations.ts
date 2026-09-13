@@ -4,6 +4,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 
 import { createAnonSupabaseClient } from '@/shared/lib/supabase/server/create-server-client'
+import type { Locale } from '@/shared/lib/i18n/locale'
 
 const slugInput = z.object({ slug: z.string().trim().min(2).max(50) })
 export const publicReservationInput = z.object({
@@ -39,6 +40,7 @@ export interface PublicReservationService {
 }
 
 export interface PublicReservationProfile {
+  defaultLocale: Locale
   name: string
   slug: string
   timezone: string
@@ -71,6 +73,7 @@ function hashRateKey(slug: string, email: string, phone?: string): string {
 }
 
 interface PublicReservationProfileRow {
+  default_locale: Locale
   ends_at_time: string | null
   service_id: string | null
   service_name: string | null
@@ -127,6 +130,7 @@ export const getPublicReservationProfile = createServerFn({ method: 'GET' })
     const typedAreaRows = (areaRows ?? []) as PublicReservationAreaRow[]
     const terms = ((termsResult.data ?? []) as PublicReservationTermsRow[])[0]
     return {
+      defaultLocale: first.default_locale,
       name: first.tenant_name,
       services: typedRows.filter(isServiceRow).map((row) => ({
         endsAtTime: row.ends_at_time,

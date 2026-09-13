@@ -185,6 +185,8 @@ const es = {
   'public.noSlotsInArea':
     'No quedan horas libres en esta zona para ese día y número de personas. Prueba otra zona.',
   'public.noSlots': 'No quedan horas libres para ese día y número de personas.',
+  'public.availabilityFailed':
+    'No podemos comprobar la disponibilidad ahora. Vuelve a intentarlo o contacta con el restaurante.',
   'public.alternativeSlots': 'Primeras horas libres en otras zonas:',
   'public.searching': 'Buscando horas disponibles…',
   'public.people': 'Personas',
@@ -234,7 +236,7 @@ const es = {
   'public.backHome': 'Volver al inicio',
   'invoices.title': 'Facturas',
   'invoices.empty': 'Todavía no hay facturas emitidas.',
-  'invoices.env.test': 'Entorno de pruebas VERI*FACTU',
+  'invoices.env.test': 'Entorno no productivo: VERI*FACTU en pruebas',
   'settings.title': 'Ajustes',
   'settings.description': 'Gestiona tus preferencias de cuenta y de uso de SobreTaula.',
   'settings.preferences': 'Preferencias',
@@ -458,6 +460,8 @@ const ca: Record<MessageKey, string> = {
   'public.noSlotsInArea':
     'No queden hores lliures en aquesta zona per a aquell dia i nombre de persones. Prova una altra zona.',
   'public.noSlots': 'No queden hores lliures per a aquell dia i nombre de persones.',
+  'public.availabilityFailed':
+    'No podem comprovar la disponibilitat ara. Torna-ho a provar o contacta amb el restaurant.',
   'public.alternativeSlots': 'Primeres hores lliures en altres zones:',
   'public.searching': 'Buscant hores disponibles…',
   'public.people': 'Persones',
@@ -507,7 +511,7 @@ const ca: Record<MessageKey, string> = {
   'public.backHome': 'Torna a l’inici',
   'invoices.title': 'Factures',
   'invoices.empty': 'Encara no hi ha factures emeses.',
-  'invoices.env.test': 'Entorn de proves VERI*FACTU',
+  'invoices.env.test': 'Entorn no productiu: VERI*FACTU en proves',
   'settings.title': 'Configuració',
   'settings.description': 'Gestiona les teves preferències de compte i d’ús de SobreTaula.',
   'settings.preferences': 'Preferències',

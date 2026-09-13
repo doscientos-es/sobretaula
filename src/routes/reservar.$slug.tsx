@@ -12,7 +12,7 @@ function PublicBookingRoute() {
   const profile = Route.useLoaderData()
   if (!profile) throw notFound()
   return (
-    <LocaleProvider browserDefault storageKey={PUBLIC_LOCALE_STORAGE_KEY}>
+    <LocaleProvider defaultLocale={profile.defaultLocale} storageKey={PUBLIC_LOCALE_STORAGE_KEY}>
       <PublicReservationPage profile={profile} />
     </LocaleProvider>
   )
