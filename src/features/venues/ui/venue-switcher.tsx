@@ -36,7 +36,7 @@ export function VenueSwitcher({
                 key={venue.id}
                 to="/t/$slug/l/$venue"
                 params={{ slug: tenantSlug, venue: venue.slug }}
-                aria-current={venue.slug === activeVenueSlug ? 'true' : undefined}
+                aria-current={venue.slug === activeVenueSlug ? 'page' : undefined}
                 className={`st-saas-nav-link flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${
                   venue.slug === activeVenueSlug ? 'st-saas-nav-link--active' : ''
                 }`}

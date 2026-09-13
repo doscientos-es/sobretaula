@@ -5,20 +5,26 @@ import {
   operationalTenantMiddleware,
   tenantMembershipMiddleware,
 } from '@/features/tenancy/application/require-tenant-membership'
+import { paginationRange, type PaginatedResult } from '@/shared/lib/pagination'
 import { createRequestSupabaseClient } from '@/shared/lib/supabase/server/create-server-client'
 
+import { validateDeliveryNoteLines } from '../domain/delivery-notes'
 import { calculateStock, findLowStock } from '../domain/inventory'
 import { calculateRecipeCost } from '../domain/product-costing'
 import {
   createIngredientInput,
+  deliveryNoteInput,
+  ingredientListInput,
   inventoryMovementInput,
   inventoryQueryInput,
   productTenantInput,
   recipeInput,
   recipeQueryInput,
   recipeVersionsInput,
+  receiveDeliveryNoteInput,
   restoreRecipeVersionInput,
   requireProductEditor,
+  supplierInput,
 } from './product-schema'
 
 const middleware = [
@@ -29,26 +35,75 @@ const middleware = [
 
 export const listIngredients = createServerFn({ method: 'GET' })
   .middleware(middleware)
+  .validator(ingredientListInput)
+  .handler(
+    async ({
+      context,
+      data,
+    }): Promise<
+      PaginatedResult<{
+        id: string
+        name: string
+        unit: string
+        costCentsPerUnit: number
+        allergens: string[]
+        isVegan: boolean
+        isActive: boolean
+        minimumStock: number
+      }>
+    > => {
+      requireProductEditor(context.tenantMembership.role)
+      const { from, to } = paginationRange(data)
+      const {
+        data: rows,
+        error,
+        count,
+      } = await createRequestSupabaseClient(context.tenantMembership.accessToken)
+        .from('ingredients')
+        .select(
+          'id, name, unit, cost_cents_per_unit, allergens, is_vegan, is_active, minimum_stock',
+        )
+        .eq('tenant_id', data.tenantId)
+        .ilike('name', `%${data.search}%`)
+        .order('name')
+        .range(from, to)
+      if (error) throw new Error(`ingredients_load_failed:${error.code}`)
+      const items = (rows ?? []).map((row) => ({
+        id: row.id as string,
+        name: row.name as string,
+        unit: row.unit as string,
+        costCentsPerUnit: Number(row.cost_cents_per_unit),
+        allergens: (row.allergens as string[]) ?? [],
+        isVegan: Boolean(row.is_vegan),
+        isActive: Boolean(row.is_active),
+        minimumStock: Number(row.minimum_stock ?? 0),
+      }))
+      const total = count ?? items.length
+      return { items, page: data.page, pageSize: data.pageSize, total, hasMore: to + 1 < total }
+    },
+  )
+
+export const listSuppliers = createServerFn({ method: 'GET' })
+  .middleware(middleware)
   .validator(productTenantInput)
   .handler(async ({ context, data }) => {
     requireProductEditor(context.tenantMembership.role)
     const { data: rows, error } = await createRequestSupabaseClient(
       context.tenantMembership.accessToken,
     )
-      .from('ingredients')
-      .select('id, name, unit, cost_cents_per_unit, allergens, is_vegan, is_active, minimum_stock')
+      .from('suppliers')
+      .select('id, name, tax_id, phone, email')
       .eq('tenant_id', data.tenantId)
+      .eq('is_active', true)
       .order('name')
-    if (error) throw new Error(`ingredients_load_failed:${error.code}`)
+      .limit(100)
+    if (error) throw new Error(`suppliers_load_failed:${error.code}`)
     return (rows ?? []).map((row) => ({
       id: row.id as string,
       name: row.name as string,
-      unit: row.unit as string,
-      costCentsPerUnit: Number(row.cost_cents_per_unit),
-      allergens: (row.allergens as string[]) ?? [],
-      isVegan: Boolean(row.is_vegan),
-      isActive: Boolean(row.is_active),
-      minimumStock: Number(row.minimum_stock ?? 0),
+      taxId: row.tax_id as string | null,
+      phone: row.phone as string | null,
+      email: row.email as string | null,
     }))
   })
 
@@ -313,4 +368,72 @@ export const addInventoryMovement = createServerFn({ method: 'POST' })
       .single()
     if (error || !row) throw new Error(`inventory_movement_failed:${error?.code ?? 'unknown'}`)
     return { movementId: row.id as string }
+  })
+
+export const createSupplier = createServerFn({ method: 'POST' })
+  .middleware(middleware)
+  .validator(supplierInput)
+  .handler(async ({ context, data }) => {
+    requireProductEditor(context.tenantMembership.role)
+    const { data: row, error } = await createRequestSupabaseClient(
+      context.tenantMembership.accessToken,
+    )
+      .from('suppliers')
+      .insert({
+        tenant_id: data.tenantId,
+        name: data.name,
+        tax_id: data.taxId ?? null,
+        phone: data.phone ?? null,
+        email: data.email ?? null,
+      })
+      .select('id')
+      .single()
+    if (error || !row) throw new Error(`supplier_create_failed:${error?.code ?? 'unknown'}`)
+    return { supplierId: row.id as string }
+  })
+
+export const createDeliveryNote = createServerFn({ method: 'POST' })
+  .middleware(middleware)
+  .validator(deliveryNoteInput)
+  .handler(async ({ context, data }) => {
+    requireProductEditor(context.tenantMembership.role)
+    validateDeliveryNoteLines(data.lines)
+    const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    const { data: note, error } = await supabase
+      .from('delivery_notes')
+      .insert({
+        tenant_id: data.tenantId,
+        venue_id: data.venueId,
+        supplier_id: data.supplierId,
+        reference: data.reference,
+        received_on: data.receivedOn,
+        notes: data.notes,
+      })
+      .select('id')
+      .single()
+    if (error || !note) throw new Error(`delivery_note_create_failed:${error?.code ?? 'unknown'}`)
+    const { error: linesError } = await supabase.from('delivery_note_lines').insert(
+      data.lines.map((line) => ({
+        delivery_note_id: note.id,
+        ingredient_id: line.ingredientId,
+        quantity: line.quantity,
+        unit_cost_cents: line.unitCostCents,
+        tenant_id: data.tenantId,
+      })),
+    )
+    if (linesError) throw new Error(`delivery_note_lines_create_failed:${linesError.code}`)
+    return { deliveryNoteId: note.id as string }
+  })
+
+export const receiveDeliveryNote = createServerFn({ method: 'POST' })
+  .middleware(middleware)
+  .validator(receiveDeliveryNoteInput)
+  .handler(async ({ context, data }) => {
+    requireProductEditor(context.tenantMembership.role)
+    const { error } = await createRequestSupabaseClient(context.tenantMembership.accessToken).rpc(
+      'receive_delivery_note',
+      { p_delivery_note_id: data.deliveryNoteId },
+    )
+    if (error) throw new Error(`delivery_note_receive_failed:${error.code}`)
+    return { ok: true }
   })

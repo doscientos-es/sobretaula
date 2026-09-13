@@ -85,7 +85,7 @@ export const getBillingOverview = createServerFn({ method: 'GET' })
       findFiscalSettings(supabase, data.tenantId),
       findVerifactuCertificateMetadata(supabase, data.tenantId),
       listSeries(supabase, data.tenantId),
-      listInvoices(supabase, data.tenantId),
+      listInvoices(supabase, data.tenantId, data),
       supabase
         .from('platform_billing_customers')
         .select('address_line, city, postal_code, tax_id, legal_name')
@@ -94,7 +94,7 @@ export const getBillingOverview = createServerFn({ method: 'GET' })
     ])
     return {
       certificate,
-      invoices,
+      invoices: invoices.items,
       series,
       settings: settings ? validateFiscalSettings(settings) : null,
       prefill:

@@ -51,6 +51,8 @@ import { Route as TSlugFacturasRouteImport } from './routes/t.$slug.facturas'
 import { Route as ApiTTenantIdVerifactuCertificateRouteImport } from './routes/api.t.$tenantId.verifactu-certificate'
 import { Route as TSlugLVenueRouteImport } from './routes/t.$slug.l.$venue'
 import { Route as TSlugLNuevoRouteImport } from './routes/t.$slug.l.nuevo'
+import { Route as TSlugManifestWebmanifestRouteImport } from './routes/t.$slug.manifest.webmanifest'
+import { Route as TSlugPwaIconSvgRouteImport } from './routes/t.$slug.pwa-icon.svg'
 import { Route as TSlugSuscripcionFacturasRouteImport } from './routes/t.$slug.suscripcion.facturas'
 import { Route as TSlugLVenueIndexRouteImport } from './routes/t.$slug.l.$venue.index'
 import { Route as TSlugLVenueBloquesRouteImport } from './routes/t.$slug.l.$venue.bloques'
@@ -279,6 +281,17 @@ const TSlugLNuevoRoute = TSlugLNuevoRouteImport.update({
   path: '/l/nuevo',
   getParentRoute: () => TSlugRoute,
 } as any)
+const TSlugManifestWebmanifestRoute =
+  TSlugManifestWebmanifestRouteImport.update({
+    id: '/manifest/webmanifest',
+    path: '/manifest/webmanifest',
+    getParentRoute: () => TSlugRoute,
+  } as any)
+const TSlugPwaIconSvgRoute = TSlugPwaIconSvgRouteImport.update({
+  id: '/pwa-icon/svg',
+  path: '/pwa-icon/svg',
+  getParentRoute: () => TSlugRoute,
+} as any)
 const TSlugSuscripcionFacturasRoute =
   TSlugSuscripcionFacturasRouteImport.update({
     id: '/suscripcion/facturas',
@@ -402,6 +415,8 @@ export interface FileRoutesByFullPath {
   '/api/t/$tenantId/verifactu-certificate': typeof ApiTTenantIdVerifactuCertificateRoute
   '/t/$slug/l/$venue': typeof TSlugLVenueRouteWithChildren
   '/t/$slug/l/nuevo': typeof TSlugLNuevoRoute
+  '/t/$slug/manifest/webmanifest': typeof TSlugManifestWebmanifestRoute
+  '/t/$slug/pwa-icon/svg': typeof TSlugPwaIconSvgRoute
   '/t/$slug/suscripcion/facturas': typeof TSlugSuscripcionFacturasRoute
   '/t/$slug/l/$venue/bloques': typeof TSlugLVenueBloquesRoute
   '/t/$slug/l/$venue/caja': typeof TSlugLVenueCajaRoute
@@ -458,6 +473,8 @@ export interface FileRoutesByTo {
   '/t/$slug': typeof TSlugIndexRoute
   '/api/t/$tenantId/verifactu-certificate': typeof ApiTTenantIdVerifactuCertificateRoute
   '/t/$slug/l/nuevo': typeof TSlugLNuevoRoute
+  '/t/$slug/manifest/webmanifest': typeof TSlugManifestWebmanifestRoute
+  '/t/$slug/pwa-icon/svg': typeof TSlugPwaIconSvgRoute
   '/t/$slug/suscripcion/facturas': typeof TSlugSuscripcionFacturasRoute
   '/t/$slug/l/$venue/bloques': typeof TSlugLVenueBloquesRoute
   '/t/$slug/l/$venue/caja': typeof TSlugLVenueCajaRoute
@@ -518,6 +535,8 @@ export interface FileRoutesById {
   '/api/t/$tenantId/verifactu-certificate': typeof ApiTTenantIdVerifactuCertificateRoute
   '/t/$slug/l/$venue': typeof TSlugLVenueRouteWithChildren
   '/t/$slug/l/nuevo': typeof TSlugLNuevoRoute
+  '/t/$slug/manifest/webmanifest': typeof TSlugManifestWebmanifestRoute
+  '/t/$slug/pwa-icon/svg': typeof TSlugPwaIconSvgRoute
   '/t/$slug/suscripcion/facturas': typeof TSlugSuscripcionFacturasRoute
   '/t/$slug/l/$venue/bloques': typeof TSlugLVenueBloquesRoute
   '/t/$slug/l/$venue/caja': typeof TSlugLVenueCajaRoute
@@ -579,6 +598,8 @@ export interface FileRouteTypes {
     | '/api/t/$tenantId/verifactu-certificate'
     | '/t/$slug/l/$venue'
     | '/t/$slug/l/nuevo'
+    | '/t/$slug/manifest/webmanifest'
+    | '/t/$slug/pwa-icon/svg'
     | '/t/$slug/suscripcion/facturas'
     | '/t/$slug/l/$venue/bloques'
     | '/t/$slug/l/$venue/caja'
@@ -635,6 +656,8 @@ export interface FileRouteTypes {
     | '/t/$slug'
     | '/api/t/$tenantId/verifactu-certificate'
     | '/t/$slug/l/nuevo'
+    | '/t/$slug/manifest/webmanifest'
+    | '/t/$slug/pwa-icon/svg'
     | '/t/$slug/suscripcion/facturas'
     | '/t/$slug/l/$venue/bloques'
     | '/t/$slug/l/$venue/caja'
@@ -694,6 +717,8 @@ export interface FileRouteTypes {
     | '/api/t/$tenantId/verifactu-certificate'
     | '/t/$slug/l/$venue'
     | '/t/$slug/l/nuevo'
+    | '/t/$slug/manifest/webmanifest'
+    | '/t/$slug/pwa-icon/svg'
     | '/t/$slug/suscripcion/facturas'
     | '/t/$slug/l/$venue/bloques'
     | '/t/$slug/l/$venue/caja'
@@ -1032,6 +1057,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TSlugLNuevoRouteImport
       parentRoute: typeof TSlugRoute
     }
+    '/t/$slug/manifest/webmanifest': {
+      id: '/t/$slug/manifest/webmanifest'
+      path: '/manifest/webmanifest'
+      fullPath: '/t/$slug/manifest/webmanifest'
+      preLoaderRoute: typeof TSlugManifestWebmanifestRouteImport
+      parentRoute: typeof TSlugRoute
+    }
+    '/t/$slug/pwa-icon/svg': {
+      id: '/t/$slug/pwa-icon/svg'
+      path: '/pwa-icon/svg'
+      fullPath: '/t/$slug/pwa-icon/svg'
+      preLoaderRoute: typeof TSlugPwaIconSvgRouteImport
+      parentRoute: typeof TSlugRoute
+    }
     '/t/$slug/suscripcion/facturas': {
       id: '/t/$slug/suscripcion/facturas'
       path: '/suscripcion/facturas'
@@ -1228,6 +1267,8 @@ interface TSlugRouteChildren {
   TSlugIndexRoute: typeof TSlugIndexRoute
   TSlugLVenueRoute: typeof TSlugLVenueRouteWithChildren
   TSlugLNuevoRoute: typeof TSlugLNuevoRoute
+  TSlugManifestWebmanifestRoute: typeof TSlugManifestWebmanifestRoute
+  TSlugPwaIconSvgRoute: typeof TSlugPwaIconSvgRoute
   TSlugSuscripcionFacturasRoute: typeof TSlugSuscripcionFacturasRoute
 }
 
@@ -1241,6 +1282,8 @@ const TSlugRouteChildren: TSlugRouteChildren = {
   TSlugIndexRoute: TSlugIndexRoute,
   TSlugLVenueRoute: TSlugLVenueRouteWithChildren,
   TSlugLNuevoRoute: TSlugLNuevoRoute,
+  TSlugManifestWebmanifestRoute: TSlugManifestWebmanifestRoute,
+  TSlugPwaIconSvgRoute: TSlugPwaIconSvgRoute,
   TSlugSuscripcionFacturasRoute: TSlugSuscripcionFacturasRoute,
 }
 

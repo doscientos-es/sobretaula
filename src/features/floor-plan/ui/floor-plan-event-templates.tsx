@@ -65,6 +65,16 @@ export function FloorPlanEventTemplates({
     window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })
   }
 
+  async function remove(template: EventLayoutTemplate) {
+    if (!window.confirm(`¿Borrar la plantilla «${template.name}»?`)) return
+    setPending(true)
+    try {
+      await onDelete(template)
+    } finally {
+      setPending(false)
+    }
+  }
+
   return (
     <>
       {templates.length > 0 && (
@@ -89,7 +99,7 @@ export function FloorPlanEventTemplates({
                 <Button
                   className="mt-2"
                   disabled={pending}
-                  onClick={() => void onDelete(template)}
+                  onClick={() => void remove(template)}
                   type="button"
                   variant="outline"
                 >

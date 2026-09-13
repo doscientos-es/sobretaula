@@ -6,12 +6,15 @@ import {
   operationalTenantMiddleware,
   tenantMembershipMiddleware,
 } from '@/features/tenancy/application/require-tenant-membership'
+import { paginationRange, type PaginatedResult } from '@/shared/lib/pagination'
 import { createRequestSupabaseClient } from '@/shared/lib/supabase/server/create-server-client'
 
 const searchInput = z.object({
   tenantId: z.string().uuid(),
   venueId: z.string().uuid(),
   query: z.string().trim().max(100).default(''),
+  page: z.number().int().min(1).default(1),
+  pageSize: z.number().int().min(1).max(100).default(25),
 })
 const noteInput = z.object({
   tenantId: z.string().uuid(),
@@ -55,19 +58,19 @@ export interface GuestSummary {
 export const searchGuests = createServerFn({ method: 'GET' })
   .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
   .validator(searchInput)
-  .handler(async ({ context, data }): Promise<GuestSummary[]> => {
+  .handler(async ({ context, data }): Promise<PaginatedResult<GuestSummary>> => {
     const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
     let request = supabase
       .from('guests')
-      .select('email, full_name, id, notes, phone')
+      .select('email, full_name, id, notes, phone', { count: 'exact' })
       .eq('tenant_id', data.tenantId)
       .order('full_name')
-      .limit(50)
+      .range(paginationRange(data).from, paginationRange(data).to)
     if (data.query)
       request = request.or(
         `full_name.ilike.%${data.query}%,phone.ilike.%${data.query}%,email.ilike.%${data.query}%`,
       )
-    const { data: guests, error } = await request
+    const { data: guests, error, count } = await request
     if (error) throw new Error(`guests_search_failed:${error.code}`)
     const ids = (guests ?? []).map((guest) => guest.id)
     const { data: reservations, error: reservationsError } = ids.length
@@ -201,7 +204,7 @@ export const searchGuests = createServerFn({ method: 'GET' })
         ...(preferences.get(preference.guest_id) ?? []),
         { notes: preference.notes, preference: preference.preference },
       ])
-    return (guests ?? []).map((guest) => ({
+    const items = (guests ?? []).map((guest) => ({
       id: guest.id,
       name: guest.full_name,
       phone: guest.phone,
@@ -215,6 +218,14 @@ export const searchGuests = createServerFn({ method: 'GET' })
       allergies: allergies.get(guest.id) ?? [],
       preferences: preferences.get(guest.id) ?? [],
     }))
+    const total = count ?? items.length
+    return {
+      items,
+      page: data.page,
+      pageSize: data.pageSize,
+      total,
+      hasMore: data.page * data.pageSize < total,
+    }
   })
 
 export const addGuestNote = createServerFn({ method: 'POST' })

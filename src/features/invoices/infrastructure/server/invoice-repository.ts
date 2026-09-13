@@ -1,5 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 
+import { paginationRange, type PaginatedResult } from '@/shared/lib/pagination'
+
 import type { InvoiceSeries, FiscalSettings } from '../../domain/fiscal-settings'
 import type { Invoice } from '../../domain/invoice'
 
@@ -143,17 +145,24 @@ export async function createSeries(
   }
 }
 
-export async function listInvoices(supabase: SupabaseClient, tenantId: string): Promise<Invoice[]> {
-  const { data, error } = await supabase
+export async function listInvoices(
+  supabase: SupabaseClient,
+  tenantId: string,
+  options: { page: number; pageSize: number; search: string },
+): Promise<PaginatedResult<Invoice>> {
+  const { from, to } = paginationRange(options)
+  let request = supabase
     .from('invoices')
     .select(
       'customer_name, full_number, id, issued_at, issuer_nif, number, series_id, status, subtotal_cents, total_cents, vat_cents',
+      { count: 'exact' },
     )
     .eq('tenant_id', tenantId)
     .order('issued_at', { ascending: false })
-    .limit(100)
+  if (options.search) request = request.ilike('customer_name', `%${options.search}%`)
+  const { data, error, count } = await request.range(from, to)
   if (error) throw new Error(`invoices_lookup_failed:${error.code}`)
-  return (data ?? []).map((row) => ({
+  const items = (data ?? []).map((row): Invoice => ({
     customerName: (row.customer_name as string | null) ?? null,
     fullNumber: row.full_number as string,
     id: row.id as string,
@@ -166,6 +175,8 @@ export async function listInvoices(supabase: SupabaseClient, tenantId: string): 
     totalGross: row.total_cents as number,
     totalNet: row.subtotal_cents as number,
     totalTax: row.vat_cents as number,
-    verifactuEnv: 'test',
+    verifactuEnv: 'test' as Invoice['verifactuEnv'],
   }))
+  const total = count ?? items.length
+  return { items, page: options.page, pageSize: options.pageSize, total, hasMore: to + 1 < total }
 }

@@ -2,9 +2,9 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
-  useState,
+  useRef,
+  useSyncExternalStore,
   type ReactNode,
 } from 'react'
 
@@ -22,12 +22,48 @@ const LocalePreferenceContext = createContext<LocalePreference | null>(null)
 
 function readStoredLocale(storageKey: string | null): Locale | null {
   if (!storageKey || typeof window === 'undefined') return null
-  const stored = window.localStorage.getItem(storageKey)
-  return stored ? parseLocale(stored) : null
+  try {
+    const stored = window.localStorage.getItem(storageKey)
+    return stored ? parseLocale(stored) : null
+  } catch {
+    return null
+  }
 }
 
 function browserLocale(): Locale {
   return typeof navigator === 'undefined' ? DEFAULT_LOCALE : parseLocale(navigator.language)
+}
+
+export function resolveLocalePreference({
+  browserDefault,
+  browserLanguage,
+  defaultLocale,
+  storedLocale,
+}: {
+  browserDefault: boolean
+  browserLanguage?: string | null
+  defaultLocale: Locale
+  storedLocale?: string | null
+}): Locale {
+  if (storedLocale) return parseLocale(storedLocale)
+  return browserDefault ? parseLocale(browserLanguage) : defaultLocale
+}
+
+const LOCALE_CHANGE_EVENT = 'sobretaula:locale-change'
+
+function subscribeToLocale(onChange: () => void, storageKey: string | null) {
+  if (typeof window === 'undefined') return () => undefined
+
+  const handleStorage = (event: StorageEvent) => {
+    if (!storageKey || event.key === storageKey || event.key === null) onChange()
+  }
+  window.addEventListener('storage', handleStorage)
+  window.addEventListener(LOCALE_CHANGE_EVENT, onChange)
+
+  return () => {
+    window.removeEventListener('storage', handleStorage)
+    window.removeEventListener(LOCALE_CHANGE_EVENT, onChange)
+  }
 }
 
 export function LocaleProvider({
@@ -41,18 +77,40 @@ export function LocaleProvider({
   defaultLocale?: Locale
   storageKey?: string | null
 }) {
-  const [locale, setLocaleState] = useState(defaultLocale)
-
-  useEffect(() => {
-    setLocaleState(
-      readStoredLocale(storageKey) ?? (browserDefault ? browserLocale() : defaultLocale),
-    )
-  }, [browserDefault, defaultLocale, storageKey])
+  const inMemoryLocale = useRef<Locale | null>(null)
+  const subscribe = useCallback(
+    (onChange: () => void) => subscribeToLocale(onChange, storageKey),
+    [storageKey],
+  )
+  const getSnapshot = useCallback(
+    () =>
+      inMemoryLocale.current ??
+      resolveLocalePreference({
+        browserDefault,
+        browserLanguage: browserLocale(),
+        defaultLocale,
+        storedLocale: readStoredLocale(storageKey),
+      }),
+    [browserDefault, defaultLocale, storageKey],
+  )
+  const getServerSnapshot = useCallback(() => defaultLocale, [defaultLocale])
+  const locale = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 
   const setLocale = useCallback(
     (nextLocale: Locale) => {
-      setLocaleState(nextLocale)
-      if (storageKey) window.localStorage.setItem(storageKey, nextLocale)
+      if (typeof window !== 'undefined') {
+        let persisted = false
+        try {
+          if (storageKey) {
+            window.localStorage.setItem(storageKey, nextLocale)
+            persisted = true
+          }
+        } catch {
+          // Fall back to the in-memory preference when storage is unavailable.
+        }
+        if (!persisted) inMemoryLocale.current = nextLocale
+        window.dispatchEvent(new Event(LOCALE_CHANGE_EVENT))
+      }
     },
     [storageKey],
   )

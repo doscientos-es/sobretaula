@@ -51,9 +51,9 @@ export function GuestsPage({ tenantId, venueId }: { tenantId: string; venueId: s
   }, [reloadToken, tenantId])
   useEffect(() => {
     let active = true
-    void searchGuests({ data: { tenantId, venueId, query } })
+    void searchGuests({ data: { tenantId, venueId, query, page: 1, pageSize: 25 } })
       .then((result) => {
-        if (active) setGuests(result)
+        if (active) setGuests(result.items)
       })
       .catch(() => {
         if (active) {
@@ -145,9 +145,9 @@ export function GuestsPage({ tenantId, venueId }: { tenantId: string; venueId: s
                                   data: { tenantId, guestId: guest.id, tagId: tag.id },
                                 }).then(
                                   () =>
-                                    void searchGuests({ data: { tenantId, venueId, query } }).then(
-                                      setGuests,
-                                    ),
+                                    void searchGuests({
+                                      data: { page: 1, pageSize: 25, query, tenantId, venueId },
+                                    }).then((result) => setGuests(result.items)),
                                 )
                               }
                               type="button"
@@ -209,7 +209,11 @@ export function GuestsPage({ tenantId, venueId }: { tenantId: string; venueId: s
                                 setSelected(null)
                                 setMergeTarget('')
                                 setGuests(
-                                  await searchGuests({ data: { tenantId, venueId, query } }),
+                                  (
+                                    await searchGuests({
+                                      data: { page: 1, pageSize: 25, query, tenantId, venueId },
+                                    })
+                                  ).items,
                                 )
                                 setError(null)
                               } catch {
@@ -279,7 +283,11 @@ export function GuestsPage({ tenantId, venueId }: { tenantId: string; venueId: s
                                   })
                                   setAttribute('')
                                   setGuests(
-                                    await searchGuests({ data: { tenantId, venueId, query } }),
+                                    (
+                                      await searchGuests({
+                                        data: { page: 1, pageSize: 25, query, tenantId, venueId },
+                                      })
+                                    ).items,
                                   )
                                 } catch {
                                   setError('No se ha podido guardar la preferencia.')
@@ -305,7 +313,11 @@ export function GuestsPage({ tenantId, venueId }: { tenantId: string; venueId: s
                                   })
                                   setAttribute('')
                                   setGuests(
-                                    await searchGuests({ data: { tenantId, venueId, query } }),
+                                    (
+                                      await searchGuests({
+                                        data: { page: 1, pageSize: 25, query, tenantId, venueId },
+                                      })
+                                    ).items,
                                   )
                                 } catch {
                                   setError('No se ha podido guardar la alergia.')
@@ -365,9 +377,9 @@ export function GuestsPage({ tenantId, venueId }: { tenantId: string; venueId: s
                                 setNote('')
                                 setError(null)
                                 const refreshed = await searchGuests({
-                                  data: { tenantId, venueId, query },
+                                  data: { tenantId, venueId, query, page: 1, pageSize: 25 },
                                 })
-                                setGuests(refreshed)
+                                setGuests(refreshed.items)
                               } catch {
                                 setError('No se ha podido guardar la nota.')
                               } finally {

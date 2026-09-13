@@ -10,11 +10,14 @@ import { createRequestSupabaseClient } from '@/shared/lib/supabase/server/create
 
 const tenantInput = z.object({ tenantId: z.string().uuid() })
 const hexColor = /^#[0-9A-Fa-f]{6}$/
+const presets = ['terracotta', 'olive', 'ocean', 'midnight', 'custom'] as const
 
 const brandingInput = tenantInput.extend({
   emailFromName: z.string().trim().min(1).max(120),
   logoUrl: z.union([z.literal(''), z.string().url().startsWith('https://')]),
   primaryColor: z.string().regex(hexColor),
+  accentColor: z.string().regex(hexColor),
+  preset: z.enum(presets),
   replyToEmail: z.union([z.literal(''), z.string().email().max(320)]),
 })
 
@@ -22,6 +25,8 @@ export interface EmailBranding {
   emailFromName: string
   logoUrl: string | null
   primaryColor: string
+  accentColor: string
+  preset: (typeof presets)[number]
   replyToEmail: string | null
 }
 
@@ -38,7 +43,7 @@ export const getEmailBranding = createServerFn({ method: 'GET' })
       context.tenantMembership.accessToken,
     )
       .from('tenant_email_branding')
-      .select('email_from_name, logo_url, primary_color, reply_to_email')
+      .select('email_from_name, logo_url, primary_color, accent_color, preset, reply_to_email')
       .eq('tenant_id', data.tenantId)
       .maybeSingle()
     if (error) throw new Error(`email_branding_load_failed:${error.code}`)
@@ -47,6 +52,8 @@ export const getEmailBranding = createServerFn({ method: 'GET' })
       emailFromName: branding.email_from_name,
       logoUrl: branding.logo_url,
       primaryColor: branding.primary_color,
+      accentColor: branding.accent_color,
+      preset: branding.preset,
       replyToEmail: branding.reply_to_email,
     }
   })
@@ -64,6 +71,8 @@ export const saveEmailBranding = createServerFn({ method: 'POST' })
           email_from_name: data.emailFromName,
           logo_url: data.logoUrl || null,
           primary_color: data.primaryColor.toLowerCase(),
+          accent_color: data.accentColor.toLowerCase(),
+          preset: data.preset,
           reply_to_email: data.replyToEmail || null,
           tenant_id: data.tenantId,
         },

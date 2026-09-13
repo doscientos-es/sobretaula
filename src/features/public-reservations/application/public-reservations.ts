@@ -40,7 +40,11 @@ export interface PublicReservationService {
 }
 
 export interface PublicReservationProfile {
+  accentColor: string
   defaultLocale: Locale
+  logoUrl: string | null
+  primaryColor: string
+  preset: 'terracotta' | 'olive' | 'ocean' | 'midnight' | 'custom'
   name: string
   slug: string
   timezone: string
@@ -84,6 +88,10 @@ interface PublicReservationProfileRow {
   timezone: string
   venue_name: string
   weekday: number
+  logo_url: string | null
+  primary_color: string
+  accent_color: string
+  preset: PublicReservationProfile['preset']
 }
 
 interface PublicReservationAreaRow {
@@ -131,6 +139,10 @@ export const getPublicReservationProfile = createServerFn({ method: 'GET' })
     const terms = ((termsResult.data ?? []) as PublicReservationTermsRow[])[0]
     return {
       defaultLocale: first.default_locale,
+      accentColor: first.accent_color,
+      logoUrl: first.logo_url,
+      primaryColor: first.primary_color,
+      preset: first.preset,
       name: first.tenant_name,
       services: typedRows.filter(isServiceRow).map((row) => ({
         endsAtTime: row.ends_at_time,

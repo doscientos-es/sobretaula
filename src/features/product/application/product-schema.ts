@@ -3,6 +3,11 @@ import { z } from 'zod'
 import { ALLERGENS } from '../domain/product-costing'
 
 export const productTenantInput = z.object({ tenantId: z.string().uuid() })
+export const ingredientListInput = productTenantInput.extend({
+  page: z.number().int().min(1).default(1),
+  pageSize: z.number().int().min(1).max(100).default(25),
+  search: z.string().trim().max(120).default(''),
+})
 export const createIngredientInput = productTenantInput.extend({
   name: z.string().trim().min(1).max(120),
   unit: z.enum(['g', 'kg', 'ml', 'l', 'unit']),
@@ -43,6 +48,32 @@ export const inventoryMovementInput = inventoryQueryInput.extend({
     .refine((value) => value !== 0),
   unitCostCents: z.number().min(0).max(1_000_000).optional(),
   reason: z.string().trim().min(2).max(200),
+})
+export const supplierInput = productTenantInput.extend({
+  name: z.string().trim().min(1).max(160),
+  taxId: z.string().trim().max(30).optional(),
+  phone: z.string().trim().max(40).optional(),
+  email: z.string().trim().email().max(254).optional(),
+})
+export const deliveryNoteInput = inventoryQueryInput.extend({
+  supplierId: z.string().uuid(),
+  reference: z.string().trim().min(1).max(120),
+  receivedOn: z.string().date(),
+  notes: z.string().trim().max(1000).default(''),
+  lines: z
+    .array(
+      z.object({
+        ingredientId: z.string().uuid(),
+        quantity: z.number().positive().max(1_000_000),
+        unitCostCents: z.number().min(0).max(1_000_000),
+      }),
+    )
+    .min(1)
+    .max(500),
+})
+export const receiveDeliveryNoteInput = z.object({
+  tenantId: z.string().uuid(),
+  deliveryNoteId: z.string().uuid(),
 })
 
 export function requireProductEditor(role: string): void {

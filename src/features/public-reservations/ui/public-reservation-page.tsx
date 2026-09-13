@@ -213,9 +213,16 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
     }
   }
 
+  const theme = {
+    '--public-primary': profile.primaryColor,
+    '--public-accent': profile.accentColor,
+  } as React.CSSProperties
   if (confirmed) {
     return (
-      <main className="relative grid min-h-svh place-items-center overflow-hidden bg-[#fbfaf8] p-[clamp(1rem,4vw,3.5rem)]">
+      <main
+        style={theme}
+        className="relative grid min-h-svh place-items-center overflow-hidden bg-[#fbfaf8] p-[clamp(1rem,4vw,3.5rem)]"
+      >
         <div className="absolute top-4 right-4 z-20">
           <LanguageSwitcher />
         </div>
@@ -225,11 +232,11 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
         >
           <span
             aria-hidden="true"
-            className="inline-grid size-16 place-items-center rounded-full bg-[#21835b] text-white"
+            className="inline-grid size-16 place-items-center rounded-full bg-[var(--public-primary)] text-white"
           >
             <Check className="size-7" />
           </span>
-          <p className="mb-3 text-xs font-bold tracking-[0.14em] text-[#c34d3e] uppercase">
+          <p className="mb-3 text-xs font-bold tracking-[0.14em] text-[var(--public-accent)] uppercase">
             {t('public.received')}
           </p>
           <h1
@@ -261,7 +268,10 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
   }
 
   return (
-    <main className="relative grid min-h-svh place-items-center overflow-hidden bg-[#fbfaf8] p-[clamp(1rem,4vw,3.5rem)]">
+    <main
+      style={theme}
+      className="relative grid min-h-svh place-items-center overflow-hidden bg-[#fbfaf8] p-[clamp(1rem,4vw,3.5rem)]"
+    >
       <div className="absolute top-4 right-4 z-20">
         <LanguageSwitcher />
       </div>
@@ -275,7 +285,14 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
       />
       <section className="relative z-10 grid w-full max-w-[68rem] items-center gap-[clamp(1.5rem,5vw,5rem)] min-[800px]:grid-cols-[minmax(0,1fr)_minmax(24rem,32rem)]">
         <header className="max-w-lg">
-          <p className="mb-3 text-xs font-bold tracking-[0.14em] text-[#c34d3e] uppercase">
+          {profile.logoUrl ? (
+            <img
+              alt={`Logo de ${profile.name}`}
+              className="mb-5 h-12 max-w-48 object-contain object-left"
+              src={profile.logoUrl}
+            />
+          ) : null}
+          <p className="mb-3 text-xs font-bold tracking-[0.14em] text-[var(--public-accent)] uppercase">
             {t('public.directBooking')}
           </p>
           <h1 className="m-0 text-[clamp(2.5rem,7vw,5.5rem)] leading-[0.95] font-[650] tracking-[-0.075em] text-[#292d34]">
@@ -297,7 +314,7 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
           <CardHeader>
             <CardTitle>{t('public.findTable')}</CardTitle>
             <CardDescription>
-              {profile.services.length > 0 ? t('public.noAccount') : t('public.noServices')}
+              {profile.services.length > 0 ? t('public.noAccount') : t('public.noServicesAction')}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -375,11 +392,11 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                       ))}
                     </select>
                     {date && !availabilityLoading && availabilityError ? (
-                      <p className="mt-2 text-xs text-[#c34d3e]">
+                      <p className="mt-2 text-xs text-[var(--public-accent)]">
                         {t('public.availabilityFailed')}
                       </p>
                     ) : date && !availabilityLoading && availableSlots.length === 0 ? (
-                      <p className="mt-2 text-xs text-[#c34d3e]">
+                      <p className="mt-2 text-xs text-[var(--public-accent)]">
                         {areaId ? t('public.noSlotsInArea') : t('public.noSlots')}
                       </p>
                     ) : null}

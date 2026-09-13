@@ -26,6 +26,8 @@ type Branding = {
   email_from_name: string
   logo_url: string | null
   primary_color: string
+  accent_color: string
+  preset: string
   reply_to_email: string | null
 }
 type PushSubscription = { auth_key: string; endpoint: string; p256dh_key: string }
@@ -231,7 +233,7 @@ function emailHtml({
   return `<!doctype html><html lang="${locale.slice(0, 2)}"><body style="margin:0;background:#f7f7f5;color:#1c1917;font-family:Arial,sans-serif;">
     <main style="max-width:560px;margin:32px auto;background:#ffffff;border-radius:16px;overflow:hidden;">
       <header style="border-top:6px solid ${escapeHtml(branding.primary_color)};padding:28px 32px 20px;">${logo}</header>
-      <section style="padding:0 32px 32px;"><h1 style="margin:0 0 16px;font-size:24px;">${heading}</h1>
+      <section style="padding:0 32px 32px;"><h1 style="margin:0 0 16px;font-size:24px;color:${escapeHtml(branding.accent_color)};">${heading}</h1>
         <p>${intro}</p>
         <div style="margin:24px 0;padding:20px;border-radius:12px;background:#f7f7f5;"><p style="margin:0 0 8px;"><strong>${escapeHtml(startsAt)}</strong></p>
           <p style="margin:0;">${reservation.party_size} ${reservation.party_size === 1 ? 'persona' : 'personas'}</p></div>
@@ -273,7 +275,7 @@ async function deliverEmail(job: Job): Promise<'sent' | 'cancelled'> {
       .maybeSingle<Tenant>(),
     supabase
       .from('tenant_email_branding')
-      .select('email_from_name, logo_url, primary_color, reply_to_email')
+      .select('email_from_name, logo_url, primary_color, accent_color, preset, reply_to_email')
       .eq('tenant_id', reservation.tenant_id)
       .maybeSingle<Branding>(),
   ])
@@ -284,6 +286,8 @@ async function deliverEmail(job: Job): Promise<'sent' | 'cancelled'> {
     email_from_name: tenant.name,
     logo_url: null,
     primary_color: '#0f766e',
+    accent_color: '#c34d3e',
+    preset: 'terracotta',
     reply_to_email: null,
   }
   const apiKey = requiredEnv('RESEND_API_KEY')

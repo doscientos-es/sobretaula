@@ -8,11 +8,21 @@ import { createTranslator } from '@/shared/lib/i18n/messages'
 export function PwaRuntime() {
   const locale = useLocale('es')
   const t = createTranslator(locale)
+  const tenantSlug =
+    typeof window !== 'undefined' ? window.location.pathname.match(/^\/t\/([^/]+)/)?.[1] : undefined
   const { dismiss, install, isIos, pending, visible } = usePwaInstallPrompt({
-    storageKey: 'sobretaula:pwa-install-dismissed',
+    storageKey: `sobretaula:pwa-install-dismissed:${tenantSlug ?? 'platform'}`,
   })
 
   useEffect(() => registerPwaServiceWorker({ scriptUrl: '/sw.js' }), [])
+
+  useEffect(() => {
+    if (!tenantSlug) return
+    const manifest = document.querySelector<HTMLLinkElement>('link[rel="manifest"]')
+    const icon = document.querySelector<HTMLLinkElement>('link[rel="icon"]')
+    if (manifest) manifest.href = `/t/${tenantSlug}/manifest.webmanifest`
+    if (icon) icon.href = `/t/${tenantSlug}/pwa-icon.svg?size=192`
+  }, [tenantSlug])
 
   if (!visible) return null
 
@@ -22,7 +32,7 @@ export function PwaRuntime() {
       className="bg-card fixed inset-x-3 bottom-3 z-50 mx-auto flex max-w-md items-start gap-3 rounded-xl border p-4 shadow-[var(--ui-shadow-floating)] sm:inset-x-auto sm:right-4 sm:left-auto"
     >
       <div className="min-w-0 flex-1">
-        <p className="font-medium">{t('pwa.install.title')}</p>
+        <p className="font-medium">{tenantSlug ? document.title : t('pwa.install.title')}</p>
         <p className="text-muted-foreground mt-1 text-sm">
           {isIos ? t('pwa.install.iosDescription') : t('pwa.install.description')}
         </p>
