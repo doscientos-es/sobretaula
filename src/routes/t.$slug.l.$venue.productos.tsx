@@ -29,7 +29,12 @@ function ProductRoute() {
   const { ingredients, menu, stock, menuItems, suppliers } = Route.useLoaderData()
   return (
     <>
-      <ModifierCard menu={menu} onDone={() => window.location.reload()} tenantId={tenant.id} />
+      <ModifierCard
+        ingredients={ingredients.items}
+        menu={menu}
+        onDone={() => window.location.reload()}
+        tenantId={tenant.id}
+      />
       <ChannelPriceCard
         menuItems={menuItems}
         tenantId={tenant.id}

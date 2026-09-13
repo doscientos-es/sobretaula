@@ -211,6 +211,8 @@ export const createModifierOption = createServerFn({ method: 'POST' })
         name_i18n: localizedName(data.nameEs, data.nameCa),
         position: data.position ?? 0,
         price_delta_cents: data.priceDeltaCents,
+        ingredient_id: data.ingredientId ?? null,
+        replaces_ingredient_id: data.replacesIngredientId ?? null,
         tenant_id: data.tenantId,
       })
       .select('id')

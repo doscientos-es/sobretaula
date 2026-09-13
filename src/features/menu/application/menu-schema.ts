@@ -73,7 +73,12 @@ export const createModifierOptionInput = menuTenantInput.extend({
   nameEs: z.string().trim().min(1).max(100),
   position: z.number().int().min(0).max(9999).optional(),
   priceDeltaCents: z.number().int().min(-1_000_000).max(1_000_000),
-})
+  ingredientId: z.string().uuid().optional(),
+  replacesIngredientId: z.string().uuid().optional(),
+}).refine(
+  (input) => Boolean(input.ingredientId) === Boolean(input.replacesIngredientId),
+  { message: 'ingredient_substitution_requires_both_ids' },
+)
 
 export const menuChannelPriceInput = menuTenantInput.extend({
   channel: z.enum(MENU_CHANNELS),

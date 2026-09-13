@@ -17,7 +17,7 @@ import { summarizePosTerminal } from '../domain/terminal-summary'
 
 function TerminalMetric({ label, value }: { label: string; value: number }) {
   return (
-    <div className="bg-card rounded-xl border p-4">
+    <div className="bg-muted/30 rounded-lg border p-3">
       <p className="text-muted-foreground text-xs font-medium">{label}</p>
       <p className="mt-1 text-2xl font-semibold tabular-nums">{value}</p>
     </div>
@@ -58,15 +58,15 @@ export function PosTerminalPage({
           </PageHeaderDescription>
         </div>
       </PageHeader>
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
         <TerminalMetric label="Cuentas abiertas" value={summary.activeSessions} />
         <TerminalMetric label="Mesas libres" value={summary.availableTables} />
         <TerminalMetric label="Comandas pendientes" value={summary.pendingItems} />
         <TerminalMetric label="Listo para servir" value={summary.readyItems} />
       </div>
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-2 lg:grid-cols-3">
         <Link
-          className="bg-card hover:bg-muted/60 rounded-xl border p-5 transition-colors"
+          className="bg-card hover:bg-muted/60 rounded-lg border p-4 transition-colors"
           params={params}
           to="/t/$slug/l/$venue/servicio"
         >
@@ -76,7 +76,7 @@ export function PosTerminalPage({
           </span>
         </Link>
         <Link
-          className="bg-card hover:bg-muted/60 rounded-xl border p-5 transition-colors"
+          className="bg-card hover:bg-muted/60 rounded-lg border p-4 transition-colors"
           params={params}
           to="/t/$slug/l/$venue/reservas"
         >
@@ -86,7 +86,7 @@ export function PosTerminalPage({
           </span>
         </Link>
         <Link
-          className="bg-card hover:bg-muted/60 rounded-xl border p-5 transition-colors"
+          className="bg-card hover:bg-muted/60 rounded-lg border p-4 transition-colors"
           params={params}
           to="/t/$slug/l/$venue/fichaje-terminal"
         >
@@ -97,7 +97,7 @@ export function PosTerminalPage({
         </Link>
         {canManageCash && (
           <Link
-            className="bg-card hover:bg-muted/60 rounded-xl border p-5 transition-colors"
+            className="bg-card hover:bg-muted/60 rounded-lg border p-4 transition-colors"
             params={params}
             to="/t/$slug/l/$venue/caja"
           >
@@ -108,7 +108,7 @@ export function PosTerminalPage({
           </Link>
         )}
       </div>
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
         <Card>
           <CardHeader>
             <CardTitle>{accountWorkspace ? 'Comanda seleccionada' : 'Cuentas activas'}</CardTitle>
@@ -150,7 +150,7 @@ export function PosTerminalPage({
                       <li key={session.id}>
                         {canAccessAccounts ? (
                           <Link
-                            className="hover:bg-muted/60 flex flex-col rounded-lg border p-4"
+                            className="hover:bg-muted/60 flex flex-col rounded-md border p-3"
                             params={params}
                             search={{ sessionId: session.id }}
                             to="/t/$slug/l/$venue/tpv"
@@ -158,7 +158,7 @@ export function PosTerminalPage({
                             {content}
                           </Link>
                         ) : (
-                          <div className="flex flex-col rounded-lg border p-4">{content}</div>
+                          <div className="flex flex-col rounded-md border p-3">{content}</div>
                         )}
                       </li>
                     )
@@ -182,8 +182,7 @@ export function PosTerminalPage({
               <strong>{summary.blockedTables}</strong> mesas bloqueadas
             </p>
             <p className="text-muted-foreground border-t pt-3">
-              Las acciones de comandas, cocina y cobro se incorporan progresivamente aquí sin
-              duplicar la información de sala.
+              Selecciona una cuenta para continuar con la comanda o el cobro.
             </p>
           </CardContent>
         </Card>

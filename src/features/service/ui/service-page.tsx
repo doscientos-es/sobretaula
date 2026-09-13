@@ -348,11 +348,17 @@ export function ServicePage({
                     ))}
                   </div>
                 )}
-                <ul aria-label="Leyenda de estados" className="mb-4 flex flex-wrap gap-2 text-xs">
-                  <li className="bg-muted rounded-full px-2 py-1">● Libre</li>
-                  <li className="bg-destructive/15 rounded-full px-2 py-1">● Ocupada</li>
-                  <li className="bg-primary/15 rounded-full px-2 py-1">● Reservada</li>
-                  <li className="bg-warning/15 rounded-full px-2 py-1">● Limpieza</li>
+                <ul aria-label="Leyenda de estados" className="mb-4 flex flex-wrap gap-1 text-xs">
+                  <li className="border-border rounded-md border px-2 py-1">● Libre</li>
+                  <li className="border-destructive/30 text-destructive rounded-md border px-2 py-1">
+                    ● Ocupada
+                  </li>
+                  <li className="border-primary/30 text-primary rounded-md border px-2 py-1">
+                    ● Reservada
+                  </li>
+                  <li className="border-warning/30 text-warning-foreground rounded-md border px-2 py-1">
+                    ● Limpieza
+                  </li>
                 </ul>
                 <div className="mb-4 flex gap-2" aria-label="Vista del servicio">
                   <Button

@@ -30,7 +30,7 @@ export function ServicePlan({
   return (
     <svg
       aria-hidden="true"
-      className="border-border bg-muted/30 h-auto w-full rounded-xl border shadow-inner"
+      className="border-border bg-background h-auto w-full rounded-lg border"
       focusable="false"
       viewBox={`0 0 ${version.widthCm} ${version.heightCm}`}
     >
@@ -47,7 +47,7 @@ export function ServicePlan({
               opacity={selected ? 1 : 0.7}
               rx="12"
               stroke={selected ? 'var(--foreground)' : 'transparent'}
-              strokeWidth="6"
+              strokeWidth="4"
               transform={`rotate(${placement.rotationDeg} ${placement.xCm + placement.widthCm / 2} ${placement.yCm + placement.heightCm / 2})`}
               width={placement.widthCm}
               x={placement.xCm}

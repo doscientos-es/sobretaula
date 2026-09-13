@@ -14,7 +14,7 @@ export const getPublicMenu = createServerFn({ method: 'GET' })
     }),
   )
   .handler(async ({ data }): Promise<MenuCatalog> => {
-    const { data: rows, error } = await createAnonSupabaseClient().rpc('public_menu_by_slug_v2', {
+    const { data: rows, error } = await createAnonSupabaseClient().rpc('public_menu_by_slug_v3', {
       p_slug: data.slug,
       p_channel: data.channel,
     })
@@ -32,6 +32,7 @@ export const getPublicMenu = createServerFn({ method: 'GET' })
       item_name_i18n: unknown
       price_cents: number
       vat_rate_bps: number
+      modifier_groups?: unknown
     }
     const typedRows = (rows ?? []) as PublicMenuRow[]
     const categories = new Map<
@@ -61,6 +62,9 @@ export const getPublicMenu = createServerFn({ method: 'GET' })
         allergens: row.allergens ?? [],
         allergenReasons: row.allergen_reasons ?? {},
         isVegan: Boolean(row.is_vegan),
+        modifierGroups: Array.isArray(row.modifier_groups)
+          ? (row.modifier_groups as NonNullable<MenuCatalog['items'][number]['modifierGroups']>)
+          : [],
       })),
     }
   })

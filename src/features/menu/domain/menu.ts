@@ -13,6 +13,8 @@ export interface MenuModifierOption {
   isActive: boolean
   nameI18n: LocalizedText
   priceDeltaCents: number
+  ingredientId?: string | null
+  replacesIngredientId?: string | null
   position: number
 }
 

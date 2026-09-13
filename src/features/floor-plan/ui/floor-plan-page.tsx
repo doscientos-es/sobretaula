@@ -754,7 +754,7 @@ export function FloorPlanPage({
           setPreviewDevice={setPreviewDevice}
         />
       ) : (
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_18rem]">
           <FloorPlanCanvas
             activeArea={activeArea}
             activeVersion={activeVersion}
@@ -780,10 +780,10 @@ export function FloorPlanPage({
             selectedId={selectedId}
             selectedIds={selectedIds}
           />
-          <Card>
+          <Card className="lg:sticky lg:top-6 lg:self-start">
             <CardHeader>
-              <CardTitle>Mesas</CardTitle>
-              <CardDescription>Alternativa accesible al plano SVG.</CardDescription>
+              <CardTitle>Edición y mesas</CardTitle>
+              <CardDescription>Selecciona una mesa o elemento para editarlo.</CardDescription>
             </CardHeader>
             <CardContent>
               {placements.length === 0 ? (
@@ -816,7 +816,7 @@ export function FloorPlanPage({
               )}
               {selectedId && (
                 <div className="mt-3 flex gap-2">
-                  <Button onClick={duplicateSelected} type="button">
+                  <Button onClick={duplicateSelected} type="button" variant="outline">
                     Duplicar
                   </Button>
                   <Button onClick={removeSelected} type="button">
@@ -987,40 +987,40 @@ export function FloorPlanPage({
               <div className="mt-6 space-y-2">
                 <p className="text-muted-foreground text-sm">Elementos estructurales</p>
                 <div className="flex flex-wrap gap-2">
-                  <Button onClick={() => addElement('wall')} type="button">
+                  <Button onClick={() => addElement('wall')} type="button" variant="outline">
                     Pared
                   </Button>
-                  <Button onClick={() => addElement('door')} type="button">
+                  <Button onClick={() => addElement('door')} type="button" variant="outline">
                     Puerta
                   </Button>
-                  <Button onClick={() => addElement('bar')} type="button">
+                  <Button onClick={() => addElement('bar')} type="button" variant="outline">
                     Barra
                   </Button>
-                  <Button onClick={() => addElement('stairs')} type="button">
+                  <Button onClick={() => addElement('stairs')} type="button" variant="outline">
                     Escalera
                   </Button>
-                  <Button onClick={() => addElement('plant')} type="button">
+                  <Button onClick={() => addElement('plant')} type="button" variant="outline">
                     Planta
                   </Button>
-                  <Button onClick={() => addElement('label')} type="button">
+                  <Button onClick={() => addElement('label')} type="button" variant="outline">
                     Etiqueta
                   </Button>
-                  <Button onClick={() => addElement('window')} type="button">
+                  <Button onClick={() => addElement('window')} type="button" variant="outline">
                     Ventana
                   </Button>
-                  <Button onClick={() => addElement('other')} type="button">
+                  <Button onClick={() => addElement('other')} type="button" variant="outline">
                     Obstáculo
                   </Button>
-                  <Button onClick={() => addElement('pillar')} type="button">
+                  <Button onClick={() => addElement('pillar')} type="button" variant="outline">
                     Pilar
                   </Button>
-                  <Button onClick={() => addElement('bathroom')} type="button">
+                  <Button onClick={() => addElement('bathroom')} type="button" variant="outline">
                     Baño
                   </Button>
-                  <Button onClick={() => addElement('kitchen')} type="button">
+                  <Button onClick={() => addElement('kitchen')} type="button" variant="outline">
                     Cocina
                   </Button>
-                  <Button onClick={() => addElement('exit')} type="button">
+                  <Button onClick={() => addElement('exit')} type="button" variant="outline">
                     Salida
                   </Button>
                 </div>

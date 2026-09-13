@@ -24,14 +24,18 @@ import { parsePriceToCents } from '@/shared/lib/money/money'
 import { createModifierGroup, createModifierOption, type MenuCatalog } from '../application/menu'
 import { localizedText } from '../domain/menu'
 
+type IngredientOption = { id: string; name: string }
+
 export function ModifierCard({
   menu,
   onDone,
   tenantId,
+  ingredients = [],
 }: {
   menu: MenuCatalog
   onDone: () => void
   tenantId: string
+  ingredients?: IngredientOption[]
 }) {
   const feedback = useFormFeedback()
   const [menuItemId, setMenuItemId] = useState(menu.items[0]?.id ?? '')
@@ -40,6 +44,8 @@ export function ModifierCard({
   const [optionPrice, setOptionPrice] = useState('0,00')
   const [selectionMin, setSelectionMin] = useState(0)
   const [selectionMax, setSelectionMax] = useState(1)
+  const [ingredientId, setIngredientId] = useState('')
+  const [replacesIngredientId, setReplacesIngredientId] = useState('')
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -69,6 +75,8 @@ export function ModifierCard({
           groupId,
           nameEs: optionName,
           priceDeltaCents,
+          ingredientId: ingredientId || undefined,
+          replacesIngredientId: replacesIngredientId || undefined,
           tenantId,
         },
       })
@@ -161,6 +169,30 @@ export function ModifierCard({
               value={selectionMax}
             />
           </Field>
+          {ingredients.length > 0 ? (
+            <>
+              <Field>
+                <FieldLabel htmlFor="modifier-replaces">Sustituye ingrediente (opcional)</FieldLabel>
+                <Select id="modifier-replaces" onSelectionChange={(key) => setReplacesIngredientId(String(key) === 'none' ? '' : String(key))} selectedKey={replacesIngredientId || 'none'}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent><SelectList>
+                    <SelectItem id="none">No sustituye ninguno</SelectItem>
+                    {ingredients.map((ingredient) => <SelectItem id={ingredient.id} key={ingredient.id}>{ingredient.name}</SelectItem>)}
+                  </SelectList></SelectContent>
+                </Select>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="modifier-ingredient">Ingrediente que consume (opcional)</FieldLabel>
+                <Select id="modifier-ingredient" onSelectionChange={(key) => setIngredientId(String(key) === 'none' ? '' : String(key))} selectedKey={ingredientId || 'none'}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent><SelectList>
+                    <SelectItem id="none">Sin sustitución de stock</SelectItem>
+                    {ingredients.map((ingredient) => <SelectItem id={ingredient.id} key={ingredient.id}>{ingredient.name}</SelectItem>)}
+                  </SelectList></SelectContent>
+                </Select>
+              </Field>
+            </>
+          ) : null}
           <FormFeedback pendingLabel="Guardando modificador…" state={feedback.state} />
           <Button disabled={feedback.pending || !menuItemId} type="submit">
             Añadir modificador

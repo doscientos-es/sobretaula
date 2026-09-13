@@ -101,9 +101,10 @@ export function FloorPlanCanvas({
           {activeVersion.widthCm / 100} m × {activeVersion.heightCm / 100} m · {placements.length}{' '}
           mesas
         </CardDescription>
-        <div className="flex flex-wrap items-center gap-2 pt-2" aria-label="Controles de zoom">
+        <div className="flex flex-wrap items-center gap-1.5 pt-1" aria-label="Controles del plano">
           <Button
             aria-label="Alejar plano"
+            className="size-9 px-0"
             disabled={zoom <= 1}
             onClick={() => setZoom((current) => Math.max(1, current - 0.25))}
             type="button"
@@ -111,11 +112,12 @@ export function FloorPlanCanvas({
           >
             −
           </Button>
-          <output className="text-muted-foreground min-w-12 text-center text-sm">
+          <output className="text-muted-foreground min-w-14 text-center text-sm tabular-nums">
             {Math.round(zoom * 100)}%
           </output>
           <Button
             aria-label="Acercar plano"
+            className="size-9 px-0"
             disabled={zoom >= 3}
             onClick={() => setZoom((current) => Math.min(3, current + 0.25))}
             type="button"
@@ -239,7 +241,7 @@ export function FloorPlanCanvas({
         >
           <svg
             aria-hidden="true"
-            className="border-border bg-muted/30 h-auto w-full rounded-xl border shadow-inner"
+            className="border-border bg-background h-auto w-full rounded-lg border"
             focusable="false"
             onPointerDown={(event) => {
               if (event.button !== 1 && !event.altKey) return
@@ -307,7 +309,8 @@ export function FloorPlanCanvas({
                 pointerEvents="none"
                 stroke="var(--ring)"
                 strokeDasharray="12 10"
-                strokeWidth="3"
+                opacity="0.45"
+                strokeWidth="1.5"
               >
                 <line
                   x1={selected.xCm + selected.widthCm / 2}
@@ -327,9 +330,10 @@ export function FloorPlanCanvas({
               guide.axis === 'x' ? (
                 <line
                   key={`guide-${index}`}
-                  stroke="var(--destructive)"
+                  opacity="0.65"
+                  stroke="var(--primary)"
                   strokeDasharray="8 8"
-                  strokeWidth="2"
+                  strokeWidth="1.5"
                   x1={guide.value}
                   x2={guide.value}
                   y1={0}
@@ -338,9 +342,10 @@ export function FloorPlanCanvas({
               ) : (
                 <line
                   key={`guide-${index}`}
-                  stroke="var(--destructive)"
+                  opacity="0.65"
+                  stroke="var(--primary)"
                   strokeDasharray="8 8"
-                  strokeWidth="2"
+                  strokeWidth="1.5"
                   x1={0}
                   x2={activeVersion.widthCm}
                   y1={guide.value}
@@ -357,9 +362,9 @@ export function FloorPlanCanvas({
                     onSelectItem(element.id, event.ctrlKey || event.metaKey)
                   }
                   opacity={lockedIds.includes(element.id) ? 0.48 : 0.65}
-                  rx="8"
+                  rx="4"
                   stroke={selectedIds.includes(element.id) ? 'var(--ring)' : 'transparent'}
-                  strokeWidth={selectedIds.includes(element.id) ? 8 : 0}
+                  strokeWidth={selectedIds.includes(element.id) ? 4 : 0}
                   transform={`rotate(${element.rotationDeg} ${element.xCm + element.widthCm / 2} ${element.yCm + element.heightCm / 2})`}
                   width={element.widthCm}
                   x={element.xCm}
@@ -390,7 +395,7 @@ export function FloorPlanCanvas({
                   opacity={lockedIds.includes(placement.id) ? 0.62 : 0.85}
                   rx="12"
                   stroke={selectedIds.includes(placement.id) ? 'var(--ring)' : 'transparent'}
-                  strokeWidth={selectedIds.includes(placement.id) ? 8 : 0}
+                  strokeWidth={selectedIds.includes(placement.id) ? 4 : 0}
                   transform={`rotate(${placement.rotationDeg} ${placement.xCm + placement.widthCm / 2} ${placement.yCm + placement.heightCm / 2})`}
                   width={placement.widthCm}
                   x={placement.xCm}
