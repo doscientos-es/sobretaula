@@ -70,5 +70,5 @@ begin
   return next;
 end; $$;
 
-revoke execute on function public.record_gift_card_payment(uuid, uuid, uuid, text, integer, uuid) from public, anon;
-grant execute on function public.record_gift_card_payment(uuid, uuid, uuid, text, integer, uuid) to authenticated;
+revoke execute on function public.record_gift_card_payment(uuid, uuid, uuid, integer, text, uuid) from public, anon;
+grant execute on function public.record_gift_card_payment(uuid, uuid, uuid, integer, text, uuid) to authenticated;

@@ -1,4 +1,12 @@
 export { getPlatformAdminAccess, getPlatformDashboard } from './application/platform-dashboard'
+export {
+  getPlatformModules,
+  getTenantModuleRequests,
+  requestTenantModule,
+  setPlatformModule,
+  setTenantModuleOverride,
+} from './application/module-management'
+export type { PlatformModule, TenantModuleRequest } from './application/module-management'
 export { getPlatformAuditLog } from './application/platform-audit'
 export {
   getPlatformTenantDetail,
@@ -32,6 +40,7 @@ export {
 export type { ManagedTenantStatus, PlatformAdminRole } from './domain/platform-admin'
 export type { PlatformAuditEvent } from './domain/platform-audit'
 export { PlatformConsolePage } from './ui/platform-console-page'
+export { PlatformModulesPage } from './ui/platform-modules-page'
 export { PlatformAuditPage } from './ui/platform-audit-page'
 export { PlatformAuditList } from './ui/platform-audit-list'
 export { PlatformTenantDetailsPage } from './ui/platform-tenant-details-page'

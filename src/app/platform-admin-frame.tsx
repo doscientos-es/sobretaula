@@ -14,6 +14,7 @@ import {
   FileText,
   LayoutDashboard,
   LogOut,
+  Package,
   ScrollText,
   Settings2,
   ShieldCheck,
@@ -96,6 +97,13 @@ export function PlatformAdminFrame({ children }: { children: ReactNode }) {
                 to="/admin/facturacion"
               >
                 <CreditCard className="size-3" /> {t('platform.subscriptions')}
+              </Link>
+              <Link
+                activeProps={{ className: `${navLinkClass} st-platform-nav-link--active` }}
+                className={navLinkClass}
+                to="/admin/modulos"
+              >
+                <Package className="size-3" /> Módulos y precios
               </Link>
               <Link
                 activeProps={{ className: `${navLinkClass} st-platform-nav-link--active` }}

@@ -26,6 +26,7 @@ import { Route as AdminEquipoRouteImport } from './routes/admin.equipo'
 import { Route as AdminFacturacionRouteImport } from './routes/admin.facturacion'
 import { Route as AdminFacturasRouteImport } from './routes/admin.facturas'
 import { Route as AdminInvitacionRouteImport } from './routes/admin.invitacion'
+import { Route as AdminModulosRouteImport } from './routes/admin.modulos'
 import { Route as EsperaTokenRouteImport } from './routes/espera.$token'
 import { Route as LegalCondicionesSaasRouteImport } from './routes/legal.condiciones-saas'
 import { Route as LegalCookiesRouteImport } from './routes/legal.cookies'
@@ -159,6 +160,11 @@ const AdminFacturasRoute = AdminFacturasRouteImport.update({
 const AdminInvitacionRoute = AdminInvitacionRouteImport.update({
   id: '/invitacion',
   path: '/invitacion',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminModulosRoute = AdminModulosRouteImport.update({
+  id: '/modulos',
+  path: '/modulos',
   getParentRoute: () => AdminRoute,
 } as any)
 const EsperaTokenRoute = EsperaTokenRouteImport.update({
@@ -435,6 +441,7 @@ export interface FileRoutesByFullPath {
   '/admin/facturacion': typeof AdminFacturacionRoute
   '/admin/facturas': typeof AdminFacturasRoute
   '/admin/invitacion': typeof AdminInvitacionRoute
+  '/admin/modulos': typeof AdminModulosRoute
   '/espera/$token': typeof EsperaTokenRoute
   '/legal/condiciones-saas': typeof LegalCondicionesSaasRoute
   '/legal/cookies': typeof LegalCookiesRoute
@@ -502,6 +509,7 @@ export interface FileRoutesByTo {
   '/admin/facturacion': typeof AdminFacturacionRoute
   '/admin/facturas': typeof AdminFacturasRoute
   '/admin/invitacion': typeof AdminInvitacionRoute
+  '/admin/modulos': typeof AdminModulosRoute
   '/espera/$token': typeof EsperaTokenRoute
   '/legal/condiciones-saas': typeof LegalCondicionesSaasRoute
   '/legal/cookies': typeof LegalCookiesRoute
@@ -569,6 +577,7 @@ export interface FileRoutesById {
   '/admin/facturacion': typeof AdminFacturacionRoute
   '/admin/facturas': typeof AdminFacturasRoute
   '/admin/invitacion': typeof AdminInvitacionRoute
+  '/admin/modulos': typeof AdminModulosRoute
   '/espera/$token': typeof EsperaTokenRoute
   '/legal/condiciones-saas': typeof LegalCondicionesSaasRoute
   '/legal/cookies': typeof LegalCookiesRoute
@@ -639,6 +648,7 @@ export interface FileRouteTypes {
     | '/admin/facturacion'
     | '/admin/facturas'
     | '/admin/invitacion'
+    | '/admin/modulos'
     | '/espera/$token'
     | '/legal/condiciones-saas'
     | '/legal/cookies'
@@ -706,6 +716,7 @@ export interface FileRouteTypes {
     | '/admin/facturacion'
     | '/admin/facturas'
     | '/admin/invitacion'
+    | '/admin/modulos'
     | '/espera/$token'
     | '/legal/condiciones-saas'
     | '/legal/cookies'
@@ -772,6 +783,7 @@ export interface FileRouteTypes {
     | '/admin/facturacion'
     | '/admin/facturas'
     | '/admin/invitacion'
+    | '/admin/modulos'
     | '/espera/$token'
     | '/legal/condiciones-saas'
     | '/legal/cookies'
@@ -970,6 +982,13 @@ declare module '@tanstack/react-router' {
       path: '/invitacion'
       fullPath: '/admin/invitacion'
       preLoaderRoute: typeof AdminInvitacionRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/modulos': {
+      id: '/admin/modulos'
+      path: '/modulos'
+      fullPath: '/admin/modulos'
+      preLoaderRoute: typeof AdminModulosRouteImport
       parentRoute: typeof AdminRoute
     }
     '/espera/$token': {
@@ -1325,6 +1344,7 @@ interface AdminRouteChildren {
   AdminFacturacionRoute: typeof AdminFacturacionRoute
   AdminFacturasRoute: typeof AdminFacturasRoute
   AdminInvitacionRoute: typeof AdminInvitacionRoute
+  AdminModulosRoute: typeof AdminModulosRoute
   AdminIndexRoute: typeof AdminIndexRoute
   AdminTenantsTenantIdRoute: typeof AdminTenantsTenantIdRoute
   AdminTenantsIndexRoute: typeof AdminTenantsIndexRoute
@@ -1337,6 +1357,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminFacturacionRoute: AdminFacturacionRoute,
   AdminFacturasRoute: AdminFacturasRoute,
   AdminInvitacionRoute: AdminInvitacionRoute,
+  AdminModulosRoute: AdminModulosRoute,
   AdminIndexRoute: AdminIndexRoute,
   AdminTenantsTenantIdRoute: AdminTenantsTenantIdRoute,
   AdminTenantsIndexRoute: AdminTenantsIndexRoute,
