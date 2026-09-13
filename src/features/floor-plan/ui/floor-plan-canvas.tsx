@@ -6,12 +6,10 @@ import {
   CardHeader,
   CardTitle,
   Field,
-  FieldLabel,
 } from '@doscientos/ui'
 import { useRef, useState, type PointerEvent } from 'react'
 
 import {
-  describeSpaceType,
   type FloorPlanArea,
   type FloorPlanElement,
   type FloorPlanTablePlacement,
@@ -29,7 +27,6 @@ export function FloorPlanCanvas({
   activeArea,
   activeVersion,
   alignmentGuides,
-  areas,
   blockedAccesses,
   elements,
   gridSize,
@@ -41,7 +38,6 @@ export function FloorPlanCanvas({
   onMinimumAisleChange,
   onMovePlacement,
   onSelectItem,
-  onSwitchArea,
   placements,
   previewDevice,
   selectedId,
@@ -50,7 +46,6 @@ export function FloorPlanCanvas({
   activeArea: FloorPlanArea | undefined
   activeVersion: FloorPlanVersion
   alignmentGuides: readonly AlignmentGuide[]
-  areas: readonly FloorPlanArea[]
   blockedAccesses: readonly { accessId: string; placementId: string }[]
   elements: readonly FloorPlanElement[]
   gridSize: number
@@ -62,7 +57,6 @@ export function FloorPlanCanvas({
   onMinimumAisleChange: (value: number) => void
   onMovePlacement: (id: string, xCm: number, yCm: number) => void
   onSelectItem: (id: string, additive?: boolean) => void
-  onSwitchArea: (areaId: string) => void
   placements: readonly FloorPlanTablePlacement[]
   previewDevice: FloorPlanPreviewDevice
   selectedId: string | undefined
@@ -173,30 +167,6 @@ export function FloorPlanCanvas({
               : ''}
             {alignmentGuides.some((guide) => guide.axis === 'y') ? 'alineación horizontal' : ''}
           </p>
-        )}
-        {areas.length > 1 && (
-          <Field className="pt-2">
-            <FieldLabel htmlFor="floor-plan-area">Zona a editar</FieldLabel>
-            <select
-              aria-label="Zona a editar"
-              className="border-border rounded-md border px-2 py-1 text-sm"
-              id="floor-plan-area"
-              onChange={(event) => onSwitchArea(event.target.value)}
-              value={activeArea?.id ?? ''}
-            >
-              {areas.map((area) => (
-                <option key={area.id} value={area.id}>
-                  {area.name} ·{' '}
-                  {area.floorNumber === 0
-                    ? 'Planta baja'
-                    : area.floorNumber === null || area.floorNumber === undefined
-                      ? 'Sin planta'
-                      : `Planta ${area.floorNumber}`}{' '}
-                  · {describeSpaceType(area.spaceType)}
-                </option>
-              ))}
-            </select>
-          </Field>
         )}
       </CardHeader>
       <CardContent>

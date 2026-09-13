@@ -812,7 +812,6 @@ export function FloorPlanPage({
             activeArea={activeArea}
             activeVersion={activeVersion}
             alignmentGuides={alignmentGuides}
-            areas={data.areas}
             blockedAccesses={blockedAccesses}
             elements={elements}
             gridSize={gridSize}
@@ -827,7 +826,6 @@ export function FloorPlanPage({
             onMinimumAisleChange={setMinimumAisleCm}
             onMovePlacement={changePlacement}
             onSelectItem={selectItem}
-            onSwitchArea={switchArea}
             placements={placements}
             previewDevice={previewDevice}
             selectedId={selectedId}
