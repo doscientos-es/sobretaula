@@ -50,7 +50,10 @@ export function GuestsPage({ tenantId, venueId }: { tenantId: string; venueId: s
   useEffect(() => {
     void getGuestTags({ data: { tenantId } })
       .then(setTags)
-      .catch(() => setError('No se han podido cargar las etiquetas.'))
+      // Tags are an enhancement of the directory, not a prerequisite for
+      // loading customers. Do not replace a valid customer result with a
+      // global error if this secondary query is unavailable.
+      .catch(() => setTags([]))
   }, [reloadToken, tenantId])
   useEffect(() => {
     let active = true

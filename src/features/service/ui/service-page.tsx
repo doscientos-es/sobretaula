@@ -246,7 +246,8 @@ export function ServicePage({
           className="border-destructive/40 bg-destructive/10 text-destructive rounded-lg border p-3 text-sm"
           role="alert"
         >
-          Sin conexión. No ejecutes cambios en la sala hasta recuperar la red.
+          Sin conexión. Las operaciones compatibles se guardarán y reintentarán al recuperar la red;
+          los cobros y cambios que exigen confirmar el estado actual esperan conexión.
         </div>
       )}
       <Card aria-label="Resumen de atención del turno">
@@ -290,10 +291,7 @@ export function ServicePage({
           {(pulse.kitchenAttention ||
             pulse.attentionSessions > 0 ||
             pulse.delayedReservations > 0) && (
-            <p
-              className="border-warning/40 bg-warning/10 text-warning-foreground mt-3 rounded-lg border p-3 text-sm"
-              role="status"
-            >
+            <output className="border-warning/40 bg-warning/10 text-warning-foreground mt-3 rounded-lg border p-3 text-sm">
               Prioridad:{' '}
               {pulse.delayedReservations > 0
                 ? 'revisar llegadas retrasadas'
@@ -301,7 +299,7 @@ export function ServicePage({
                   ? 'revisar mesas con tiempo excedido'
                   : 'revisar carga de cocina'}
               .
-            </p>
+            </output>
           )}
         </CardContent>
       </Card>

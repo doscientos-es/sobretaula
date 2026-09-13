@@ -202,6 +202,19 @@ export async function loadFloorPlan(
   if (areasResult.error) throw new Error(`floor_plan_load_failed:${areasResult.error.code}`)
   const areaIds = (areasResult.data ?? []).map((area) => area.id)
 
+  // Supabase serializes an empty `in` filter as `in.()`, which is rejected by
+  // PostgREST. A venue without areas is a valid initial state for this screen.
+  if (areaIds.length === 0) {
+    return {
+      areas: [],
+      elements: [],
+      eventLayoutTemplates: [],
+      placements: [],
+      tableGroupPresets: [],
+      versions: [],
+    }
+  }
+
   const versionsResult = await supabase
     .from('floor_plan_versions')
     .select('active_from, active_to, area_id, height_cm, id, name, width_cm')
