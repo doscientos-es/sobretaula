@@ -5,6 +5,37 @@ import { useEffect } from 'react'
 import { useLocale } from '@/shared/lib/i18n/locale-preference'
 import { createTranslator } from '@/shared/lib/i18n/messages'
 
+const BUILD_ID = import.meta.env.VITE_BUILD_ID ?? 'dev'
+const UPDATE_CHECK_INTERVAL_MS = 60_000
+
+/**
+ * Una pestaña abierta navega con TanStack Router sin volver a pedir el
+ * documento, así que seguiría ejecutando el bundle del despliegue anterior
+ * indefinidamente. Al activarse un worker nuevo se recarga una sola vez.
+ */
+function watchDeploymentUpdates(registration: ServiceWorkerRegistration): () => void {
+  const container = navigator.serviceWorker
+  const wasControlled = Boolean(container.controller)
+  let lastCheck = Date.now()
+
+  const onControllerChange = () => {
+    if (wasControlled) window.location.reload()
+  }
+  const onVisibilityChange = () => {
+    if (document.visibilityState !== 'visible') return
+    if (Date.now() - lastCheck < UPDATE_CHECK_INTERVAL_MS) return
+    lastCheck = Date.now()
+    void registration.update().catch(() => undefined)
+  }
+
+  container.addEventListener('controllerchange', onControllerChange)
+  document.addEventListener('visibilitychange', onVisibilityChange)
+  return () => {
+    container.removeEventListener('controllerchange', onControllerChange)
+    document.removeEventListener('visibilitychange', onVisibilityChange)
+  }
+}
+
 export function PwaRuntime() {
   const locale = useLocale('es')
   const t = createTranslator(locale)
@@ -21,7 +52,17 @@ export function PwaRuntime() {
       })
       return
     }
-    return registerPwaServiceWorker({ scriptUrl: '/sw.js' })
+    let unwatch: (() => void) | undefined
+    const unregister = registerPwaServiceWorker({
+      onRegistered: (registration) => {
+        unwatch = watchDeploymentUpdates(registration)
+      },
+      scriptUrl: `/sw.js?v=${BUILD_ID}`,
+    })
+    return () => {
+      unwatch?.()
+      unregister()
+    }
   }, [])
 
   useEffect(() => {

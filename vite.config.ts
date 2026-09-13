@@ -11,7 +11,12 @@ export default defineConfig(({ mode }) => {
   // así que el .env local también debe llegar allí.
   Object.assign(process.env, loadEnv(mode, process.cwd(), ''))
 
+  // Identifica el despliegue para que el service worker use una caché nueva por
+  // build y las pestañas abiertas no se queden con el bundle anterior.
+  const buildId = process.env.VERCEL_GIT_COMMIT_SHA ?? Date.now().toString(36)
+
   return {
+    define: { 'import.meta.env.VITE_BUILD_ID': JSON.stringify(buildId) },
     plugins: [tailwindcss(), tanstackStart(), react(), nitro({ preset: 'vercel' })],
     resolve: {
       alias: {

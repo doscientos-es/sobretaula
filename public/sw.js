@@ -1,4 +1,6 @@
-const CACHE_NAME = 'sobretaula-static-v1'
+const CACHE_PREFIX = 'sobretaula-static-'
+const CACHE_VERSION = new URL(self.location.href).searchParams.get('v') ?? 'dev'
+const CACHE_NAME = `${CACHE_PREFIX}${CACHE_VERSION}`
 const STATIC_ASSETS = ['/icon.svg', '/manifest.webmanifest']
 
 self.addEventListener('install', (event) => {
@@ -11,7 +13,11 @@ self.addEventListener('activate', (event) => {
     caches
       .keys()
       .then((keys) =>
-        Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))),
+        Promise.all(
+          keys
+            .filter((key) => key.startsWith(CACHE_PREFIX) && key !== CACHE_NAME)
+            .map((key) => caches.delete(key)),
+        ),
       ),
   )
   self.clients.claim()
