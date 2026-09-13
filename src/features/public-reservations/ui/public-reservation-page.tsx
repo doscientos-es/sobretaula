@@ -80,7 +80,7 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
     values: Record<string, string | number> = {},
   ) => formatMessage(locale, key, values)
   const feedback = useFormFeedback()
-  const [serviceId, setServiceId] = useState(profile.services[0]?.id ?? '')
+  const [serviceId, setServiceId] = useState('')
   const [areaId, setAreaId] = useState('')
   const [date, setDate] = useState('')
   const [time, setTime] = useState('')
@@ -295,243 +295,258 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form className="grid gap-4" onSubmit={(event) => void submit(event)}>
-              <Field>
-                <FieldLabel htmlFor="public-service">{t('public.moment')}</FieldLabel>
-                <select
-                  id="public-service"
-                  className="min-h-12 bg-white"
-                  onChange={(event) => selectService(event.target.value)}
-                  value={serviceId}
-                >
-                  {profile.services.map((candidate) => (
-                    <option key={candidate.id} value={candidate.id}>
-                      {candidate.name} ·{' '}
-                      {new Intl.DateTimeFormat(locale, { timeZone: 'UTC', weekday: 'long' }).format(
-                        new Date(Date.UTC(2024, 0, 7 + candidate.weekday)),
-                      )}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-              {profile.areas.length ? (
-                <Field>
-                  <FieldLabel htmlFor="public-area">{t('public.optionalArea')}</FieldLabel>
-                  <select
-                    id="public-area"
-                    className="min-h-12 bg-white"
-                    onChange={(event) => {
-                      setAreaId(event.target.value)
-                      if (date) void selectDate(date, partySize, event.target.value)
-                    }}
-                    value={areaId}
-                  >
-                    <option value="">{t('public.anyArea')}</option>
-                    {profile.areas.map((area) => (
-                      <option key={area.id} value={area.id}>
-                        {area.name}
-                      </option>
-                    ))}
-                  </select>
-                </Field>
-              ) : null}
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field>
-                  <FieldLabel htmlFor="public-date">
-                    <CalendarDays aria-hidden="true" className="mr-1 inline size-4" />{' '}
-                    {t('public.day')}
-                  </FieldLabel>
-                  <select
-                    id="public-date"
-                    className="min-h-12 bg-white"
-                    onChange={(event) => void selectDate(event.target.value)}
-                    required
-                    value={date}
-                  >
-                    <option value="">{t('public.selectDay')}</option>
-                    {dates.map((candidate) => (
-                      <option key={candidate} value={candidate}>
-                        {formatDate(candidate, locale)}
-                      </option>
-                    ))}
-                  </select>
-                  {date && !availabilityLoading && availableSlots.length === 0 ? (
-                    <p className="mt-2 text-xs text-[#c34d3e]">
-                      {areaId ? t('public.noSlotsInArea') : t('public.noSlots')}
-                    </p>
-                  ) : null}
-                  {alternativeSlots.length ? (
-                    <p className="mt-2 text-xs text-[#5b6470]">
-                      {t('public.alternativeSlots')}{' '}
-                      {alternativeSlots.map((slot) => (
-                        <button
-                          className="ml-2 underline"
-                          key={slot}
-                          onClick={() => {
-                            setAreaId('')
-                            setAvailableSlots([slot])
-                            setTime(slot)
-                          }}
-                          type="button"
-                        >
-                          {slot}
-                        </button>
-                      ))}
-                    </p>
-                  ) : null}
-                </Field>
-                <Field>
-                  <FieldLabel htmlFor="public-time">{t('public.time')}</FieldLabel>
-                  <select
-                    id="public-time"
-                    className="min-h-12 bg-white"
-                    onChange={(event) => setTime(event.target.value)}
-                    required
-                    value={time}
-                  >
-                    <option value="">{t('public.selectTime')}</option>
-                    {(date ? availableSlots : slots).map((candidate) => (
-                      <option key={candidate} value={candidate}>
-                        {candidate}
-                      </option>
-                    ))}
-                  </select>
-                  {availabilityLoading ? (
-                    <p aria-live="polite" className="text-muted-foreground mt-2 text-xs">
-                      {t('public.searching')}
-                    </p>
-                  ) : null}
-                </Field>
-              </div>
-              <Field>
-                <FieldLabel htmlFor="public-party">
-                  <Users aria-hidden="true" className="mr-1 inline size-4" /> {t('public.people')}
-                </FieldLabel>
-                <Input
-                  id="public-party"
-                  className="min-h-12"
-                  max={50}
-                  min={1}
-                  onChange={(event) => {
-                    const nextSize = Number(event.target.value)
-                    setPartySize(nextSize)
-                    if (date) void selectDate(date, nextSize)
-                  }}
-                  required
-                  type="number"
-                  value={partySize}
-                />
-              </Field>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field>
-                  <FieldLabel htmlFor="public-name">{t('public.name')}</FieldLabel>
-                  <Input
-                    autoComplete="name"
-                    id="public-name"
-                    onChange={(event) => setGuestName(event.target.value)}
-                    required
-                    value={guestName}
-                  />
-                </Field>
-                <Field>
-                  <FieldLabel htmlFor="public-phone">{t('public.phone')}</FieldLabel>
-                  <Input
-                    autoComplete="tel"
-                    id="public-phone"
-                    inputMode="tel"
-                    onChange={(event) => setPhone(event.target.value)}
-                    value={phone}
-                  />
-                </Field>
-              </div>
-              <Field>
-                <FieldLabel htmlFor="public-email">{t('public.email')}</FieldLabel>
-                <Input
-                  autoComplete="email"
-                  id="public-email"
-                  onChange={(event) => setEmail(event.target.value)}
-                  required
-                  type="email"
-                  value={email}
-                />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="public-notes">{t('public.notes')}</FieldLabel>
-                <textarea
-                  className="min-h-20 w-full rounded-md border bg-white px-3 py-2"
-                  id="public-notes"
-                  maxLength={1000}
-                  onChange={(event) => setNotes(event.target.value)}
-                  value={notes}
-                />
-              </Field>
-              <label className="flex items-start gap-2 text-xs leading-5 text-[#737983]">
-                <input
-                  checked={privacyAccepted}
-                  onChange={(event) => setPrivacyAccepted(event.target.checked)}
-                  required
-                  type="checkbox"
-                />
-                <span>{t('public.privacyConsent')}</span>
-              </label>
-              {profile.terms ? (
-                <div className="grid gap-2 rounded-md border border-[#292d34]/10 bg-[#fbfaf8] p-3 text-xs leading-5 text-[#60656d]">
-                  <p className="font-semibold text-[#292d34]">
-                    {profile.terms.title} ·{' '}
-                    {message('public.termsVersion', { version: profile.terms.version })}
-                  </p>
-                  <p className="max-h-28 overflow-y-auto whitespace-pre-wrap">
-                    {profile.terms.body}
-                  </p>
-                  <label className="flex items-start gap-2">
-                    <input
-                      checked={termsAccepted}
-                      onChange={(event) => setTermsAccepted(event.target.checked)}
-                      required
-                      type="checkbox"
-                    />
-                    <span>{t('public.acceptTerms')}</span>
-                  </label>
-                </div>
-              ) : null}
-              <FormFeedback pendingLabel={t('public.checking')} state={feedback.state} />
-              <Button
-                className="w-full"
-                disabled={
-                  feedback.pending ||
-                  availabilityLoading ||
-                  profile.services.length === 0 ||
-                  Boolean(date && availableSlots.length === 0)
-                }
-                size="lg"
-                type="submit"
+            {profile.services.length === 0 ? (
+              <div
+                aria-live="polite"
+                className="rounded-lg border border-dashed border-[#c34d3e]/40 bg-[#fff7f4] p-4 text-sm text-[#60656d]"
+                role="status"
               >
-                {t('public.reserve')}
-              </Button>
-              <p className="m-0 text-xs leading-5 text-[#737983]">
-                {message('public.legalPrefix', { name: profile.name })}{' '}
-                <Link
-                  className="underline underline-offset-2"
-                  params={{ slug: profile.slug }}
-                  rel="noreferrer"
-                  target="_blank"
-                  to="/reservar/$slug/privacidad"
+                <p className="font-medium text-[#292d34]">{t('public.noServices')}</p>
+                <p className="mt-1">{t('public.noServicesAction')}</p>
+              </div>
+            ) : (
+              <form className="grid gap-4" onSubmit={(event) => void submit(event)}>
+                <Field>
+                  <FieldLabel htmlFor="public-service">{t('public.moment')}</FieldLabel>
+                  <select
+                    id="public-service"
+                    className="min-h-12 bg-white"
+                    onChange={(event) => selectService(event.target.value)}
+                    value={serviceId}
+                  >
+                    <option disabled value="">
+                      {t('public.selectMoment')}
+                    </option>
+                    {profile.services.map((candidate) => (
+                      <option key={candidate.id} value={candidate.id}>
+                        {candidate.name} ·{' '}
+                        {new Intl.DateTimeFormat(locale, {
+                          timeZone: 'UTC',
+                          weekday: 'long',
+                        }).format(new Date(Date.UTC(2024, 0, 7 + candidate.weekday)))}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                {profile.areas.length ? (
+                  <Field>
+                    <FieldLabel htmlFor="public-area">{t('public.optionalArea')}</FieldLabel>
+                    <select
+                      id="public-area"
+                      className="min-h-12 bg-white"
+                      onChange={(event) => {
+                        setAreaId(event.target.value)
+                        if (date) void selectDate(date, partySize, event.target.value)
+                      }}
+                      value={areaId}
+                    >
+                      <option value="">{t('public.anyArea')}</option>
+                      {profile.areas.map((area) => (
+                        <option key={area.id} value={area.id}>
+                          {area.name}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                ) : null}
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field>
+                    <FieldLabel htmlFor="public-date">
+                      <CalendarDays aria-hidden="true" className="mr-1 inline size-4" />{' '}
+                      {t('public.day')}
+                    </FieldLabel>
+                    <select
+                      id="public-date"
+                      className="min-h-12 bg-white"
+                      onChange={(event) => void selectDate(event.target.value)}
+                      required
+                      value={date}
+                    >
+                      <option value="">{t('public.selectDay')}</option>
+                      {dates.map((candidate) => (
+                        <option key={candidate} value={candidate}>
+                          {formatDate(candidate, locale)}
+                        </option>
+                      ))}
+                    </select>
+                    {date && !availabilityLoading && availableSlots.length === 0 ? (
+                      <p className="mt-2 text-xs text-[#c34d3e]">
+                        {areaId ? t('public.noSlotsInArea') : t('public.noSlots')}
+                      </p>
+                    ) : null}
+                    {alternativeSlots.length ? (
+                      <p className="mt-2 text-xs text-[#5b6470]">
+                        {t('public.alternativeSlots')}{' '}
+                        {alternativeSlots.map((slot) => (
+                          <button
+                            className="ml-2 underline"
+                            key={slot}
+                            onClick={() => {
+                              setAreaId('')
+                              setAvailableSlots([slot])
+                              setTime(slot)
+                            }}
+                            type="button"
+                          >
+                            {slot}
+                          </button>
+                        ))}
+                      </p>
+                    ) : null}
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="public-time">{t('public.time')}</FieldLabel>
+                    <select
+                      id="public-time"
+                      className="min-h-12 bg-white"
+                      onChange={(event) => setTime(event.target.value)}
+                      required
+                      value={time}
+                    >
+                      <option value="">{t('public.selectTime')}</option>
+                      {(date ? availableSlots : slots).map((candidate) => (
+                        <option key={candidate} value={candidate}>
+                          {candidate}
+                        </option>
+                      ))}
+                    </select>
+                    {availabilityLoading ? (
+                      <p aria-live="polite" className="text-muted-foreground mt-2 text-xs">
+                        {t('public.searching')}
+                      </p>
+                    ) : null}
+                  </Field>
+                </div>
+                <Field>
+                  <FieldLabel htmlFor="public-party">
+                    <Users aria-hidden="true" className="mr-1 inline size-4" /> {t('public.people')}
+                  </FieldLabel>
+                  <Input
+                    id="public-party"
+                    className="min-h-12"
+                    max={50}
+                    min={1}
+                    onChange={(event) => {
+                      const nextSize = Number(event.target.value)
+                      setPartySize(nextSize)
+                      if (date) void selectDate(date, nextSize)
+                    }}
+                    required
+                    type="number"
+                    value={partySize}
+                  />
+                </Field>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field>
+                    <FieldLabel htmlFor="public-name">{t('public.name')}</FieldLabel>
+                    <Input
+                      autoComplete="name"
+                      id="public-name"
+                      onChange={(event) => setGuestName(event.target.value)}
+                      required
+                      value={guestName}
+                    />
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="public-phone">{t('public.phone')}</FieldLabel>
+                    <Input
+                      autoComplete="tel"
+                      id="public-phone"
+                      inputMode="tel"
+                      onChange={(event) => setPhone(event.target.value)}
+                      value={phone}
+                    />
+                  </Field>
+                </div>
+                <Field>
+                  <FieldLabel htmlFor="public-email">{t('public.email')}</FieldLabel>
+                  <Input
+                    autoComplete="email"
+                    id="public-email"
+                    onChange={(event) => setEmail(event.target.value)}
+                    required
+                    type="email"
+                    value={email}
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="public-notes">{t('public.notes')}</FieldLabel>
+                  <textarea
+                    className="min-h-20 w-full rounded-md border bg-white px-3 py-2"
+                    id="public-notes"
+                    maxLength={1000}
+                    onChange={(event) => setNotes(event.target.value)}
+                    value={notes}
+                  />
+                </Field>
+                <label className="flex items-start gap-2 text-xs leading-5 text-[#737983]">
+                  <input
+                    checked={privacyAccepted}
+                    onChange={(event) => setPrivacyAccepted(event.target.checked)}
+                    required
+                    type="checkbox"
+                  />
+                  <span>{t('public.privacyConsent')}</span>
+                </label>
+                {profile.terms ? (
+                  <div className="grid gap-2 rounded-md border border-[#292d34]/10 bg-[#fbfaf8] p-3 text-xs leading-5 text-[#60656d]">
+                    <p className="font-semibold text-[#292d34]">
+                      {profile.terms.title} ·{' '}
+                      {message('public.termsVersion', { version: profile.terms.version })}
+                    </p>
+                    <p className="max-h-28 overflow-y-auto whitespace-pre-wrap">
+                      {profile.terms.body}
+                    </p>
+                    <label className="flex items-start gap-2">
+                      <input
+                        checked={termsAccepted}
+                        onChange={(event) => setTermsAccepted(event.target.checked)}
+                        required
+                        type="checkbox"
+                      />
+                      <span>{t('public.acceptTerms')}</span>
+                    </label>
+                  </div>
+                ) : null}
+                <FormFeedback pendingLabel={t('public.checking')} state={feedback.state} />
+                <Button
+                  className="w-full"
+                  disabled={
+                    feedback.pending ||
+                    availabilityLoading ||
+                    profile.services.length === 0 ||
+                    Boolean(date && availableSlots.length === 0)
+                  }
+                  size="lg"
+                  type="submit"
                 >
-                  {t('public.privacyPolicy')}
-                </Link>{' '}
-                {t('public.andTerms')}{' '}
-                <Link
-                  className="underline underline-offset-2"
-                  params={{ slug: profile.slug }}
-                  rel="noreferrer"
-                  target="_blank"
-                  to="/reservar/$slug/condiciones"
-                >
-                  {t('public.bookingTerms')}
-                </Link>
-                .
-              </p>
-            </form>
+                  {t('public.reserve')}
+                </Button>
+                <p className="m-0 text-xs leading-5 text-[#737983]">
+                  {message('public.legalPrefix', { name: profile.name })}{' '}
+                  <Link
+                    className="underline underline-offset-2"
+                    params={{ slug: profile.slug }}
+                    rel="noreferrer"
+                    target="_blank"
+                    to="/reservar/$slug/privacidad"
+                  >
+                    {t('public.privacyPolicy')}
+                  </Link>{' '}
+                  {t('public.andTerms')}{' '}
+                  <Link
+                    className="underline underline-offset-2"
+                    params={{ slug: profile.slug }}
+                    rel="noreferrer"
+                    target="_blank"
+                    to="/reservar/$slug/condiciones"
+                  >
+                    {t('public.bookingTerms')}
+                  </Link>
+                  .
+                </p>
+              </form>
+            )}
           </CardContent>
         </Card>
       </section>

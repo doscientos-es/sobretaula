@@ -3,6 +3,8 @@
 La producción usa Supabase gestionado con datos reales. Nunca incluir ni reutilizar credenciales,
 URLs o datos de producción en entornos de prueba.
 
+El proyecto usa el mcp de polbackup05 para conectarse a supabase
+
 ## Migraciones de Supabase
 
 Cuando el agente cree o modifique una migración en `supabase/migrations`,

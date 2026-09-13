@@ -172,7 +172,10 @@ const es = {
   'public.findTable': 'Encuentra tu mesa',
   'public.noAccount': 'No necesitas crear una cuenta.',
   'public.noServices': 'Este restaurante todavía no ha publicado ningún turno disponible.',
+  'public.noServicesAction':
+    'El equipo del restaurante debe publicar primero un turno y su disponibilidad para poder aceptar reservas.',
   'public.moment': 'Momento',
+  'public.selectMoment': 'Selecciona un turno',
   'public.optionalArea': 'Zona (opcional)',
   'public.anyArea': 'Cualquier zona',
   'public.day': 'Día',
@@ -242,6 +245,15 @@ const es = {
     'SobreTaula utiliza almacenamiento técnico imprescindible para mantener la sesión y proteger formularios.',
   'settings.cookies.technical': 'No hay cookies analíticas ni publicitarias activas.',
   'settings.cookies.viewPolicy': 'Consultar la política de cookies',
+  'settings.notifications.title': 'Notificaciones',
+  'settings.notifications.cardDescription': 'Recibe avisos cuando entre una reserva importante.',
+  'settings.notifications.description':
+    'Activa los avisos de este dispositivo para no perderte nuevas reservas.',
+  'settings.notifications.enable': 'Activar notificaciones',
+  'settings.notifications.disable': 'Desactivar notificaciones',
+  'settings.notifications.unavailable':
+    'Las notificaciones push no están disponibles en este navegador o aún no están configuradas.',
+  'settings.notifications.error': 'No se ha podido actualizar la preferencia. Inténtalo de nuevo.',
   'settings.account.title': 'Cuenta',
   'settings.account.description': 'Identidad con la que has iniciado sesión.',
   'settings.account.email': 'Correo electrónico',
@@ -251,6 +263,11 @@ const es = {
     'Se usará como idioma inicial del restaurante y de las pantallas de trabajo.',
   'onboarding.language.spanish': 'Español',
   'onboarding.language.catalan': 'Catalán',
+  'pwa.install.title': 'Instala SobreTaula',
+  'pwa.install.description': 'Accede más rápido y recibe avisos importantes en tu dispositivo.',
+  'pwa.install.iosDescription': 'Usa Compartir y después «Añadir a pantalla de inicio».',
+  'pwa.install.action': 'Instalar',
+  'pwa.install.dismiss': 'Ahora no',
 } as const
 
 export type MessageKey = keyof typeof es
@@ -428,7 +445,10 @@ const ca: Record<MessageKey, string> = {
   'public.findTable': 'Troba la teva taula',
   'public.noAccount': 'No cal que creïs cap compte.',
   'public.noServices': 'Aquest restaurant encara no ha publicat cap torn disponible.',
+  'public.noServicesAction':
+    'L’equip del restaurant ha de publicar primer un torn i la seva disponibilitat per poder acceptar reserves.',
   'public.moment': 'Moment',
+  'public.selectMoment': 'Tria un torn',
   'public.optionalArea': 'Zona (opcional)',
   'public.anyArea': 'Qualsevol zona',
   'public.day': 'Dia',
@@ -498,6 +518,15 @@ const ca: Record<MessageKey, string> = {
     'SobreTaula utilitza emmagatzematge tècnic imprescindible per mantenir la sessió i protegir formularis.',
   'settings.cookies.technical': 'No hi ha galetes analítiques ni publicitàries actives.',
   'settings.cookies.viewPolicy': 'Consulta la política de galetes',
+  'settings.notifications.title': 'Notificacions',
+  'settings.notifications.cardDescription': 'Rep avisos quan entri una reserva important.',
+  'settings.notifications.description':
+    'Activa els avisos d’aquest dispositiu per no perdre’t noves reserves.',
+  'settings.notifications.enable': 'Activar notificacions',
+  'settings.notifications.disable': 'Desactivar notificacions',
+  'settings.notifications.unavailable':
+    'Les notificacions push no estan disponibles en aquest navegador o encara no estan configurades.',
+  'settings.notifications.error': 'No s’ha pogut actualitzar la preferència. Torna-ho a provar.',
   'settings.account.title': 'Compte',
   'settings.account.description': 'Identitat amb què has iniciat sessió.',
   'settings.account.email': 'Correu electrònic',
@@ -507,6 +536,11 @@ const ca: Record<MessageKey, string> = {
     'S’utilitzarà com a idioma inicial del restaurant i de les pantalles de treball.',
   'onboarding.language.spanish': 'Castellà',
   'onboarding.language.catalan': 'Català',
+  'pwa.install.title': 'Instal·la SobreTaula',
+  'pwa.install.description': 'Accedeix més ràpid i rep avisos importants al teu dispositiu.',
+  'pwa.install.iosDescription': 'Fes servir Compartir i després «Afegir a la pantalla d’inici».',
+  'pwa.install.action': 'Instal·la',
+  'pwa.install.dismiss': 'Ara no',
 }
 
 const messages: Record<Locale, Record<MessageKey, string>> = { ca, es }

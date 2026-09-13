@@ -2,14 +2,15 @@ import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 
 import { authMiddleware } from '@/features/auth/infrastructure/server/auth-middleware'
+import { getTenantBySlug } from '@/features/tenancy/application/get-tenant-by-slug'
 import {
   operationalTenantMiddleware,
   tenantMembershipMiddleware,
 } from '@/features/tenancy/application/require-tenant-membership'
 import { createRequestSupabaseClient } from '@/shared/lib/supabase/server/create-server-client'
-import { isValidVenueSlug } from '@/shared/lib/tenant/venue-slug'
+import { isValidVenueSlug, parseVenueSlug } from '@/shared/lib/tenant/venue-slug'
 
-import type { Venue } from '../domain/venue'
+import { resolveVenue, type Venue } from '../domain/venue'
 
 const tenantInput = z.object({ tenantId: z.string().uuid() })
 const createVenueInput = tenantInput.extend({
@@ -42,6 +43,19 @@ export const getTenantVenues = createServerFn({ method: 'GET' })
       slug: venue.slug,
     }))
   })
+
+/** Resolves the local for a route loader without relying on same-route context. */
+export async function loadVenueRouteContext(slug: string, venueParam: string) {
+  const venueSlug = parseVenueSlug(venueParam)
+  if (!venueSlug) return null
+
+  const tenant = await getTenantBySlug({ data: { slug } })
+  if (!tenant) return null
+
+  const venues = await getTenantVenues({ data: { tenantId: tenant.id } })
+  const venue = resolveVenue(venues, venueSlug)
+  return venue ? { tenant, venue } : null
+}
 
 /** Each extra local adds a fixed monthly amount, so only owners may add one. */
 export const createVenue = createServerFn({ method: 'POST' })

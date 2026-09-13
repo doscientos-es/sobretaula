@@ -9,9 +9,10 @@ import {
   PageHeaderTitle,
 } from '@doscientos/ui'
 import { Link } from '@tanstack/react-router'
-import { Globe2, ShieldCheck, UserRound } from 'lucide-react'
+import { Bell, Globe2, ShieldCheck, UserRound } from 'lucide-react'
 
 import type { CurrentUser } from '@/features/auth'
+import { PushNotificationPreferences } from '@/features/settings/ui/push-notification-preferences'
 import { LanguageSwitcher } from '@/shared/lib/i18n/language-switcher'
 import { useLocale } from '@/shared/lib/i18n/locale-preference'
 import { createTranslator } from '@/shared/lib/i18n/messages'
@@ -62,6 +63,19 @@ export function SettingsPage({ user }: { user: CurrentUser }) {
             >
               {t('settings.cookies.viewPolicy')}
             </Link>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Bell aria-hidden="true" className="size-4" />
+              {t('settings.notifications.title')}
+            </CardTitle>
+            <CardDescription>{t('settings.notifications.cardDescription')}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <PushNotificationPreferences />
           </CardContent>
         </Card>
 

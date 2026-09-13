@@ -1,0 +1,25 @@
+{
+  "name": "SobreTaula",
+  "short_name": "SobreTaula",
+  "description": "Gestión de sala, reservas y facturación",
+  "lang": "es",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f7f7f7",
+  "theme_color": "#ff5f4d",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}

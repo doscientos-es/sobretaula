@@ -2,8 +2,9 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 type Job = {
   id: string
-  channel: 'email' | 'sms' | 'whatsapp'
+  channel: 'email' | 'sms' | 'whatsapp' | 'push'
   guest_id: string | null
+  recipient_user_id: string | null
   reservation_id: string | null
   type: string
 }
@@ -27,11 +28,164 @@ type Branding = {
   primary_color: string
   reply_to_email: string | null
 }
+type PushSubscription = { auth_key: string; endpoint: string; p256dh_key: string }
+
+const encoder = new TextEncoder()
 
 function requiredEnv(name: string): string {
   const value = Deno.env.get(name)
   if (!value) throw new Error(`missing_env:${name}`)
   return value
+}
+
+function base64UrlEncode(value: ArrayBuffer | Uint8Array): string {
+  const bytes = value instanceof Uint8Array ? value : new Uint8Array(value)
+  let binary = ''
+  for (const byte of bytes) binary += String.fromCharCode(byte)
+  return btoa(binary).replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', '')
+}
+
+function base64UrlDecode(value: string): Uint8Array {
+  const padded = value + '='.repeat((4 - (value.length % 4)) % 4)
+  const binary = atob(padded.replaceAll('-', '+').replaceAll('_', '/'))
+  return Uint8Array.from(binary, (character) => character.charCodeAt(0))
+}
+
+function concatBytes(...values: Uint8Array[]): Uint8Array {
+  const result = new Uint8Array(values.reduce((length, value) => length + value.length, 0))
+  let offset = 0
+  for (const value of values) {
+    result.set(value, offset)
+    offset += value.length
+  }
+  return result
+}
+
+async function hmac(keyBytes: Uint8Array, data: Uint8Array): Promise<Uint8Array> {
+  const key = await crypto.subtle.importKey(
+    'raw',
+    keyBytes,
+    { hash: 'SHA-256', name: 'HMAC' },
+    false,
+    ['sign'],
+  )
+  return new Uint8Array(await crypto.subtle.sign('HMAC', key, data))
+}
+
+async function hkdfExpand(prk: Uint8Array, info: Uint8Array, length: number): Promise<Uint8Array> {
+  const chunks: Uint8Array[] = []
+  let previous = new Uint8Array()
+  for (
+    let index = 1;
+    chunks.reduce((total, chunk) => total + chunk.length, 0) < length;
+    index += 1
+  ) {
+    previous = await hmac(prk, concatBytes(previous, info, new Uint8Array([index])))
+    chunks.push(previous)
+  }
+  return concatBytes(...chunks).slice(0, length)
+}
+
+function vapidPublicJwk(publicKey: Uint8Array): JsonWebKey {
+  if (publicKey.length !== 65 || publicKey[0] !== 4) throw new Error('invalid_vapid_public_key')
+  return {
+    crv: 'P-256',
+    kty: 'EC',
+    x: base64UrlEncode(publicKey.slice(1, 33)),
+    y: base64UrlEncode(publicKey.slice(33, 65)),
+  }
+}
+
+async function signVapidToken(
+  endpoint: string,
+): Promise<{ authorization: string; publicKey: string }> {
+  const publicKeyValue = requiredEnv('VAPID_PUBLIC_KEY')
+  const privateKeyValue = requiredEnv('VAPID_PRIVATE_KEY')
+  const publicKey = base64UrlDecode(publicKeyValue)
+  const privateKey = await crypto.subtle.importKey(
+    'jwk',
+    {
+      ...vapidPublicJwk(publicKey),
+      d: base64UrlEncode(base64UrlDecode(privateKeyValue)),
+      ext: false,
+    },
+    { crv: 'P-256', name: 'ECDSA' },
+    false,
+    ['sign'],
+  )
+  const header = base64UrlEncode(encoder.encode(JSON.stringify({ alg: 'ES256', typ: 'JWT' })))
+  const payload = base64UrlEncode(
+    encoder.encode(
+      JSON.stringify({
+        aud: new URL(endpoint).origin,
+        exp: Math.floor(Date.now() / 1000) + 12 * 60 * 60,
+        sub: requiredEnv('VAPID_SUBJECT'),
+      }),
+    ),
+  )
+  const input = `${header}.${payload}`
+  const signature = await crypto.subtle.sign(
+    { hash: 'SHA-256', name: 'ECDSA' },
+    privateKey,
+    encoder.encode(input),
+  )
+  return {
+    authorization: `vapid t=${input}.${base64UrlEncode(signature)}, k=${publicKeyValue}`,
+    publicKey: publicKeyValue,
+  }
+}
+
+async function encryptPushPayload(
+  subscription: PushSubscription,
+  payload: string,
+): Promise<Uint8Array> {
+  const subscriberPublicKeyBytes = base64UrlDecode(subscription.p256dh_key)
+  const subscriberPublicKey = await crypto.subtle.importKey(
+    'raw',
+    subscriberPublicKeyBytes,
+    { crv: 'P-256', name: 'ECDH' },
+    false,
+    [],
+  )
+  const ephemeral = (await crypto.subtle.generateKey({ crv: 'P-256', name: 'ECDH' }, true, [
+    'deriveBits',
+  ])) as CryptoKeyPair
+  const ephemeralPublicKey = new Uint8Array(
+    await crypto.subtle.exportKey('raw', ephemeral.publicKey),
+  )
+  const sharedSecret = new Uint8Array(
+    await crypto.subtle.deriveBits(
+      { name: 'ECDH', public: subscriberPublicKey },
+      ephemeral.privateKey,
+      256,
+    ),
+  )
+  const authSecret = base64UrlDecode(subscription.auth_key)
+  const authInfo = concatBytes(
+    encoder.encode('WebPush: info\0'),
+    subscriberPublicKeyBytes,
+    ephemeralPublicKey,
+  )
+  const authPrk = await hmac(authSecret, sharedSecret)
+  const ikm = await hkdfExpand(authPrk, authInfo, 32)
+  const salt = crypto.getRandomValues(new Uint8Array(16))
+  const prk = await hmac(salt, ikm)
+  const cek = await hkdfExpand(prk, encoder.encode('Content-Encoding: aes128gcm\0'), 16)
+  const nonce = await hkdfExpand(prk, encoder.encode('Content-Encoding: nonce\0'), 12)
+  const aesKey = await crypto.subtle.importKey('raw', cek, 'AES-GCM', false, ['encrypt'])
+  const plaintext = concatBytes(encoder.encode(payload), new Uint8Array([2]))
+  const ciphertext = new Uint8Array(
+    await crypto.subtle.encrypt({ iv: nonce, name: 'AES-GCM' }, aesKey, plaintext),
+  )
+  const recordSize = new Uint8Array(4)
+  new DataView(recordSize.buffer).setUint32(0, 4096)
+  return concatBytes(
+    salt,
+    recordSize,
+    new Uint8Array([ephemeralPublicKey.length]),
+    ephemeralPublicKey,
+    ciphertext,
+  )
 }
 
 const supabase = createClient(requiredEnv('SUPABASE_URL'), requiredEnv('SUPABASE_SERVICE_ROLE_KEY'))
@@ -161,8 +315,75 @@ async function deliverEmail(job: Job): Promise<'sent' | 'cancelled'> {
   return 'sent'
 }
 
+async function deliverPush(job: Job): Promise<'sent' | 'cancelled'> {
+  if (!job.reservation_id || !job.recipient_user_id)
+    throw new Error('push_payload_missing_reservation_or_recipient')
+  const { data: reservation, error: reservationError } = await supabase
+    .from('reservations')
+    .select('ends_at, guest_id, party_size, starts_at, status, tenant_id, venue_id')
+    .eq('id', job.reservation_id)
+    .maybeSingle<Reservation>()
+  if (reservationError || !reservation) throw new Error('reservation_not_found')
+  if (!['pending', 'confirmed'].includes(reservation.status)) return 'cancelled'
+
+  const [
+    { data: subscriptions, error: subscriptionsError },
+    { data: venue, error: venueError },
+    { data: tenant, error: tenantError },
+  ] = await Promise.all([
+    supabase
+      .from('push_subscriptions')
+      .select('auth_key, endpoint, p256dh_key')
+      .eq('user_id', job.recipient_user_id)
+      .returns<PushSubscription[]>(),
+    supabase.from('venues').select('name').eq('id', reservation.venue_id).maybeSingle<Venue>(),
+    supabase
+      .from('tenants')
+      .select('name, timezone')
+      .eq('id', reservation.tenant_id)
+      .maybeSingle<Tenant>(),
+  ])
+  if (subscriptionsError || venueError || !venue || tenantError || !tenant)
+    throw new Error('push_payload_not_available')
+  if (!subscriptions?.length) return 'cancelled'
+
+  const startsAt = new Intl.DateTimeFormat(job.locale === 'ca' ? 'ca-ES' : 'es-ES', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+    timeZone: tenant.timezone,
+  }).format(new Date(reservation.starts_at))
+  const payload = JSON.stringify({
+    body: `Nueva reserva en ${venue.name}: ${reservation.party_size} ${reservation.party_size === 1 ? 'persona' : 'personas'} · ${startsAt}`,
+    tag: `reservation-${reservation.tenant_id}`,
+    title: 'Nueva reserva',
+    url: '/',
+  })
+  let delivered = 0
+  for (const subscription of subscriptions) {
+    const { authorization } = await signVapidToken(subscription.endpoint)
+    const response = await fetch(subscription.endpoint, {
+      body: await encryptPushPayload(subscription, payload),
+      headers: {
+        authorization,
+        'content-encoding': 'aes128gcm',
+        'content-type': 'application/octet-stream',
+        ttl: '300',
+      },
+      method: 'POST',
+    })
+    if (response.status === 404 || response.status === 410) {
+      await supabase.from('push_subscriptions').delete().eq('endpoint', subscription.endpoint)
+      continue
+    }
+    if (!response.ok) throw new Error(`push_provider_http_${response.status}`)
+    delivered += 1
+  }
+  return delivered ? 'sent' : 'cancelled'
+}
+
 async function deliver(job: Job): Promise<'sent' | 'cancelled'> {
   if (job.channel === 'email') return deliverEmail(job)
+  if (job.channel === 'push') return deliverPush(job)
   throw new Error(`provider_not_configured:${job.channel}`)
 }
 

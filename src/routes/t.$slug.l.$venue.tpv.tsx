@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, notFound } from '@tanstack/react-router'
 import { z } from 'zod'
 
 import {
@@ -17,6 +17,7 @@ import { PosTerminalPage } from '@/features/pos'
 import { getSalesReport, ProductSalesSummary, SalesReportPage } from '@/features/reports'
 import { getServiceBoard, KitchenQueue, type ServiceBoard } from '@/features/service'
 import { requireTenantRouteAccess } from '@/features/tenancy/application/tenant-route-access'
+import { loadVenueRouteContext } from '@/features/venues'
 import { useLocale } from '@/shared/lib/i18n/locale-preference'
 import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
 
@@ -25,8 +26,10 @@ export const Route = createFileRoute('/t/$slug/l/$venue/tpv')({
   loaderDeps: ({ search }) => ({ sessionId: search.sessionId }),
   beforeLoad: ({ context }) =>
     requireTenantRouteAccess(context.tenantMembership.role, 'operations'),
-  loader: async ({ context, deps }) => {
-    const { tenant, venue } = context
+  loader: async ({ context, deps, params }) => {
+    const routeContext = await loadVenueRouteContext(params.slug, params.venue)
+    if (!routeContext) throw notFound()
+    const { tenant, venue } = routeContext
     const canManage = ['owner', 'manager'].includes(context.tenantMembership.role)
     const now = new Date()
     const startOfDay = new Date(now)
@@ -36,22 +39,22 @@ export const Route = createFileRoute('/t/$slug/l/$venue/tpv')({
       getMenu({ data: { tenantId: tenant.id, venueId: venue.id } }),
       canManage
         ? Promise.all([
-            getCashRegister({ data: { tenantId: tenant.id, venueId: venue.id } }),
-            listClosedCashRegisters({ data: { tenantId: tenant.id, venueId: venue.id } }),
-            getSalesReport({
-              data: {
-                from: startOfDay.toISOString(),
-                tenantId: tenant.id,
-                to: now.toISOString(),
-                venueId: venue.id,
-              },
-            }),
-          ])
+          getCashRegister({ data: { tenantId: tenant.id, venueId: venue.id } }),
+          listClosedCashRegisters({ data: { tenantId: tenant.id, venueId: venue.id } }),
+          getSalesReport({
+            data: {
+              from: startOfDay.toISOString(),
+              tenantId: tenant.id,
+              to: now.toISOString(),
+              venueId: venue.id,
+            },
+          }),
+        ])
         : Promise.resolve(undefined),
     ])
     const sessionId =
       context.tenantMembership.role !== 'host' &&
-      board.sessions.some((session) => session.id === deps.sessionId)
+        board.sessions.some((session) => session.id === deps.sessionId)
         ? deps.sessionId
         : undefined
     const account = sessionId
@@ -64,14 +67,16 @@ export const Route = createFileRoute('/t/$slug/l/$venue/tpv')({
       cashRegister: management?.[0],
       menu,
       report: management?.[2],
+      tenant,
+      venue,
     }
   },
   component: PosTerminalRoute,
 })
 
 function PosTerminalRoute() {
-  const { tenantMembership, venue } = Route.useRouteContext()
-  const { account, board, cashHistory, cashRegister, report } = Route.useLoaderData()
+  const { tenantMembership } = Route.useRouteContext()
+  const { account, board, cashHistory, cashRegister, report, venue } = Route.useLoaderData()
   const canManage = ['owner', 'manager'].includes(tenantMembership.role)
   return (
     <PosTerminalPage
@@ -86,14 +91,14 @@ function PosTerminalRoute() {
         : {})}
       {...(canManage && cashHistory && report
         ? {
-            managementWorkspace: (
-              <PosTerminalManagementWorkspace
-                history={cashHistory}
-                register={cashRegister ?? null}
-                report={report}
-              />
-            ),
-          }
+          managementWorkspace: (
+            <PosTerminalManagementWorkspace
+              history={cashHistory}
+              register={cashRegister ?? null}
+              report={report}
+            />
+          ),
+        }
         : {})}
       slug={Route.useParams().slug}
       venue={venue.slug}
@@ -102,8 +107,8 @@ function PosTerminalRoute() {
 }
 
 function PosTerminalAccountWorkspace({ account }: { account: AccountView }) {
-  const { tenant, tenantMembership, venue } = Route.useRouteContext()
-  const { menu } = Route.useLoaderData()
+  const { tenantMembership } = Route.useRouteContext()
+  const { menu, tenant, venue } = Route.useLoaderData()
   const reload = useLoaderReload()
   const locale = useLocale(tenant.defaultLocale)
   return (
@@ -129,7 +134,7 @@ function PosTerminalAccountWorkspace({ account }: { account: AccountView }) {
 }
 
 function PosTerminalKitchenWorkspace({ board }: { board: ServiceBoard }) {
-  const { tenant, venue } = Route.useRouteContext()
+  const { tenant, venue } = Route.useLoaderData()
   const reload = useLoaderReload()
   return (
     <KitchenQueue
@@ -150,7 +155,7 @@ function PosTerminalManagementWorkspace({
   register: Awaited<ReturnType<typeof getCashRegister>>
   report: Awaited<ReturnType<typeof getSalesReport>>
 }) {
-  const { tenant, venue } = Route.useRouteContext()
+  const { tenant, venue } = Route.useLoaderData()
   const reload = useLoaderReload()
   return (
     <div className="space-y-6">

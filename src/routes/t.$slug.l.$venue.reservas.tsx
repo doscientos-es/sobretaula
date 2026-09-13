@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, notFound } from '@tanstack/react-router'
 
 import {
   getReservationServices,
@@ -6,22 +6,25 @@ import {
   ReservationPage,
 } from '@/features/reservations'
 import { useLocale } from '@/shared/lib/i18n/locale-preference'
+import { loadVenueRouteContext } from '@/features/venues'
 
 export const Route = createFileRoute('/t/$slug/l/$venue/reservas')({
-  loader: async ({ context }) => {
-    const data = { tenantId: context.tenant.id, venueId: context.venue.id }
+  loader: async ({ params }) => {
+    const routeContext = await loadVenueRouteContext(params.slug, params.venue)
+    if (!routeContext) throw notFound()
+    const { tenant, venue } = routeContext
+    const data = { tenantId: tenant.id, venueId: venue.id }
     const [services, terms] = await Promise.all([
       getReservationServices({ data }),
       getReservationTerms({ data }),
     ])
-    return { services, terms }
+    return { services, terms, tenant, venue }
   },
   component: ReservationsRoute,
 })
 
 function ReservationsRoute() {
-  const { tenant, venue } = Route.useRouteContext()
-  const { services, terms } = Route.useLoaderData()
+  const { services, terms, tenant, venue } = Route.useLoaderData()
   const locale = useLocale(tenant.defaultLocale)
 
   return (

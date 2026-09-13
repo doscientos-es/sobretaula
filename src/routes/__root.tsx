@@ -10,6 +10,7 @@ import {
 import { CircleAlert, House, RefreshCw, Utensils } from 'lucide-react'
 import { useSyncExternalStore, type ReactNode } from 'react'
 
+import { PwaRuntime } from '@/app/pwa-runtime'
 import { missingEnvironmentVariable } from '@/app/root-error'
 import { isPasswordRecoveryHash, PasswordResetPage } from '@/features/auth'
 import { DEFAULT_LOCALE } from '@/shared/lib/i18n/locale'
@@ -31,11 +32,16 @@ function isPasswordRecoveryLocation(): boolean {
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
-    links: [{ href: appCss, rel: 'stylesheet' }],
+    links: [
+      { href: appCss, rel: 'stylesheet' },
+      { href: '/manifest.webmanifest', rel: 'manifest' },
+      { href: '/icon.svg', rel: 'icon', type: 'image/svg+xml' },
+    ],
     meta: [
       { charSet: 'utf-8' },
       { content: 'width=device-width, initial-scale=1', name: 'viewport' },
       { content: 'noindex,nofollow', name: 'robots' },
+      { content: '#ff5f4d', name: 'theme-color' },
       { title: 'SobreTaula' },
     ],
   }),
@@ -63,6 +69,7 @@ function RootLayout() {
   return (
     <LocaleProvider>
       <Outlet />
+      <PwaRuntime />
     </LocaleProvider>
   )
 }
