@@ -52,13 +52,43 @@ describe('service board', () => {
         kitchenAlertOrderCount: 2,
         kitchenLoad: 2,
         pacingTargetMinutes: 60,
-        reservations: [soonReservation, { ...soonReservation, id: 'late', startsAt: '2026-09-09T18:30:00.000Z' }],
+        reservations: [
+          soonReservation,
+          { ...soonReservation, id: 'late', startsAt: '2026-09-09T18:30:00.000Z' },
+        ],
         sessions: [session],
         tables: [
-          { ...tables[0], status: 'cleaning', covers: null, reservationId: null, sessionId: null },
-          { ...tables[1], status: 'blocked', covers: null, reservationId: null, sessionId: null },
+          {
+            code: '1',
+            id: 'table-1',
+            maxSeats: 4,
+            minSeats: 2,
+            status: 'cleaning',
+            covers: null,
+            reservationId: null,
+            sessionId: null,
+          },
+          {
+            code: '2',
+            id: 'table-2',
+            maxSeats: 2,
+            minSeats: 1,
+            status: 'blocked',
+            covers: null,
+            reservationId: null,
+            sessionId: null,
+          },
         ],
-        waitlist: [{ estimatedWaitMinutes: 20, guestName: 'Ana', guestPhone: null, id: 'wait-1', partySize: 2, requestedFor: '' }],
+        waitlist: [
+          {
+            estimatedWaitMinutes: 20,
+            guestName: 'Ana',
+            guestPhone: null,
+            id: 'wait-1',
+            partySize: 2,
+            requestedFor: '',
+          },
+        ],
       },
       new Date('2026-09-09T19:00:00.000Z'),
     )
@@ -69,8 +99,8 @@ describe('service board', () => {
       waitingParties: 1,
       cleaningTables: 1,
       blockedTables: 1,
-      attentionSessions: 1,
-      kitchenAttention: false,
+      attentionSessions: 0,
+      kitchenAttention: true,
     })
   })
   it('marks tables as occupied, reserved or free', () => {

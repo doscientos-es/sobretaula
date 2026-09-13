@@ -141,10 +141,12 @@ export function buildServicePulse(board: ServiceBoard, now: Date): ServicePulse 
     cleaningTables: board.tables.filter((table) => table.status === 'cleaning').length,
     blockedTables: board.tables.filter((table) => table.status === 'blocked').length,
     attentionSessions: board.sessions.filter(
-      (session) => sessionPacingState(session, now, board.pacingTargetMinutes ?? 90) === 'attention',
+      (session) =>
+        sessionPacingState(session, now, board.pacingTargetMinutes ?? 90) === 'attention',
     ).length,
     kitchenAttention:
-      kitchenLoadState(board.kitchenLoad ?? 0, board.kitchenAlertOrderCount ?? 12) === 'attention' ||
+      kitchenLoadState(board.kitchenLoad ?? 0, board.kitchenAlertOrderCount ?? 12) ===
+        'attention' ||
       Object.values(
         kitchenStationLoadState(board.kitchenLoadByStation ?? {}, board.kitchenAlertMinutes ?? 60),
       ).some((state) => state === 'attention'),

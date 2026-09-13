@@ -252,19 +252,25 @@ export function ServicePage({
       <Card aria-label="Resumen de atención del turno">
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Ahora</CardTitle>
-          <CardDescription>Lo que requiere atención antes de seguir con el servicio.</CardDescription>
+          <CardDescription>
+            Lo que requiere atención antes de seguir con el servicio.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
             <div className="rounded-lg border p-3">
               <p className="text-muted-foreground text-xs">En servicio</p>
               <p className="mt-1 text-2xl font-semibold">{pulse.activeSessions}</p>
-              <p className="text-muted-foreground text-xs">{pulse.attentionSessions} con tiempo excedido</p>
+              <p className="text-muted-foreground text-xs">
+                {pulse.attentionSessions} con tiempo excedido
+              </p>
             </div>
             <div className="rounded-lg border p-3">
               <p className="text-muted-foreground text-xs">Próximas llegadas</p>
               <p className="mt-1 text-2xl font-semibold">{pulse.upcomingReservations}</p>
-              <p className="text-muted-foreground text-xs">{pulse.delayedReservations} retrasadas</p>
+              <p className="text-muted-foreground text-xs">
+                {pulse.delayedReservations} retrasadas
+              </p>
             </div>
             <div className="rounded-lg border p-3">
               <p className="text-muted-foreground text-xs">Puerta</p>
@@ -273,15 +279,28 @@ export function ServicePage({
             </div>
             <div className="rounded-lg border p-3">
               <p className="text-muted-foreground text-xs">Disponibilidad</p>
-              <p className="mt-1 text-2xl font-semibold">{pulse.cleaningTables + pulse.blockedTables}</p>
+              <p className="mt-1 text-2xl font-semibold">
+                {pulse.cleaningTables + pulse.blockedTables}
+              </p>
               <p className="text-muted-foreground text-xs">
                 {pulse.cleaningTables} por limpiar · {pulse.blockedTables} bloqueadas
               </p>
             </div>
           </div>
-          {(pulse.kitchenAttention || pulse.attentionSessions > 0 || pulse.delayedReservations > 0) && (
-            <p className="border-warning/40 bg-warning/10 text-warning-foreground mt-3 rounded-lg border p-3 text-sm" role="status">
-              Prioridad: {pulse.delayedReservations > 0 ? 'revisar llegadas retrasadas' : pulse.attentionSessions > 0 ? 'revisar mesas con tiempo excedido' : 'revisar carga de cocina'}.
+          {(pulse.kitchenAttention ||
+            pulse.attentionSessions > 0 ||
+            pulse.delayedReservations > 0) && (
+            <p
+              className="border-warning/40 bg-warning/10 text-warning-foreground mt-3 rounded-lg border p-3 text-sm"
+              role="status"
+            >
+              Prioridad:{' '}
+              {pulse.delayedReservations > 0
+                ? 'revisar llegadas retrasadas'
+                : pulse.attentionSessions > 0
+                  ? 'revisar mesas con tiempo excedido'
+                  : 'revisar carga de cocina'}
+              .
             </p>
           )}
         </CardContent>
