@@ -2,6 +2,8 @@ export { getTenantBySlug, tenantBySlugQuery } from './application/get-tenant-by-
 export { getUserDestinations } from './application/get-user-destinations'
 export { getTenantModules } from './application/modules'
 export { getDashboardMetrics } from './application/dashboard-metrics'
+export { getTenantSetupStatus } from './application/setup-status'
+export type { TenantSetupStatus } from './application/setup-status'
 export type { DashboardMetrics } from './application/dashboard-metrics'
 export { getDashboardActions } from './domain/dashboard-actions'
 export type { TenantDashboardAction } from './domain/dashboard-actions'

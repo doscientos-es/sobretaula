@@ -1,6 +1,7 @@
 export {
   addGuestNote,
   getGuestTags,
+  importGuestCsv,
   searchGuests,
   toggleGuestTag,
   updateGuestMarketingConsent,

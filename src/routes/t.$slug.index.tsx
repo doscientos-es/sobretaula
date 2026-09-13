@@ -9,7 +9,9 @@ export const Route = createFileRoute('/t/$slug/')({
 })
 
 function TenantHomeRoute() {
-  const { metrics, tenant, venues } = tenantRoute.useLoaderData()
+  const { metrics, setupStatus, tenant, venues } = tenantRoute.useLoaderData()
 
-  return <TenantHomePage metrics={metrics} tenant={tenant} venues={venues} />
+  return (
+    <TenantHomePage metrics={metrics} setupStatus={setupStatus} tenant={tenant} venues={venues} />
+  )
 }

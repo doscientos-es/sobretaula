@@ -1,6 +1,7 @@
 export {
   createMenuCategory,
   createMenuItem,
+  importMenuCsv,
   createModifierGroup,
   createModifierOption,
   getMenu,

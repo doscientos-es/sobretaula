@@ -22,13 +22,14 @@ import { useState, type FormEvent } from 'react'
 import type { Locale } from '@/shared/lib/i18n/locale'
 import { parsePriceToCents } from '@/shared/lib/money/money'
 
-import { createMenuCategory, createMenuItem } from '../application/menu'
+import { createMenuCategory, createMenuItem, importMenuCsv } from '../application/menu'
 import {
   formatVatRate,
   localizedText,
   type KitchenStation,
   type MenuCategory,
 } from '../domain/menu'
+import { previewMenuCsv, type MenuImportPreview } from '../domain/menu-import'
 
 const VAT_RATE_OPTIONS = [1000, 2100, 400, 0] as const
 
@@ -55,6 +56,8 @@ export function MenuForms({
   const [itemPreparationMinutes, setItemPreparationMinutes] = useState(15)
   const [itemKitchenStation, setItemKitchenStation] = useState<KitchenStation>('general')
   const [itemSku, setItemSku] = useState('')
+  const [csv, setCsv] = useState('')
+  const [csvPreview, setCsvPreview] = useState<MenuImportPreview | null>(null)
 
   async function run(action: () => Promise<unknown>, message: string) {
     if (feedback.pending) return
@@ -113,6 +116,18 @@ export function MenuForms({
     )
   }
 
+  function previewImport() {
+    setCsvPreview(previewMenuCsv(csv))
+  }
+
+  function importCatalog() {
+    if (!csvPreview || csvPreview.errors.length || !csvPreview.rows.length) return
+    void run(
+      () => importMenuCsv({ data: { csv, tenantId } }),
+      'No se ha podido importar la carta. No se han aplicado las filas con errores.',
+    )
+  }
+
   return (
     <div className="space-y-6 lg:sticky lg:top-6 lg:self-start">
       <Card>
@@ -143,6 +158,52 @@ export function MenuForms({
               Crear categoría
             </Button>
           </form>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Importar carta</CardTitle>
+          <CardDescription>
+            Usa las columnas categoria, nombre, precio, iva y opcionalmente sku y descripcion.
+            Primero valida; después confirma la carga.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-3">
+          <textarea
+            aria-label="CSV de carta"
+            className="min-h-32 w-full rounded-md border px-3 py-2 font-mono text-xs"
+            onChange={(event) => {
+              setCsv(event.target.value)
+              setCsvPreview(null)
+            }}
+            placeholder="categoria;nombre;precio;iva\nEntrantes;Croquetas;8,50;10"
+            value={csv}
+          />
+          <div className="flex flex-wrap gap-2">
+            <Button
+              disabled={!csv.trim() || feedback.pending}
+              onClick={previewImport}
+              type="button"
+              variant="outline"
+            >
+              Validar CSV
+            </Button>
+            <Button
+              disabled={!csvPreview || csvPreview.errors.length > 0 || feedback.pending}
+              onClick={importCatalog}
+              type="button"
+            >
+              Confirmar importación
+            </Button>
+          </div>
+          {csvPreview ? (
+            <output className="text-sm">
+              {csvPreview.rows.length} filas válidas · {csvPreview.errors.length} errores
+              {csvPreview.errors.length
+                ? ` (${csvPreview.errors.map((error) => `fila ${error.row}: ${error.message}`).join('; ')})`
+                : ''}
+            </output>
+          ) : null}
         </CardContent>
       </Card>
       {categories.length > 0 && (

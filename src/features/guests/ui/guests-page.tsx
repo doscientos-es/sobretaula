@@ -23,12 +23,14 @@ import {
   addGuestNote,
   addGuestPreference,
   getGuestTags,
+  importGuestCsv,
   mergeGuests,
   searchGuests,
   updateGuestMarketingConsent,
   toggleGuestTag,
   type GuestSummary,
 } from '../application/guests'
+import { previewGuestCsv, type GuestImportPreview } from '../domain/guest-import'
 import { classifyGuest } from '../domain/guest-segments'
 
 export function GuestsPage({ tenantId, venueId }: { tenantId: string; venueId: string }) {
@@ -47,6 +49,9 @@ export function GuestsPage({ tenantId, venueId }: { tenantId: string; venueId: s
   const [tags, setTags] = useState<Array<{ id: string; label: string }>>([])
   const [attribute, setAttribute] = useState('')
   const [now] = useState(() => Date.now())
+  const [csv, setCsv] = useState('')
+  const [csvPreview, setCsvPreview] = useState<GuestImportPreview | null>(null)
+  const [importing, setImporting] = useState(false)
   useEffect(() => {
     void getGuestTags({ data: { tenantId } })
       .then(setTags)
@@ -82,6 +87,62 @@ export function GuestsPage({ tenantId, venueId }: { tenantId: string; venueId: s
           Consulta el historial y las preferencias de tus comensales.
         </PageHeaderDescription>
       </PageHeader>
+      <Card>
+        <CardHeader>
+          <CardTitle>Importar clientes</CardTitle>
+          <CardDescription>
+            Columnas: nombre; opcionales: telefono, email y consentimiento_marketing.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-3">
+          <textarea
+            aria-label="CSV de clientes"
+            className="min-h-24 w-full rounded-md border px-3 py-2 font-mono text-xs"
+            onChange={(event) => {
+              setCsv(event.target.value)
+              setCsvPreview(null)
+            }}
+            placeholder="nombre;telefono;email;consentimiento_marketing"
+            value={csv}
+          />
+          <div className="flex flex-wrap gap-2">
+            <Button
+              disabled={!csv.trim() || importing}
+              onClick={() => setCsvPreview(previewGuestCsv(csv))}
+              type="button"
+              variant="outline"
+            >
+              Validar CSV
+            </Button>
+            <Button
+              disabled={!csvPreview || csvPreview.errors.length > 0 || importing}
+              onClick={() => {
+                if (!csvPreview || csvPreview.errors.length) return
+                setImporting(true)
+                void importGuestCsv({ data: { csv, tenantId } })
+                  .then(() => {
+                    setCsv('')
+                    setCsvPreview(null)
+                    setReloadToken((value) => value + 1)
+                  })
+                  .catch(() => setError('No se han podido importar los clientes.'))
+                  .finally(() => setImporting(false))
+              }}
+              type="button"
+            >
+              Confirmar importación
+            </Button>
+          </div>
+          {csvPreview ? (
+            <output className="text-sm">
+              {csvPreview.rows.length} filas válidas · {csvPreview.errors.length} errores
+              {csvPreview.errors.length
+                ? ` (${csvPreview.errors.map((item) => `fila ${item.row}: ${item.message}`).join('; ')})`
+                : ''}
+            </output>
+          ) : null}
+        </CardContent>
+      </Card>
       <Card>
         <CardHeader>
           <CardTitle>Directorio</CardTitle>

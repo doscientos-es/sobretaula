@@ -115,3 +115,50 @@ export function splitEvenly(totalCents: MinorUnits, parts: number): MinorUnits[]
   const remainder = totalCents - base * parts
   return Array.from({ length: parts }, (_, index) => base + (index < remainder ? 1 : 0))
 }
+
+export function splitByPercentages(
+  totalCents: MinorUnits,
+  percentages: readonly number[],
+): MinorUnits[] {
+  if (!percentages.length || percentages.some((value) => value < 0 || !Number.isFinite(value)))
+    throw new Error('invalid_split_percentages')
+  const total = percentages.reduce((sum, value) => sum + value, 0)
+  if (Math.abs(total - 100) > 0.0001) throw new Error('split_percentages_must_equal_100')
+  const shares = percentages.map((value) => Math.floor((totalCents * value) / 100))
+  let remainder = totalCents - shares.reduce((sum, value) => sum + value, 0)
+  return shares.map((share) => {
+    if (remainder > 0) {
+      remainder -= 1
+      return share + 1
+    }
+    return share
+  })
+}
+
+export function splitByAmounts(totalCents: MinorUnits, amounts: readonly number[]): MinorUnits[] {
+  if (!amounts.length || amounts.some((value) => !Number.isInteger(value) || value < 0))
+    throw new Error('invalid_split_amounts')
+  if (amounts.reduce((sum, value) => sum + value, 0) !== totalCents)
+    throw new Error('split_amounts_must_equal_total')
+  return [...amounts]
+}
+
+export function splitByProducts(
+  lines: readonly AccountLine[],
+  assignments: readonly (readonly string[])[],
+): MinorUnits[] {
+  const lineById = new Map(lines.map((line) => [line.id, line]))
+  const assigned = new Set<string>()
+  return assignments.map((personLineIds) => {
+    let total = 0
+    for (const lineId of personLineIds) {
+      if (assigned.has(lineId)) throw new Error('split_product_assigned_twice')
+      const line = lineById.get(lineId)
+      if (!line) throw new Error('split_product_not_found')
+      if (line.status === 'cancelled') throw new Error('split_cancelled_product')
+      assigned.add(lineId)
+      total += lineGrossCents(line)
+    }
+    return total
+  })
+}

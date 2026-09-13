@@ -40,7 +40,9 @@ proyecto Supabase autorizado no se pueden sustituir por tests locales.
 ### P1 · Economía, fiscalidad y equipo
 
 - [ ] **P1.5 · Cuenta completa.** División por persona/producto/porcentaje/
-      importe, movimientos entre sesiones y reapertura controlada.
+      importe, movimientos entre sesiones y reapertura controlada. El contrato
+      de dominio y la migración `payment_line_allocations` están preparados;
+      falta aplicar la migración autorizada y conectar el RPC de cobro.
 - [ ] **P1.6 · Caja y exportaciones.** Validación contable del arqueo, informe
       para gestoría y exportación de jornada.
 - [ ] **P1.7 · Propinas y coste laboral.** Reglas por local, cálculo por tiempo

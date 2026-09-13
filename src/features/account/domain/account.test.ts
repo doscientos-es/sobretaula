@@ -6,6 +6,9 @@ import {
   lineGrossCents,
   lineNetCents,
   splitEvenly,
+  splitByAmounts,
+  splitByPercentages,
+  splitByProducts,
   type AccountLine,
   type AccountPayment,
 } from './account'
@@ -149,5 +152,27 @@ describe('splitEvenly', () => {
   it('rejects zero or fractional parts', () => {
     expect(() => splitEvenly(1000, 0)).toThrow('invalid_split_parts')
     expect(() => splitEvenly(1000, 2.5)).toThrow('invalid_split_parts')
+  })
+})
+
+describe('explicit bill splits', () => {
+  it('splits by percentages while preserving every cent', () => {
+    expect(splitByPercentages(1001, [50, 30, 20])).toEqual([501, 300, 200])
+  })
+
+  it('accepts exact amounts and rejects totals that do not reconcile', () => {
+    expect(splitByAmounts(1000, [250, 750])).toEqual([250, 750])
+    expect(() => splitByAmounts(1000, [250, 700])).toThrow('split_amounts_must_equal_total')
+  })
+
+  it('allocates complete products to people without duplicating lines', () => {
+    const lines = [
+      line({ id: 'starter', unitPriceCents: 800 }),
+      line({ id: 'main', quantity: 2, unitPriceCents: 1500 }),
+    ]
+    expect(splitByProducts(lines, [['starter'], ['main']])).toEqual([800, 3000])
+    expect(() => splitByProducts(lines, [['starter'], ['starter']])).toThrow(
+      'split_product_assigned_twice',
+    )
   })
 })

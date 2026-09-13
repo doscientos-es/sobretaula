@@ -443,7 +443,10 @@ export const recordPayment = createServerFn({ method: 'POST' })
     if (data.amountCents > balanceCents)
       throw new Response('Payment exceeds balance', { status: 422 })
 
-    const { data: paymentRows, error } = await supabase.rpc('record_single_payment', {
+    const rpcName = data.allocations?.length
+      ? 'record_single_payment_with_allocations'
+      : 'record_single_payment'
+    const { data: paymentRows, error } = await supabase.rpc(rpcName, {
       p_amount_cents: data.amountCents,
       p_method: data.method,
       p_operation_id: data.operationId,
@@ -451,6 +454,7 @@ export const recordPayment = createServerFn({ method: 'POST' })
       p_tenant_id: data.tenantId,
       p_tip_cents: data.tipCents ?? 0,
       p_venue_id: data.venueId,
+      ...(data.allocations?.length ? { p_allocations: data.allocations } : {}),
     })
     if (error || !paymentRows?.[0]) {
       if (error?.message.includes('payment_exceeds_balance'))

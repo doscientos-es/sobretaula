@@ -30,7 +30,16 @@ import {
   refundPayment,
   type AccountView,
 } from '../application/account'
-import { PAYMENT_METHODS, splitEvenly, type PaymentMethod } from '../domain/account'
+import {
+  PAYMENT_METHODS,
+  splitByAmounts,
+  splitByPercentages,
+  splitByProducts,
+  splitEvenly,
+  lineGrossCents,
+  type AccountLine,
+  type PaymentMethod,
+} from '../domain/account'
 
 export const PAYMENT_METHOD_LABEL: Record<PaymentMethod, string> = {
   card: 'Tarjeta',
@@ -88,11 +97,42 @@ export function AccountPayments({
   const [mixedTipA, setMixedTipA] = useState('')
   const [mixedTipB, setMixedTipB] = useState('')
   const [parts, setParts] = useState<number>(2)
+  const [splitMode, setSplitMode] = useState<'equal' | 'percentage' | 'amount' | 'product'>('equal')
+  const [splitValues, setSplitValues] = useState('50,50')
+  const [productAssignments, setProductAssignments] = useState<Record<string, number>>({})
+  const [selectedShareIndex, setSelectedShareIndex] = useState<number | null>(null)
   const [discountDraft, setDiscountDraft] = useState('')
   const [discountReason, setDiscountReason] = useState('')
   const open = session.status === 'open'
   const settled = totals.balanceCents === 0
-  const shares = settled ? [] : splitEvenly(totals.balanceCents, parts)
+  let shares: number[] = []
+  if (!settled) {
+    try {
+      shares =
+        splitMode === 'equal'
+          ? splitEvenly(totals.balanceCents, parts)
+          : splitMode === 'percentage'
+            ? splitByPercentages(
+                totals.balanceCents,
+                splitValues.split(',').map((value) => Number(value.trim())),
+              )
+            : splitMode === 'amount'
+              ? splitByAmounts(
+                  totals.balanceCents,
+                  splitValues.split(',').map((value) => Number(value.trim())),
+                )
+              : splitByProducts(
+                  account.lines,
+                  Array.from({ length: parts }, (_, person) =>
+                    account.lines
+                      .filter((line) => productAssignments[line.id] === person)
+                      .map((line) => line.id),
+                  ),
+                )
+    } catch {
+      shares = []
+    }
+  }
 
   function charge(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -114,6 +154,27 @@ export function AccountPayments({
       feedback.setError(
         `El importe supera el pendiente de ${formatMoney(totals.balanceCents, locale)}.`,
       )
+      return
+    }
+    const allocations =
+      splitMode === 'product'
+        ? account.lines
+            .filter((line) => productAssignments[line.id] === selectedShareIndex)
+            .map((line) => ({
+              amountCents: lineGrossCents(line),
+              orderItemId: line.id,
+              quantity: line.quantity,
+            }))
+        : undefined
+    if (
+      splitMode === 'product' &&
+      account.lines.some((line) => productAssignments[line.id] === undefined)
+    ) {
+      feedback.setError('Asigna todas las líneas a una persona antes de cobrar.')
+      return
+    }
+    if (splitMode === 'product' && selectedShareIndex === null) {
+      feedback.setError('Selecciona la persona cuyo importe vas a cobrar.')
       return
     }
     if (feedback.pending) return
@@ -147,6 +208,7 @@ export function AccountPayments({
         operationId: (singlePaymentOperationId.current ??= crypto.randomUUID()),
         sessionId: session.id,
         tenantId,
+        ...(allocations ? { allocations } : {}),
         ...(tipCents > 0 ? { tipCents } : {}),
         venueId,
       },
@@ -371,11 +433,83 @@ export function AccountPayments({
                 </SelectContent>
               </Select>
             </Field>
+            <Field>
+              <FieldLabel htmlFor="payment-split-mode">Tipo de división</FieldLabel>
+              <Select
+                className="w-full"
+                id="payment-split-mode"
+                onSelectionChange={(key) => {
+                  const mode = String(key) as typeof splitMode
+                  setSplitMode(mode)
+                  if (mode === 'equal') setSplitValues('50,50')
+                }}
+                selectedKey={splitMode}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectList>
+                    <SelectItem id="equal">Partes iguales</SelectItem>
+                    <SelectItem id="percentage">Por porcentaje</SelectItem>
+                    <SelectItem id="amount">Por importe</SelectItem>
+                    <SelectItem id="product">Por producto/persona</SelectItem>
+                  </SelectList>
+                </SelectContent>
+              </Select>
+            </Field>
+            {splitMode === 'product' ? (
+              <div className="grid gap-2 rounded-lg border p-3">
+                <p className="text-sm font-medium">Asigna cada línea a una persona</p>
+                {account.lines.map((line: AccountLine) => (
+                  <div
+                    className="flex flex-wrap items-center justify-between gap-2 text-sm"
+                    key={line.id}
+                  >
+                    <span>
+                      {line.quantity}× {line.name}
+                    </span>
+                    <div className="flex gap-1">
+                      {Array.from({ length: parts }, (_, person) => (
+                        <Button
+                          key={person}
+                          onClick={() =>
+                            setProductAssignments((current) => ({ ...current, [line.id]: person }))
+                          }
+                          size="sm"
+                          type="button"
+                          variant={productAssignments[line.id] === person ? 'default' : 'outline'}
+                        >
+                          P{person + 1}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : splitMode !== 'equal' ? (
+              <Field>
+                <FieldLabel htmlFor="payment-split-values">
+                  {splitMode === 'percentage'
+                    ? 'Porcentajes separados por comas (ej. 50,30,20)'
+                    : 'Importes en céntimos separados por comas'}
+                </FieldLabel>
+                <Input
+                  id="payment-split-values"
+                  inputMode="decimal"
+                  onChange={(event) => setSplitValues(event.target.value)}
+                  value={splitValues}
+                />
+              </Field>
+            ) : null}
             <div className="flex flex-wrap gap-2">
               {shares.map((share, index) => (
                 <Button
                   key={`${parts}-${index}`}
-                  onClick={() => setAmountDraft((share / 100).toFixed(2))}
+                  onClick={() => {
+                    setSelectedShareIndex(index)
+                    setAmountDraft((share / 100).toFixed(2))
+                  }}
                   size="sm"
                   type="button"
                   variant="outline"

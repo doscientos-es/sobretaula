@@ -25,14 +25,17 @@ import { useLocale } from '@/shared/lib/i18n/locale-preference'
 import { createTranslator, formatMessage, type MessageKey } from '@/shared/lib/i18n/messages'
 
 import type { DashboardMetrics } from '../application/dashboard-metrics'
+import type { TenantSetupStatus } from '../application/setup-status'
 import type { Tenant } from '../domain/tenant'
 
 export function TenantHomePage({
   metrics,
+  setupStatus,
   tenant,
   venues,
 }: {
   metrics: DashboardMetrics
+  setupStatus: TenantSetupStatus
   tenant: Tenant
   venues: readonly Venue[]
 }) {
@@ -227,16 +230,16 @@ export function TenantHomePage({
                 aria-hidden="true"
                 className="bg-success/15 text-success grid size-6 shrink-0 place-items-center rounded-full text-xs font-semibold"
               >
-                {venues.length > 0 ? '✓' : '1'}
+                {setupStatus.hasVenue ? '✓' : '1'}
               </span>
               <div className="min-w-0">
                 <p className="text-sm font-medium">Crea tu primer local</p>
                 <p className="text-muted-foreground mt-1 text-xs">
-                  {venues.length > 0
+                  {setupStatus.hasVenue
                     ? 'Ya hay un local creado.'
                     : 'Necesario para configurar la sala.'}
                 </p>
-                {venues.length === 0 && (
+                {!setupStatus.hasVenue && (
                   <Link
                     className="text-primary mt-2 inline-block text-xs font-medium underline underline-offset-4"
                     params={{ slug: tenant.slug }}
@@ -250,14 +253,16 @@ export function TenantHomePage({
             <li className="flex items-start gap-3 rounded-lg border p-3">
               <span
                 aria-hidden="true"
-                className="bg-primary/10 text-primary grid size-6 shrink-0 place-items-center rounded-full text-xs font-semibold"
+                className={`${setupStatus.hasFloorPlan && setupStatus.hasMenu ? 'bg-success/15 text-success' : 'bg-primary/10 text-primary'} grid size-6 shrink-0 place-items-center rounded-full text-xs font-semibold`}
               >
-                2
+                {setupStatus.hasFloorPlan && setupStatus.hasMenu ? '✓' : '2'}
               </span>
               <div className="min-w-0">
                 <p className="text-sm font-medium">Prepara plano y carta</p>
                 <p className="text-muted-foreground mt-1 text-xs">
-                  Mesas, zonas, productos y precios para el equipo.
+                  {setupStatus.hasFloorPlan && setupStatus.hasMenu
+                    ? 'Plano y carta preparados.'
+                    : 'Mesas, zonas, productos y precios para el equipo.'}
                 </p>
                 {venues[0] && (
                   <Link
@@ -275,12 +280,14 @@ export function TenantHomePage({
                 aria-hidden="true"
                 className="bg-primary/10 text-primary grid size-6 shrink-0 place-items-center rounded-full text-xs font-semibold"
               >
-                3
+                {setupStatus.hasReservations ? '✓' : '3'}
               </span>
               <div className="min-w-0">
                 <p className="text-sm font-medium">Configura reservas</p>
                 <p className="text-muted-foreground mt-1 text-xs">
-                  Define turnos, capacidad y condiciones del restaurante.
+                  {setupStatus.hasReservations
+                    ? 'Turnos y capacidad configurados.'
+                    : 'Define turnos, capacidad y condiciones del restaurante.'}
                 </p>
                 {venues[0] && (
                   <Link
@@ -298,7 +305,7 @@ export function TenantHomePage({
                 aria-hidden="true"
                 className="bg-primary/10 text-primary grid size-6 shrink-0 place-items-center rounded-full text-xs font-semibold"
               >
-                4
+                {setupStatus.hasTeam ? '✓' : '4'}
               </span>
               <div className="min-w-0">
                 <p className="text-sm font-medium">Invita al equipo</p>

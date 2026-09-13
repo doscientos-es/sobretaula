@@ -58,6 +58,32 @@ describe('account schemas', () => {
     ).toThrow()
   })
 
+  it('accepts auditable line allocations and rejects invalid quantities', () => {
+    const parsed = recordPaymentInput.parse({
+      ...base,
+      allocations: [
+        {
+          amountCents: 1200,
+          orderItemId: 'd4c5b6a7-8e9f-4a0b-9c8d-7e6f5a4b3c2d',
+          quantity: 1,
+        },
+      ],
+      amountCents: 1200,
+      method: 'cash',
+      operationId: 'c5b8a9d2-1234-4e5f-8a9b-0c1d2e3f4a5b',
+    })
+    expect(parsed.allocations).toHaveLength(1)
+    expect(() =>
+      recordPaymentInput.parse({
+        ...base,
+        allocations: [{ amountCents: 1200, orderItemId: 'bad', quantity: 0 }],
+        amountCents: 1200,
+        method: 'cash',
+        operationId: 'c5b8a9d2-1234-4e5f-8a9b-0c1d2e3f4a5b',
+      }),
+    ).toThrow()
+  })
+
   it('requires the order item id when removing a line', () => {
     expect(() => removeOrderItemInput.parse(base)).toThrow()
     expect(() =>

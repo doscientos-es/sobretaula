@@ -36,6 +36,7 @@ import { RedsysSubscriptionButton } from '@/features/platform-billing/ui/redsys-
 import {
   getTenantBySlug,
   getDashboardMetrics,
+  getTenantSetupStatus,
   getTenantMembership,
   isTenantAdministrator,
   isTenantOperational,
@@ -99,10 +100,22 @@ export const Route = createFileRoute('/t/$slug')({
           reservationsThisWeek: 0,
           noShowsThisWeek: 0,
         }
+    const setupStatus = isTenantOperational(tenant.status)
+      ? await getTenantSetupStatus({
+          data: { tenantId: tenant.id, venueIds: venues.map((venue) => venue.id) },
+        })
+      : {
+          hasTeam: false,
+          hasFloorPlan: false,
+          hasMenu: false,
+          hasReservations: false,
+          hasVenue: false,
+        }
     return {
       billingStatus,
       membership: context.tenantMembership,
       metrics,
+      setupStatus,
       tenant,
       venues,
     }

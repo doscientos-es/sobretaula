@@ -9,6 +9,13 @@ import {
 import { paginationRange, type PaginatedResult } from '@/shared/lib/pagination'
 import { createRequestSupabaseClient } from '@/shared/lib/supabase/server/create-server-client'
 
+import { previewGuestCsv } from '../domain/guest-import'
+
+const importGuestCsvInput = z.object({
+  tenantId: z.string().uuid(),
+  csv: z.string().min(1).max(1_000_000),
+})
+
 const searchInput = z.object({
   tenantId: z.string().uuid(),
   venueId: z.string().uuid(),
@@ -233,6 +240,31 @@ export const searchGuests = createServerFn({ method: 'GET' })
       total,
       hasMore: data.page * data.pageSize < total,
     }
+  })
+
+export const importGuestCsv = createServerFn({ method: 'POST' })
+  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .validator(importGuestCsvInput)
+  .handler(async ({ context, data }) => {
+    if (!['owner', 'manager'].includes(context.tenantMembership.role))
+      throw new Response('Forbidden', { status: 403 })
+    const preview = previewGuestCsv(data.csv)
+    if (preview.errors.length || !preview.rows.length)
+      throw new Response('Invalid CSV', { status: 422 })
+    const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    let imported = 0
+    for (const guest of preview.rows) {
+      const result = await supabase.from('guests').insert({
+        ...(guest.email ? { email: guest.email } : {}),
+        full_name: guest.fullName,
+        marketing_consent: guest.marketingConsent,
+        ...(guest.phone ? { phone: guest.phone } : {}),
+        tenant_id: data.tenantId,
+      })
+      if (result.error) throw new Error(`guest_import_failed:${result.error.code}`)
+      imported += 1
+    }
+    return { imported }
   })
 
 export const updateGuestMarketingConsent = createServerFn({ method: 'POST' })

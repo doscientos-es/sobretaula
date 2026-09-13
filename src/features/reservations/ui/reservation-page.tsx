@@ -22,10 +22,13 @@ import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
 import {
   createReservation,
   createReservationService,
+  importReservationCsv,
   publishReservationTerms,
   type ReservationService,
   type ReservationTermsVersion,
+  updateReservationService,
 } from '../application/reservations'
+import { previewReservationCsv, type ReservationImportPreview } from '../domain/reservation-import'
 import { ReservationAgendaCard } from './reservation-agenda-card'
 
 const weekdays = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
@@ -70,6 +73,22 @@ export function ReservationPage({
   const [startsAt, setStartsAt] = useState('')
   const [termsTitle, setTermsTitle] = useState(terms[0]?.title ?? 'Condiciones de reserva')
   const [termsBody, setTermsBody] = useState(terms[0]?.body ?? '')
+  const [editingServiceId, setEditingServiceId] = useState<string | null>(null)
+  const [reservationCsv, setReservationCsv] = useState('')
+  const [reservationPreview, setReservationPreview] = useState<ReservationImportPreview | null>(
+    null,
+  )
+
+  function loadService(service: ReservationService) {
+    setEditingServiceId(service.id)
+    setServiceName(service.name)
+    setWeekday(service.weekday)
+    setServiceStartsAt(service.startsAtTime.slice(0, 5))
+    setServiceEndsAt(service.endsAtTime.slice(0, 5))
+    setServiceSlotMinutes(service.slotMinutes)
+    setServiceMaxCovers(service.maxCoversPerSlot ?? 1)
+    setServiceMaxReservations(service.maxReservationsPerSlot ?? 1)
+  }
 
   async function configureService(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -83,22 +102,28 @@ export function ReservationPage({
     }
     feedback.setPending()
     try {
-      await createReservationService({
-        data: {
-          endsAtTime: serviceEndsAt,
-          maxCoversPerSlot: serviceMaxCovers,
-          maxReservationsPerSlot: serviceMaxReservations,
-          name: serviceName,
-          slotMinutes: serviceSlotMinutes,
-          startsAtTime: serviceStartsAt,
-          tenantId,
-          venueId,
-          weekday,
-        },
-      })
+      const payload = {
+        endsAtTime: serviceEndsAt,
+        maxCoversPerSlot: serviceMaxCovers,
+        maxReservationsPerSlot: serviceMaxReservations,
+        name: serviceName,
+        slotMinutes: serviceSlotMinutes,
+        startsAtTime: serviceStartsAt,
+        tenantId,
+        venueId,
+        weekday,
+      }
+      if (editingServiceId) {
+        await updateReservationService({
+          data: { ...payload, serviceId: editingServiceId },
+        })
+      } else {
+        await createReservationService({ data: payload })
+      }
+      setEditingServiceId(null)
       reload()
     } catch {
-      feedback.setError('No se ha podido crear el turno. Comprueba que no esté duplicado.')
+      feedback.setError('No se ha podido guardar el turno. Comprueba los datos.')
     }
   }
 
@@ -196,10 +221,70 @@ export function ReservationPage({
           </form>
         </CardContent>
       </Card>
-      {services.length === 0 ? (
+      <Card className="max-w-xl">
+        <CardHeader>
+          <CardTitle>Importar reservas futuras</CardTitle>
+          <CardDescription>
+            Columnas: turno, fecha_hora y comensales. Opcionales: nombre y telefono. Cada fila se
+            comprobará contra la disponibilidad real antes de crearla.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-3">
+          <textarea
+            aria-label="CSV de reservas futuras"
+            className="min-h-24 w-full rounded-md border px-3 py-2 font-mono text-xs"
+            onChange={(event) => {
+              setReservationCsv(event.target.value)
+              setReservationPreview(null)
+            }}
+            placeholder="turno;fecha_hora;comensales;nombre;telefono"
+            value={reservationCsv}
+          />
+          <div className="flex flex-wrap gap-2">
+            <Button
+              disabled={!reservationCsv.trim() || feedback.pending}
+              onClick={() => setReservationPreview(previewReservationCsv(reservationCsv))}
+              type="button"
+              variant="outline"
+            >
+              Validar CSV
+            </Button>
+            <Button
+              disabled={
+                !reservationPreview || reservationPreview.errors.length > 0 || feedback.pending
+              }
+              onClick={() => {
+                if (!reservationPreview || reservationPreview.errors.length) return
+                feedback.setPending()
+                void importReservationCsv({ data: { csv: reservationCsv, tenantId, venueId } })
+                  .then((result) => {
+                    feedback.setSuccess(`${result.imported} reservas importadas.`)
+                    setReservationCsv('')
+                    setReservationPreview(null)
+                    reload()
+                  })
+                  .catch(() => feedback.setError('No se han podido importar las reservas.'))
+              }}
+              type="button"
+            >
+              Confirmar importación
+            </Button>
+          </div>
+          {reservationPreview ? (
+            <output className="text-sm">
+              {reservationPreview.rows.length} filas válidas · {reservationPreview.errors.length}{' '}
+              errores
+              {reservationPreview.errors.length
+                ? ` (${reservationPreview.errors.map((item) => `fila ${item.row}: ${item.message}`).join('; ')})`
+                : ''}
+            </output>
+          ) : null}
+        </CardContent>
+      </Card>
+      {services.length === 0 || editingServiceId ? (
         <Card className="max-w-xl">
           <CardHeader>
-            <CardTitle>Configura el primer turno</CardTitle>
+            <CardTitle>{editingServiceId ? 'Editar turno' : 'Configura el primer turno'}</CardTitle>
             <CardDescription>
               El pacing inicial admite 20 comensales y 6 reservas cada 15 minutos.
             </CardDescription>
@@ -291,8 +376,13 @@ export function ReservationPage({
               </div>
               <FormFeedback pendingLabel="Creando turno…" state={feedback.state} />
               <Button disabled={feedback.pending} type="submit">
-                Crear turno
+                {editingServiceId ? 'Guardar cambios' : 'Crear turno'}
               </Button>
+              {editingServiceId ? (
+                <Button onClick={() => setEditingServiceId(null)} type="button" variant="ghost">
+                  Cancelar
+                </Button>
+              ) : null}
             </form>
           </CardContent>
         </Card>
@@ -320,6 +410,14 @@ export function ReservationPage({
                       {service.maxReservationsPerSlot ?? 'Reservas flexibles'} reservas por
                       intervalo
                     </p>
+                    <Button
+                      className="mt-3"
+                      onClick={() => loadService(service)}
+                      type="button"
+                      variant="outline"
+                    >
+                      Editar turno
+                    </Button>
                   </li>
                 ))}
               </ul>

@@ -33,6 +33,16 @@ export const updateOrderItemStatusInput = accountSessionInput.extend({
 })
 
 export const recordPaymentInput = accountSessionInput.extend({
+  allocations: z
+    .array(
+      z.object({
+        amountCents: z.number().int().min(1).max(1_000_000),
+        orderItemId: z.string().uuid(),
+        quantity: z.number().int().min(1).max(99),
+      }),
+    )
+    .max(99)
+    .optional(),
   amountCents: z.number().int().min(1).max(1_000_000),
   method: z.enum(PAYMENT_METHODS),
   tipCents: z.number().int().min(0).max(1_000_000).optional(),

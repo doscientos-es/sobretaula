@@ -13,6 +13,7 @@ import {
   type AvailabilityRule,
   type ReservationWindow,
 } from '../domain/availability'
+import { previewReservationCsv } from '../domain/reservation-import'
 
 const tenantInput = z.object({ tenantId: z.string().uuid() })
 const venueInput = tenantInput.extend({ venueId: z.string().uuid() })
@@ -24,6 +25,9 @@ const serviceInput = venueInput.extend({
   slotMinutes: z.number().int().min(5).max(120),
   startsAtTime: z.string().regex(/^([01][0-9]|2[0-3]):[0-5][0-9]$/),
   weekday: z.number().int().min(0).max(6),
+})
+const updateServiceInput = serviceInput.extend({
+  serviceId: z.string().uuid(),
 })
 const reservationInput = venueInput.extend({
   guestName: z.string().trim().min(1).max(200).optional(),
@@ -38,7 +42,12 @@ const rescheduleReservationInput = venueInput.extend({
   reservationId: z.string().uuid(),
   startsAt: z.string().datetime({ offset: true }),
 })
-const reservationEventsInput = venueInput.extend({ reservationId: z.string().uuid() })
+const reservationEventsInput = venueInput.extend({
+  reservationId: z.string().uuid(),
+})
+const importReservationCsvInput = venueInput.extend({
+  csv: z.string().min(1).max(1_000_000),
+})
 const reservationTermsInput = venueInput
 const publishReservationTermsInput = venueInput.extend({
   body: z.string().trim().min(1).max(10000),
@@ -333,6 +342,41 @@ export const createReservationService = createServerFn({ method: 'POST' })
     return { serviceId: service.id }
   })
 
+export const updateReservationService = createServerFn({ method: 'POST' })
+  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .validator(updateServiceInput)
+  .handler(async ({ context, data }) => {
+    requireReservationEditor(context.tenantMembership.role)
+    if (data.endsAtTime <= data.startsAtTime) throw new Response('Invalid service', { status: 422 })
+    const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    const { data: service, error: serviceError } = await supabase
+      .from('services')
+      .update({
+        ends_at_time: data.endsAtTime,
+        name: data.name,
+        starts_at_time: data.startsAtTime,
+        weekday: data.weekday,
+      })
+      .eq('id', data.serviceId)
+      .eq('tenant_id', data.tenantId)
+      .eq('venue_id', data.venueId)
+      .eq('is_active', true)
+      .select('id')
+      .maybeSingle()
+    if (serviceError || !service) throw new Response('Not found', { status: 404 })
+    const { error: ruleError } = await supabase
+      .from('availability_rules')
+      .update({
+        max_covers_per_slot: data.maxCoversPerSlot,
+        max_reservations_per_slot: data.maxReservationsPerSlot,
+        slot_minutes: data.slotMinutes,
+      })
+      .eq('service_id', data.serviceId)
+      .eq('tenant_id', data.tenantId)
+    if (ruleError) throw new Error(`reservation_rule_update_failed:${ruleError.code}`)
+    return { serviceId: service.id }
+  })
+
 export const createReservation = createServerFn({ method: 'POST' })
   .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
   .validator(reservationInput)
@@ -509,6 +553,63 @@ export const createReservation = createServerFn({ method: 'POST' })
     return { reservationId: reservation.id, tableId: availability.tableId }
   })
 
+export const importReservationCsv = createServerFn({ method: 'POST' })
+  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .validator(importReservationCsvInput)
+  .handler(async ({ context, data }) => {
+    requireReservationEditor(context.tenantMembership.role)
+    const preview = previewReservationCsv(data.csv)
+    if (preview.errors.length || !preview.rows.length)
+      throw new Response('Invalid CSV', { status: 422 })
+    const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    const { data: services, error } = await supabase
+      .from('services')
+      .select('id, name')
+      .eq('tenant_id', data.tenantId)
+      .eq('venue_id', data.venueId)
+      .eq('is_active', true)
+    if (error) throw new Error(`reservation_import_services_failed:${error.code}`)
+    const serviceIds = new Map(
+      (services ?? []).map((service) => [service.name.trim().toLowerCase(), service.id as string]),
+    )
+    const errors: Array<{ message: string; row: number }> = []
+    let imported = 0
+    for (const [offset, row] of preview.rows.entries()) {
+      const serviceId = serviceIds.get(row.serviceName.toLowerCase())
+      if (!serviceId) {
+        errors.push({ message: 'service_not_found', row: offset + 2 })
+        continue
+      }
+      if (new Date(row.startsAt) <= new Date()) {
+        errors.push({ message: 'reservation_must_be_future', row: offset + 2 })
+        continue
+      }
+      try {
+        await createReservation({
+          data: {
+            guestName: row.guestName,
+            ...(row.guestPhone ? { guestPhone: row.guestPhone } : {}),
+            partySize: row.partySize,
+            serviceId,
+            startsAt: row.startsAt,
+            tenantId: data.tenantId,
+            venueId: data.venueId,
+          },
+        })
+        imported += 1
+      } catch (reservationError) {
+        errors.push({
+          message:
+            reservationError instanceof Response
+              ? `reservation_rejected:${reservationError.status}`
+              : 'reservation_create_failed',
+          row: offset + 2,
+        })
+      }
+    }
+    return { errors, imported }
+  })
+
 export const rescheduleReservation = createServerFn({ method: 'POST' })
   .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
   .validator(rescheduleReservationInput)
@@ -605,7 +706,10 @@ export const rescheduleReservation = createServerFn({ method: 'POST' })
     if (assignmentError) {
       await supabase
         .from('reservations')
-        .update({ ends_at: previousEnd.toISOString(), starts_at: previousStart.toISOString() })
+        .update({
+          ends_at: previousEnd.toISOString(),
+          starts_at: previousStart.toISOString(),
+        })
         .eq('id', reservation.id)
         .eq('tenant_id', data.tenantId)
       if (assignmentError.code === '23P01') throw new Response('Table unavailable', { status: 409 })

@@ -67,9 +67,7 @@ export function PlatformModulesPage({
         </p>
       </header>
       {message && (
-        <p className="bg-muted rounded-lg px-3 py-2 text-sm" role="status">
-          {message}
-        </p>
+        <output className="bg-muted block rounded-lg px-3 py-2 text-sm">{message}</output>
       )}
       <Card>
         <CardHeader>
