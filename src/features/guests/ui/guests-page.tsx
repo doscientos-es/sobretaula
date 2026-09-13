@@ -22,6 +22,7 @@ import {
   addGuestAllergy,
   addGuestNote,
   addGuestPreference,
+  exportGuestContactsCsv,
   getGuestTags,
   importGuestCsv,
   mergeGuests,
@@ -54,6 +55,24 @@ export function GuestsPage({ tenantId, venueId }: { tenantId: string; venueId: s
   const [importing, setImporting] = useState(false)
   const [csvFileName, setCsvFileName] = useState('')
   const [isDraggingCsv, setIsDraggingCsv] = useState(false)
+  const [exporting, setExporting] = useState(false)
+  async function exportContacts() {
+    setExporting(true)
+    try {
+      const content = await exportGuestContactsCsv({ data: { tenantId } })
+      const url = URL.createObjectURL(new Blob([content], { type: 'text/csv;charset=utf-8' }))
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `sobretaula-clientes-${new Date().toISOString().slice(0, 10)}.csv`
+      link.click()
+      URL.revokeObjectURL(url)
+      setError(null)
+    } catch {
+      setError('No se ha podido exportar el directorio de clientes.')
+    } finally {
+      setExporting(false)
+    }
+  }
   async function loadCsvFile(file: File | undefined) {
     if (!file) return
     if (file.size > 10 * 1024 * 1024) {
@@ -207,6 +226,15 @@ export function GuestsPage({ tenantId, venueId }: { tenantId: string; venueId: s
         <CardHeader>
           <CardTitle>Directorio</CardTitle>
           <CardDescription>Busca por nombre, teléfono o email.</CardDescription>
+          <Button
+            className="w-fit"
+            disabled={exporting}
+            onClick={() => void exportContacts()}
+            type="button"
+            variant="outline"
+          >
+            {exporting ? 'Preparando exportación…' : 'Exportar contactos CSV'}
+          </Button>
           <Input
             aria-label="Buscar clientes"
             onChange={(event) => {

@@ -53,9 +53,12 @@ reproducible (comando ejecutado y su resultado).
 
 ### Riesgo de migraciones pendiente de autorización
 
-La carpeta `supabase/migrations` contiene colisiones de versión en
-`20260910000026`, `20260910000031`, `20260910000035`, `20260910000058`,
-`20260910000062` y `20260913000048`. Es un riesgo de aplicación, no se corrige
+La carpeta `supabase/migrations` conserva colisiones históricas de versión:
+`20260910000026` (availability/versión de certificado), `20260910000031`
+(plano/lista de espera), `20260910000035` (tipos de plano/disponibilidad),
+`20260910000058` (idempotencia/lista de espera y branding) y `20260910000062`
+(auditoría fiscal/borrado de plataforma). La colisión local de `20260913000048`
+se corrigió renombrando la migración atómica de carta a `20260914000002`. Es un riesgo de aplicación, no se corrige
 renombrando archivos sin comparar antes `supabase_migrations.schema_migrations`
 del proyecto autorizado. El gate X5 conserva esta acción como pendiente del
 responsable con acceso remoto.

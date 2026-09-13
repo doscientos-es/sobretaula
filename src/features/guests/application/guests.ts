@@ -9,6 +9,7 @@ import {
 import { paginationRange, type PaginatedResult } from '@/shared/lib/pagination'
 import { createRequestSupabaseClient } from '@/shared/lib/supabase/server/create-server-client'
 
+import { buildGuestContactsCsv } from '../domain/guest-export'
 import { previewGuestCsv } from '../domain/guest-import'
 
 const importGuestCsvInput = z.object({
@@ -51,6 +52,7 @@ const consentInput = z.object({
   guestId: z.string().uuid(),
   marketingConsent: z.boolean(),
 })
+const guestExportInput = z.object({ tenantId: z.string().uuid() })
 
 export interface GuestSummary {
   id: string
@@ -265,6 +267,39 @@ export const importGuestCsv = createServerFn({ method: 'POST' })
       imported += 1
     }
     return { imported }
+  })
+
+export const exportGuestContactsCsv = createServerFn({ method: 'GET' })
+  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .validator(guestExportInput)
+  .handler(async ({ context, data }) => {
+    if (!['owner', 'manager'].includes(context.tenantMembership.role))
+      throw new Response('Forbidden', { status: 403 })
+    const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    const [guestsResult, tenantResult] = await Promise.all([
+      supabase
+        .from('guests')
+        .select('id, full_name, email, phone, marketing_consent, created_at')
+        .eq('tenant_id', data.tenantId)
+        .order('full_name')
+        .order('id')
+        .limit(10_000),
+      supabase.from('tenants').select('timezone').eq('id', data.tenantId).single(),
+    ])
+    if (guestsResult.error) throw new Error(`guest_export_failed:${guestsResult.error.code}`)
+    if (tenantResult.error)
+      throw new Error(`guest_export_timezone_failed:${tenantResult.error.code}`)
+    return buildGuestContactsCsv(
+      (guestsResult.data ?? []).map((guest) => ({
+        createdAt: guest.created_at,
+        email: guest.email,
+        id: guest.id,
+        marketingConsent: guest.marketing_consent,
+        name: guest.full_name,
+        phone: guest.phone,
+      })),
+      { timezone: tenantResult.data.timezone ?? 'Europe/Madrid' },
+    )
   })
 
 export const updateGuestMarketingConsent = createServerFn({ method: 'POST' })

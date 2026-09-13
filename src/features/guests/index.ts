@@ -1,5 +1,6 @@
 export {
   addGuestNote,
+  exportGuestContactsCsv,
   getGuestTags,
   importGuestCsv,
   searchGuests,
