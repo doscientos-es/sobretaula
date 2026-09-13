@@ -21,6 +21,7 @@ import { useState, type DragEvent, type FormEvent } from 'react'
 import type { Locale } from '@/shared/lib/i18n/locale'
 import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
 
+import { reservationServiceErrorMessage } from '../application/reservation-service-error'
 import {
   createReservation,
   createReservationService,
@@ -30,7 +31,6 @@ import {
   type ReservationTermsVersion,
   updateReservationService,
 } from '../application/reservations'
-import { reservationServiceErrorMessage } from '../application/reservation-service-error'
 import { previewReservationCsv, type ReservationImportPreview } from '../domain/reservation-import'
 import { ReservationAgendaCard } from './reservation-agenda-card'
 
@@ -251,8 +251,8 @@ export function ReservationPage({
                 value={termsBody}
               />
               <FieldDescription>
-                Incluye solo normas que apliquéis realmente. Puedes modificarlo más adelante:
-                cada publicación crea una nueva versión.
+                Incluye solo normas que apliquéis realmente. Puedes modificarlo más adelante: cada
+                publicación crea una nueva versión.
               </FieldDescription>
             </Field>
             <Button disabled={feedback.pending} type="submit">
