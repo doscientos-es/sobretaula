@@ -1,6 +1,6 @@
 # Estado de implementación
 
-Última actualización: 2026-09-13. Incluye la ejecución local de tests y la
+Última actualización: 2026-09-14. Incluye la ejecución local de tests y la
 revisión del historial de migraciones del proyecto Supabase autorizado.
 
 ## Carta: categorías y estado operativo
@@ -35,6 +35,18 @@ interna marcada como «implementada» cubre todo el MVP comercial.
 Registro honesto de lo que existe y está verificado. Un punto sin ejecutar es
 **pendiente**, no aprobado. No se marca nada como hecho sin evidencia
 reproducible (comando ejecutado y su resultado).
+
+### Evidencia local de release candidate (2026-09-14)
+
+- `pnpm quality`: correcto; formato, estructura, tipos y **411 tests pasados**
+  (3 omitidos y 1 fichero omitido). `oxlint` termina correctamente con warnings
+  no bloqueantes ya inventariados.
+- `pnpm test:e2e -- --trace=off`: **2 pasados** (flujo público publicado y
+  gestión tokenizada `Cache-Control: no-store`) y **26 omitidos** por no existir
+  `E2E_STORAGE_STATE` de una cuenta de pruebas no productiva.
+- La evidencia anterior no cierra I2/I3/I4 ni ningún gate X: no sustituye un
+  smoke autenticado, una suite aislada de RLS, restore, piloto, asesoría o
+  migración/verificación remota.
 
 ## Fases
 

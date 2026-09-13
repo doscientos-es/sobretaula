@@ -13,9 +13,16 @@ import {
   useFormFeedback,
   FormFeedback,
 } from '@doscientos/ui'
+import { CheckCircle2, CircleDollarSign, Pencil, Trash2 } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 
-import { closeTipsPeriod, saveTipEntry, type getTipsOverview } from '../application/tips'
+import {
+  closeTipsPeriod,
+  deleteTipEntry,
+  saveTipEntry,
+  updateTipEntry,
+  type getTipsOverview,
+} from '../application/tips'
 import { describeTipAuditEvent } from '../domain/tips'
 type Overview = Awaited<ReturnType<typeof getTipsOverview>>
 const euro = (c: number) => `${(c / 100).toFixed(2).replace('.', ',')} €`
@@ -60,6 +67,12 @@ export function TipsPage({
 }) {
   const feedback = useFormFeedback()
   const [result, setResult] = useState<Awaited<ReturnType<typeof closeTipsPeriod>> | null>(null)
+  const [editingEntryId, setEditingEntryId] = useState<string | null>(null)
+  const [selectedTipDate, setSelectedTipDate] = useState(() =>
+    new Date().toISOString().slice(0, 10),
+  )
+  const registeredTipDates = new Set(overview.registeredTipDates)
+  const selectedDateAlreadyRegistered = registeredTipDates.has(selectedTipDate)
   const lastClosedTo = overview.periods[0]?.to_date ?? null
   function setPeriod(from: string, to: string) {
     const form = document.querySelector<HTMLFormElement>('#close-tips-form')
@@ -83,8 +96,12 @@ export function TipsPage({
       })
       feedback.setSuccess('Cierre diario guardado.')
       onDone()
-    } catch {
-      feedback.setError('No se ha podido guardar el cierre.')
+    } catch (error) {
+      feedback.setError(
+        error instanceof Error && error.message.includes('23505')
+          ? 'Ese día ya tiene un cierre registrado. Elige otro día.'
+          : 'No se ha podido guardar el cierre.',
+      )
     }
   }
   async function close(event: FormEvent<HTMLFormElement>) {
@@ -100,6 +117,51 @@ export function TipsPage({
       feedback.setSuccess('Periodo cerrado y reparto calculado.')
     } catch {
       feedback.setError('No se ha podido cerrar el periodo.')
+    }
+  }
+  async function editEntry(entry: Overview['entries'][number]) {
+    const amount = window.prompt(
+      'Importe del cierre (€)',
+      (Number(entry.amount_cents) / 100).toFixed(2),
+    )
+    if (amount === null) return
+    const note = window.prompt('Nota (opcional)', entry.note ?? '')
+    if (note === null) return
+    setEditingEntryId(entry.id)
+    try {
+      await updateTipEntry({
+        data: {
+          tenantId,
+          venueId,
+          entryId: entry.id,
+          amountCents: Math.round(Number(amount.replace(',', '.')) * 100),
+          note,
+        },
+      })
+      feedback.setSuccess('Cierre actualizado y registrado en el historial.')
+      onDone()
+    } catch {
+      feedback.setError('No se ha podido actualizar el cierre.')
+    } finally {
+      setEditingEntryId(null)
+    }
+  }
+  async function removeEntry(entry: Overview['entries'][number]) {
+    if (
+      !window.confirm(
+        `¿Eliminar el cierre del ${entry.tip_date}? Se conservará el trazo en el historial.`,
+      )
+    )
+      return
+    setEditingEntryId(entry.id)
+    try {
+      await deleteTipEntry({ data: { tenantId, venueId, entryId: entry.id } })
+      feedback.setSuccess('Cierre eliminado y registrado en el historial.')
+      onDone()
+    } catch {
+      feedback.setError('No se ha podido eliminar el cierre.')
+    } finally {
+      setEditingEntryId(null)
     }
   }
   return (
@@ -133,16 +195,27 @@ export function TipsPage({
                 <Input
                   defaultValue={new Date().toISOString().slice(0, 10)}
                   id="tip-date"
+                  onChange={(event) => setSelectedTipDate(event.target.value)}
+                  aria-describedby="tip-date-help"
                   name="date"
                   required
                   type="date"
                 />
+                <p className="text-muted-foreground text-xs" id="tip-date-help">
+                  {selectedDateAlreadyRegistered
+                    ? 'Este día ya tiene un cierre. Selecciona otro.'
+                    : 'Los días con cierre ya registrado no se pueden volver a añadir.'}
+                </p>
               </Field>
               <Field>
                 <FieldLabel htmlFor="tip-amount">Total del bote (€)</FieldLabel>
                 <Input id="tip-amount" min="0" name="amount" required step="0.01" type="number" />
               </Field>
-              <Button className="self-end" disabled={feedback.pending} type="submit">
+              <Button
+                className="self-end"
+                disabled={feedback.pending || selectedDateAlreadyRegistered}
+                type="submit"
+              >
                 Guardar día
               </Button>
               <Field className="sm:col-span-2">
@@ -253,7 +326,10 @@ export function TipsPage({
         <CardContent>
           <ul className="space-y-2 text-sm">
             {overview.entries.slice(0, 10).map((entry) => (
-              <li className="flex justify-between border-b pb-2" key={entry.id}>
+              <li
+                className="flex flex-wrap items-center justify-between gap-3 border-b pb-2"
+                key={entry.id}
+              >
                 <span>
                   <span className="block">{entry.tip_date}</span>
                   <span className="text-muted-foreground text-xs">
@@ -262,9 +338,45 @@ export function TipsPage({
                 </span>
                 <span className="flex items-center gap-2 font-medium">
                   {entry.paid_at ? (
-                    <span className="text-muted-foreground text-xs font-normal">Repartida</span>
-                  ) : null}
+                    <span
+                      className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-1 text-xs font-normal text-emerald-700"
+                      title="Propina ya cobrada"
+                    >
+                      <CheckCircle2 aria-hidden="true" className="size-3.5" /> Cobrada
+                    </span>
+                  ) : (
+                    <span
+                      className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-xs font-normal text-amber-700"
+                      title="Propina pendiente de cobro"
+                    >
+                      <CircleDollarSign aria-hidden="true" className="size-3.5" /> Pendiente
+                    </span>
+                  )}
                   {euro(Number(entry.amount_cents))}
+                  {!entry.paid_at ? (
+                    <>
+                      <Button
+                        aria-label={`Editar cierre del ${entry.tip_date}`}
+                        disabled={editingEntryId === entry.id}
+                        onClick={() => void editEntry(entry)}
+                        size="icon"
+                        type="button"
+                        variant="ghost"
+                      >
+                        <Pencil aria-hidden="true" className="size-4" />
+                      </Button>
+                      <Button
+                        aria-label={`Eliminar cierre del ${entry.tip_date}`}
+                        disabled={editingEntryId === entry.id}
+                        onClick={() => void removeEntry(entry)}
+                        size="icon"
+                        type="button"
+                        variant="ghost"
+                      >
+                        <Trash2 aria-hidden="true" className="text-destructive size-4" />
+                      </Button>
+                    </>
+                  ) : null}
                 </span>
               </li>
             ))}

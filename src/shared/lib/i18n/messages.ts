@@ -219,6 +219,10 @@ const es = {
   'public.acceptPrivacy': 'Acepta la política de privacidad para continuar.',
   'public.acceptTermsError': 'Acepta las condiciones de reserva para continuar.',
   'public.slotTaken': 'Esta hora acaba de ocuparse. Elige otra, por favor.',
+  'public.rateLimited': 'Has hecho demasiados intentos. Espera unos minutos antes de volver a reservar.',
+  'public.termsUnavailable': 'Las condiciones de reserva han cambiado. Revísalas y vuelve a intentarlo.',
+  'public.selectionUnavailable': 'Este turno ya no está disponible. Actualiza la página y elige otro.',
+  'public.bookingDetailsInvalid': 'Revisa el nombre, el email y el teléfono antes de continuar.',
   'public.bookingFailed':
     'No hemos podido completar la reserva. Revisa los datos e inténtalo de nuevo.',
   'public.cancelConfirm': '¿Seguro que quieres cancelar esta reserva?',
@@ -580,6 +584,10 @@ const ca: Record<MessageKey, string> = {
   'public.acceptPrivacy': 'Accepta la política de privacitat per continuar.',
   'public.acceptTermsError': 'Accepta les condicions de reserva per continuar.',
   'public.slotTaken': 'Aquesta hora s’acaba d’ocupar. Tria’n una altra, si us plau.',
+  'public.rateLimited': 'Has fet massa intents. Espera uns minuts abans de tornar a reservar.',
+  'public.termsUnavailable': 'Les condicions de reserva han canviat. Revisa-les i torna-ho a provar.',
+  'public.selectionUnavailable': 'Aquest torn ja no està disponible. Actualitza la pàgina i tria’n un altre.',
+  'public.bookingDetailsInvalid': 'Revisa el nom, l’email i el telèfon abans de continuar.',
   'public.bookingFailed':
     'No hem pogut completar la reserva. Revisa les dades i torna-ho a provar.',
   'public.cancelConfirm': 'Segur que vols cancel·lar aquesta reserva?',

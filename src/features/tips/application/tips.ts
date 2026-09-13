@@ -10,7 +10,13 @@ import { paginationRange } from '@/shared/lib/pagination'
 import { createRequestSupabaseClient } from '@/shared/lib/supabase/server/create-server-client'
 
 import { distributeTips } from '../domain/tips'
-import { closeTipsInput, saveTipInput, tipsInput } from './tips-schema'
+import {
+  closeTipsInput,
+  deleteTipInput,
+  saveTipInput,
+  tipsInput,
+  updateTipInput,
+} from './tips-schema'
 const middleware = [
   authMiddleware,
   tenantMembershipMiddleware,
@@ -25,7 +31,7 @@ export const getTipsOverview = createServerFn({ method: 'GET' })
   .handler(async ({ context, data }) => {
     manager(context.tenantMembership.role)
     const db = createRequestSupabaseClient(context.tenantMembership.accessToken)
-    const [entries, periods, auditEvents] = await Promise.all([
+    const [entries, periods, auditEvents, registeredDates] = await Promise.all([
       db
         .from('tip_pool_entries')
         .select(
@@ -52,8 +58,14 @@ export const getTipsOverview = createServerFn({ method: 'GET' })
         .eq('venue_id', data.venueId)
         .order('occurred_at', { ascending: false })
         .limit(100),
+      db
+        .from('tip_pool_entries')
+        .select('tip_date')
+        .eq('tenant_id', data.tenantId)
+        .eq('venue_id', data.venueId),
     ])
-    if (entries.error || periods.error || auditEvents.error) throw new Error('tips_load_failed')
+    if (entries.error || periods.error || auditEvents.error || registeredDates.error)
+      throw new Error('tips_load_failed')
     const entryRows = entries.data ?? []
     const periodRows = (periods.data ?? []) as Array<{
       id: string
@@ -99,6 +111,7 @@ export const getTipsOverview = createServerFn({ method: 'GET' })
       entriesPageSize: data.pageSize,
       entriesTotal: entries.count ?? entryRows.length,
       entriesHasMore: data.page * data.pageSize < (entries.count ?? entryRows.length),
+      registeredTipDates: (registeredDates.data ?? []).map((row) => row.tip_date),
     }
   })
 export const saveTipEntry = createServerFn({ method: 'POST' })
@@ -108,19 +121,46 @@ export const saveTipEntry = createServerFn({ method: 'POST' })
     manager(context.tenantMembership.role)
     const { error } = await createRequestSupabaseClient(context.tenantMembership.accessToken)
       .from('tip_pool_entries')
-      .upsert(
-        {
-          tenant_id: data.tenantId,
-          venue_id: data.venueId,
-          tip_date: data.date,
-          amount_cents: data.amountCents,
-          note: data.note || null,
-          created_by: context.tenantMembership.userId,
-        },
-        { onConflict: 'tenant_id,venue_id,tip_date' },
-      )
+      .insert({
+        tenant_id: data.tenantId,
+        venue_id: data.venueId,
+        tip_date: data.date,
+        amount_cents: data.amountCents,
+        note: data.note || null,
+        created_by: context.tenantMembership.userId,
+      })
     if (error) throw new Error(`tips_save_failed:${error.code}`)
     return { saved: true }
+  })
+export const updateTipEntry = createServerFn({ method: 'POST' })
+  .middleware(middleware)
+  .validator(updateTipInput)
+  .handler(async ({ context, data }) => {
+    manager(context.tenantMembership.role)
+    const { error } = await createRequestSupabaseClient(context.tenantMembership.accessToken)
+      .from('tip_pool_entries')
+      .update({ amount_cents: data.amountCents, note: data.note || null })
+      .eq('id', data.entryId)
+      .eq('tenant_id', data.tenantId)
+      .eq('venue_id', data.venueId)
+      .is('paid_at', null)
+    if (error) throw new Error(`tips_update_failed:${error.code}`)
+    return { updated: true }
+  })
+export const deleteTipEntry = createServerFn({ method: 'POST' })
+  .middleware(middleware)
+  .validator(deleteTipInput)
+  .handler(async ({ context, data }) => {
+    manager(context.tenantMembership.role)
+    const { error } = await createRequestSupabaseClient(context.tenantMembership.accessToken)
+      .from('tip_pool_entries')
+      .delete()
+      .eq('id', data.entryId)
+      .eq('tenant_id', data.tenantId)
+      .eq('venue_id', data.venueId)
+      .is('paid_at', null)
+    if (error) throw new Error(`tips_delete_failed:${error.code}`)
+    return { deleted: true }
   })
 export const closeTipsPeriod = createServerFn({ method: 'POST' })
   .middleware(middleware)

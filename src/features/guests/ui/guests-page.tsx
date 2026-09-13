@@ -73,7 +73,7 @@ export function GuestsPage({ tenantId, venueId }: { tenantId: string; venueId: s
       setError('No se ha podido leer el archivo CSV.')
     }
   }
-  function dropCsv(event: DragEvent<HTMLLabelElement>) {
+  function dropCsv(event: DragEvent<HTMLInputElement>) {
     event.preventDefault()
     setIsDraggingCsv(false)
     void loadCsvFile(event.dataTransfer.files[0])
@@ -125,16 +125,6 @@ export function GuestsPage({ tenantId, venueId }: { tenantId: string; venueId: s
           <label
             aria-label="Seleccionar archivo CSV de clientes"
             className={`grid min-h-24 cursor-pointer place-items-center rounded-lg border-2 border-dashed px-4 py-4 text-center text-sm ${isDraggingCsv ? 'border-primary bg-primary/10' : 'border-muted-foreground/30 hover:border-primary/60'}`}
-            onDragEnter={(event) => {
-              event.preventDefault()
-              setIsDraggingCsv(true)
-            }}
-            onDragLeave={(event) => {
-              event.preventDefault()
-              setIsDraggingCsv(false)
-            }}
-            onDragOver={(event) => event.preventDefault()}
-            onDrop={dropCsv}
             htmlFor="guest-csv-file"
           >
             <span>
@@ -149,7 +139,17 @@ export function GuestsPage({ tenantId, venueId }: { tenantId: string; venueId: s
               aria-label="Archivo CSV de clientes"
               className="sr-only"
               id="guest-csv-file"
+              onDragEnter={(event) => {
+                event.preventDefault()
+                setIsDraggingCsv(true)
+              }}
+              onDragLeave={(event) => {
+                event.preventDefault()
+                setIsDraggingCsv(false)
+              }}
+              onDragOver={(event) => event.preventDefault()}
               onChange={(event) => void loadCsvFile(event.target.files?.[0])}
+              onDrop={dropCsv}
               type="file"
             />
           </label>

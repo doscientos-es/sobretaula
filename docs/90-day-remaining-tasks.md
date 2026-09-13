@@ -1,6 +1,6 @@
 # SobreTaula · Plan técnico de 90 días
 
-Estado: activo. Última revisión: 2026-09-13.
+Estado: activo. Última revisión: 2026-09-14.
 
 Objetivo: convertir la base actual en un producto vendible y operable para un
 restaurante independiente con sala. El alcance termina en un servicio completo
@@ -201,8 +201,9 @@ propietario y siguiente acción; no se rebaja silenciosamente el alcance.
   único con turnos, zonas, carta, impuestos y primer servicio.
 - [~] **P0.2 Reservas internas:** CRUD de turnos y agenda con búsqueda, estado,
   reprogramación, historial, filtros persistidos en URL e idempotencia de
-  creación preparados; faltan bloques con impacto, reglas por área, cerrar
-  todas las transiciones en un motor único y validar concurrencia remotamente.
+  creación preparados y cubiertos por pruebas de dominio; faltan bloques con
+  impacto, reglas por área, cerrar todas las transiciones en un motor único y
+  validar concurrencia en el proyecto remoto autorizado.
 - [ ] **P0.3 Flujo diario:** smoke reserva → sala → TPV → cocina → cobro → caja.
 - [ ] **P0.4 Seguridad:** RLS, carreras, idempotencia, auditoría y restore aislado.
 - [ ] **P1.1 Sala/cocina:** Ahora, KDS completo, handover y tablet/móvil.
@@ -212,8 +213,9 @@ propietario y siguiente acción; no se rebaja silenciosamente el alcance.
 - [ ] **P1.5 Privacidad/exportaciones:** retención, anonimización y formatos.
 - [~] **P2.1 Importación:** CSV con productos y modificadores, preview, errores por
   fila y RPC atómico preparados; falta aplicar la migración y prueba integrada.
-- [~] **P2.2 Reserva pública:** flujo y emails implementados; faltan humo,
-  retención/privacidad y validación remota.
+- [~] **P2.2 Reserva pública:** flujo, estados vacíos, gestión por token y emails
+  implementados; smoke público local verificado (flujo publicado y
+  `no-store`); faltan E2E autenticado, retención/privacidad y validación remota.
 - [ ] **P2.3 Comunicaciones:** rebotes y reenvío manual; SMS/WhatsApp tras X6.
 
 ## Definition of Done

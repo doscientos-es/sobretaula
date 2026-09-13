@@ -118,7 +118,7 @@ export function ReservationPage({
     }
   }
 
-  function dropReservations(event: DragEvent<HTMLLabelElement>) {
+  function dropReservations(event: DragEvent<HTMLInputElement>) {
     event.preventDefault()
     setIsDraggingReservations(false)
     void loadReservationFile(event.dataTransfer.files[0])
@@ -321,16 +321,6 @@ export function ReservationPage({
                     <label
                       aria-label="Seleccionar archivo CSV de reservas"
                       className={`grid min-h-24 cursor-pointer place-items-center rounded-lg border-2 border-dashed px-4 py-4 text-center text-sm ${isDraggingReservations ? 'border-primary bg-primary/10' : 'border-muted-foreground/30 hover:border-primary/60'}`}
-                      onDragEnter={(event) => {
-                        event.preventDefault()
-                        setIsDraggingReservations(true)
-                      }}
-                      onDragLeave={(event) => {
-                        event.preventDefault()
-                        setIsDraggingReservations(false)
-                      }}
-                      onDragOver={(event) => event.preventDefault()}
-                      onDrop={dropReservations}
                       htmlFor="reservation-csv-file"
                     >
                       <span>
@@ -347,7 +337,17 @@ export function ReservationPage({
                         aria-label="Archivo CSV de reservas"
                         className="sr-only"
                         id="reservation-csv-file"
+                        onDragEnter={(event) => {
+                          event.preventDefault()
+                          setIsDraggingReservations(true)
+                        }}
+                        onDragLeave={(event) => {
+                          event.preventDefault()
+                          setIsDraggingReservations(false)
+                        }}
+                        onDragOver={(event) => event.preventDefault()}
                         onChange={(event) => void loadReservationFile(event.target.files?.[0])}
+                        onDrop={dropReservations}
                         type="file"
                       />
                     </label>

@@ -22,8 +22,10 @@ import { formatMessage, createTranslator } from '@/shared/lib/i18n/messages'
 import {
   createPublicReservation,
   getPublicReservationAvailability,
+  publicReservationInput,
   type PublicReservationProfile,
 } from '../application/public-reservations'
+import { publicReservationFailure } from '../application/public-reservation-error'
 import { zonedLocalToIso } from '../domain/zoned-time'
 
 function localDateKey(date: Date, timeZone: string): string {
@@ -167,33 +169,46 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
       feedback.setError(t('public.acceptTermsError'))
       return
     }
+    const data = {
+      email,
+      ...(phone ? { phone } : {}),
+      ...(areaId ? { areaId } : {}),
+      guestName,
+      ...(notes ? { notes } : {}),
+      partySize,
+      privacyAccepted: true as const,
+      ...(profile.terms ? { termsVersionId: profile.terms.id } : {}),
+      serviceId,
+      slug: profile.slug,
+      startsAt: zonedLocalToIso(`${date}T${time}`, profile.timezone),
+    }
+    const parsed = publicReservationInput.safeParse(data)
+    if (!parsed.success) {
+      feedback.setError(t('public.bookingDetailsInvalid'))
+      return
+    }
     feedback.setPending()
     try {
       const result = await createPublicReservation({
-        data: {
-          email,
-          ...(phone ? { phone } : {}),
-          ...(areaId ? { areaId } : {}),
-          guestName,
-          ...(notes ? { notes } : {}),
-          partySize,
-          privacyAccepted: true,
-          ...(profile.terms ? { termsVersionId: profile.terms.id } : {}),
-          serviceId,
-          slug: profile.slug,
-          // The browser's local zone is the restaurant's zone in this MVP. The
-          // server validates the instant again against the tenant timezone.
-          startsAt: zonedLocalToIso(`${date}T${time}`, profile.timezone),
-        },
+        data: parsed.data,
       })
       setManagementToken(result.managementToken)
       setConfirmed(true)
       feedback.setSuccess('')
     } catch (error) {
+      const failure = publicReservationFailure(error)
       feedback.setError(
-        error instanceof Response && error.status === 409
+        failure === 'slotTaken'
           ? t('public.slotTaken')
-          : t('public.bookingFailed'),
+          : failure === 'rateLimited'
+            ? t('public.rateLimited')
+            : failure === 'termsUnavailable'
+              ? t('public.termsUnavailable')
+              : failure === 'selectionUnavailable'
+                ? t('public.selectionUnavailable')
+                : failure === 'detailsInvalid'
+                  ? t('public.bookingDetailsInvalid')
+                  : t('public.bookingFailed'),
       )
     }
   }
@@ -495,6 +510,8 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                     <Input
                       autoComplete="name"
                       id="public-name"
+                      maxLength={200}
+                      minLength={2}
                       onChange={(event) => setGuestName(event.target.value)}
                       required
                       value={guestName}
@@ -506,6 +523,8 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                       autoComplete="tel"
                       id="public-phone"
                       inputMode="tel"
+                      maxLength={40}
+                      minLength={6}
                       onChange={(event) => setPhone(event.target.value)}
                       value={phone}
                     />
@@ -516,6 +535,7 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                   <Input
                     autoComplete="email"
                     id="public-email"
+                    maxLength={200}
                     onChange={(event) => setEmail(event.target.value)}
                     required
                     type="email"

@@ -101,7 +101,7 @@ export function FloorPlanPage({
   const [versionActivation, setVersionActivation] = useState('')
   const [versionDeactivation, setVersionDeactivation] = useState('')
   const templateInputRef = useRef<HTMLInputElement>(null)
-  const [previewDevice, setPreviewDevice] = useState<FloorPlanPreviewDevice>('desktop')
+  const [previewDevice] = useState<FloorPlanPreviewDevice>('desktop')
   const [selectedId, setSelectedId] = useState<string>()
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [gridSize, setGridSize] = useState(DEFAULT_GRID_SIZE_CM)

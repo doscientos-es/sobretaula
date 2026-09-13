@@ -6,7 +6,7 @@ export type TipDistribution = {
 }
 
 export interface TipAuditEventDescriptionInput {
-  eventType: 'daily_total_saved' | 'daily_total_updated' | 'period_closed'
+  eventType: 'daily_total_saved' | 'daily_total_updated' | 'daily_total_deleted' | 'period_closed'
   fromDate: string | null
   tipDate: string | null
   toDate: string | null
@@ -20,6 +20,7 @@ export function describeTipAuditEvent({
   toDate,
 }: TipAuditEventDescriptionInput): string {
   if (eventType === 'period_closed') return `Cerró el período ${fromDate} — ${toDate}`
+  if (eventType === 'daily_total_deleted') return `Eliminó el cierre del día ${tipDate}`
   if (eventType === 'daily_total_updated') return `Actualizó el cierre del día ${tipDate}`
   return `Registró el cierre del día ${tipDate}`
 }
