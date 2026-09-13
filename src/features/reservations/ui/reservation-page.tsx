@@ -6,12 +6,14 @@ import {
   CardHeader,
   CardTitle,
   Field,
+  FieldDescription,
   FieldLabel,
   FormFeedback,
   Input,
   PageHeader,
   PageHeaderDescription,
   PageHeaderTitle,
+  Textarea,
   useFormFeedback,
 } from '@doscientos/ui'
 import { useState, type DragEvent, type FormEvent } from 'react'
@@ -28,6 +30,7 @@ import {
   type ReservationTermsVersion,
   updateReservationService,
 } from '../application/reservations'
+import { reservationServiceErrorMessage } from '../application/reservation-service-error'
 import { previewReservationCsv, type ReservationImportPreview } from '../domain/reservation-import'
 import { ReservationAgendaCard } from './reservation-agenda-card'
 
@@ -150,8 +153,8 @@ export function ReservationPage({
       }
       setEditingServiceId(null)
       reload()
-    } catch {
-      feedback.setError('No se ha podido guardar el turno. Comprueba los datos.')
+    } catch (error) {
+      feedback.setError(reservationServiceErrorMessage(error))
     }
   }
 
@@ -216,10 +219,14 @@ export function ReservationPage({
         <CardHeader>
           <CardTitle>Condiciones de reserva</CardTitle>
           <CardDescription>
-            Cada publicación crea una versión nueva y queda congelada en las reservas aceptadas.
+            Escribe las normas que verá una persona antes de confirmar una reserva: cancelaciones,
+            retrasos, grupos o pagos. Al publicar se aplicarán a las próximas reservas; las ya
+            aceptadas conservarán la versión que aceptaron.
+          </CardDescription>
+          <CardDescription>
             {terms[0]
-              ? ` Versión activa: ${terms[0].version}.`
-              : ' Todavía no hay una versión publicada.'}
+              ? `Versión activa: ${terms[0].version}. Publica de nuevo solo si necesitas cambiar las condiciones.`
+              : 'Aún no hay condiciones publicadas. Completa el título y el texto para activarlas en las reservas online.'}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -232,16 +239,21 @@ export function ReservationPage({
                 required
                 value={termsTitle}
               />
+              <FieldDescription>Se mostrará como encabezado de las condiciones.</FieldDescription>
             </Field>
             <Field>
               <FieldLabel htmlFor="reservation-terms-body">Texto</FieldLabel>
-              <textarea
-                className="min-h-28 w-full rounded-md border px-3 py-2"
+              <Textarea
+                className="min-h-28"
                 id="reservation-terms-body"
                 onChange={(event) => setTermsBody(event.target.value)}
                 required
                 value={termsBody}
               />
+              <FieldDescription>
+                Incluye solo normas que apliquéis realmente. Puedes modificarlo más adelante:
+                cada publicación crea una nueva versión.
+              </FieldDescription>
             </Field>
             <Button disabled={feedback.pending} type="submit">
               Publicar nueva versión

@@ -100,11 +100,6 @@ export function MenuItemRow({
             onChange={(event) => setPriceDraft(event.target.value)}
             value={priceDraft}
           />
-          {(priceChanged || preparationChanged || stationChanged) && (
-            <Button disabled={feedback.pending} onClick={savePrice} size="sm" type="button">
-              Guardar
-            </Button>
-          )}
         </span>
       </TableCell>
       <TableCell>{formatVatRate(item.vatRateBps, locale)}</TableCell>
@@ -145,6 +140,11 @@ export function MenuItemRow({
       <TableCell>
         <span className="flex items-center justify-end gap-3">
           <FormFeedback pendingLabel="Guardando…" state={feedback.state} />
+          {(priceChanged || preparationChanged || stationChanged) && (
+            <Button disabled={feedback.pending} onClick={savePrice} size="sm" type="button">
+              Guardar
+            </Button>
+          )}
           <Button
             disabled={feedback.pending}
             onClick={() =>

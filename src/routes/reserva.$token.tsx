@@ -7,6 +7,7 @@ import {
 import { LocaleProvider, PUBLIC_LOCALE_STORAGE_KEY } from '@/shared/lib/i18n/locale-preference'
 
 export const Route = createFileRoute('/reserva/$token')({
+  headers: () => ({ 'Cache-Control': 'no-store' }),
   loader: ({ params }) => getPublicReservation({ data: { token: params.token } }),
   component: ReservationManagementRoute,
 })

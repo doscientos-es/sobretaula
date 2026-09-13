@@ -49,8 +49,10 @@ proyecto Supabase autorizado no se pueden sustituir por tests locales.
       preparados; falta aplicar la migración autorizada, validar la semántica
       de reparto en base de datos y ejecutar el flujo integrado con datos de
       prueba.
-- [ ] **P1.6 · Caja y exportaciones.** Validación contable del arqueo, informe
-      para gestoría y exportación de jornada.
+- [ ] **P1.6 · Caja y exportaciones.** La caja ofrece histórico y CSV con
+      desglose por método; fichaje ofrece informe y CSV por rango. Falta la
+      validación contable del arqueo, el formato definitivo para gestoría y la
+      revisión externa de jornada.
 - [ ] **P1.7 · Propinas y coste laboral.** Reglas por local, cálculo por tiempo
       trabajado, redondeo explicado y resumen semanal accionable.
 - [ ] **P1.8 · Fiscalidad.** VERI*FACTU extremo a extremo, errores accionables,
@@ -60,13 +62,14 @@ proyecto Supabase autorizado no se pueden sustituir por tests locales.
 
 ### P2 · Activación comercial y ecosistema
 
-- [~] **P2.1 · Importación.** Clientes y reservas ya tienen CSV con preview,
-  validación y errores por fila; faltan productos/categorías/modificadores y
-  la importación transaccional completa.
+- [~] **P2.1 · Importación.** Carta, categorías, clientes y reservas futuras ya
+  tienen CSV con plantilla, arrastrar/soltar, límite de tamaño, preview,
+  validación y feedback; faltan modificadores, persistencia atómica por carga y
+  una prueba integrada de importación.
 - [~] **P2.2 · Reserva pública vendible.** Reserva, gestión por token,
   `no-store`, caducidad, rate limit, condiciones versionadas y lista de
-  espera están implementados; falta humo de sobreventa y validación de
-  retención/privacidad.
+  espera están implementados; el header `no-store` está verificado por HTTP
+  local. Falta humo de sobreventa y validación remota de retención/privacidad.
 - [~] **P2.3 · Comunicaciones.** Confirmaciones y recordatorios por email están
   activos mediante outbox/worker; faltan rebotes y reenvío manual. SMS/WhatsApp
   siguen desactivados hasta aprobar proveedor y consentimiento.

@@ -52,7 +52,7 @@ export function MenuPage({
           </PageHeaderDescription>
         </div>
       </PageHeader>
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+      <div className="grid gap-6">
         <div className="space-y-6">
           {sections.length === 0 ? (
             <Card>

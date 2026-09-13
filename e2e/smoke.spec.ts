@@ -7,6 +7,13 @@ test('public reservation page renders an intentional empty state', async ({ page
   await expect(page.getByRole('button', { name: 'Reservar mesa' })).toHaveCount(0)
 })
 
+test('tokenized reservation management is never cacheable', async ({ request }) => {
+  const response = await request.get(
+    '/reserva/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+  )
+  expect(response.headers()['cache-control']).toBe('no-store')
+})
+
 test.describe('authenticated restaurant smoke', () => {
   test.skip(
     !process.env.E2E_STORAGE_STATE,

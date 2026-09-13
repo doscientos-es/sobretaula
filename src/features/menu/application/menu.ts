@@ -3,7 +3,10 @@ import { z } from 'zod'
 
 import { authMiddleware } from '@/features/auth/infrastructure/server/auth-middleware'
 import { tenantMembershipMiddleware } from '@/features/tenancy/application/require-tenant-membership'
-import { createRequestSupabaseClient } from '@/shared/lib/supabase/server/create-server-client'
+import {
+  createRequestSupabaseClient,
+  createServiceSupabaseClient,
+} from '@/shared/lib/supabase/server/create-server-client'
 
 import type { LocalizedText, MenuCategory, MenuItem, MenuModifierOption } from '../domain/menu'
 import { previewMenuCsv } from '../domain/menu-import'
@@ -228,7 +231,7 @@ export const createMenuCategory = createServerFn({ method: 'POST' })
   .validator(createMenuCategoryInput)
   .handler(async ({ context, data }) => {
     requireMenuEditor(context.tenantMembership.role)
-    const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    const supabase = createServiceSupabaseClient()
     const { data: category, error } = await supabase
       .from('menu_categories')
       .insert({
@@ -248,7 +251,7 @@ export const createMenuItem = createServerFn({ method: 'POST' })
   .validator(createMenuItemInput)
   .handler(async ({ context, data }) => {
     requireMenuEditor(context.tenantMembership.role)
-    const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    const supabase = createServiceSupabaseClient()
     const { data: category, error: categoryError } = await supabase
       .from('menu_categories')
       .select('id')

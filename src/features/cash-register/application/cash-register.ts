@@ -132,6 +132,16 @@ export const addCashMovement = createServerFn({ method: 'POST' })
   .handler(async ({ context, data }) => {
     requireManager(context.tenantMembership.role)
     const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    const { data: register, error: registerError } = await supabase
+      .from('cash_registers')
+      .select('id')
+      .eq('id', data.registerId)
+      .eq('tenant_id', data.tenantId)
+      .eq('venue_id', data.venueId)
+      .eq('status', 'open')
+      .maybeSingle()
+    if (registerError) throw new Error(`cash_movement_register_check_failed:${registerError.code}`)
+    if (!register) throw new Response('Cash register not found or closed', { status: 409 })
     const { error } = await supabase.from('cash_movements').insert({
       tenant_id: data.tenantId,
       register_id: data.registerId,

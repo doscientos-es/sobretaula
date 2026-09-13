@@ -99,6 +99,10 @@ function requireReservationEditor(role: string): void {
   if (!['owner', 'manager', 'host'].includes(role)) throw new Response('Forbidden', { status: 403 })
 }
 
+function requireReservationServiceEditor(role: string): void {
+  if (!['owner', 'manager'].includes(role)) throw new Response('Forbidden', { status: 403 })
+}
+
 function requireTermsEditor(role: string): void {
   if (!['owner', 'manager'].includes(role)) throw new Response('Forbidden', { status: 403 })
 }
@@ -310,7 +314,7 @@ export const createReservationService = createServerFn({ method: 'POST' })
   .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
   .validator(serviceInput)
   .handler(async ({ context, data }) => {
-    requireReservationEditor(context.tenantMembership.role)
+    requireReservationServiceEditor(context.tenantMembership.role)
     if (data.endsAtTime <= data.startsAtTime) throw new Response('Invalid service', { status: 422 })
     const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
     const { data: service, error: serviceError } = await supabase
@@ -346,7 +350,7 @@ export const updateReservationService = createServerFn({ method: 'POST' })
   .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
   .validator(updateServiceInput)
   .handler(async ({ context, data }) => {
-    requireReservationEditor(context.tenantMembership.role)
+    requireReservationServiceEditor(context.tenantMembership.role)
     if (data.endsAtTime <= data.startsAtTime) throw new Response('Invalid service', { status: 422 })
     const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
     const { data: service, error: serviceError } = await supabase
