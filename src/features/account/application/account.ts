@@ -117,7 +117,7 @@ export const addOrderItem = createServerFn({ method: 'POST' })
       .eq('is_active', true)
     if (groupsError) throw new Error(`modifier_groups_load_failed:${groupsError.code}`)
     const modifierOptionIds = data.modifierOptionIds ?? []
-    const { data: options, error: optionsError } = modifierOptionIds.length
+    let optionsResult = modifierOptionIds.length
       ? await supabase
           .from('menu_modifier_options')
           .select(
@@ -126,6 +126,13 @@ export const addOrderItem = createServerFn({ method: 'POST' })
           .eq('tenant_id', data.tenantId)
           .in('id', modifierOptionIds)
       : { data: [], error: null }
+    if (optionsResult.error?.code === 'PGRST204' || optionsResult.error?.code === '42703')
+      optionsResult = (await supabase
+        .from('menu_modifier_options')
+        .select('group_id, id, is_active, name_i18n, price_delta_cents')
+        .eq('tenant_id', data.tenantId)
+        .in('id', modifierOptionIds)) as typeof optionsResult
+    const { data: options, error: optionsError } = optionsResult
     if (optionsError) throw new Error(`modifier_options_load_failed:${optionsError.code}`)
     if ((options ?? []).length !== new Set(modifierOptionIds).size)
       throw new Response('Invalid modifiers', { status: 422 })

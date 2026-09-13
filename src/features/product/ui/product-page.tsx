@@ -630,6 +630,16 @@ export function ProductPage({
           <CardTitle>Stock actual</CardTitle>
         </CardHeader>
         <CardContent>
+          {stock.lowStockIngredientIds.length > 0 ? (
+            <div className="bg-warning/15 text-warning-foreground mb-4 rounded-lg p-3 text-sm" role="alert">
+              <strong>{stock.lowStockIngredientIds.length} ingredientes bajo mínimo.</strong>{' '}
+              Revisa las compras antes del próximo servicio.
+            </div>
+          ) : (
+            <output className="text-success mb-4 block text-sm" aria-live="polite">
+              Stock por encima de los mínimos configurados.
+            </output>
+          )}
           <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
             <Field className="min-w-56">
               <FieldLabel htmlFor="ingredient-search">Buscar ingrediente</FieldLabel>

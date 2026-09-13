@@ -14,10 +14,19 @@ export const getPublicMenu = createServerFn({ method: 'GET' })
     }),
   )
   .handler(async ({ data }): Promise<MenuCatalog> => {
-    const { data: rows, error } = await createAnonSupabaseClient().rpc('public_menu_by_slug_v3', {
+    const client = createAnonSupabaseClient()
+    let { data: rows, error } = await client.rpc('public_menu_by_slug_v3', {
       p_slug: data.slug,
       p_channel: data.channel,
     })
+    if (error?.code === '42883' || error?.code === 'PGRST202') {
+      const fallback = await client.rpc('public_menu_by_slug_v2', {
+        p_slug: data.slug,
+        p_channel: data.channel,
+      })
+      rows = fallback.data
+      error = fallback.error
+    }
     if (error) throw new Error(`public_menu_load_failed:${error.code}`)
     type PublicMenuRow = {
       allergen_reasons?: Record<string, string[]>
