@@ -102,7 +102,7 @@ export function MenuForms({
     }
   }
 
-  function dropCsv(event: DragEvent<HTMLLabelElement>) {
+  function dropCsv(event: DragEvent<HTMLInputElement>) {
     event.preventDefault()
     setIsDraggingCsv(false)
     void loadCsvFile(event.dataTransfer.files[0])
@@ -187,16 +187,6 @@ export function MenuForms({
                     ? 'border-primary bg-primary/10'
                     : 'border-muted-foreground/30 hover:border-primary/60 hover:bg-muted/40'
                 }`}
-                onDragEnter={(event) => {
-                  event.preventDefault()
-                  setIsDraggingCsv(true)
-                }}
-                onDragLeave={(event) => {
-                  event.preventDefault()
-                  setIsDraggingCsv(false)
-                }}
-                onDragOver={(event) => event.preventDefault()}
-                onDrop={dropCsv}
                 htmlFor="menu-csv-file"
               >
                 <span>
@@ -213,7 +203,17 @@ export function MenuForms({
                   aria-label="Archivo CSV de carta"
                   className="sr-only"
                   id="menu-csv-file"
+                  onDragEnter={(event) => {
+                    event.preventDefault()
+                    setIsDraggingCsv(true)
+                  }}
+                  onDragLeave={(event) => {
+                    event.preventDefault()
+                    setIsDraggingCsv(false)
+                  }}
+                  onDragOver={(event) => event.preventDefault()}
                   onChange={(event) => void loadCsvFile(event.target.files?.[0])}
+                  onDrop={dropCsv}
                   type="file"
                 />
               </label>

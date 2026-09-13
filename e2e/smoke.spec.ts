@@ -1,10 +1,10 @@
 import { test, expect } from '@playwright/test'
 
-test('public reservation page renders an intentional empty state', async ({ page }) => {
+test('public reservation page renders the published booking flow', async ({ page }) => {
   await page.goto('/reservar/la-fonda-demo')
   await expect(page.getByRole('heading', { name: 'La Fonda Demo' })).toBeVisible()
-  await expect(page.getByText(/todavía no ha publicado ningún turno/i).first()).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Reservar mesa' })).toHaveCount(0)
+  await expect(page.locator('#public-service option')).toHaveCount(2)
+  await expect(page.getByRole('button', { name: 'Reservar mesa' })).toBeVisible()
 })
 
 test('tokenized reservation management is never cacheable', async ({ request }) => {

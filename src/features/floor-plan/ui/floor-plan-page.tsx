@@ -797,7 +797,6 @@ export function FloorPlanPage({
                 key={area.id}
                 aria-selected={area.id === activeArea?.id}
                 onClick={() => switchArea(area.id)}
-                role="tab"
                 type="button"
                 variant={area.id === activeArea?.id ? 'default' : 'outline'}
               >

@@ -38,7 +38,10 @@ const quickPeriod = (kind: 'month' | 'week' | 'last') => {
   const to = new Date(today)
   to.setDate(to.getDate() - 1)
   const from = new Date(to)
-  if (kind === 'month') (from.setMonth(from.getMonth() - 1), from.setDate(from.getDate() + 1))
+  if (kind === 'month') {
+    from.setMonth(from.getMonth() - 1)
+    from.setDate(from.getDate() + 1)
+  }
   if (kind === 'week') from.setDate(from.getDate() - 6)
   return { from: kind === 'last' ? '' : isoDate(from), to: kind === 'last' ? '' : isoDate(to) }
 }
@@ -186,7 +189,6 @@ export function TipsPage({
                 type="button"
                 variant="outline"
                 onClick={() => {
-                  const p = quickPeriod('last')
                   setPeriod(
                     isoDate(addDays(new Date(`${lastClosedTo}T00:00:00`), 1)),
                     isoDate(addDays(new Date(), -1)),

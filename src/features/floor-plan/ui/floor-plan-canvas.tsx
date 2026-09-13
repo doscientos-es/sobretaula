@@ -1,12 +1,4 @@
-import {
-  Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  Field,
-} from '@doscientos/ui'
+import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from '@doscientos/ui'
 import { useRef, useState, type PointerEvent } from 'react'
 
 import {
@@ -24,7 +16,7 @@ interface AlignmentGuide {
 }
 
 export function FloorPlanCanvas({
-  activeArea,
+  activeArea: _activeArea,
   activeVersion,
   alignmentGuides,
   blockedAccesses,
