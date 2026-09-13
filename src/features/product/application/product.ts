@@ -314,13 +314,20 @@ export const getInventory = createServerFn({ method: 'GET' })
   .handler(async ({ context, data }) => {
     requireProductEditor(context.tenantMembership.role)
     const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
-    const { data: movements, error } = await supabase
-      .from('inventory_movements')
-      .select('ingredient_id, quantity')
-      .eq('tenant_id', data.tenantId)
-      .eq('venue_id', data.venueId)
-      .order('created_at')
-    if (error) throw new Error(`inventory_load_failed:${error.code}`)
+    const aggregate = await supabase.rpc('inventory_stock_by_venue', {
+      p_tenant_id: data.tenantId,
+      p_venue_id: data.venueId,
+    })
+    let movements = aggregate.data
+    if (aggregate.error?.code === '42883' || aggregate.error?.code === 'PGRST202') {
+      const fallback = await supabase
+        .from('inventory_movements')
+        .select('ingredient_id, quantity')
+        .eq('tenant_id', data.tenantId)
+        .eq('venue_id', data.venueId)
+      if (fallback.error) throw new Error(`inventory_load_failed:${fallback.error.code}`)
+      movements = fallback.data
+    } else if (aggregate.error) throw new Error(`inventory_load_failed:${aggregate.error.code}`)
     const stock = calculateStock(
       (movements ?? []).map((movement) => ({
         ingredientId: movement.ingredient_id as string,
