@@ -58,8 +58,7 @@ export function FloorPlanSetupCard({
       <CardHeader>
         <CardTitle>Crea tu primer plano</CardTitle>
         <CardDescription>
-          Define la primera área del local. Después podrás colocar mesas y guardar nuevas
-          versiones.
+          Define la primera área del local. Después podrás colocar mesas y guardar nuevas versiones.
         </CardDescription>
       </CardHeader>
       <CardContent>

@@ -15,6 +15,7 @@ import type { FloorPlanArea } from '../domain/floor-plan'
 interface EventTemplateValues {
   activeFrom: string
   activeTo: string
+  editingEventId?: string
   name: string
 }
 
@@ -41,7 +42,12 @@ export function FloorPlanEventTemplates({
     if (!eventName.trim() || !eventFrom) return
     setPending(true)
     try {
-      await onSave({ activeFrom: eventFrom, activeTo: eventTo, name: eventName })
+      await onSave({
+        activeFrom: eventFrom,
+        activeTo: eventTo,
+        ...(editingEventId ? { editingEventId } : {}),
+        name: eventName,
+      })
       setEventName('')
       setEventFrom('')
       setEventTo('')

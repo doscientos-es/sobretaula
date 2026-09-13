@@ -66,6 +66,12 @@ import {
   serializeLayoutTemplate,
 } from '../domain/layout-template'
 import { inspectTableGroupPresetAvailability } from '../domain/table-group-presets'
+import { FloorPlanEventTemplates, type EventTemplateValues } from './floor-plan-event-templates'
+import {
+  FloorPlanSetupCard,
+  type FloorPlanPreviewDevice,
+  type FloorPlanSetupValues,
+} from './floor-plan-setup-card'
 
 function readLockedIds(lockStorageKey: string | undefined): string[] {
   if (!lockStorageKey || typeof window === 'undefined') return []
@@ -89,14 +95,6 @@ export function FloorPlanPage({
 }) {
   const feedback = useFormFeedback()
   const reload = useLoaderReload()
-  const [areaName, setAreaName] = useState('Sala principal')
-  const [widthCm, setWidthCm] = useState(800)
-  const [heightCm, setHeightCm] = useState(600)
-  const [floorNumber, setFloorNumber] = useState<number | null>(0)
-  const [spaceType, setSpaceType] = useState<
-    'indoor' | 'covered_terrace' | 'outdoor_terrace' | 'other'
-  >('indoor')
-  const [outdoorOpen, setOutdoorOpen] = useState(true)
   const [tableCode, setTableCode] = useState('1')
   const [tableSeats, setTableSeats] = useState(4)
   const [tableAccessible, setTableAccessible] = useState(false)
@@ -107,12 +105,8 @@ export function FloorPlanPage({
   const [versionName, setVersionName] = useState('Nueva versión')
   const [versionActivation, setVersionActivation] = useState('')
   const [versionDeactivation, setVersionDeactivation] = useState('')
-  const [eventName, setEventName] = useState('')
-  const [eventFrom, setEventFrom] = useState('')
-  const [eventTo, setEventTo] = useState('')
-  const [editingEventId, setEditingEventId] = useState<string>()
   const templateInputRef = useRef<HTMLInputElement>(null)
-  const [previewDevice, setPreviewDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop')
+  const [previewDevice, setPreviewDevice] = useState<FloorPlanPreviewDevice>('desktop')
   const [draggingTableId, setDraggingTableId] = useState<string>()
   const [selectedId, setSelectedId] = useState<string>()
   const [selectedIds, setSelectedIds] = useState<string[]>([])
@@ -221,16 +215,16 @@ export function FloorPlanPage({
       }
     })
   }
-  async function createEventTemplate() {
-    if (!activeVersion || !activeArea || !eventName.trim() || !eventFrom) {
+  async function createEventTemplate(values: EventTemplateValues) {
+    if (!activeVersion || !activeArea || !values.name.trim() || !values.activeFrom) {
       feedback.setError('Indica nombre y fecha de inicio del evento.')
       return
     }
     feedback.setPending()
     try {
       const payload = {
-        activeFrom: new Date(eventFrom).toISOString(),
-        activeTo: eventTo ? new Date(eventTo).toISOString() : null,
+        activeFrom: new Date(values.activeFrom).toISOString(),
+        activeTo: values.activeTo ? new Date(values.activeTo).toISOString() : null,
         areaIds: [activeArea.id],
         layout: createLayoutTemplate({
           widthCm: activeVersion.widthCm,
@@ -238,19 +232,19 @@ export function FloorPlanPage({
           tables: placements,
           elements,
         }) as unknown as Record<string, unknown>,
-        name: eventName,
+        name: values.name,
         tenantId,
         venueId,
       }
-      if (editingEventId)
-        await updateEventLayoutTemplate({ data: { ...payload, templateId: editingEventId } })
+      if (values.editingEventId)
+        await updateEventLayoutTemplate({
+          data: { ...payload, templateId: values.editingEventId },
+        })
       else await createEventLayoutTemplate({ data: payload })
-      setEventName('')
-      setEventFrom('')
-      setEventTo('')
-      setEditingEventId(undefined)
       feedback.setSuccess(
-        editingEventId ? 'Plantilla de evento actualizada.' : 'Plantilla de evento guardada.',
+        values.editingEventId
+          ? 'Plantilla de evento actualizada.'
+          : 'Plantilla de evento guardada.',
       )
       reload()
     } catch {
@@ -301,27 +295,15 @@ export function FloorPlanPage({
     ? `${Math.max(0, Math.min(activeVersion.widthCm * (1 - 1 / zoom), (activeVersion.widthCm * (1 - 1 / zoom)) / 2 + pan.x)).toFixed(2)} ${Math.max(0, Math.min(activeVersion.heightCm * (1 - 1 / zoom), (activeVersion.heightCm * (1 - 1 / zoom)) / 2 + pan.y)).toFixed(2)} ${(activeVersion.widthCm / zoom).toFixed(2)} ${(activeVersion.heightCm / zoom).toFixed(2)}`
     : undefined
 
-  async function createPlan(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    feedback.setPending()
-
-    try {
-      await createInitialFloorPlan({
-        data: {
-          areaName,
-          floorNumber,
-          heightCm,
-          outdoorOpen,
-          spaceType,
-          tenantId,
-          venueId,
-          widthCm,
-        },
-      })
-      reload()
-    } catch {
-      feedback.setError('No se ha podido crear el plano. Revisa los datos e inténtalo de nuevo.')
-    }
+  async function createPlan(values: FloorPlanSetupValues) {
+    await createInitialFloorPlan({
+      data: {
+        ...values,
+        tenantId,
+        venueId,
+      },
+    })
+    reload()
   }
 
   async function createTable(event: FormEvent<HTMLFormElement>) {
@@ -772,208 +754,31 @@ export function FloorPlanPage({
           </PageHeaderDescription>
         </div>
       </PageHeader>
-      {(data.eventLayoutTemplates?.length ?? 0) > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Plantillas de evento</CardTitle>
-            <CardDescription>Servicios especiales programados por zona.</CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {data.eventLayoutTemplates?.map((template) => (
-              <div className="border-border rounded-lg border p-3" key={template.id}>
-                <p className="font-medium">{template.name}</p>
-                <p className="text-muted-foreground text-xs">
-                  Desde {new Date(template.activeFrom).toLocaleString('es-ES')}
-                  {template.activeTo
-                    ? ` · hasta ${new Date(template.activeTo).toLocaleString('es-ES')}`
-                    : ''}
-                </p>
-                <p className="text-muted-foreground mt-1 text-xs">
-                  {template.areaIds.length} zonas afectadas
-                </p>
-                <Button
-                  className="mt-2"
-                  disabled={feedback.pending}
-                  onClick={() => {
-                    if (!window.confirm(`¿Borrar la plantilla «${template.name}»?`)) return
-                    feedback.setPending()
-                    void deleteEventLayoutTemplate({
-                      data: { templateId: template.id, tenantId, venueId },
-                    })
-                      .then(() => {
-                        feedback.setSuccess('Plantilla eliminada.')
-                        reload()
-                      })
-                      .catch(() => feedback.setError('No se ha podido borrar la plantilla.'))
-                  }}
-                  type="button"
-                  variant="outline"
-                >
-                  Borrar
-                </Button>
-                <Button
-                  className="mt-2 ml-2"
-                  onClick={() => {
-                    setEditingEventId(template.id)
-                    setEventName(template.name)
-                    setEventFrom(template.activeFrom.slice(0, 16))
-                    setEventTo(template.activeTo?.slice(0, 16) ?? '')
-                    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })
-                  }}
-                  type="button"
-                  variant="outline"
-                >
-                  Editar
-                </Button>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      )}
-      {activeVersion && activeArea && (
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              {editingEventId ? 'Editar plantilla de evento' : 'Crear plantilla de evento'}
-            </CardTitle>
-            <CardDescription>Guarda el layout actual para {activeArea.name}.</CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-3 sm:grid-cols-4">
-            <Input
-              aria-label="Nombre del evento"
-              onChange={(event) => setEventName(event.target.value)}
-              placeholder="Nombre"
-              value={eventName}
-            />
-            <Input
-              aria-label="Inicio del evento"
-              onChange={(event) => setEventFrom(event.target.value)}
-              type="datetime-local"
-              value={eventFrom}
-            />
-            <Input
-              aria-label="Fin del evento"
-              onChange={(event) => setEventTo(event.target.value)}
-              type="datetime-local"
-              value={eventTo}
-            />
-            <Button
-              disabled={feedback.pending}
-              onClick={() => void createEventTemplate()}
-              type="button"
-            >
-              {editingEventId ? 'Guardar cambios' : 'Guardar evento'}
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+      <FloorPlanEventTemplates
+        activeArea={activeArea}
+        activeVersion={activeVersion}
+        onDelete={async (template) => {
+          if (!window.confirm(`¿Borrar la plantilla «${template.name}»?`)) return
+          feedback.setPending()
+          try {
+            await deleteEventLayoutTemplate({
+              data: { templateId: template.id, tenantId, venueId },
+            })
+            feedback.setSuccess('Plantilla eliminada.')
+            reload()
+          } catch {
+            feedback.setError('No se ha podido borrar la plantilla.')
+          }
+        }}
+        onSave={createEventTemplate}
+        templates={data.eventLayoutTemplates ?? []}
+      />
       {!activeVersion ? (
-        <Card className="max-w-2xl">
-          <CardHeader>
-            <CardTitle>Crea tu primer plano</CardTitle>
-            <CardDescription>
-              Define la primera área del local. Después podrás colocar mesas y guardar nuevas
-              versiones.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form
-              className="grid gap-4 sm:grid-cols-2"
-              onSubmit={(event) => void createPlan(event)}
-            >
-              <Field>
-                <FieldLabel htmlFor="area-name">Área</FieldLabel>
-                <Input
-                  id="area-name"
-                  onChange={(event) => setAreaName(event.target.value)}
-                  required
-                  value={areaName}
-                />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="width-cm">Ancho (cm)</FieldLabel>
-                <Input
-                  id="width-cm"
-                  min={100}
-                  onChange={(event) => setWidthCm(Number(event.target.value))}
-                  required
-                  type="number"
-                  value={widthCm}
-                />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="height-cm">Alto (cm)</FieldLabel>
-                <Input
-                  id="height-cm"
-                  min={100}
-                  onChange={(event) => setHeightCm(Number(event.target.value))}
-                  required
-                  type="number"
-                  value={heightCm}
-                />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="floor-number">Planta</FieldLabel>
-                <Input
-                  id="floor-number"
-                  onChange={(event) =>
-                    setFloorNumber(event.target.value === '' ? null : Number(event.target.value))
-                  }
-                  type="number"
-                  value={floorNumber ?? ''}
-                />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="space-type">Tipo de zona</FieldLabel>
-                <select
-                  className="border-border rounded-md border px-2"
-                  id="space-type"
-                  onChange={(event) => setSpaceType(event.target.value as typeof spaceType)}
-                  value={spaceType}
-                >
-                  <option value="indoor">Interior</option>
-                  <option value="covered_terrace">Terraza cubierta</option>
-                  <option value="outdoor_terrace">Terraza exterior</option>
-                  <option value="other">Otra zona</option>
-                </select>
-              </Field>
-              {spaceType !== 'indoor' && (
-                <label className="flex items-center gap-2 text-sm sm:col-span-2">
-                  <input
-                    checked={outdoorOpen}
-                    onChange={(event) => setOutdoorOpen(event.target.checked)}
-                    type="checkbox"
-                  />
-                  Terraza abierta para operar
-                </label>
-              )}
-              <div className="sm:col-span-2">
-                <FormFeedback pendingLabel="Creando plano…" state={feedback.state} />
-                <Button className="mt-2" disabled={feedback.pending} type="submit">
-                  Crear plano
-                </Button>
-              </div>
-              <div
-                className="flex flex-wrap items-center gap-2 pt-2"
-                aria-label="Previsualización responsive"
-              >
-                <span className="text-muted-foreground text-sm">Previsualizar:</span>
-                {(['desktop', 'tablet', 'mobile'] as const).map((device) => (
-                  <Button
-                    key={device}
-                    aria-pressed={previewDevice === device}
-                    onClick={() => setPreviewDevice(device)}
-                    size="sm"
-                    type="button"
-                    variant={previewDevice === device ? 'default' : 'outline'}
-                  >
-                    {device === 'desktop' ? 'Escritorio' : device === 'tablet' ? 'Tablet' : 'Móvil'}
-                  </Button>
-                ))}
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+        <FloorPlanSetupCard
+          onCreate={createPlan}
+          previewDevice={previewDevice}
+          setPreviewDevice={setPreviewDevice}
+        />
       ) : (
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
           <Card>
