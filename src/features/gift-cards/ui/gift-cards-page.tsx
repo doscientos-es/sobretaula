@@ -1,5 +1,12 @@
-import { Button, Card, CardContent, CardHeader, CardTitle, Input } from '@doscientos/ui'
-import { useCallback, useEffect, useState } from 'react'
+import {
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Input,
+} from "@doscientos/ui";
+import { useCallback, useEffect, useState } from "react";
 
 import {
   cancelGiftCard,
@@ -7,47 +14,59 @@ import {
   listGiftCards,
   redeemGiftCard,
   type GiftCard,
-} from '../application/gift-cards'
+} from "../application/gift-cards";
 export function GiftCardsPage({ tenantId }: { tenantId: string }) {
-  const [cards, setCards] = useState<GiftCard[]>([])
-  const [code, setCode] = useState('')
-  const [amount, setAmount] = useState('')
-  const [feedback, setFeedback] = useState<string | null>(null)
-  const [page, setPage] = useState(1)
-  const [search, setSearch] = useState('')
-  const [hasMore, setHasMore] = useState(false)
+  const [cards, setCards] = useState<GiftCard[]>([]);
+  const [code, setCode] = useState("");
+  const [amount, setAmount] = useState("");
+  const [feedback, setFeedback] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const [hasMore, setHasMore] = useState(false);
   const load = useCallback(
     async (requestedPage = page, requestedSearch = search) => {
       try {
         const result = await listGiftCards({
-          data: { tenantId, page: requestedPage, pageSize: 25, search: requestedSearch },
-        })
-        setCards(result.items)
-        setHasMore(result.hasMore)
+          data: {
+            tenantId,
+            page: requestedPage,
+            pageSize: 25,
+            search: requestedSearch,
+          },
+        });
+        setCards(result.items);
+        setHasMore(result.hasMore);
       } catch {
-        setFeedback('No se han podido cargar las tarjetas.')
+        setFeedback("No se han podido cargar las tarjetas.");
       }
     },
     [page, search, tenantId],
-  )
+  );
   useEffect(() => {
-    void load()
-  }, [load])
-  async function run(action: 'issue' | 'redeem') {
-    const euros = Number(amount.replace(',', '.'))
-    const value = Math.round(euros * 100)
-    if (!code.trim() || !Number.isFinite(euros) || euros <= 0 || value <= 0) return
+    void load();
+  }, [load]);
+  async function run(action: "issue" | "redeem") {
+    const euros = Number(amount.replace(",", "."));
+    const value = Math.round(euros * 100);
+    if (!code.trim() || !Number.isFinite(euros) || euros <= 0 || value <= 0)
+      return;
     try {
-      if (action === 'issue') await issueGiftCard({ data: { tenantId, code, amountCents: value } })
-      else await redeemGiftCard({ data: { tenantId, code, amountCents: value } })
-      setFeedback(action === 'issue' ? 'Tarjeta emitida.' : 'Tarjeta canjeada.')
-      setCode('')
-      setAmount('')
-      await load()
+      if (action === "issue")
+        await issueGiftCard({ data: { tenantId, code, amountCents: value } });
+      else
+        await redeemGiftCard({ data: { tenantId, code, amountCents: value } });
+      setFeedback(
+        action === "issue" ? "Tarjeta emitida." : "Tarjeta canjeada.",
+      );
+      setCode("");
+      setAmount("");
+      await load();
     } catch {
       setFeedback(
-        action === 'issue' ? 'No se ha podido emitir.' : 'Saldo insuficiente o tarjeta no válida.',
-      )
+        action === "issue"
+          ? "No se ha podido emitir."
+          : "Saldo insuficiente o tarjeta no válida.",
+      );
     }
   }
   return (
@@ -78,14 +97,20 @@ export function GiftCardsPage({ tenantId }: { tenantId: string }) {
               type="text"
               value={amount}
             />
-            <Button onClick={() => void run('issue')} type="button">
+            <Button onClick={() => void run("issue")} type="button">
               Emitir
             </Button>
-            <Button onClick={() => void run('redeem')} type="button" variant="outline">
+            <Button
+              onClick={() => void run("redeem")}
+              type="button"
+              variant="outline"
+            >
               Canjear
             </Button>
           </div>
-          {feedback ? <output className="mt-2 block text-sm">{feedback}</output> : null}
+          {feedback ? (
+            <output className="mt-2 block text-sm">{feedback}</output>
+          ) : null}
         </CardContent>
       </Card>
       <Card>
@@ -93,8 +118,8 @@ export function GiftCardsPage({ tenantId }: { tenantId: string }) {
           <Input
             aria-label="Buscar tarjetas"
             onChange={(e) => {
-              setSearch(e.target.value)
-              setPage(1)
+              setSearch(e.target.value);
+              setPage(1);
             }}
             placeholder="Buscar por código"
             value={search}
@@ -104,14 +129,15 @@ export function GiftCardsPage({ tenantId }: { tenantId: string }) {
               <li className="flex justify-between py-3 text-sm" key={card.id}>
                 <span className="font-medium">{card.code}</span>
                 <span className="flex items-center gap-2">
-                  {(card.balanceCents / 100).toFixed(2)} € de{' '}
-                  {(card.initialBalanceCents / 100).toFixed(2)} € · {card.status}
-                  {card.status === 'active' ? (
+                  {(card.balanceCents / 100).toFixed(2)} € de{" "}
+                  {(card.initialBalanceCents / 100).toFixed(2)} € ·{" "}
+                  {card.status}
+                  {card.status === "active" ? (
                     <Button
                       onClick={() =>
-                        void cancelGiftCard({ data: { tenantId, cardId: card.id } }).then(() =>
-                          load(),
-                        )
+                        void cancelGiftCard({
+                          data: { tenantId, cardId: card.id },
+                        }).then(() => load())
                       }
                       size="sm"
                       type="button"
@@ -146,5 +172,5 @@ export function GiftCardsPage({ tenantId }: { tenantId: string }) {
         </CardContent>
       </Card>
     </section>
-  )
+  );
 }
