@@ -10,5 +10,5 @@ export const Route = createFileRoute('/admin/auditoria')({
 })
 
 function PlatformAuditRoute() {
-  return <PlatformAuditPage events={Route.useLoaderData()} />
+  return <PlatformAuditPage events={Route.useLoaderData().items} />
 }

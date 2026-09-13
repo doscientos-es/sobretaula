@@ -42,20 +42,6 @@ function nextDates(weekday: number, timeZone: string): string[] {
   return result
 }
 
-function slotsForService(service: PublicReservationProfile['services'][number]): string[] {
-  const [startHour = 0, startMinute = 0] = service.startsAtTime.slice(0, 5).split(':').map(Number)
-  const [endHour = 0, endMinute = 0] = service.endsAtTime.slice(0, 5).split(':').map(Number)
-  const start = startHour * 60 + startMinute
-  const end = endHour * 60 + endMinute
-  const slots: string[] = []
-  for (let minute = start; minute < end; minute += service.slotMinutes) {
-    slots.push(
-      `${String(Math.floor(minute / 60)).padStart(2, '0')}:${String(minute % 60).padStart(2, '0')}`,
-    )
-  }
-  return slots
-}
-
 function formatDate(date: string, locale: string): string {
   return new Intl.DateTimeFormat(locale, {
     day: 'numeric',
@@ -103,7 +89,6 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
     () => (service ? nextDates(service.weekday, profile.timezone) : []),
     [profile.timezone, service],
   )
-  const slots = useMemo(() => (service ? slotsForService(service) : []), [service])
 
   function selectService(id: string) {
     availabilityRequestRef.current += 1
@@ -327,7 +312,11 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                 <span className="mt-1 block">{t('public.noServicesAction')}</span>
               </output>
             ) : (
-              <form className="grid gap-4" onSubmit={(event) => void submit(event)}>
+              <form
+                aria-busy={availabilityLoading || feedback.pending}
+                className="grid gap-4"
+                onSubmit={(event) => void submit(event)}
+              >
                 <Field>
                   <FieldLabel htmlFor="public-service">{t('public.moment')}</FieldLabel>
                   <select
@@ -391,38 +380,12 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                         </option>
                       ))}
                     </select>
-                    {date && !availabilityLoading && availabilityError ? (
-                      <p className="mt-2 text-xs text-[var(--public-accent)]">
-                        {t('public.availabilityFailed')}
-                      </p>
-                    ) : date && !availabilityLoading && availableSlots.length === 0 ? (
-                      <p className="mt-2 text-xs text-[var(--public-accent)]">
-                        {areaId ? t('public.noSlotsInArea') : t('public.noSlots')}
-                      </p>
-                    ) : null}
-                    {alternativeSlots.length ? (
-                      <p className="mt-2 text-xs text-[#5b6470]">
-                        {t('public.alternativeSlots')}{' '}
-                        {alternativeSlots.map((slot) => (
-                          <button
-                            className="ml-2 underline"
-                            key={slot}
-                            onClick={() => {
-                              setAreaId('')
-                              setAvailableSlots([slot])
-                              setTime(slot)
-                            }}
-                            type="button"
-                          >
-                            {slot}
-                          </button>
-                        ))}
-                      </p>
-                    ) : null}
                   </Field>
                   <Field>
                     <FieldLabel htmlFor="public-time">{t('public.time')}</FieldLabel>
                     <select
+                      aria-describedby="public-availability-status"
+                      disabled={!date || availabilityLoading || availableSlots.length === 0}
                       id="public-time"
                       className="min-h-12 bg-white"
                       onChange={(event) => setTime(event.target.value)}
@@ -430,19 +393,83 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                       value={time}
                     >
                       <option value="">{t('public.selectTime')}</option>
-                      {(date ? availableSlots : slots).map((candidate) => (
+                      {availableSlots.map((candidate) => (
                         <option key={candidate} value={candidate}>
                           {candidate}
                         </option>
                       ))}
                     </select>
-                    {availabilityLoading ? (
-                      <p aria-live="polite" className="text-muted-foreground mt-2 text-xs">
-                        {t('public.searching')}
-                      </p>
-                    ) : null}
+                    <div aria-live="polite" className="mt-2" id="public-availability-status">
+                      {availabilityLoading ? (
+                        <p className="text-muted-foreground flex items-center gap-2 text-xs">
+                          <span
+                            aria-hidden="true"
+                            className="size-2 animate-pulse rounded-full bg-[var(--public-accent)] motion-reduce:animate-none"
+                          />
+                          {t('public.searching')}
+                        </p>
+                      ) : availabilityError ? (
+                        <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--public-accent)]">
+                          <span>{t('public.availabilityFailed')}</span>
+                          <button
+                            className="font-semibold underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--public-accent)]"
+                            onClick={() => void selectDate(date)}
+                            type="button"
+                          >
+                            {t('error.retry')}
+                          </button>
+                        </div>
+                      ) : date && availableSlots.length === 0 ? (
+                        <p className="text-xs text-[var(--public-accent)]">
+                          {areaId ? t('public.noSlotsInArea') : t('public.noSlots')}
+                        </p>
+                      ) : alternativeSlots.length ? (
+                        <p className="text-xs text-[#5b6470]">
+                          {t('public.alternativeSlots')}{' '}
+                          {alternativeSlots.map((slot) => (
+                            <button
+                              className="ml-2 font-semibold underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--public-accent)]"
+                              key={slot}
+                              onClick={() => {
+                                setAreaId('')
+                                setAvailableSlots([slot])
+                                setTime(slot)
+                              }}
+                              type="button"
+                            >
+                              {slot}
+                            </button>
+                          ))}
+                        </p>
+                      ) : null}
+                    </div>
                   </Field>
                 </div>
+                {service && date && time ? (
+                  <output
+                    aria-live="polite"
+                    className="grid gap-2 rounded-xl border border-[#292d34]/10 bg-[#fbfaf8] p-3 text-xs text-[#60656d] sm:grid-cols-2"
+                  >
+                    <span>
+                      <span className="block text-[#737983]">{t('public.moment')}</span>
+                      <strong className="font-semibold text-[#292d34]">{service.name}</strong>
+                    </span>
+                    <span>
+                      <span className="block text-[#737983]">{t('public.day')}</span>
+                      <strong className="font-semibold text-[#292d34]">
+                        {formatDate(date, locale)}
+                      </strong>
+                    </span>
+                    <span>
+                      <span className="block text-[#737983]">{t('public.time')}</span>
+                      <strong className="font-semibold text-[#292d34]">{time}</strong>
+                    </span>
+                    <span>
+                      <span className="block text-[#737983]">{t('public.people')}</span>
+                      <strong className="font-semibold text-[#292d34]">{partySize}</strong>
+                    </span>
+                  </output>
+                ) : null}
                 <Field>
                   <FieldLabel htmlFor="public-party">
                     <Users aria-hidden="true" className="mr-1 inline size-4" /> {t('public.people')}

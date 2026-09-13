@@ -2,6 +2,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 
 import { authMiddleware } from '@/features/auth/infrastructure/server/auth-middleware'
+import { paginationRange, type PaginatedResult } from '@/shared/lib/pagination'
 import { indexProfilesByUserId } from '@/shared/lib/supabase/profile-index'
 
 import {
@@ -11,7 +12,11 @@ import {
 } from '../domain/platform-audit'
 import { createPlatformOwnerClient } from './platform-dashboard'
 
-const auditLogInput = z.object({ tenantId: z.string().uuid().optional() })
+const auditLogInput = z.object({
+  tenantId: z.string().uuid().optional(),
+  page: z.number().int().min(1).default(1),
+  pageSize: z.number().int().min(1).max(100).default(25),
+})
 const auditRowSchema = z.object({
   action: z.enum(PLATFORM_AUDIT_ACTIONS),
   actor_user_id: z.string().uuid().nullable(),
@@ -26,18 +31,20 @@ const auditRowSchema = z.object({
 export const getPlatformAuditLog = createServerFn({ method: 'GET' })
   .middleware([authMiddleware])
   .validator(auditLogInput)
-  .handler(async ({ context, data }): Promise<PlatformAuditEvent[]> => {
+  .handler(async ({ context, data }): Promise<PaginatedResult<PlatformAuditEvent>> => {
     const supabase = await createPlatformOwnerClient(
       context.principal.accessToken,
       context.principal.userId,
     )
     let request = supabase
       .from('platform_audit_log')
-      .select('action, actor_user_id, created_at, id, metadata, target_id, target_type')
+      .select('action, actor_user_id, created_at, id, metadata, target_id, target_type', {
+        count: 'exact',
+      })
       .order('created_at', { ascending: false })
-      .limit(100)
+      .range(...(Object.values(paginationRange(data)) as [number, number]))
     if (data.tenantId) request = request.eq('target_type', 'tenant').eq('target_id', data.tenantId)
-    const { data: rows, error } = await request
+    const { data: rows, error, count } = await request
     if (error) throw new Error(`platform_audit_log_load_failed:${error.code}`)
 
     const events = (rows ?? []).map((row) => auditRowSchema.parse(row))
@@ -62,7 +69,7 @@ export const getPlatformAuditLog = createServerFn({ method: 'GET' })
     const tenantsById = new Map(
       (tenantsResult.data ?? []).map((tenant) => [tenant.id, tenant.name]),
     )
-    return events.map((event) => {
+    const items = events.map((event) => {
       const actor = event.actor_user_id ? profilesByUserId.get(event.actor_user_id) : undefined
       const target =
         event.target_type === 'tenant'
@@ -79,4 +86,12 @@ export const getPlatformAuditLog = createServerFn({ method: 'GET' })
         target,
       }
     })
+    const total = count ?? items.length
+    return {
+      items,
+      page: data.page,
+      pageSize: data.pageSize,
+      total,
+      hasMore: data.page * data.pageSize < total,
+    }
   })

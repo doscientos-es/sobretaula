@@ -50,6 +50,7 @@ export function PushNotificationPreferences() {
   const [enabled, setEnabled] = useState(false)
   const [pending, setPending] = useState(false)
   const [error, setError] = useState(false)
+  const [success, setSuccess] = useState('')
 
   useEffect(() => {
     let cancelled = false
@@ -80,6 +81,7 @@ export function PushNotificationPreferences() {
   async function enable() {
     setPending(true)
     setError(false)
+    setSuccess('')
     try {
       const config = await getPushNotificationConfig()
       if (!config.publicKey || !('serviceWorker' in navigator) || !('PushManager' in window)) {
@@ -101,6 +103,7 @@ export function PushNotificationPreferences() {
       if (!data) throw new Error('push_subscription_payload_missing')
       await savePushSubscription({ data })
       setEnabled(true)
+      setSuccess(t('settings.notifications.enabled'))
     } catch {
       setError(true)
     } finally {
@@ -111,6 +114,7 @@ export function PushNotificationPreferences() {
   async function disable() {
     setPending(true)
     setError(false)
+    setSuccess('')
     try {
       const registration = await serviceWorkerReady()
       if (!registration) {
@@ -123,6 +127,7 @@ export function PushNotificationPreferences() {
         await subscription.unsubscribe()
       }
       setEnabled(false)
+      setSuccess(t('settings.notifications.disabled'))
     } catch {
       setError(true)
     } finally {
@@ -131,7 +136,7 @@ export function PushNotificationPreferences() {
   }
 
   return (
-    <div className="space-y-3 text-sm">
+    <div aria-busy={pending} className="space-y-3 text-sm">
       <p className="text-muted-foreground">{t('settings.notifications.description')}</p>
       {available === false ? (
         <p className="text-muted-foreground">{t('settings.notifications.unavailable')}</p>
@@ -143,16 +148,25 @@ export function PushNotificationPreferences() {
             </output>
           ) : null}
           <button
-            className="bg-primary text-primary-foreground rounded-lg px-3 py-2 font-medium disabled:opacity-60"
+            className="bg-primary text-primary-foreground focus-visible:outline-ring rounded-lg px-3 py-2 font-medium transition-[transform,opacity] duration-150 hover:-translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-60 motion-reduce:transform-none"
             disabled={pending || available === null}
             onClick={() => void (enabled ? disable() : enable())}
             type="button"
           >
-            {enabled ? t('settings.notifications.disable') : t('settings.notifications.enable')}
+            {pending
+              ? t('settings.notifications.updating')
+              : enabled
+                ? t('settings.notifications.disable')
+                : t('settings.notifications.enable')}
           </button>
         </>
       )}
       {error ? <p className="text-destructive">{t('settings.notifications.error')}</p> : null}
+      {success ? (
+        <output aria-live="polite" className="text-success block font-medium">
+          {success}
+        </output>
+      ) : null}
     </div>
   )
 }

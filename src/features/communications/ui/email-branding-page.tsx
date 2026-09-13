@@ -16,6 +16,8 @@ import {
 } from '@doscientos/ui'
 import { useState, type ChangeEvent, type FormEvent } from 'react'
 
+import { useLocale } from '@/shared/lib/i18n/locale-preference'
+import { createTranslator } from '@/shared/lib/i18n/messages'
 import { createBrowserSupabaseClient } from '@/shared/lib/supabase/client'
 
 import { saveEmailBranding, type EmailBranding } from '../application/email-branding'
@@ -31,6 +33,8 @@ export function EmailBrandingPage({
   defaultName: string
   tenantId: string
 }) {
+  const locale = useLocale('es')
+  const t = createTranslator(locale)
   const feedback = useFormFeedback()
   const [emailFromName, setEmailFromName] = useState(branding?.emailFromName ?? defaultName)
   const [logoUrl, setLogoUrl] = useState(branding?.logoUrl ?? '')
@@ -38,61 +42,70 @@ export function EmailBrandingPage({
   const [accentColor, setAccentColor] = useState(branding?.accentColor ?? '#c34d3e')
   const [preset, setPreset] = useState<EmailBranding['preset']>(branding?.preset ?? 'terracotta')
   const [replyToEmail, setReplyToEmail] = useState(branding?.replyToEmail ?? '')
+  const [logoUploadState, setLogoUploadState] = useState<'idle' | 'pending' | 'success' | 'error'>(
+    'idle',
+  )
+  const uploadingLogo = logoUploadState === 'pending'
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (feedback.pending || uploadingLogo) return
     feedback.setPending()
     void saveEmailBranding({
       data: { emailFromName, logoUrl, primaryColor, accentColor, preset, replyToEmail, tenantId },
     })
-      .then(() => feedback.setSuccess('Identidad de correo guardada.'))
-      .catch(() => feedback.setError('No se ha podido guardar la identidad de correo.'))
+      .then(() => feedback.setSuccess(t('communications.branding.saveSuccess')))
+      .catch(() => feedback.setError(t('communications.branding.saveError')))
   }
 
   async function uploadLogo(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
-    if (!file) return
+    if (!file || uploadingLogo) return
     if (file.size > 2 * 1024 * 1024) {
-      feedback.setError('El logo no puede superar 2 MB.')
+      setLogoUploadState('error')
       return
     }
-    const client = createBrowserSupabaseClient()
-    const path = `${tenantId}/logo-${Date.now()}.${file.name.split('.').pop() ?? 'png'}`
-    const result = await client.storage
-      .from('tenant_logos')
-      .upload(path, file, { upsert: true, contentType: file.type })
-    if (result.error) {
-      feedback.setError('No se ha podido subir el logo.')
-      return
+    setLogoUploadState('pending')
+    try {
+      const client = createBrowserSupabaseClient()
+      const path = `${tenantId}/logo-${Date.now()}.${file.name.split('.').pop() ?? 'png'}`
+      const result = await client.storage
+        .from('tenant_logos')
+        .upload(path, file, { upsert: true, contentType: file.type })
+      if (result.error) throw result.error
+      setLogoUrl(client.storage.from('tenant_logos').getPublicUrl(path).data.publicUrl)
+      setLogoUploadState('success')
+    } catch {
+      setLogoUploadState('error')
+    } finally {
+      event.target.value = ''
     }
-    setLogoUrl(client.storage.from('tenant_logos').getPublicUrl(path).data.publicUrl)
   }
 
   return (
     <section className="space-y-6">
       <PageHeader className="border-border/70 border-b pb-6">
         <div>
-          <PageHeaderTitle>Comunicaciones</PageHeaderTitle>
-          <PageHeaderDescription>
-            Personaliza los correos de confirmación que reciben tus clientes.
-          </PageHeaderDescription>
+          <PageHeaderTitle>{t('communications.branding.title')}</PageHeaderTitle>
+          <PageHeaderDescription>{t('communications.branding.description')}</PageHeaderDescription>
         </div>
       </PageHeader>
       <Card>
         <CardHeader>
-          <CardTitle>Identidad de los correos</CardTitle>
-          <CardDescription>
-            El nombre se muestra como remitente. El envío sale desde el dominio seguro de
-            SobreTaula.
-          </CardDescription>
+          <CardTitle>{t('communications.branding.cardTitle')}</CardTitle>
+          <CardDescription>{t('communications.branding.cardDescription')}</CardDescription>
         </CardHeader>
         <CardContent>
-          <form className="grid gap-5 sm:grid-cols-2" onSubmit={submit}>
+          <form
+            aria-busy={feedback.pending || uploadingLogo}
+            className="grid gap-5 sm:grid-cols-2"
+            onSubmit={submit}
+          >
             <Field className="sm:col-span-2">
-              <FieldLabel htmlFor="theme-preset">Estilo rápido</FieldLabel>
+              <FieldLabel htmlFor="theme-preset">{t('communications.branding.preset')}</FieldLabel>
               <select
-                className="min-h-10 rounded-md border px-3"
-                disabled={!canManage}
+                className="focus-visible:outline-ring min-h-10 rounded-md border px-3 focus-visible:outline-2 focus-visible:outline-offset-2"
+                disabled={!canManage || feedback.pending || uploadingLogo}
                 id="theme-preset"
                 onChange={(event) => {
                   const value = event.target.value as EmailBranding['preset']
@@ -112,17 +125,19 @@ export function EmailBrandingPage({
                 }}
                 value={preset}
               >
-                <option value="terracotta">Terracota · cálido</option>
-                <option value="olive">Oliva · natural</option>
-                <option value="ocean">Océano · fresco</option>
-                <option value="midnight">Medianoche · elegante</option>
-                <option value="custom">Personalizado</option>
+                <option value="terracotta">{t('communications.branding.preset.terracotta')}</option>
+                <option value="olive">{t('communications.branding.preset.olive')}</option>
+                <option value="ocean">{t('communications.branding.preset.ocean')}</option>
+                <option value="midnight">{t('communications.branding.preset.midnight')}</option>
+                <option value="custom">{t('communications.branding.preset.custom')}</option>
               </select>
             </Field>
             <Field>
-              <FieldLabel htmlFor="email-from-name">Nombre del remitente</FieldLabel>
+              <FieldLabel htmlFor="email-from-name">
+                {t('communications.branding.senderName')}
+              </FieldLabel>
               <Input
-                disabled={!canManage}
+                disabled={!canManage || feedback.pending || uploadingLogo}
                 id="email-from-name"
                 maxLength={120}
                 onChange={(event) => setEmailFromName(event.target.value)}
@@ -130,20 +145,45 @@ export function EmailBrandingPage({
                 value={emailFromName}
               />
               {canManage ? (
-                <input
-                  accept="image/png,image/jpeg,image/webp"
-                  className="mt-2 block text-sm"
-                  type="file"
-                  onChange={(event) => void uploadLogo(event)}
-                />
+                <div className="mt-3 space-y-2">
+                  <FieldLabel htmlFor="logo-upload">
+                    {t('communications.branding.logoUpload')}
+                  </FieldLabel>
+                  <input
+                    accept="image/png,image/jpeg,image/webp"
+                    className="file:bg-muted block text-sm file:mr-3 file:rounded-md file:border-0 file:px-3 file:py-2 file:font-medium disabled:opacity-60"
+                    disabled={feedback.pending || uploadingLogo}
+                    id="logo-upload"
+                    onChange={(event) => void uploadLogo(event)}
+                    type="file"
+                  />
+                  {logoUploadState !== 'idle' ? (
+                    <output
+                      aria-live="polite"
+                      className={
+                        logoUploadState === 'error'
+                          ? 'text-destructive block text-xs'
+                          : 'text-muted-foreground block text-xs'
+                      }
+                    >
+                      {logoUploadState === 'pending'
+                        ? t('communications.branding.logoUploading')
+                        : logoUploadState === 'success'
+                          ? t('communications.branding.logoUploaded')
+                          : t('communications.branding.logoUploadError')}
+                    </output>
+                  ) : null}
+                </div>
               ) : null}
             </Field>
             <Field>
-              <FieldLabel htmlFor="accent-color">Color de acento</FieldLabel>
+              <FieldLabel htmlFor="accent-color">
+                {t('communications.branding.accentColor')}
+              </FieldLabel>
               <input
-                aria-label="Selector de color de acento"
+                aria-label={t('communications.branding.accentColorPicker')}
                 className="size-10 cursor-pointer rounded border p-1"
-                disabled={!canManage}
+                disabled={!canManage || feedback.pending || uploadingLogo}
                 id="accent-color"
                 onChange={(event) => {
                   setAccentColor(event.target.value)
@@ -154,9 +194,11 @@ export function EmailBrandingPage({
               />
             </Field>
             <Field>
-              <FieldLabel htmlFor="reply-to-email">Correo de respuesta</FieldLabel>
+              <FieldLabel htmlFor="reply-to-email">
+                {t('communications.branding.replyToEmail')}
+              </FieldLabel>
               <Input
-                disabled={!canManage}
+                disabled={!canManage || feedback.pending || uploadingLogo}
                 id="reply-to-email"
                 onChange={(event) => setReplyToEmail(event.target.value)}
                 placeholder="reservas@turestaurante.es"
@@ -165,9 +207,9 @@ export function EmailBrandingPage({
               />
             </Field>
             <Field className="sm:col-span-2">
-              <FieldLabel htmlFor="logo-url">URL pública del logo</FieldLabel>
+              <FieldLabel htmlFor="logo-url">{t('communications.branding.logoUrl')}</FieldLabel>
               <Input
-                disabled={!canManage}
+                disabled={!canManage || feedback.pending || uploadingLogo}
                 id="logo-url"
                 onChange={(event) => setLogoUrl(event.target.value)}
                 placeholder="https://…/logo.png"
@@ -176,20 +218,22 @@ export function EmailBrandingPage({
               />
             </Field>
             <Field>
-              <FieldLabel htmlFor="primary-color">Color principal</FieldLabel>
+              <FieldLabel htmlFor="primary-color">
+                {t('communications.branding.primaryColor')}
+              </FieldLabel>
               <div className="flex items-center gap-3">
                 <input
-                  aria-label="Selector de color principal"
+                  aria-label={t('communications.branding.primaryColorPicker')}
                   className="size-10 cursor-pointer rounded border p-1"
-                  disabled={!canManage}
+                  disabled={!canManage || feedback.pending || uploadingLogo}
                   id="primary-color"
                   onChange={(event) => setPrimaryColor(event.target.value)}
                   type="color"
                   value={primaryColor}
                 />
                 <Input
-                  aria-label="Código hexadecimal del color principal"
-                  disabled={!canManage}
+                  aria-label={t('communications.branding.primaryColorValue')}
+                  disabled={!canManage || feedback.pending || uploadingLogo}
                   onChange={(event) => setPrimaryColor(event.target.value)}
                   pattern="#[0-9A-Fa-f]{6}"
                   value={primaryColor}
@@ -208,18 +252,20 @@ export function EmailBrandingPage({
                 {emailFromName || defaultName}
               </p>
               <p className="text-muted-foreground mt-1 text-xs">
-                Vista previa del encabezado del correo.
+                {t('communications.branding.preview')}
               </p>
             </div>
             {canManage ? (
               <div className="sm:col-span-2">
-                <Button disabled={feedback.pending} type="submit">
-                  Guardar identidad
+                <Button disabled={feedback.pending || uploadingLogo} type="submit">
+                  {feedback.pending
+                    ? t('communications.branding.saving')
+                    : t('communications.branding.save')}
                 </Button>
               </div>
             ) : null}
           </form>
-          <FormFeedback pendingLabel="Guardando identidad…" state={feedback.state} />
+          <FormFeedback pendingLabel={t('communications.branding.saving')} state={feedback.state} />
         </CardContent>
       </Card>
     </section>

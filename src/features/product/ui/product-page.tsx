@@ -86,6 +86,9 @@ export function ProductPage({
   const [ingredientSearchInput, setIngredientSearchInput] = useState('')
   const [ingredientSearch, setIngredientSearch] = useState('')
   const [ingredientPage, setIngredientPage] = useState(ingredients.page)
+  const [ingredientLoading, setIngredientLoading] = useState(false)
+  const [ingredientLoadError, setIngredientLoadError] = useState(false)
+  const [ingredientRefresh, setIngredientRefresh] = useState(0)
   const ingredientItems = ingredientList.items
   const purchaseRecommendations = useMemo(
     () =>
@@ -113,6 +116,7 @@ export function ProductPage({
   async function createRecommendedPurchase(
     recommendation: (typeof purchaseRecommendations)[number],
   ) {
+    if (feedback.pending) return
     const selectedSupplierId = supplierId || suppliers.items[0]?.id
     if (!selectedSupplierId) {
       feedback.setError('Crea o selecciona un proveedor antes de generar el pedido.')
@@ -187,6 +191,8 @@ export function ProductPage({
   }, [ingredientSearchInput])
   useEffect(() => {
     let cancelled = false
+    setIngredientLoading(true)
+    setIngredientLoadError(false)
     void listIngredients({
       data: {
         page: ingredientPage,
@@ -194,13 +200,20 @@ export function ProductPage({
         search: ingredientSearch,
         tenantId,
       },
-    }).then((result) => {
-      if (!cancelled) setIngredientList(result)
     })
+      .then((result) => {
+        if (!cancelled) setIngredientList(result)
+      })
+      .catch(() => {
+        if (!cancelled) setIngredientLoadError(true)
+      })
+      .finally(() => {
+        if (!cancelled) setIngredientLoading(false)
+      })
     return () => {
       cancelled = true
     }
-  }, [ingredientPage, ingredientSearch, ingredients.pageSize, tenantId])
+  }, [ingredientPage, ingredientRefresh, ingredientSearch, ingredients.pageSize, tenantId])
   const [name, setName] = useState('')
   const [unit, setUnit] = useState('kg')
   const [cost, setCost] = useState('')
@@ -261,6 +274,18 @@ export function ProductPage({
       feedback.setError('No se ha podido crear el ingrediente.')
     }
   }
+  async function saveRecipe() {
+    if (feedback.pending || !menuItemId || recipeLines.length === 0) return
+    feedback.setPending()
+    try {
+      await replaceRecipe({ data: { tenantId, menuItemId, lines: recipeLines } })
+      feedback.setSuccess('Receta guardada.')
+      setRecipeLines([])
+      onDone()
+    } catch {
+      feedback.setError('No se ha podido guardar la receta.')
+    }
+  }
   return (
     <section className="space-y-6">
       <Card className="border-warning/30 bg-warning/5">
@@ -284,6 +309,7 @@ export function ProductPage({
                   <div className="flex items-center gap-2">
                     <strong>{recommendation.quantity} unidades</strong>
                     <Button
+                      disabled={feedback.pending}
                       onClick={() => void createRecommendedPurchase(recommendation)}
                       size="sm"
                       type="button"
@@ -319,7 +345,11 @@ export function ProductPage({
           <CardTitle>Ingredientes e inventario</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <form className="grid gap-3 md:grid-cols-5" onSubmit={(event) => void submit(event)}>
+          <form
+            aria-busy={feedback.pending}
+            className="grid gap-3 md:grid-cols-5"
+            onSubmit={(event) => void submit(event)}
+          >
             <Field>
               <FieldLabel htmlFor="ingredient-name">Nombre</FieldLabel>
               <Input
@@ -373,8 +403,8 @@ export function ProductPage({
                 value={minimum}
               />
             </Field>
-            <Button className="self-end" type="submit">
-              Añadir
+            <Button className="self-end" disabled={feedback.pending} type="submit">
+              {feedback.pending ? 'Guardando…' : 'Añadir'}
             </Button>
           </form>
           <fieldset className="border-border rounded-lg border p-3">
@@ -544,19 +574,11 @@ export function ProductPage({
             </output>
           ) : null}
           <Button
-            disabled={!menuItemId || recipeLines.length === 0}
-            onClick={() =>
-              void replaceRecipe({ data: { tenantId, menuItemId, lines: recipeLines } }).then(
-                () => {
-                  feedback.setSuccess('Receta guardada.')
-                  setRecipeLines([])
-                  onDone()
-                },
-              )
-            }
+            disabled={feedback.pending || !menuItemId || recipeLines.length === 0}
+            onClick={() => void saveRecipe()}
             type="button"
           >
-            Guardar receta
+            {feedback.pending ? 'Guardando…' : 'Guardar receta'}
           </Button>
         </CardContent>
       </Card>
@@ -566,6 +588,7 @@ export function ProductPage({
         </CardHeader>
         <CardContent>
           <form
+            aria-busy={feedback.pending}
             className="grid gap-3 md:grid-cols-4"
             onSubmit={(e) => {
               e.preventDefault()
@@ -658,8 +681,12 @@ export function ProductPage({
                 value={reason}
               />
             </Field>
-            <Button className="md:col-span-4 md:justify-self-end" type="submit">
-              Registrar movimiento
+            <Button
+              className="md:col-span-4 md:justify-self-end"
+              disabled={feedback.pending}
+              type="submit"
+            >
+              {feedback.pending ? 'Registrando…' : 'Registrar movimiento'}
             </Button>
           </form>
         </CardContent>
@@ -673,6 +700,7 @@ export function ProductPage({
         </CardHeader>
         <CardContent>
           <form
+            aria-busy={feedback.pending}
             className="grid gap-3 md:grid-cols-5"
             onSubmit={(event) => void receiveDelivery(event)}
           >
@@ -764,13 +792,17 @@ export function ProductPage({
                 value={deliveryCost}
               />
             </Field>
-            <Button className="md:col-span-5 md:justify-self-end" type="submit">
-              Recibir albarán
+            <Button
+              className="md:col-span-5 md:justify-self-end"
+              disabled={feedback.pending}
+              type="submit"
+            >
+              {feedback.pending ? 'Recibiendo…' : 'Recibir albarán'}
             </Button>
           </form>
         </CardContent>
       </Card>
-      <Card>
+      <Card aria-busy={ingredientLoading}>
         <CardHeader>
           <CardTitle>Stock actual</CardTitle>
         </CardHeader>
@@ -801,9 +833,11 @@ export function ProductPage({
             </Field>
             <div className="flex items-center gap-2" aria-live="polite">
               <span className="text-muted-foreground text-sm">
-                {ingredientList.total === 0
-                  ? 'Sin resultados'
-                  : `Página ${ingredientList.page} · ${ingredientList.total} ingredientes`}
+                {ingredientLoading
+                  ? 'Actualizando inventario…'
+                  : ingredientList.total === 0
+                    ? 'Sin resultados'
+                    : `Página ${ingredientList.page} · ${ingredientList.total} ingredientes`}
               </span>
               <Button
                 disabled={ingredientList.page <= 1}
@@ -825,6 +859,19 @@ export function ProductPage({
               </Button>
             </div>
           </div>
+          {ingredientLoadError ? (
+            <div className="mb-4 flex flex-wrap items-center gap-3" role="alert">
+              <p className="text-destructive text-sm">No se ha podido actualizar el inventario.</p>
+              <Button
+                onClick={() => setIngredientRefresh((current) => current + 1)}
+                size="sm"
+                type="button"
+                variant="outline"
+              >
+                Reintentar
+              </Button>
+            </div>
+          ) : null}
           <Table>
             <TableHeader>
               <TableRow>

@@ -1,5 +1,5 @@
-export { explainProfitability } from './domain/operations-insight'
+export { answerOperationsQuestion, explainProfitability } from './domain/operations-insight'
 export type { OperationsInsight, OperationsInsightInput } from './domain/operations-insight'
 export { canChangeRecommendationStatus } from './domain/recommendation-status'
 export type { RecommendationStatus } from './domain/recommendation-status'
-export { decideRecommendation } from './application/recommendations'
+export { decideRecommendation, listRecommendationDecisions } from './application/recommendations'

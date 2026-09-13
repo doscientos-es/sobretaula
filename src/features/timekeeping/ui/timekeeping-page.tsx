@@ -134,7 +134,7 @@ export function TimekeepingPage({
           <PageHeaderDescription>Registra tu jornada desde este terminal.</PageHeaderDescription>
         </div>
       </PageHeader>
-      <Card className="max-w-xl">
+      <Card aria-busy={feedback.pending} className="max-w-xl">
         <CardHeader>
           <CardTitle>{last ? `Último estado: ${labels[last]}` : 'Sin jornada iniciada'}</CardTitle>
         </CardHeader>
@@ -178,18 +178,21 @@ export function TimekeepingPage({
                 }}
                 type="button"
               >
-                {labels[eventType]}
+                {feedback.pending ? 'Registrando fichaje…' : labels[eventType]}
               </Button>
             ))}
           </div>
           {!isOnline && (
-            <output className="text-warning-foreground bg-warning/10 rounded-md p-3 text-sm">
+            <output
+              aria-live="polite"
+              className="text-warning-foreground bg-warning/10 rounded-md p-3 text-sm"
+            >
               Sin conexión. El fichaje personal se guardará localmente y se sincronizará al volver
               la red. Pendientes: {pendingOffline}.
             </output>
           )}
           {isOnline && pendingOffline > 0 && (
-            <output className="text-muted-foreground text-sm">
+            <output aria-live="polite" className="text-muted-foreground text-sm">
               Sincronizando {pendingOffline} fichaje{pendingOffline === 1 ? '' : 's'} pendiente
               {pendingOffline === 1 ? '' : 's'}…
             </output>
@@ -216,7 +219,7 @@ export function TimekeepingPage({
                 onClick={() => void savePin()}
                 type="button"
               >
-                Guardar PIN
+                {feedback.pending ? 'Guardando PIN…' : 'Guardar PIN'}
               </Button>
             </div>
           </div>

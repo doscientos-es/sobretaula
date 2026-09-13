@@ -1,5 +1,6 @@
 import { createFileRoute, notFound } from '@tanstack/react-router'
 
+import { listRecommendationDecisions } from '@/features/ai-operations'
 import { getVenueBenchmark, VenueBenchmarkCard } from '@/features/multi-venue'
 import { getSalesReport } from '@/features/reports'
 import { ProductSalesSummary } from '@/features/reports/ui/product-sales-summary'
@@ -20,6 +21,9 @@ export const Route = createFileRoute('/t/$slug/l/$venue/informes')({
     })
     return {
       benchmark,
+      recommendationHistory: await listRecommendationDecisions({
+        data: { tenantId: tenant.id, venueId: venue.id },
+      }),
       report: await getSalesReport({
         data: {
           tenantId: tenant.id,
@@ -35,7 +39,7 @@ export const Route = createFileRoute('/t/$slug/l/$venue/informes')({
   component: ReportRoute,
 })
 function ReportRoute() {
-  const { report, benchmark, tenant, venue } = Route.useLoaderData()
+  const { report, benchmark, recommendationHistory, tenant, venue } = Route.useLoaderData()
   return (
     <>
       <SalesReportPage
@@ -44,7 +48,12 @@ function ReportRoute() {
           getSalesReport({ data: { tenantId: tenant.id, venueId: venue.id, from, to } })
         }
       />
-      <ProfitCockpit report={report} tenantId={tenant.id} venueId={venue.id} />
+      <ProfitCockpit
+        report={report}
+        tenantId={tenant.id}
+        venueId={venue.id}
+        recommendationHistory={recommendationHistory}
+      />
       <ProductSalesSummary products={report.productSummary} />
       <VenueBenchmarkCard benchmark={benchmark} />
     </>

@@ -9,6 +9,7 @@ import {
   PageHeaderTitle,
 } from '@doscientos/ui'
 import { Link } from '@tanstack/react-router'
+import { ArrowUpRight } from 'lucide-react'
 import type { ReactNode } from 'react'
 
 import type { ServiceBoard } from '@/features/service'
@@ -17,9 +18,9 @@ import { summarizePosTerminal } from '../domain/terminal-summary'
 
 function TerminalMetric({ label, value }: { label: string; value: number }) {
   return (
-    <div className="bg-muted/30 rounded-lg border p-3">
-      <p className="text-muted-foreground text-xs font-medium">{label}</p>
-      <p className="mt-1 text-2xl font-semibold tabular-nums">{value}</p>
+    <div className="bg-card hover:border-border-strong rounded-xl border p-4 shadow-[var(--ui-shadow-hairline)] transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-[var(--ui-shadow-surface)] motion-reduce:transform-none">
+      <p className="text-muted-foreground text-xs font-medium tracking-wide">{label}</p>
+      <p className="mt-1.5 text-2xl font-semibold tabular-nums">{value}</p>
     </div>
   )
 }
@@ -58,50 +59,74 @@ export function PosTerminalPage({
           </PageHeaderDescription>
         </div>
       </PageHeader>
-      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <TerminalMetric label="Cuentas abiertas" value={summary.activeSessions} />
         <TerminalMetric label="Mesas libres" value={summary.availableTables} />
         <TerminalMetric label="Comandas pendientes" value={summary.pendingItems} />
         <TerminalMetric label="Listo para servir" value={summary.readyItems} />
       </div>
-      <div className="grid gap-2 lg:grid-cols-3">
+      <div className="grid gap-3 lg:grid-cols-3">
         <Link
-          className="bg-card hover:bg-muted/60 rounded-lg border p-4 transition-colors"
+          className="group bg-card hover:border-border-strong hover:bg-muted/40 focus-visible:outline-ring rounded-xl border p-4 shadow-[var(--ui-shadow-hairline)] transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-[var(--ui-shadow-surface)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transform-none"
           params={params}
           to="/t/$slug/l/$venue/servicio"
         >
-          <span className="font-semibold">Sala y mesas</span>
+          <span className="flex items-center justify-between gap-3 font-semibold">
+            Sala y mesas
+            <ArrowUpRight
+              aria-hidden="true"
+              className="text-muted-foreground size-4 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 motion-reduce:transform-none"
+            />
+          </span>
           <span className="text-muted-foreground mt-1 block text-sm">
             Abrir mesas, recibir reservas y gestionar cambios de sala.
           </span>
         </Link>
         <Link
-          className="bg-card hover:bg-muted/60 rounded-lg border p-4 transition-colors"
+          className="group bg-card hover:border-border-strong hover:bg-muted/40 focus-visible:outline-ring rounded-xl border p-4 shadow-[var(--ui-shadow-hairline)] transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-[var(--ui-shadow-surface)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transform-none"
           params={params}
           to="/t/$slug/l/$venue/reservas"
         >
-          <span className="font-semibold">Reservas</span>
+          <span className="flex items-center justify-between gap-3 font-semibold">
+            Reservas
+            <ArrowUpRight
+              aria-hidden="true"
+              className="text-muted-foreground size-4 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 motion-reduce:transform-none"
+            />
+          </span>
           <span className="text-muted-foreground mt-1 block text-sm">
             Consultar llegadas, lista de espera y próximos servicios.
           </span>
         </Link>
         <Link
-          className="bg-card hover:bg-muted/60 rounded-lg border p-4 transition-colors"
+          className="group bg-card hover:border-border-strong hover:bg-muted/40 focus-visible:outline-ring rounded-xl border p-4 shadow-[var(--ui-shadow-hairline)] transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-[var(--ui-shadow-surface)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transform-none"
           params={params}
           to="/t/$slug/l/$venue/fichaje-terminal"
         >
-          <span className="font-semibold">Fichaje</span>
+          <span className="flex items-center justify-between gap-3 font-semibold">
+            Fichaje
+            <ArrowUpRight
+              aria-hidden="true"
+              className="text-muted-foreground size-4 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 motion-reduce:transform-none"
+            />
+          </span>
           <span className="text-muted-foreground mt-1 block text-sm">
             Registra entrada, pausas y salida antes de empezar el servicio.
           </span>
         </Link>
         {canManageCash && (
           <Link
-            className="bg-card hover:bg-muted/60 rounded-lg border p-4 transition-colors"
+            className="group bg-card hover:border-border-strong hover:bg-muted/40 focus-visible:outline-ring rounded-xl border p-4 shadow-[var(--ui-shadow-hairline)] transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-[var(--ui-shadow-surface)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transform-none"
             params={params}
             to="/t/$slug/l/$venue/caja"
           >
-            <span className="font-semibold">Caja</span>
+            <span className="flex items-center justify-between gap-3 font-semibold">
+              Caja
+              <ArrowUpRight
+                aria-hidden="true"
+                className="text-muted-foreground size-4 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 motion-reduce:transform-none"
+              />
+            </span>
             <span className="text-muted-foreground mt-1 block text-sm">
               Apertura, movimientos, arqueo y cierres del turno.
             </span>
@@ -150,12 +175,18 @@ export function PosTerminalPage({
                       <li key={session.id}>
                         {canAccessAccounts ? (
                           <Link
-                            className="hover:bg-muted/60 flex flex-col rounded-md border p-3"
+                            className="group hover:bg-muted/40 hover:border-border-strong focus-visible:outline-ring flex flex-col rounded-lg border p-3 transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-[var(--ui-shadow-hairline)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transform-none"
                             params={params}
                             search={{ sessionId: session.id }}
                             to="/t/$slug/l/$venue/tpv"
                           >
-                            {content}
+                            <span className="flex items-center justify-between gap-3">
+                              {content}
+                              <ArrowUpRight
+                                aria-hidden="true"
+                                className="text-muted-foreground size-4 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 motion-reduce:transform-none"
+                              />
+                            </span>
                           </Link>
                         ) : (
                           <div className="flex flex-col rounded-md border p-3">{content}</div>

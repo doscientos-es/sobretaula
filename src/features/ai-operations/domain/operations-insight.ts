@@ -48,3 +48,17 @@ export function explainProfitability(input: OperationsInsightInput): OperationsI
       : ['Mantener seguimiento semanal'],
   }
 }
+
+export function answerOperationsQuestion(
+  question: string,
+  input: OperationsInsightInput,
+): OperationsInsight {
+  const insight = explainProfitability(input)
+  const normalized = question.trim().toLowerCase()
+  return normalized.includes('ganado') || normalized.includes('margen') || !normalized
+    ? insight
+    : {
+        ...insight,
+        answer: `Puedo responder sobre rentabilidad, costes, mermas y personal. ${insight.answer}`,
+      }
+}

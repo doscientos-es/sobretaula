@@ -14,7 +14,7 @@ export const Route = createFileRoute('/admin/tenants/$tenantId')({
         getPlatformTenantDetail({ data: { tenantId: params.tenantId } }),
         getPlatformAuditLog({ data: { tenantId: params.tenantId } }),
       ])
-      return { auditEvents, tenant }
+      return { auditEvents: auditEvents.items, tenant }
     }),
   component: PlatformTenantDetailsRoute,
   ...platformRouteState,

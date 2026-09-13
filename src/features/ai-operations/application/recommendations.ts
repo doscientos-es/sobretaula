@@ -6,6 +6,7 @@ import {
   operationalTenantMiddleware,
   tenantMembershipMiddleware,
 } from '@/features/tenancy/application/require-tenant-membership'
+import { paginationRange, type PaginatedResult } from '@/shared/lib/pagination'
 import { createRequestSupabaseClient } from '@/shared/lib/supabase/server/create-server-client'
 const input = z.object({
   tenantId: z.string().uuid(),
@@ -42,3 +43,65 @@ export const decideRecommendation = createServerFn({ method: 'POST' })
     if (error) throw new Error(`recommendation_decision_failed:${error.code}`)
     return { saved: true }
   })
+
+export const listRecommendationDecisions = createServerFn({ method: 'GET' })
+  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .validator(
+    z.object({
+      tenantId: z.string().uuid(),
+      venueId: z.string().uuid(),
+      page: z.number().int().min(1).default(1),
+      pageSize: z.number().int().min(1).max(100).default(25),
+    }),
+  )
+  .handler(
+    async ({
+      context,
+      data,
+    }): Promise<
+      PaginatedResult<{
+        id: string
+        title: string
+        detail: string
+        status: 'accepted' | 'ignored' | 'snoozed'
+        decidedAt: string
+        periodFrom: string
+        periodTo: string
+      }>
+    > => {
+      const {
+        data: rows,
+        error,
+        count,
+      } = await createRequestSupabaseClient(context.tenantMembership.accessToken)
+        .from('profitability_recommendations')
+        .select('id, title, detail, status, decided_at, decided_by, period_from, period_to', {
+          count: 'exact',
+        })
+        .eq('tenant_id', data.tenantId)
+        .eq('venue_id', data.venueId)
+        .not('decided_at', 'is', null)
+        .order('decided_at', { ascending: false })
+        .range(...(Object.values(paginationRange(data)) as [number, number]))
+      if (error?.code === '42P01')
+        return { items: [], page: data.page, pageSize: data.pageSize, total: 0, hasMore: false }
+      if (error) throw new Error(`recommendation_history_failed:${error.code}`)
+      const items = (rows ?? []).map((row) => ({
+        id: row.id as string,
+        title: row.title as string,
+        detail: row.detail as string,
+        status: row.status as 'accepted' | 'ignored' | 'snoozed',
+        decidedAt: row.decided_at as string,
+        periodFrom: row.period_from as string,
+        periodTo: row.period_to as string,
+      }))
+      const total = count ?? items.length
+      return {
+        items,
+        page: data.page,
+        pageSize: data.pageSize,
+        total,
+        hasMore: data.page * data.pageSize < total,
+      }
+    },
+  )

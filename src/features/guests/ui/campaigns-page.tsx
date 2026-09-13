@@ -13,6 +13,7 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import {
   createGuestCampaign,
   listGuestCampaigns,
+  updateGuestCampaignStatus,
   type CampaignSummary,
 } from '../application/campaigns'
 
@@ -59,6 +60,16 @@ export function CampaignsPage({ tenantId }: { tenantId: string }) {
       setPage(1)
     } catch {
       setFeedback('No se ha podido crear la campaña.')
+    }
+  }
+  async function sendCampaign(campaignId: string) {
+    setFeedback(null)
+    try {
+      await updateGuestCampaignStatus({ data: { tenantId, campaignId, status: 'sent' } })
+      setFeedback('Campaña enviada a los contactos con consentimiento.')
+      await load()
+    } catch {
+      setFeedback('No se ha podido enviar la campaña.')
     }
   }
   return (
@@ -133,6 +144,11 @@ export function CampaignsPage({ tenantId }: { tenantId: string }) {
                     {campaign.status} · {campaign.recipients} destinatarios ·{' '}
                     {(campaign.attributedRevenueCents / 100).toFixed(2)} € atribuibles
                   </span>
+                  {campaign.status === 'draft' ? (
+                    <Button onClick={() => void sendCampaign(campaign.id)} size="sm" type="button">
+                      Marcar enviada
+                    </Button>
+                  ) : null}
                 </li>
               ))}
             </ul>

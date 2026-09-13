@@ -15,6 +15,7 @@ import {
   Coins,
   ExternalLink,
   FileText,
+  Gift,
   LayoutDashboard,
   Mail,
   Map,
@@ -250,6 +251,18 @@ export function TenantAdminFrame({
                 >
                   <Coins className="size-3" />
                   Propinas
+                </Link>
+              )}
+              {activeVenue && (
+                <Link
+                  onClick={handleLockedNavigation}
+                  to="/t/$slug/l/$venue/fidelizacion"
+                  params={{ slug, venue: activeVenue.slug }}
+                  activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
+                  className={navLinkClass}
+                >
+                  <Gift className="size-3" />
+                  Fidelización
                 </Link>
               )}
               <Link

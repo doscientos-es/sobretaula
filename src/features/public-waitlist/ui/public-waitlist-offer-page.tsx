@@ -11,53 +11,81 @@ import {
 } from '@doscientos/ui'
 import { useState } from 'react'
 
+import { useLocale } from '@/shared/lib/i18n/locale-preference'
+import { createTranslator } from '@/shared/lib/i18n/messages'
+
 import { respondWaitlistOffer, type WaitlistOffer } from '../application/public-waitlist'
 export function PublicWaitlistOfferPage({ offer, token }: { offer: WaitlistOffer; token: string }) {
-  const [result, setResult] = useState<string | null>(null)
+  const locale = useLocale('es')
+  const t = createTranslator(locale)
+  const [result, setResult] = useState<'accepted' | 'declined' | 'unavailable' | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState(false)
   const available = offer.status === 'offered'
   async function respond(accept: boolean) {
-    const response = await respondWaitlistOffer({ data: { token, accept } })
-    setResult(
-      response.ok
-        ? accept
-          ? '¡Listo! Hemos aceptado tu plaza.'
-          : 'Hemos rechazado la oferta.'
-        : 'Esta oferta ya no está disponible.',
-    )
+    if (busy) return
+    setBusy(true)
+    setError(false)
+    try {
+      const response = await respondWaitlistOffer({ data: { token, accept } })
+      setResult(response.ok ? (accept ? 'accepted' : 'declined') : 'unavailable')
+    } catch {
+      setError(true)
+    } finally {
+      setBusy(false)
+    }
   }
   return (
     <section className="mx-auto max-w-lg space-y-6">
       <PageHeader>
-        <PageHeaderTitle>Tu mesa está disponible</PageHeaderTitle>
-        <PageHeaderDescription>Responde a esta oferta antes de que caduque.</PageHeaderDescription>
+        <PageHeaderTitle>{t('public.waitlist.title')}</PageHeaderTitle>
+        <PageHeaderDescription>{t('public.waitlist.description')}</PageHeaderDescription>
       </PageHeader>
-      <Card>
+      <Card aria-busy={busy}>
         <CardHeader>
           <CardTitle>
-            {available ? `${offer.party_size ?? ''} comensales` : 'Oferta no disponible'}
+            {available
+              ? `${offer.party_size ?? ''} ${offer.party_size === 1 ? t('public.people.single') : t('public.people.multiple')}`
+              : t('public.waitlist.unavailable')}
           </CardTitle>
           <CardDescription>
             {available && offer.requested_for
               ? new Date(offer.requested_for).toLocaleString()
-              : 'El enlace ha caducado o ya se ha utilizado.'}
+              : t('public.waitlist.expired')}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {result ? (
-            <p aria-live="polite">{result}</p>
+            <p
+              aria-live="polite"
+              className={`rounded-lg border p-3 text-sm ${result === 'accepted' ? 'border-success/30 bg-success/10 text-success' : 'border-border bg-muted/50 text-foreground'}`}
+            >
+              {t(`public.waitlist.${result}`)}
+            </p>
           ) : available ? (
-            <div className="flex flex-wrap gap-2">
-              <Button onClick={() => void respond(true)} type="button">
-                Aceptar plaza
-              </Button>
-              <Button onClick={() => void respond(false)} type="button" variant="outline">
-                No, gracias
-              </Button>
+            <div className="space-y-3">
+              {error ? (
+                <p aria-live="assertive" className="text-destructive text-sm">
+                  {t('public.waitlist.failed')}
+                </p>
+              ) : null}
+              <div className="flex flex-wrap gap-2">
+                <Button disabled={busy} onClick={() => void respond(true)} type="button">
+                  {busy ? t('public.waitlist.busy') : t('public.waitlist.accept')}
+                </Button>
+                <Button
+                  disabled={busy}
+                  onClick={() => void respond(false)}
+                  type="button"
+                  variant="outline"
+                >
+                  {t('public.waitlist.decline')}
+                </Button>
+              </div>
+              <p className="text-muted-foreground text-xs">{t('public.waitlist.help')}</p>
             </div>
           ) : (
-            <p className="text-muted-foreground text-sm">
-              Contacta con el restaurante si necesitas ayuda.
-            </p>
+            <p className="text-muted-foreground text-sm">{t('public.waitlist.help')}</p>
           )}
         </CardContent>
       </Card>

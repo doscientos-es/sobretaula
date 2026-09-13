@@ -1,20 +1,32 @@
 import { Card, CardContent, CardHeader, CardTitle, MetricCard } from '@doscientos/ui'
 import { AlertTriangle, CheckCircle2, Euro, Scale } from 'lucide-react'
+import { useState } from 'react'
 
-import { decideRecommendation, explainProfitability } from '@/features/ai-operations'
+import {
+  answerOperationsQuestion,
+  decideRecommendation,
+  explainProfitability,
+  type listRecommendationDecisions,
+} from '@/features/ai-operations'
+import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
 
-import type { getSalesReport } from '../application/reports'
+import { exportSalesReportCsv, type getSalesReport } from '../application/reports'
 
 export function ProfitCockpit({
   report,
   tenantId,
   venueId,
+  recommendationHistory,
 }: {
   report: Awaited<ReturnType<typeof getSalesReport>>
   tenantId?: string
   venueId?: string
+  recommendationHistory?:
+    | Awaited<ReturnType<typeof listRecommendationDecisions>>
+    | Awaited<ReturnType<typeof listRecommendationDecisions>>['items']
 }) {
   const profit = report.profitability
+  const reload = useLoaderReload()
   const euro = (cents: number) => `${(cents / 100).toFixed(2)} €`
   const confidence = { high: 'Alta', medium: 'Media', low: 'Baja' }[profit.confidence]
   const insight = explainProfitability({
@@ -28,6 +40,22 @@ export function ProfitCockpit({
     laborCostCents: profit.laborCostCents,
     laborCostAvailable: profit.laborCostAvailable,
   })
+  const [question, setQuestion] = useState('')
+  const [questionAnswer, setQuestionAnswer] = useState(insight)
+  const decisions = Array.isArray(recommendationHistory)
+    ? recommendationHistory
+    : (recommendationHistory?.items ?? [])
+  async function downloadCsv() {
+    if (!tenantId || !venueId) return
+    const csv = await exportSalesReportCsv({
+      data: { tenantId, venueId, from: profit.period.from, to: profit.period.to },
+    })
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }))
+    link.download = `sobretaula-informe-${profit.period.from.slice(0, 10)}.csv`
+    link.click()
+    URL.revokeObjectURL(link.href)
+  }
   return (
     <section aria-labelledby="profit-cockpit-title" className="space-y-4">
       <div>
@@ -37,7 +65,43 @@ export function ProfitCockpit({
         <p className="text-muted-foreground text-sm">
           Dónde estás ganando y dónde se está escapando el margen.
         </p>
+        {tenantId && venueId ? (
+          <button
+            className="mt-2 rounded-md border px-3 py-2 text-sm"
+            onClick={() => void downloadCsv()}
+            type="button"
+          >
+            Descargar CSV para gestoría
+          </button>
+        ) : null}
       </div>
+      {decisions.length ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Decisiones recientes</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm">
+            {decisions.map((decision) => (
+              <div
+                className="flex flex-wrap justify-between gap-2 border-b pb-2 last:border-0"
+                key={decision.id}
+              >
+                <span>
+                  <strong>{decision.title}</strong>
+                  <span className="text-muted-foreground ml-2">{decision.detail}</span>
+                </span>
+                <span className="font-medium">
+                  {decision.status === 'accepted'
+                    ? 'Aceptada'
+                    : decision.status === 'ignored'
+                      ? 'Ignorada'
+                      : 'Pospuesta'}
+                </span>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      ) : null}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           description="Ventas netas del periodo"
@@ -94,11 +158,11 @@ export function ProfitCockpit({
                   <span className="text-muted-foreground">{recommendation.detail}</span>
                   {tenantId && venueId && recommendation.kind !== 'healthy' && (
                     <span className="mt-2 flex gap-2">
-                      {(['accepted', 'snoozed'] as const).map((status) => (
+                      {(['accepted', 'ignored', 'snoozed'] as const).map((status) => (
                         <button
                           className="rounded border px-2 py-1 text-xs"
                           key={status}
-                          onClick={() =>
+                          onClick={() => {
                             void decideRecommendation({
                               data: {
                                 tenantId,
@@ -111,11 +175,15 @@ export function ProfitCockpit({
                                 source: ['Profit Cockpit'],
                                 status,
                               },
-                            })
-                          }
+                            }).then(() => reload())
+                          }}
                           type="button"
                         >
-                          {status === 'accepted' ? 'Aceptar' : 'Posponer'}
+                          {status === 'accepted'
+                            ? 'Aceptar'
+                            : status === 'ignored'
+                              ? 'Ignorar'
+                              : 'Posponer'}
                         </button>
                       ))}
                     </span>
@@ -131,12 +199,43 @@ export function ProfitCockpit({
           <CardTitle>Lectura de dirección</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
-          <p className="text-sm">{insight.answer}</p>
+          <div className="flex gap-2">
+            <input
+              aria-label="Pregunta sobre el periodo"
+              className="border-input min-w-0 flex-1 rounded-md border px-3 py-2 text-sm"
+              onChange={(event) => setQuestion(event.target.value)}
+              placeholder="¿Por qué ha bajado el margen?"
+              value={question}
+            />
+            <button
+              className="bg-primary text-primary-foreground rounded-md px-3 py-2 text-sm"
+              onClick={() =>
+                setQuestionAnswer(
+                  answerOperationsQuestion(question, {
+                    period: `${profit.period.from} – ${profit.period.to}`,
+                    salesCents: profit.netSalesCents,
+                    marginPercent: profit.netSalesCents
+                      ? (profit.estimatedContributionCents / profit.netSalesCents) * 100
+                      : 0,
+                    foodCostCents: profit.foodCostCents,
+                    wasteCostCents: profit.wasteCostCents,
+                    laborCostCents: profit.laborCostCents,
+                    laborCostAvailable: profit.laborCostAvailable,
+                  }),
+                )
+              }
+              type="button"
+            >
+              Consultar
+            </button>
+          </div>
+          <p className="text-sm">{questionAnswer.answer}</p>
           <p className="text-muted-foreground text-xs">
-            Confianza: {insight.confidence}. Fuentes: {insight.sources.join(', ')}.
+            Periodo: {questionAnswer.period} · Confianza: {questionAnswer.confidence}. Fuentes:{' '}
+            {questionAnswer.sources.join(', ')}.
           </p>
           <ul className="list-disc pl-5 text-sm">
-            {insight.actions.map((action) => (
+            {questionAnswer.actions.map((action) => (
               <li key={action}>{action}</li>
             ))}
           </ul>

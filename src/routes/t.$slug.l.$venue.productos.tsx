@@ -20,12 +20,40 @@ export const Route = createFileRoute('/t/$slug/l/$venue/productos')({
     const { tenant, venue } = routeContext
     const data = { tenantId: tenant.id, venueId: venue.id }
     const [ingredients, stock, menu, suppliers, forecast, purchaseOrders] = await Promise.all([
-      listIngredients({ data: { tenantId: data.tenantId, page: 1, pageSize: 100, search: '' } }),
+      listIngredients({
+        data: {
+          tenantId: data.tenantId,
+          venueId: data.venueId,
+          page: 1,
+          pageSize: 100,
+          search: '',
+        },
+      }),
       getInventory({ data: { tenantId: data.tenantId, venueId: data.venueId } }),
       getMenu({ data: { tenantId: data.tenantId, venueId: data.venueId } }),
-      listSuppliers({ data: { tenantId: data.tenantId, page: 1, pageSize: 100, search: '' } }),
-      getDemandForecast({ data: { tenantId: data.tenantId, venueId: data.venueId } }),
-      listPurchaseOrders({ data }),
+      listSuppliers({
+        data: {
+          tenantId: data.tenantId,
+          venueId: data.venueId,
+          page: 1,
+          pageSize: 100,
+          search: '',
+        },
+      }),
+      getDemandForecast({ data: { tenantId: data.tenantId, venueId: data.venueId } }).catch(() => ({
+        expectedCovers: 0,
+        expectedSalesCents: 0,
+        confidence: 'low' as const,
+        sources: ['Sin datos de previsión'],
+        ingredientDemand: {},
+      })),
+      listPurchaseOrders({ data }).catch(() => ({
+        items: [],
+        page: 1,
+        pageSize: 25,
+        total: 0,
+        hasMore: false,
+      })),
     ])
     return {
       ingredients,

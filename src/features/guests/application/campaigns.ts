@@ -8,6 +8,8 @@ import {
 } from '@/features/tenancy/application/require-tenant-membership'
 import { paginationRange, type PaginatedResult } from '@/shared/lib/pagination'
 import { createRequestSupabaseClient } from '@/shared/lib/supabase/server/create-server-client'
+
+import { canAdvanceCampaign } from '../domain/campaign-status'
 const middleware = [
   authMiddleware,
   tenantMembershipMiddleware,
@@ -43,6 +45,49 @@ export const createGuestCampaign = createServerFn({ method: 'POST' })
         created_by: context.tenantMembership.userId,
       })
     if (error) throw new Error(`campaign_create_failed:${error.code}`)
+    return { saved: true }
+  })
+
+export const updateGuestCampaignStatus = createServerFn({ method: 'POST' })
+  .middleware(middleware)
+  .validator(
+    z.object({
+      tenantId: z.string().uuid(),
+      campaignId: z.string().uuid(),
+      status: z.enum(['scheduled', 'sent', 'paused']),
+    }),
+  )
+  .handler(async ({ context, data }) => {
+    if (!['owner', 'manager'].includes(context.tenantMembership.role))
+      throw new Response('Forbidden', { status: 403 })
+    const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    const { data: campaign, error } = await supabase
+      .from('guest_campaigns')
+      .select('status')
+      .eq('id', data.campaignId)
+      .eq('tenant_id', data.tenantId)
+      .single()
+    if (error || !campaign) throw new Error('campaign_not_found')
+    if (
+      !canAdvanceCampaign(campaign.status as 'draft' | 'scheduled' | 'sent' | 'paused', data.status)
+    )
+      throw new Error('campaign_invalid_transition')
+    if (data.status === 'sent') {
+      const { error: sendError } = await supabase.rpc('send_guest_campaign', {
+        p_campaign_id: data.campaignId,
+      })
+      if (sendError) throw new Error(`campaign_send_failed:${sendError.code}`)
+      return { saved: true }
+    }
+    const { error: updateError } = await supabase
+      .from('guest_campaigns')
+      .update({
+        status: data.status,
+        sent_at: null,
+      })
+      .eq('id', data.campaignId)
+      .eq('tenant_id', data.tenantId)
+    if (updateError) throw new Error(`campaign_status_failed:${updateError.code}`)
     return { saved: true }
   })
 export const listGuestCampaigns = createServerFn({ method: 'GET' })

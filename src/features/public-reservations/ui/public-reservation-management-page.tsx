@@ -56,6 +56,7 @@ export function PublicReservationManagementPage({
   const [current, setCurrent] = useState(reservation)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
   const [newDate, setNewDate] = useState(() =>
     currentLocalValue(reservation.startsAt, reservation.timezone),
   )
@@ -65,6 +66,7 @@ export function PublicReservationManagementPage({
     if (!window.confirm(t('public.cancelConfirm'))) return
     setBusy(true)
     setError('')
+    setSuccess('')
     try {
       const result = await cancelPublicReservation({ data: { token } })
       if (!result.cancelled) {
@@ -72,6 +74,7 @@ export function PublicReservationManagementPage({
         return
       }
       setCurrent({ ...current, status: 'cancelled' })
+      setSuccess(t('public.cancelled'))
     } catch {
       setError(t('public.cancelFailed'))
     } finally {
@@ -82,6 +85,7 @@ export function PublicReservationManagementPage({
   async function reschedule() {
     setBusy(true)
     setError('')
+    setSuccess('')
     try {
       const result = await reschedulePublicReservation({
         data: { token, startsAt: zonedLocalToIso(newDate, current.timezone) },
@@ -91,6 +95,7 @@ export function PublicReservationManagementPage({
         return
       }
       setCurrent({ ...current, startsAt: zonedLocalToIso(newDate, current.timezone) })
+      setSuccess(t('public.rescheduleSaved'))
     } catch {
       setError(t('public.rescheduleFailed'))
     } finally {
@@ -104,6 +109,7 @@ export function PublicReservationManagementPage({
         <LanguageSwitcher />
       </div>
       <section
+        aria-busy={busy}
         aria-labelledby="manage-title"
         className="relative z-10 w-full max-w-xl rounded-3xl border border-[#292d34]/10 bg-white p-[clamp(2rem,7vw,5rem)] text-center shadow-[0_1.5rem_4rem_rgb(66_48_35_/_12%)]"
       >
@@ -135,6 +141,11 @@ export function PublicReservationManagementPage({
             {error}
           </p>
         )}
+        {success && (
+          <p aria-live="polite" className="text-success mt-4 text-sm font-medium">
+            {success}
+          </p>
+        )}
         {!cancelled && (
           <div className="mt-6 space-y-3 text-left">
             <label
@@ -145,7 +156,7 @@ export function PublicReservationManagementPage({
             </label>
             <input
               aria-label={t('public.newDateTime')}
-              className="w-full rounded-xl border border-[#292d34]/15 px-3 py-2"
+              className="w-full rounded-xl border border-[#292d34]/15 px-3 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#c34d3e]"
               id="new-reservation-time"
               onChange={(event) => setNewDate(event.target.value)}
               min={localNowValue(current.timezone)}
@@ -155,7 +166,7 @@ export function PublicReservationManagementPage({
             />
             <div className="flex flex-wrap gap-3">
               <Button disabled={busy || !newDate} onPress={() => void reschedule()}>
-                {t('public.saveChange')}
+                {busy ? t('public.waitlist.busy') : t('public.saveChange')}
               </Button>
               <Button disabled={busy} onPress={() => void cancel()} variant="outline">
                 {t('public.cancelReservation')}

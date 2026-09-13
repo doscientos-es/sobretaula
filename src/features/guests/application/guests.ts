@@ -39,12 +39,18 @@ const guestAttributeInput = z.object({
   tenantId: z.string().uuid(),
   value: z.string().trim().min(1).max(120),
 })
+const consentInput = z.object({
+  tenantId: z.string().uuid(),
+  guestId: z.string().uuid(),
+  marketingConsent: z.boolean(),
+})
 
 export interface GuestSummary {
   id: string
   name: string
   phone: string | null
   email: string | null
+  marketingConsent: boolean
   notes: string | null
   reservations: number
   visits: number
@@ -62,7 +68,7 @@ export const searchGuests = createServerFn({ method: 'GET' })
     const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
     let request = supabase
       .from('guests')
-      .select('email, full_name, id, notes, phone', { count: 'exact' })
+      .select('email, full_name, id, notes, phone, marketing_consent', { count: 'exact' })
       .eq('tenant_id', data.tenantId)
       .order('full_name')
       .range(paginationRange(data).from, paginationRange(data).to)
@@ -209,6 +215,7 @@ export const searchGuests = createServerFn({ method: 'GET' })
       name: guest.full_name,
       phone: guest.phone,
       email: guest.email,
+      marketingConsent: guest.marketing_consent,
       notes: guest.notes,
       reservations: counts.get(guest.id) ?? 0,
       visits: visits.get(guest.id) ?? 0,
@@ -226,6 +233,19 @@ export const searchGuests = createServerFn({ method: 'GET' })
       total,
       hasMore: data.page * data.pageSize < total,
     }
+  })
+
+export const updateGuestMarketingConsent = createServerFn({ method: 'POST' })
+  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .validator(consentInput)
+  .handler(async ({ context, data }) => {
+    const { error } = await createRequestSupabaseClient(context.tenantMembership.accessToken)
+      .from('guests')
+      .update({ marketing_consent: data.marketingConsent })
+      .eq('id', data.guestId)
+      .eq('tenant_id', data.tenantId)
+    if (error) throw new Error(`guest_consent_update_failed:${error.code}`)
+    return { saved: true }
   })
 
 export const addGuestNote = createServerFn({ method: 'POST' })

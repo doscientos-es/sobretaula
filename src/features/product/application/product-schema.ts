@@ -4,11 +4,13 @@ import { ALLERGENS } from '../domain/product-costing'
 
 export const productTenantInput = z.object({ tenantId: z.string().uuid() })
 export const ingredientListInput = productTenantInput.extend({
+  venueId: z.string().uuid().optional(),
   page: z.number().int().min(1).default(1),
   pageSize: z.number().int().min(1).max(100).default(25),
   search: z.string().trim().max(120).default(''),
 })
 export const supplierListInput = productTenantInput.extend({
+  venueId: z.string().uuid().optional(),
   page: z.number().int().min(1).default(1),
   pageSize: z.number().int().min(1).max(100).default(25),
   search: z.string().trim().max(120).default(''),

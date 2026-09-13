@@ -25,6 +25,7 @@ import {
   getGuestTags,
   mergeGuests,
   searchGuests,
+  updateGuestMarketingConsent,
   toggleGuestTag,
   type GuestSummary,
 } from '../application/guests'
@@ -169,6 +170,37 @@ export function GuestsPage({ tenantId, venueId }: { tenantId: string; venueId: s
                             </button>
                           )
                         })}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2 border-t pt-3">
+                        <label className="flex items-center gap-2 text-xs">
+                          <input
+                            checked={guest.marketingConsent}
+                            onChange={(event) =>
+                              void (async () => {
+                                try {
+                                  await updateGuestMarketingConsent({
+                                    data: {
+                                      tenantId,
+                                      guestId: guest.id,
+                                      marketingConsent: event.target.checked,
+                                    },
+                                  })
+                                  setGuests(
+                                    (
+                                      await searchGuests({
+                                        data: { page: 1, pageSize: 25, query, tenantId, venueId },
+                                      })
+                                    ).items,
+                                  )
+                                } catch {
+                                  setError('No se ha podido actualizar el consentimiento.')
+                                }
+                              })()
+                            }
+                            type="checkbox"
+                          />
+                          Acepta comunicaciones comerciales
+                        </label>
                       </div>
                       <div className="flex flex-wrap items-center gap-2 border-t pt-3">
                         <label

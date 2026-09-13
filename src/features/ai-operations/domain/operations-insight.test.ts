@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { explainProfitability } from './operations-insight'
+import { answerOperationsQuestion, explainProfitability } from './operations-insight'
 describe('explainProfitability', () => {
   it('explains verified cost drivers', () => {
     const result = explainProfitability({
@@ -15,5 +15,18 @@ describe('explainProfitability', () => {
     expect(result.answer).toContain('coste de producto')
     expect(result.sources).toContain('fichajes y tarifas')
     expect(result.confidence).toBe('high')
+  })
+  it('answers unsupported questions without inventing figures', () => {
+    const result = answerOperationsQuestion('¿Qué tiempo hace?', {
+      period: 'Semana 37',
+      salesCents: 100000,
+      marginPercent: 42,
+      foodCostCents: 40000,
+      wasteCostCents: 2500,
+      laborCostCents: null,
+      laborCostAvailable: false,
+    })
+    expect(result.answer).toContain('Puedo responder sobre rentabilidad')
+    expect(result.sources).toContain('Profit Cockpit')
   })
 })

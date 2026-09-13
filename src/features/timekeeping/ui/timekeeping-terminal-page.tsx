@@ -22,15 +22,13 @@ import {
 } from '@doscientos/ui'
 import { useState } from 'react'
 
+import { useLocale } from '@/shared/lib/i18n/locale-preference'
+import { createTranslator } from '@/shared/lib/i18n/messages'
+
 import { recordTerminalTimeEvent } from '../application/timekeeping'
 import type { TimeEventType } from '../domain/timekeeping'
 
-const actions: { label: string; value: TimeEventType }[] = [
-  { label: 'Entrar', value: 'clock_in' },
-  { label: 'Iniciar pausa', value: 'break_start' },
-  { label: 'Terminar pausa', value: 'break_end' },
-  { label: 'Salir', value: 'clock_out' },
-]
+const actions: TimeEventType[] = ['clock_in', 'break_start', 'break_end', 'clock_out']
 
 function terminalStorageKey(tenantId: string, venueId: string): string {
   return `sobretaula:timekeeping-terminal:${tenantId}:${venueId}`
@@ -49,13 +47,13 @@ function getTerminalId(tenantId: string, venueId: string): string {
   return fallback
 }
 
-function terminalError(error: unknown): string {
+function terminalError(error: unknown, t: ReturnType<typeof createTranslator>): string {
   if (error instanceof Response) {
-    if (error.status === 401) return 'El PIN no es válido.'
-    if (error.status === 409) return 'Esta acción no corresponde al estado actual de la jornada.'
-    if (error.status === 429) return 'El terminal está bloqueado durante 15 minutos por seguridad.'
+    if (error.status === 401) return t('timekeeping.terminal.invalidPin')
+    if (error.status === 409) return t('timekeeping.terminal.invalidAction')
+    if (error.status === 429) return t('timekeeping.terminal.locked')
   }
-  return 'No se ha podido registrar el fichaje. Comprueba la conexión e inténtalo de nuevo.'
+  return t('timekeeping.terminal.clockError')
 }
 
 /** Shared, authenticated venue terminal. The employee PIN is never retained in browser storage. */
@@ -68,13 +66,15 @@ export function TimekeepingTerminalPage({
   tenantId: string
   venueId: string
 }) {
+  const locale = useLocale('es')
+  const t = createTranslator(locale)
   const feedback = useFormFeedback()
   const [employeeId, setEmployeeId] = useState(staff[0]?.userId ?? '')
   const [pin, setPin] = useState('')
 
   async function clock(eventType: TimeEventType) {
     if (!employeeId || !pin) {
-      feedback.setError('Selecciona tu nombre e introduce tu PIN para fichar.')
+      feedback.setError(t('timekeeping.terminal.missingCredentials'))
       return
     }
     feedback.setPending()
@@ -84,9 +84,9 @@ export function TimekeepingTerminalPage({
         data: { employeeId, eventType, pin, tenantId, terminalId, venueId },
       })
       setPin('')
-      feedback.setSuccess('Fichaje registrado correctamente.')
+      feedback.setSuccess(t('timekeeping.terminal.clockSuccess'))
     } catch (error) {
-      feedback.setError(terminalError(error))
+      feedback.setError(terminalError(error, t))
     }
   }
 
@@ -94,24 +94,22 @@ export function TimekeepingTerminalPage({
     <section className="space-y-6">
       <PageHeader>
         <div>
-          <PageHeaderTitle>Fichaje de equipo</PageHeaderTitle>
-          <PageHeaderDescription>
-            Selecciona tu nombre, introduce tu PIN y registra el momento de tu jornada.
-          </PageHeaderDescription>
+          <PageHeaderTitle>{t('timekeeping.terminal.title')}</PageHeaderTitle>
+          <PageHeaderDescription>{t('timekeeping.terminal.description')}</PageHeaderDescription>
         </div>
       </PageHeader>
-      <Card className="max-w-xl">
+      <Card aria-busy={feedback.pending} className="max-w-xl">
         <CardHeader>
-          <CardTitle>Terminal compartido</CardTitle>
-          <CardDescription>
-            El PIN se comprueba en servidor, no se guarda en este dispositivo y cinco intentos
-            fallidos bloquean temporalmente el terminal.
-          </CardDescription>
+          <CardTitle>{t('timekeeping.terminal.cardTitle')}</CardTitle>
+          <CardDescription>{t('timekeeping.terminal.cardDescription')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <Field>
-            <FieldLabel htmlFor="terminal-employee">Empleado</FieldLabel>
+            <FieldLabel htmlFor="terminal-employee">
+              {t('timekeeping.terminal.employee')}
+            </FieldLabel>
             <Select
+              isDisabled={feedback.pending}
               id="terminal-employee"
               className="w-full"
               onSelectionChange={(key) => setEmployeeId(String(key))}
@@ -132,12 +130,13 @@ export function TimekeepingTerminalPage({
             </Select>
           </Field>
           <Field>
-            <FieldLabel htmlFor="terminal-pin">PIN personal</FieldLabel>
+            <FieldLabel htmlFor="terminal-pin">{t('timekeeping.terminal.pin')}</FieldLabel>
             <Input
               autoComplete="off"
               id="terminal-pin"
               inputMode="numeric"
               maxLength={8}
+              disabled={feedback.pending}
               onChange={(event) => setPin(event.target.value.replace(/\D/g, ''))}
               pattern="[0-9]{4,8}"
               type="password"
@@ -148,19 +147,21 @@ export function TimekeepingTerminalPage({
             {actions.map((action) => (
               <Button
                 disabled={feedback.pending || staff.length === 0}
-                key={action.value}
-                onClick={() => void clock(action.value)}
+                key={action}
+                onClick={() => void clock(action)}
                 type="button"
-                variant={action.value === 'clock_out' ? 'outline' : 'default'}
+                variant={action === 'clock_out' ? 'outline' : 'default'}
               >
-                {action.label}
+                {feedback.pending
+                  ? t('timekeeping.terminal.clocking')
+                  : t(`timekeeping.action.${action}`)}
               </Button>
             ))}
           </div>
           {staff.length === 0 && (
-            <p className="text-muted-foreground text-sm">No hay empleados activos.</p>
+            <p className="text-muted-foreground text-sm">{t('timekeeping.terminal.noStaff')}</p>
           )}
-          <FormFeedback pendingLabel="Registrando fichaje…" state={feedback.state} />
+          <FormFeedback pendingLabel={t('timekeeping.terminal.clocking')} state={feedback.state} />
         </CardContent>
       </Card>
     </section>
