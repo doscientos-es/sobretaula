@@ -34,4 +34,13 @@ test.describe('authenticated restaurant smoke', () => {
       await expect(page.locator('body')).not.toBeEmpty()
     })
   }
+
+  test('mobile navigation exposes an accessible menu trigger', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto('/t/la-fonda-demo')
+    const menuButton = page.getByRole('button', { name: /abrir menú de navegación/i })
+    await expect(menuButton).toBeVisible()
+    await menuButton.focus()
+    await expect(menuButton).toBeFocused()
+  })
 })

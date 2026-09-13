@@ -42,6 +42,7 @@ import { Route as ApiWebhooksRedsysRouteImport } from './routes/api.webhooks.red
 import { Route as ReservarSlugCondicionesRouteImport } from './routes/reservar.$slug.condiciones'
 import { Route as ReservarSlugPrivacidadRouteImport } from './routes/reservar.$slug.privacidad'
 import { Route as TSlugIndexRouteImport } from './routes/t.$slug.index'
+import { Route as TSlugAjustesRouteImport } from './routes/t.$slug.ajustes'
 import { Route as TSlugCartaRouteImport } from './routes/t.$slug.carta'
 import { Route as TSlugComunicacionesRouteImport } from './routes/t.$slug.comunicaciones'
 import { Route as TSlugEquipoRouteImport } from './routes/t.$slug.equipo'
@@ -232,6 +233,11 @@ const TSlugIndexRoute = TSlugIndexRouteImport.update({
   path: '/',
   getParentRoute: () => TSlugRoute,
 } as any)
+const TSlugAjustesRoute = TSlugAjustesRouteImport.update({
+  id: '/ajustes',
+  path: '/ajustes',
+  getParentRoute: () => TSlugRoute,
+} as any)
 const TSlugCartaRoute = TSlugCartaRouteImport.update({
   id: '/carta',
   path: '/carta',
@@ -385,6 +391,7 @@ export interface FileRoutesByFullPath {
   '/api/webhooks/redsys': typeof ApiWebhooksRedsysRoute
   '/reservar/$slug/condiciones': typeof ReservarSlugCondicionesRoute
   '/reservar/$slug/privacidad': typeof ReservarSlugPrivacidadRoute
+  '/t/$slug/ajustes': typeof TSlugAjustesRoute
   '/t/$slug/carta': typeof TSlugCartaRoute
   '/t/$slug/comunicaciones': typeof TSlugComunicacionesRoute
   '/t/$slug/equipo': typeof TSlugEquipoRoute
@@ -441,6 +448,7 @@ export interface FileRoutesByTo {
   '/api/webhooks/redsys': typeof ApiWebhooksRedsysRoute
   '/reservar/$slug/condiciones': typeof ReservarSlugCondicionesRoute
   '/reservar/$slug/privacidad': typeof ReservarSlugPrivacidadRoute
+  '/t/$slug/ajustes': typeof TSlugAjustesRoute
   '/t/$slug/carta': typeof TSlugCartaRoute
   '/t/$slug/comunicaciones': typeof TSlugComunicacionesRoute
   '/t/$slug/equipo': typeof TSlugEquipoRoute
@@ -499,6 +507,7 @@ export interface FileRoutesById {
   '/api/webhooks/redsys': typeof ApiWebhooksRedsysRoute
   '/reservar/$slug/condiciones': typeof ReservarSlugCondicionesRoute
   '/reservar/$slug/privacidad': typeof ReservarSlugPrivacidadRoute
+  '/t/$slug/ajustes': typeof TSlugAjustesRoute
   '/t/$slug/carta': typeof TSlugCartaRoute
   '/t/$slug/comunicaciones': typeof TSlugComunicacionesRoute
   '/t/$slug/equipo': typeof TSlugEquipoRoute
@@ -559,6 +568,7 @@ export interface FileRouteTypes {
     | '/api/webhooks/redsys'
     | '/reservar/$slug/condiciones'
     | '/reservar/$slug/privacidad'
+    | '/t/$slug/ajustes'
     | '/t/$slug/carta'
     | '/t/$slug/comunicaciones'
     | '/t/$slug/equipo'
@@ -615,6 +625,7 @@ export interface FileRouteTypes {
     | '/api/webhooks/redsys'
     | '/reservar/$slug/condiciones'
     | '/reservar/$slug/privacidad'
+    | '/t/$slug/ajustes'
     | '/t/$slug/carta'
     | '/t/$slug/comunicaciones'
     | '/t/$slug/equipo'
@@ -672,6 +683,7 @@ export interface FileRouteTypes {
     | '/api/webhooks/redsys'
     | '/reservar/$slug/condiciones'
     | '/reservar/$slug/privacidad'
+    | '/t/$slug/ajustes'
     | '/t/$slug/carta'
     | '/t/$slug/comunicaciones'
     | '/t/$slug/equipo'
@@ -957,6 +969,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TSlugIndexRouteImport
       parentRoute: typeof TSlugRoute
     }
+    '/t/$slug/ajustes': {
+      id: '/t/$slug/ajustes'
+      path: '/ajustes'
+      fullPath: '/t/$slug/ajustes'
+      preLoaderRoute: typeof TSlugAjustesRouteImport
+      parentRoute: typeof TSlugRoute
+    }
     '/t/$slug/carta': {
       id: '/t/$slug/carta'
       path: '/carta'
@@ -1200,6 +1219,7 @@ const TSlugLVenueRouteWithChildren = TSlugLVenueRoute._addFileChildren(
 )
 
 interface TSlugRouteChildren {
+  TSlugAjustesRoute: typeof TSlugAjustesRoute
   TSlugCartaRoute: typeof TSlugCartaRoute
   TSlugComunicacionesRoute: typeof TSlugComunicacionesRoute
   TSlugEquipoRoute: typeof TSlugEquipoRoute
@@ -1212,6 +1232,7 @@ interface TSlugRouteChildren {
 }
 
 const TSlugRouteChildren: TSlugRouteChildren = {
+  TSlugAjustesRoute: TSlugAjustesRoute,
   TSlugCartaRoute: TSlugCartaRoute,
   TSlugComunicacionesRoute: TSlugComunicacionesRoute,
   TSlugEquipoRoute: TSlugEquipoRoute,

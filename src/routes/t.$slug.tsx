@@ -29,6 +29,7 @@ import { ArrowLeft, Check, FileText, Store, TriangleAlert, Users } from 'lucide-
 import type { ReactNode } from 'react'
 
 import { TenantAdminFrame } from '@/app/app-frame'
+import { tenantRouteState } from '@/app/tenant-route-loader'
 import { WorkerFrame } from '@/app/worker-frame'
 import { getTenantBillingStatus, TenantBillingNotice } from '@/features/platform-billing'
 import { RedsysSubscriptionButton } from '@/features/platform-billing/ui/redsys-subscription-button'
@@ -108,6 +109,7 @@ export const Route = createFileRoute('/t/$slug')({
   component: TenantLayout,
   errorComponent: TenantRouteError,
   notFoundComponent: TenantNotFound,
+  ...tenantRouteState,
 })
 
 type StepStatus = 'done' | 'active' | 'upcoming'
@@ -403,13 +405,19 @@ function TenantRouteError({ error, reset }: { error: unknown; reset: () => void 
   const { slug } = useParams({ from: '/t/$slug' })
   const status = error instanceof Response ? error.status : undefined
   const title =
-    status === 403 ? 'No tienes permisos para acceder' : 'No se ha podido cargar esta pantalla'
+    status === 402
+      ? 'Valida el método de pago para continuar'
+      : status === 403
+        ? 'No tienes permisos para acceder'
+        : 'No se ha podido cargar esta pantalla'
   const description =
-    status === 403
-      ? 'Tu usuario no tiene acceso a este restaurante o a esta sección.'
-      : status === 404
-        ? 'El restaurante o la sección solicitada no existe.'
-        : 'Ha ocurrido un problema al cargar los datos. Reintenta la operación; si continúa, contacta con soporte.'
+    status === 402
+      ? 'Autoriza el pago seguro de la suscripción para desbloquear las operaciones del restaurante.'
+      : status === 403
+        ? 'Tu usuario no tiene acceso a este restaurante o a esta sección.'
+        : status === 404
+          ? 'El restaurante o la sección solicitada no existe.'
+          : 'Ha ocurrido un problema al cargar los datos. Reintenta la operación; si continúa, contacta con soporte.'
 
   return (
     <main aria-live="assertive" className="mx-auto w-full max-w-2xl p-6 sm:p-10">

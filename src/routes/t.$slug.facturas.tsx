@@ -1,5 +1,6 @@
 import { createFileRoute, getRouteApi } from '@tanstack/react-router'
 
+import { tenantRouteState } from '@/app/tenant-route-loader'
 import { getBillingOverview, InvoiceListPage } from '@/features/invoices'
 import { requireTenantRouteAccess, tenantBySlugQuery } from '@/features/tenancy'
 import { useLocale } from '@/shared/lib/i18n/locale-preference'
@@ -16,6 +17,7 @@ export const Route = createFileRoute('/t/$slug/facturas')({
     return getBillingOverview({ data: { tenantId: tenant.id } })
   },
   component: InvoicesRoute,
+  ...tenantRouteState,
 })
 
 function InvoicesRoute() {

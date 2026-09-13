@@ -1,5 +1,6 @@
 import { createFileRoute, notFound } from '@tanstack/react-router'
 
+import { tenantRouteState } from '@/app/tenant-route-loader'
 import { getFloorPlan } from '@/features/floor-plan'
 import { getServiceBoard, ServicePage } from '@/features/service'
 import { loadVenueRouteContext } from '@/features/venues'
@@ -15,6 +16,7 @@ export const Route = createFileRoute('/t/$slug/l/$venue/servicio')({
     return { board, plan, tenant, venue }
   },
   component: ServiceRoute,
+  ...tenantRouteState,
 })
 
 function ServiceRoute() {

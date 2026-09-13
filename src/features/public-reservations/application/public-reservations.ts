@@ -3,8 +3,8 @@ import { createHash, randomBytes } from 'node:crypto'
 import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 
-import { createAnonSupabaseClient } from '@/shared/lib/supabase/server/create-server-client'
 import type { Locale } from '@/shared/lib/i18n/locale'
+import { createAnonSupabaseClient } from '@/shared/lib/supabase/server/create-server-client'
 
 const slugInput = z.object({ slug: z.string().trim().min(2).max(50) })
 export const publicReservationInput = z.object({

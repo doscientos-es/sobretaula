@@ -1,5 +1,6 @@
 import { createFileRoute, getRouteApi } from '@tanstack/react-router'
 
+import { tenantRouteState } from '@/app/tenant-route-loader'
 import {
   getTenantTeam,
   requireTenantRouteAccess,
@@ -19,6 +20,7 @@ export const Route = createFileRoute('/t/$slug/equipo')({
     return getTenantTeam({ data: { tenantId: tenant.id } })
   },
   component: TenantTeamRoute,
+  ...tenantRouteState,
 })
 
 function TenantTeamRoute() {

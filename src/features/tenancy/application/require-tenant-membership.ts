@@ -54,11 +54,7 @@ export const operationalTenantMiddleware = createMiddleware({ type: 'function' }
     const supabase = createRequestSupabaseClient(tenantMembership.accessToken)
     const [{ data: tenant, error }, { data: subscription, error: subscriptionError }] =
       await Promise.all([
-        supabase
-          .from('tenants')
-          .select('status')
-          .eq('id', tenantMembership.tenantId)
-          .single(),
+        supabase.from('tenants').select('status').eq('id', tenantMembership.tenantId).single(),
         supabase
           .from('subscriptions')
           .select('payment_method_id, status')

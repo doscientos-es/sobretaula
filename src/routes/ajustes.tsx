@@ -1,5 +1,5 @@
 import { createFileRoute, Link, redirect } from '@tanstack/react-router'
-import { Settings2, Utensils } from 'lucide-react'
+import { Home, Settings2, Utensils } from 'lucide-react'
 
 import { AppShellFrame } from '@/app/app-shell-frame'
 import { CurrentUserSidebar, getCurrentUser } from '@/features/auth'
@@ -52,7 +52,13 @@ function SettingsRoute() {
             </span>
             <span>{t('app.name')}</span>
           </Link>
-          <nav aria-label={t('common.navigationMenu')} className="mt-6">
+          <nav aria-label={t('common.navigationMenu')} className="mt-6 space-y-0.5">
+            <Link
+              className="st-saas-nav-link flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium"
+              to="/"
+            >
+              <Home className="size-3" /> {t('app.myRestaurants')}
+            </Link>
             <Link
               activeProps={{ className: 'st-saas-nav-link--active' }}
               className="st-saas-nav-link flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium"

@@ -1,5 +1,6 @@
 import { createFileRoute, notFound } from '@tanstack/react-router'
 
+import { tenantRouteState } from '@/app/tenant-route-loader'
 import { getMenu, MenuPage } from '@/features/menu'
 import { requireTenantRouteAccess, tenantBySlugQuery } from '@/features/tenancy'
 import { useLocale } from '@/shared/lib/i18n/locale-preference'
@@ -15,6 +16,7 @@ export const Route = createFileRoute('/t/$slug/carta')({
     return { catalog, tenant }
   },
   component: MenuRoute,
+  ...tenantRouteState,
 })
 
 function MenuRoute() {

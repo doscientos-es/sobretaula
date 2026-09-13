@@ -26,6 +26,23 @@ function subscriptionData(subscription: PushSubscription) {
   }
 }
 
+function serviceWorkerReady(timeoutMs = 3_000): Promise<ServiceWorkerRegistration | null> {
+  if (!('serviceWorker' in navigator)) return Promise.resolve(null)
+  return new Promise((resolve) => {
+    let settled = false
+    const timeout = window.setTimeout(() => {
+      settled = true
+      resolve(null)
+    }, timeoutMs)
+    void navigator.serviceWorker.ready.then((registration) => {
+      if (settled) return
+      settled = true
+      window.clearTimeout(timeout)
+      resolve(registration)
+    })
+  })
+}
+
 export function PushNotificationPreferences() {
   const locale = useLocale('es')
   const t = createTranslator(locale)
@@ -36,21 +53,25 @@ export function PushNotificationPreferences() {
 
   useEffect(() => {
     let cancelled = false
-    void Promise.all([
-      getPushNotificationConfig(),
-      'serviceWorker' in navigator ? navigator.serviceWorker.ready : Promise.resolve(null),
-    ]).then(async ([config, registration]) => {
-      if (cancelled) return
-      const supported =
-        Boolean(config.publicKey) &&
-        'Notification' in window &&
-        'PushManager' in window &&
-        Boolean(registration)
-      setAvailable(supported)
-      if (supported && registration) {
-        setEnabled(Boolean(await registration.pushManager.getSubscription()))
-      }
-    })
+    void Promise.all([getPushNotificationConfig(), serviceWorkerReady()])
+      .then(async ([config, registration]) => {
+        if (cancelled) return
+        const supported =
+          Boolean(config.publicKey) &&
+          'Notification' in window &&
+          'PushManager' in window &&
+          Boolean(registration)
+        setAvailable(supported)
+        if (supported && registration) {
+          setEnabled(Boolean(await registration.pushManager.getSubscription()))
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setAvailable(false)
+          setError(true)
+        }
+      })
     return () => {
       cancelled = true
     }
@@ -67,7 +88,11 @@ export function PushNotificationPreferences() {
       }
       const permission = await Notification.requestPermission()
       if (permission !== 'granted') return
-      const registration = await navigator.serviceWorker.ready
+      const registration = await serviceWorkerReady()
+      if (!registration) {
+        setAvailable(false)
+        return
+      }
       const subscription = await registration.pushManager.subscribe({
         applicationServerKey: decodeBase64Url(config.publicKey),
         userVisibleOnly: true,
@@ -87,7 +112,11 @@ export function PushNotificationPreferences() {
     setPending(true)
     setError(false)
     try {
-      const registration = await navigator.serviceWorker.ready
+      const registration = await serviceWorkerReady()
+      if (!registration) {
+        setAvailable(false)
+        return
+      }
       const subscription = await registration.pushManager.getSubscription()
       if (subscription) {
         await removePushSubscription({ data: { endpoint: subscription.endpoint } })
@@ -107,14 +136,21 @@ export function PushNotificationPreferences() {
       {available === false ? (
         <p className="text-muted-foreground">{t('settings.notifications.unavailable')}</p>
       ) : (
-        <button
-          className="bg-primary text-primary-foreground rounded-lg px-3 py-2 font-medium disabled:opacity-60"
-          disabled={pending || available === null}
-          onClick={() => void (enabled ? disable() : enable())}
-          type="button"
-        >
-          {enabled ? t('settings.notifications.disable') : t('settings.notifications.enable')}
-        </button>
+        <>
+          {available === null ? (
+            <p aria-live="polite" className="text-muted-foreground" role="status">
+              {t('settings.notifications.checking')}
+            </p>
+          ) : null}
+          <button
+            className="bg-primary text-primary-foreground rounded-lg px-3 py-2 font-medium disabled:opacity-60"
+            disabled={pending || available === null}
+            onClick={() => void (enabled ? disable() : enable())}
+            type="button"
+          >
+            {enabled ? t('settings.notifications.disable') : t('settings.notifications.enable')}
+          </button>
+        </>
       )}
       {error ? <p className="text-destructive">{t('settings.notifications.error')}</p> : null}
     </div>

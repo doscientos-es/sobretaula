@@ -376,7 +376,9 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                       ))}
                     </select>
                     {date && !availabilityLoading && availabilityError ? (
-                      <p className="mt-2 text-xs text-[#c34d3e]">{t('public.availabilityFailed')}</p>
+                      <p className="mt-2 text-xs text-[#c34d3e]">
+                        {t('public.availabilityFailed')}
+                      </p>
                     ) : date && !availabilityLoading && availableSlots.length === 0 ? (
                       <p className="mt-2 text-xs text-[#c34d3e]">
                         {areaId ? t('public.noSlotsInArea') : t('public.noSlots')}

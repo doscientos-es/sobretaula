@@ -1,6 +1,7 @@
 import { createFileRoute, notFound } from '@tanstack/react-router'
 import { z } from 'zod'
 
+import { tenantRouteState } from '@/app/tenant-route-loader'
 import {
   AccountOrderWorkspace,
   AccountPayments,
@@ -72,6 +73,7 @@ export const Route = createFileRoute('/t/$slug/l/$venue/tpv')({
     }
   },
   component: PosTerminalRoute,
+  ...tenantRouteState,
 })
 
 function PosTerminalRoute() {

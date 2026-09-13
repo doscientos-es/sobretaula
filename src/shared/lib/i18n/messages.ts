@@ -137,7 +137,7 @@ const es = {
   'dashboard.openSession.single': 'Hay 1 servicio en curso.',
   'dashboard.openSession.multiple': 'Hay {count} servicios en curso.',
   'dashboard.nextService': 'Todo preparado para el próximo servicio a las {time}.',
-  'dashboard.allSystems': 'Todos los sistemas funcionan correctamente en {name}.',
+  'dashboard.allSystems': 'No hay acciones pendientes ahora mismo en {name}.',
   'dashboard.reservationsToday': 'Reservas de hoy',
   'dashboard.reservationsThisWeek': '{count} esta semana',
   'dashboard.occupiedTables': 'Mesas ocupadas',
@@ -253,6 +253,7 @@ const es = {
     'Activa los avisos de este dispositivo para no perderte nuevas reservas.',
   'settings.notifications.enable': 'Activar notificaciones',
   'settings.notifications.disable': 'Desactivar notificaciones',
+  'settings.notifications.checking': 'Comprobando si este dispositivo admite notificaciones…',
   'settings.notifications.unavailable':
     'Las notificaciones push no están disponibles en este navegador o aún no están configuradas.',
   'settings.notifications.error': 'No se ha podido actualizar la preferencia. Inténtalo de nuevo.',
@@ -411,7 +412,7 @@ const ca: Record<MessageKey, string> = {
   'dashboard.openSession.single': 'Hi ha 1 servei en curs.',
   'dashboard.openSession.multiple': 'Hi ha {count} serveis en curs.',
   'dashboard.nextService': 'Tot preparat per al proper servei a les {time}.',
-  'dashboard.allSystems': 'Tots els sistemes funcionen correctament a {name}.',
+  'dashboard.allSystems': 'No hi ha accions pendents ara mateix a {name}.',
   'dashboard.reservationsToday': 'Reserves d’avui',
   'dashboard.reservationsThisWeek': '{count} aquesta setmana',
   'dashboard.occupiedTables': 'Taules ocupades',
@@ -528,6 +529,7 @@ const ca: Record<MessageKey, string> = {
     'Activa els avisos d’aquest dispositiu per no perdre’t noves reserves.',
   'settings.notifications.enable': 'Activar notificacions',
   'settings.notifications.disable': 'Desactivar notificacions',
+  'settings.notifications.checking': 'Comprovant si aquest dispositiu admet notificacions…',
   'settings.notifications.unavailable':
     'Les notificacions push no estan disponibles en aquest navegador o encara no estan configurades.',
   'settings.notifications.error': 'No s’ha pogut actualitzar la preferència. Torna-ho a provar.',

@@ -1,5 +1,6 @@
 import { createFileRoute, notFound } from '@tanstack/react-router'
 
+import { tenantRouteState } from '@/app/tenant-route-loader'
 import {
   getReservationServices,
   getReservationTerms,
@@ -21,6 +22,7 @@ export const Route = createFileRoute('/t/$slug/l/$venue/reservas')({
     return { services, terms, tenant, venue }
   },
   component: ReservationsRoute,
+  ...tenantRouteState,
 })
 
 function ReservationsRoute() {
