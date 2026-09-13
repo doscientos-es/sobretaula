@@ -10,8 +10,8 @@ import { loadVenueRouteContext } from '@/features/venues'
 import { useLocale } from '@/shared/lib/i18n/locale-preference'
 
 export const Route = createFileRoute('/t/$slug/l/$venue/reservas')({
-  loader: async ({ params }) => {
-    const routeContext = await loadVenueRouteContext(params.slug, params.venue)
+  loader: async ({ context, params }) => {
+    const routeContext = await loadVenueRouteContext(context.queryClient, params.slug, params.venue)
     if (!routeContext) throw notFound()
     const { tenant, venue } = routeContext
     const data = { tenantId: tenant.id, venueId: venue.id }

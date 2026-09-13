@@ -9,8 +9,8 @@ import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
 export const Route = createFileRoute('/t/$slug/l/$venue/propinas')({
   validateSearch: z.object({ page: z.number().int().min(1).default(1) }),
   loaderDeps: ({ search }) => ({ page: search.page }),
-  loader: async ({ params, deps }) => {
-    const routeContext = await loadVenueRouteContext(params.slug, params.venue)
+  loader: async ({ context, deps, params }) => {
+    const routeContext = await loadVenueRouteContext(context.queryClient, params.slug, params.venue)
     if (!routeContext) throw notFound()
     const { tenant, venue } = routeContext
     return {

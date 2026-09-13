@@ -8,8 +8,8 @@ import { ProfitCockpit } from '@/features/reports/ui/profit-cockpit'
 import { SalesReportPage } from '@/features/reports/ui/sales-report-page'
 import { loadVenueRouteContext } from '@/features/venues'
 export const Route = createFileRoute('/t/$slug/l/$venue/informes')({
-  loader: async ({ params }) => {
-    const routeContext = await loadVenueRouteContext(params.slug, params.venue)
+  loader: async ({ context, params }) => {
+    const routeContext = await loadVenueRouteContext(context.queryClient, params.slug, params.venue)
     if (!routeContext) throw notFound()
     const { tenant, venue } = routeContext
     const benchmark = await getVenueBenchmark({

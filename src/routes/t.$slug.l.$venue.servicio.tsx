@@ -9,7 +9,7 @@ import { createRequestSupabaseClient } from '@/shared/lib/supabase/server/create
 
 export const Route = createFileRoute('/t/$slug/l/$venue/servicio')({
   loader: async ({ context, params }) => {
-    const routeContext = await loadVenueRouteContext(params.slug, params.venue)
+    const routeContext = await loadVenueRouteContext(context.queryClient, params.slug, params.venue)
     if (!routeContext) throw notFound()
     const { tenant, venue } = routeContext
     const data = { tenantId: tenant.id, venueId: venue.id }

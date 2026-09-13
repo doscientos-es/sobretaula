@@ -21,7 +21,7 @@ import { createTranslator } from '@/shared/lib/i18n/messages'
 export const Route = createFileRoute('/t/$slug/l/$venue')({
   beforeLoad: async ({ context, params }) => {
     requireTenantRouteAccess(context.tenantMembership.role, 'operations')
-    const routeContext = await loadVenueRouteContext(params.slug, params.venue)
+    const routeContext = await loadVenueRouteContext(context.queryClient, params.slug, params.venue)
     if (!routeContext) throw notFound()
     return routeContext
   },

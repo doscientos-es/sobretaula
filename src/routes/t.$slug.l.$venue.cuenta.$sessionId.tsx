@@ -11,8 +11,8 @@ export const Route = createFileRoute('/t/$slug/l/$venue/cuenta/$sessionId')({
   beforeLoad: ({ context }) => {
     requireTenantRouteAccess(context.tenantMembership.role, 'table_account')
   },
-  loader: async ({ params }) => {
-    const routeContext = await loadVenueRouteContext(params.slug, params.venue)
+  loader: async ({ context, params }) => {
+    const routeContext = await loadVenueRouteContext(context.queryClient, params.slug, params.venue)
     if (!routeContext) throw notFound()
     const { tenant, venue } = routeContext
     const data = {

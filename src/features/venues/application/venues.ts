@@ -1,8 +1,9 @@
+import { queryOptions, type QueryClient } from '@tanstack/react-query'
 import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 
 import { authMiddleware } from '@/features/auth/infrastructure/server/auth-middleware'
-import { getTenantBySlug } from '@/features/tenancy/application/get-tenant-by-slug'
+import { tenantBySlugQuery } from '@/features/tenancy/application/get-tenant-by-slug'
 import {
   operationalTenantMiddleware,
   tenantMembershipMiddleware,
@@ -44,15 +45,28 @@ export const getTenantVenues = createServerFn({ method: 'GET' })
     }))
   })
 
-/** Resolves the local for a route loader without relying on same-route context. */
-export async function loadVenueRouteContext(slug: string, venueParam: string) {
+/** Shares the accessible venue list between the tenant shell and its local routes. */
+export function tenantVenuesQuery(tenantId: string) {
+  return queryOptions({
+    queryFn: () => getTenantVenues({ data: { tenantId } }),
+    queryKey: ['tenant', tenantId, 'venues'],
+    staleTime: 5 * 60_000,
+  })
+}
+
+/** Resolves the URL local from per-router cached tenant and venue data. */
+export async function loadVenueRouteContext(
+  queryClient: QueryClient,
+  slug: string,
+  venueParam: string,
+) {
   const venueSlug = parseVenueSlug(venueParam)
   if (!venueSlug) return null
 
-  const tenant = await getTenantBySlug({ data: { slug } })
+  const tenant = await queryClient.ensureQueryData(tenantBySlugQuery(slug))
   if (!tenant) return null
 
-  const venues = await getTenantVenues({ data: { tenantId: tenant.id } })
+  const venues = await queryClient.ensureQueryData(tenantVenuesQuery(tenant.id))
   const venue = resolveVenue(venues, venueSlug)
   return venue ? { tenant, venue } : null
 }

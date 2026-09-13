@@ -41,7 +41,7 @@ import {
   isTenantOperational,
   tenantBySlugQuery,
 } from '@/features/tenancy'
-import { getTenantVenues } from '@/features/venues'
+import { tenantVenuesQuery } from '@/features/venues'
 import { LocaleProvider } from '@/shared/lib/i18n/locale-preference'
 import { parseTenantSlug } from '@/shared/lib/tenant/tenant-slug'
 
@@ -55,12 +55,13 @@ async function getMembershipOrRedirect(tenantId: string, tenantSlug: string) {
 }
 
 export const Route = createFileRoute('/t/$slug')({
-  beforeLoad: async ({ params }) => {
+  beforeLoad: async ({ context, params }) => {
     const slug = parseTenantSlug(params.slug)
     if (!slug) throw notFound()
 
     const tenant = await getTenantBySlug({ data: { slug } })
     if (!tenant) throw notFound()
+    context.queryClient.setQueryData(tenantBySlugQuery(slug).queryKey, tenant)
 
     return {
       tenantMembership: await getMembershipOrRedirect(tenant.id, tenant.slug),
@@ -77,7 +78,7 @@ export const Route = createFileRoute('/t/$slug')({
       data: { tenantId: tenant.id },
     })
     const venues = isTenantOperational(tenant.status)
-      ? await getTenantVenues({ data: { tenantId: tenant.id } })
+      ? await context.queryClient.ensureQueryData(tenantVenuesQuery(tenant.id))
       : []
     const metrics = isTenantOperational(tenant.status)
       ? await getDashboardMetrics({
