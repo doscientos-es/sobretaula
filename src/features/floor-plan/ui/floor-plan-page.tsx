@@ -1239,7 +1239,6 @@ export function FloorPlanPage({
                 id="new-area-name"
                 onChange={(event) => setNewAreaName(event.target.value)}
                 value={newAreaName}
-                autoFocus
                 required
               />
             </Field>

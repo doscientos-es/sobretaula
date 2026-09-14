@@ -58,22 +58,8 @@ async function getMembershipOrRedirect(
   }
 }
 
-function reportTenantRouteFailure(
-  operation: string,
-  error: unknown,
-  context: { slug: string; tenantId?: string },
-): never {
+function reportTenantRouteFailure(operation: string): never {
   const incidentId = globalThis.crypto?.randomUUID?.() ?? `inc-${Date.now().toString(36)}`
-  const details = {
-    incidentId,
-    operation,
-    route: '/t/$slug',
-    slug: context.slug,
-    tenantId: context.tenantId,
-    error: error instanceof Error ? error.message : String(error),
-    stack: error instanceof Error ? error.stack : undefined,
-  }
-  console.error('[tenant-route-failure]', JSON.stringify(details))
   throw new Error(`tenant_route_failed:${operation}:${incidentId}`)
 }
 
@@ -87,11 +73,7 @@ export const Route = createFileRoute('/t/$slug')({
     context.queryClient.setQueryData(tenantBySlugQuery(slug).queryKey, tenant)
 
     return {
-      tenantMembership: await getMembershipOrRedirect(
-        tenant.id,
-        tenant.slug,
-        `${location.pathname}${location.search}`,
-      ),
+      tenantMembership: await getMembershipOrRedirect(tenant.id, tenant.slug, location.href),
     }
   },
   loader: async ({ context, params }) => {
@@ -104,14 +86,14 @@ export const Route = createFileRoute('/t/$slug')({
     let billingStatus
     try {
       billingStatus = await getTenantBillingStatus({ data: { tenantId: tenant.id } })
-    } catch (error) {
-      reportTenantRouteFailure('billing_status', error, { slug, tenantId: tenant.id })
+    } catch {
+      reportTenantRouteFailure('billing_status')
     }
     let venues
     try {
       venues = await context.queryClient.ensureQueryData(tenantVenuesQuery(tenant.id))
-    } catch (error) {
-      reportTenantRouteFailure('venues', error, { slug, tenantId: tenant.id })
+    } catch {
+      reportTenantRouteFailure('venues')
     }
     let metrics
     try {
@@ -131,16 +113,16 @@ export const Route = createFileRoute('/t/$slug')({
             reservationsThisWeek: 0,
             noShowsThisWeek: 0,
           }
-    } catch (error) {
-      reportTenantRouteFailure('dashboard_metrics', error, { slug, tenantId: tenant.id })
+    } catch {
+      reportTenantRouteFailure('dashboard_metrics')
     }
     let setupStatus
     try {
       setupStatus = await getTenantSetupStatus({
         data: { tenantId: tenant.id, venueIds: venues.map((venue) => venue.id) },
       })
-    } catch (error) {
-      reportTenantRouteFailure('setup_status', error, { slug, tenantId: tenant.id })
+    } catch {
+      reportTenantRouteFailure('setup_status')
     }
     return {
       billingStatus,

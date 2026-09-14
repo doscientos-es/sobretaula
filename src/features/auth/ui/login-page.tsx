@@ -14,7 +14,7 @@ import {
 } from '@doscientos/ui'
 import { Link } from '@tanstack/react-router'
 import { ArrowRight, Eye, EyeOff, Mail, Utensils } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 
 const abstractRestaurant = '/abstract-restaurant-image.avif'
 
@@ -26,12 +26,9 @@ export function LoginPage({ redirectTo }: { redirectTo?: string }) {
   const [password, setPassword] = useState('')
   const [isPasswordVisible, setPasswordVisible] = useState(false)
   const [rememberSession, setRememberSession] = useState(false)
-  const [isHydrated, setHydrated] = useState(false)
   const feedback = useFormFeedback()
   const emailInput = useRef<HTMLInputElement>(null)
   const isSubmitting = useRef(false)
-
-  useEffect(() => setHydrated(true), [])
 
   async function submit() {
     if (isSubmitting.current) return
@@ -83,7 +80,6 @@ export function LoginPage({ redirectTo }: { redirectTo?: string }) {
               aria-describedby="login-description login-feedback"
               aria-labelledby="login-title"
               className="mt-10 space-y-5"
-              data-hydrated={isHydrated || undefined}
               method="post"
               onSubmit={(event) => {
                 event.preventDefault()
