@@ -5,7 +5,11 @@ import { test as setup, expect } from '@playwright/test'
 
 const authFile = process.env.E2E_STORAGE_STATE ?? 'e2e/.auth/owner.json'
 
+// The setup enters a real password; never persist it in failure artifacts.
+setup.use({ screenshot: 'off', trace: 'off', video: 'off' })
+
 setup('authenticate E2E owner against Supabase-dev', async ({ page }) => {
+  setup.slow()
   const email = process.env.E2E_OWNER_EMAIL
   const password = process.env.E2E_OWNER_PASSWORD
 

@@ -6,6 +6,7 @@ import {
   type FloorPlanElement,
   type FloorPlanTablePlacement,
   type FloorPlanVersion,
+  type PlanElementKind,
 } from '../domain/floor-plan'
 import type { LayoutIssue } from '../domain/geometry'
 import type { FloorPlanPreviewDevice } from './floor-plan-setup-card'
@@ -28,6 +29,8 @@ export function FloorPlanCanvas({
   onClearSelection,
   onGridSizeChange,
   onMinimumAisleChange,
+  onEmptyPlace,
+  onDropElement,
   onMoveItem,
   onSelectItem,
   placements,
@@ -47,6 +50,8 @@ export function FloorPlanCanvas({
   onClearSelection: () => void
   onGridSizeChange: (value: number) => void
   onMinimumAisleChange: (value: number) => void
+  onEmptyPlace: (xCm: number, yCm: number) => void
+  onDropElement: (kind: PlanElementKind, xCm: number, yCm: number) => void
   onMoveItem: (id: string, xCm: number, yCm: number) => void
   onSelectItem: (id: string, additive?: boolean) => void
   placements: readonly FloorPlanTablePlacement[]
@@ -58,6 +63,7 @@ export function FloorPlanCanvas({
   const [pan, setPan] = useState({ x: 0, y: 0 })
   const [draggingItemId, setDraggingItemId] = useState<string>()
   const [dragPreview, setDragPreview] = useState<{ id: string; x: number; y: number }>()
+  const [dropGhost, setDropGhost] = useState<{ kind: PlanElementKind; x: number; y: number }>()
   const panPointer = useRef<{ id: number; x: number; y: number } | undefined>(undefined)
   const viewBox = `${Math.max(0, Math.min(activeVersion.widthCm * (1 - 1 / zoom), (activeVersion.widthCm * (1 - 1 / zoom)) / 2 + pan.x)).toFixed(2)} ${Math.max(0, Math.min(activeVersion.heightCm * (1 - 1 / zoom), (activeVersion.heightCm * (1 - 1 / zoom)) / 2 + pan.y)).toFixed(2)} ${(activeVersion.widthCm / zoom).toFixed(2)} ${(activeVersion.heightCm / zoom).toFixed(2)}`
 
@@ -259,6 +265,22 @@ export function FloorPlanCanvas({
                 Math.min(3, Math.max(1, current + (event.deltaY < 0 ? 0.25 : -0.25))),
               )
             }}
+            onDragOver={(event) => {
+              event.preventDefault()
+              const point = planPointFromEvent(event)
+              const kind = event.dataTransfer.types.includes('application/x-floor-element')
+                ? (event.dataTransfer.getData('application/x-floor-element') as PlanElementKind)
+                : undefined
+              if (point && kind) setDropGhost({ kind, x: point.x, y: point.y })
+            }}
+            onDragLeave={() => setDropGhost(undefined)}
+            onDrop={(event) => {
+              event.preventDefault()
+              const kind = event.dataTransfer.getData('application/x-floor-element') as PlanElementKind
+              const point = planPointFromEvent(event)
+              if (point && kind) onDropElement(kind, point.x, point.y)
+              setDropGhost(undefined)
+            }}
             viewBox={viewBox}
           >
             <defs>
@@ -279,7 +301,11 @@ export function FloorPlanCanvas({
             <rect
               fill="url(#floor-plan-grid)"
               height={activeVersion.heightCm}
-              onPointerDown={onClearSelection}
+              onPointerDown={(event) => {
+                onClearSelection()
+                const point = planPointFromEvent(event)
+                if (point) onEmptyPlace(point.x, point.y)
+              }}
               width={activeVersion.widthCm}
             />
             {selected && (
@@ -331,6 +357,19 @@ export function FloorPlanCanvas({
                   y2={guide.value}
                 />
               ),
+            )}
+            {dropGhost && (
+              <rect
+                aria-hidden="true"
+                fill="var(--primary)"
+                height={dropGhost.kind === 'wall' ? 25 : 100}
+                opacity="0.35"
+                pointerEvents="none"
+                rx="8"
+                width={dropGhost.kind === 'wall' ? 250 : 100}
+                x={dropGhost.x}
+                y={dropGhost.y}
+              />
             )}
             {elements.map((element) => (
               <g

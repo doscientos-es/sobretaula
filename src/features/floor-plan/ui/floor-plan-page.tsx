@@ -20,6 +20,7 @@ import {
   PageHeaderTitle,
   useFormFeedback,
 } from '@doscientos/ui'
+import { DoorOpen, Grid2X2, LayoutGrid, PanelTop, Soup, Square, StairUp } from 'lucide-react'
 import {
   useEffect,
   useRef,
@@ -118,6 +119,7 @@ export function FloorPlanPage({
   const [createAreaOpen, setCreateAreaOpen] = useState(false)
   const [newAreaName, setNewAreaName] = useState('Terraza')
   const [creatingArea, setCreatingArea] = useState(false)
+  const [addElementAt, setAddElementAt] = useState<{ x: number; y: number }>()
   const activeArea = data.areas.find((area) => area.id === selectedAreaId) ?? data.areas[0]
   const activePresets = data.tableGroupPresets.filter((preset) => preset.areaId === activeArea?.id)
   const activeVersion = activeArea
@@ -476,7 +478,7 @@ export function FloorPlanPage({
     else updateSelected({ xCm: movable.xCm + displacement.x, yCm: movable.yCm + displacement.y })
   }
 
-  function addElement(kind: PlanElementKind) {
+  function addElement(kind: PlanElementKind, position = { x: 0, y: 0 }) {
     if (!activeVersion) return
     const element: FloorPlanElement = {
       floorPlanVersionId: activeVersion.id,
@@ -509,8 +511,8 @@ export function FloorPlanPage({
                               : 'Etiqueta',
       rotationDeg: 0,
       widthCm: kind === 'wall' ? 250 : 100,
-      xCm: 0,
-      yCm: 0,
+      xCm: Math.max(0, Math.round(position.x / gridSize) * gridSize),
+      yCm: Math.max(0, Math.round(position.y / gridSize) * gridSize),
     }
     setHistory((current) =>
       commitEditorHistory(current, { ...current.present, elements: [...elements, element] }),
@@ -857,6 +859,8 @@ export function FloorPlanPage({
               setSelectedId(undefined)
               setSelectedIds([])
             }}
+            onEmptyPlace={(x, y) => setAddElementAt({ x, y })}
+            onDropElement={(kind, x, y) => addElement(kind, { x, y })}
             onGridSizeChange={setGridSize}
             onMinimumAisleChange={setMinimumAisleCm}
             onMoveItem={moveItem}
@@ -1072,43 +1076,12 @@ export function FloorPlanPage({
                 })()}
               <div className="mt-6 space-y-2">
                 <p className="text-muted-foreground text-sm">Elementos estructurales</p>
-                <div className="flex flex-wrap gap-2">
-                  <Button onClick={() => addElement('wall')} type="button" variant="outline">
-                    Pared
-                  </Button>
-                  <Button onClick={() => addElement('door')} type="button" variant="outline">
-                    Puerta
-                  </Button>
-                  <Button onClick={() => addElement('bar')} type="button" variant="outline">
-                    Barra
-                  </Button>
-                  <Button onClick={() => addElement('stairs')} type="button" variant="outline">
-                    Escalera
-                  </Button>
-                  <Button onClick={() => addElement('plant')} type="button" variant="outline">
-                    Planta
-                  </Button>
-                  <Button onClick={() => addElement('label')} type="button" variant="outline">
-                    Etiqueta
-                  </Button>
-                  <Button onClick={() => addElement('window')} type="button" variant="outline">
-                    Ventana
-                  </Button>
-                  <Button onClick={() => addElement('other')} type="button" variant="outline">
-                    Obstáculo
-                  </Button>
-                  <Button onClick={() => addElement('pillar')} type="button" variant="outline">
-                    Pilar
-                  </Button>
-                  <Button onClick={() => addElement('bathroom')} type="button" variant="outline">
-                    Baño
-                  </Button>
-                  <Button onClick={() => addElement('kitchen')} type="button" variant="outline">
-                    Cocina
-                  </Button>
-                  <Button onClick={() => addElement('exit')} type="button" variant="outline">
-                    Salida
-                  </Button>
+                <div className="grid grid-cols-2 gap-2">
+                  {([['wall', 'Pared', Square], ['door', 'Puerta', DoorOpen], ['bar', 'Barra', PanelTop], ['stairs', 'Escalera', StairUp], ['plant', 'Planta', LayoutGrid], ['pillar', 'Pilar', Grid2X2], ['bathroom', 'Baño', Square], ['kitchen', 'Cocina', Soup]] as const).map(([kind, label, Icon]) => (
+                    <Button className="h-auto justify-start gap-2 py-3" draggable onDragStart={(event) => event.dataTransfer.setData('application/x-floor-element', kind)} key={kind} onClick={() => addElement(kind)} type="button" variant="outline">
+                      <Icon className="size-4" /> {label}
+                    </Button>
+                  ))}
                 </div>
               </div>
               {activeArea && (
@@ -1279,6 +1252,14 @@ export function FloorPlanPage({
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </DialogRoot>
+      <DialogRoot onOpenChange={(open) => !open && setAddElementAt(undefined)} open={Boolean(addElementAt)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>Añadir al plano</DialogTitle><DialogDescription>Elige un elemento para colocarlo en el punto seleccionado.</DialogDescription></DialogHeader>
+          <div className="grid grid-cols-2 gap-2">
+            {([['wall', 'Pared', Square], ['door', 'Puerta', DoorOpen], ['bar', 'Barra', PanelTop], ['stairs', 'Escalera', StairUp], ['plant', 'Planta', LayoutGrid], ['pillar', 'Pilar', Grid2X2], ['bathroom', 'Baño', Square], ['kitchen', 'Cocina', Soup]] as const).map(([kind, label, Icon]) => <Button className="h-auto justify-start gap-2 py-4" key={kind} onClick={() => { addElement(kind, addElementAt); setAddElementAt(undefined) }} type="button" variant="outline"><Icon className="size-5" />{label}</Button>)}
+          </div>
         </DialogContent>
       </DialogRoot>
     </section>

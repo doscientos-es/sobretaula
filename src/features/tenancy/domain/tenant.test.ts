@@ -4,7 +4,6 @@ import { isTenantAdministrator, isTenantOperational } from './tenant'
 
 describe('isTenantOperational', () => {
   it('lets only active tenants operate', () => {
-    expect(isTenantOperational('trial')).toBe(false)
     expect(isTenantOperational('active')).toBe(true)
   })
 

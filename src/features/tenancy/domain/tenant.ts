@@ -1,6 +1,6 @@
 import type { Locale } from '@/shared/lib/i18n/locale'
 
-export const TENANT_STATUSES = ['setup_pending', 'trial', 'active', 'suspended'] as const
+export const TENANT_STATUSES = ['setup_pending', 'active', 'suspended'] as const
 export type TenantStatus = (typeof TENANT_STATUSES)[number]
 
 export const TENANT_ROLES = ['owner', 'manager', 'host', 'waiter', 'accountant'] as const
@@ -27,6 +27,5 @@ export interface Tenant {
 
 /** A suspended tenant keeps its data but stops serving the operational app. */
 export function isTenantOperational(status: TenantStatus): boolean {
-  // Payment activation moves the tenant to active. Trial is a legacy state.
   return status === 'active'
 }
