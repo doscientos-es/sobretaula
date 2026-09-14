@@ -1,5 +1,7 @@
 import { Button, Card, CardContent, CardHeader, CardTitle, Input } from '@doscientos/ui'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
+
+import { useAsyncEffect } from '@/shared/lib/react/use-async-effect'
 
 import {
   adjustLoyaltyPoints,
@@ -27,9 +29,7 @@ export function LoyaltyPage({ tenantId }: { tenantId: string }) {
       setFeedback('No se ha podido cargar fidelización.')
     }
   }, [page, tenantId])
-  useEffect(() => {
-    void load()
-  }, [load])
+  useAsyncEffect(load, [load])
   async function save() {
     if (!selected || !reason.trim() || !Number.isInteger(Number(points))) return
     try {

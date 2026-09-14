@@ -34,15 +34,15 @@ create table if not exists public.tenant_module_requests (
 insert into public.module_catalog(code, name, description, monthly_price_cents, is_addon)
 values
   ('core', 'Operativa', 'TPV, mesas, servicio, caja, carta y reservas básicas.', 0, false),
-  ('inventory', 'Inventario y escandallos', 'Ingredientes, recetas, costes, compras y stock.', 3900, true),
-  ('reservations_pro', 'Reservas Pro', 'Lista de espera, depósitos, recordatorios y no-shows.', 1900, true),
-  ('loyalty', 'Clientes y fidelización', 'Clientes, puntos, campañas y tarjetas regalo.', 1900, true),
-  ('workforce', 'Equipo y turnos', 'Fichajes, turnos, ausencias y propinas.', 2900, true),
-  ('finance', 'Finanzas', 'Facturación, conciliación, gastos y exportación contable.', 2900, true),
-  ('online_ordering', 'Pedidos online', 'Pedidos para recoger o entregar y carta pública.', 2900, true),
-  ('analytics', 'Estadística avanzada', 'Rentabilidad por plato y trabajador, previsiones y comparativas.', 3900, true),
-  ('automation', 'Automatizaciones', 'Alertas, tareas y comunicaciones automáticas.', 1900, true),
-  ('multi_venue', 'Multi-local', 'Catálogo compartido y métricas consolidadas.', 4900, true)
+  ('inventory', 'Inventario y escandallos', 'Ingredientes, recetas, costes, compras y stock.', 0, false),
+  ('reservations_pro', 'Reservas Pro', 'Lista de espera, depósitos, recordatorios y no-shows.', 0, false),
+  ('loyalty', 'Clientes y fidelización', 'Clientes, puntos, campañas y tarjetas regalo.', 0, false),
+  ('workforce', 'Equipo y turnos', 'Fichajes, turnos, ausencias y propinas.', 0, false),
+  ('finance', 'Finanzas', 'Facturación, conciliación, gastos y exportación contable.', 0, false),
+  ('online_ordering', 'Pedidos online', 'Pedidos para recoger o entregar y carta pública.', 0, false),
+  ('analytics', 'Estadística avanzada', 'Rentabilidad por plato y trabajador, previsiones y comparativas.', 0, false),
+  ('automation', 'Automatizaciones', 'Alertas, tareas y comunicaciones automáticas.', 0, false),
+  ('multi_venue', 'Multi-local', 'Catálogo compartido, permisos y métricas consolidadas.', 0, false)
 on conflict (code) do update set name = excluded.name, description = excluded.description,
   monthly_price_cents = excluded.monthly_price_cents, is_addon = excluded.is_addon;
 

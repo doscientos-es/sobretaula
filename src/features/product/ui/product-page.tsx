@@ -26,6 +26,7 @@ import {
 import { useEffect, useMemo, useState } from 'react'
 
 import type { DemandForecast } from '@/features/forecasting'
+import { useAsyncEffect } from '@/shared/lib/react/use-async-effect'
 
 import {
   addInventoryMovement,
@@ -189,7 +190,7 @@ export function ProductPage({
     }, 250)
     return () => window.clearTimeout(timeout)
   }, [ingredientSearchInput])
-  useEffect(() => {
+  useAsyncEffect(() => {
     let cancelled = false
     setIngredientLoading(true)
     setIngredientLoadError(false)
@@ -214,7 +215,7 @@ export function ProductPage({
     return () => {
       cancelled = true
     }
-  }, [ingredientPage, ingredientRefresh, ingredientSearch, ingredients.pageSize, tenantId])
+  }, [ingredientPage, ingredientRefresh, ingredientSearch, ingredients.pageSize, tenantId, venueId])
   const [name, setName] = useState('')
   const [unit, setUnit] = useState('kg')
   const [cost, setCost] = useState('')

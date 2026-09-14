@@ -24,17 +24,10 @@ export const getTenantModules = createServerFn({ method: 'GET' })
       throw new Error(`tenant_modules_subscription_failed:${subscriptionError.code}`)
     if (!subscription?.plan_id) return ['core']
 
-    const { data: entitlements, error } = await supabase
-      .from('plan_entitlements')
-      .select('module_code')
-      .eq('plan_id', subscription.plan_id)
-    if (error) throw new Error(`tenant_modules_entitlements_failed:${error.code}`)
-
-    const enabled = new Set<ModuleKey>(['core'])
-    for (const row of entitlements ?? []) {
-      if (MODULE_KEYS.includes(row.module_code as ModuleKey))
-        enabled.add(row.module_code as ModuleKey)
-    }
+    // Central includes every currently shipped module. Entitlements remain in
+    // the schema for future plan variants, but must not hide product areas
+    // from a paid Central tenant when that catalogue is incomplete or stale.
+    const enabled = new Set<ModuleKey>(MODULE_KEYS)
     const { data: overrides, error: overridesError } = await supabase
       .from('tenant_module_overrides')
       .select('module_code, enabled')

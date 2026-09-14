@@ -34,37 +34,59 @@ export function SchedulingBlocksPage({ tenantId, venueId }: { tenantId: string; 
   const [endsAt, setEndsAt] = useState('')
   const [areas, setAreas] = useState<SchedulingArea[]>([])
   const [areaId, setAreaId] = useState('')
+  const [pending, setPending] = useState(false)
+  const [feedback, setFeedback] = useState<string | null>(null)
   const load = useCallback(
-    () => void getSchedulingBlocks({ data: { tenantId, venueId } }).then(setBlocks),
+    () => getSchedulingBlocks({ data: { tenantId, venueId } }).then(setBlocks),
     [tenantId, venueId],
   )
   useEffect(() => {
-    load()
+    void load()
   }, [load])
   useEffect(() => {
     void getSchedulingAreas({ data: { tenantId, venueId } }).then(setAreas)
   }, [tenantId, venueId])
   async function submit(event: FormEvent) {
     event.preventDefault()
-    await createSchedulingBlock({
-      data: {
-        tenantId,
-        venueId,
-        areaId: areaId || null,
-        blockType: blockType as
-          | 'closure'
-          | 'vacation'
-          | 'private_event'
-          | 'maintenance'
-          | 'last_minute',
-        title,
-        startsAt: new Date(startsAt).toISOString(),
-        endsAt: new Date(endsAt).toISOString(),
-        visibleOnline: true,
-      },
-    })
-    setTitle('')
-    load()
+    if (pending) return
+    const start = new Date(startsAt)
+    const end = new Date(endsAt)
+    if (!startsAt || !endsAt || Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+      setFeedback('Indica una fecha de inicio y fin válidas.')
+      return
+    }
+    if (end <= start) {
+      setFeedback('La fecha de fin debe ser posterior al inicio.')
+      return
+    }
+    setPending(true)
+    setFeedback(null)
+    try {
+      await createSchedulingBlock({
+        data: {
+          tenantId,
+          venueId,
+          areaId: areaId || null,
+          blockType: blockType as
+            | 'closure'
+            | 'vacation'
+            | 'private_event'
+            | 'maintenance'
+            | 'last_minute',
+          title: title.trim(),
+          startsAt: start.toISOString(),
+          endsAt: end.toISOString(),
+          visibleOnline: true,
+        },
+      })
+      setTitle('')
+      setFeedback('Bloqueo creado.')
+      await load()
+    } catch {
+      setFeedback('No se ha podido crear el bloqueo.')
+    } finally {
+      setPending(false)
+    }
   }
   return (
     <section className="space-y-6">
@@ -143,8 +165,11 @@ export function SchedulingBlocksPage({ tenantId, venueId }: { tenantId: string; 
               type="datetime-local"
               value={endsAt}
             />
-            <Button type="submit">Crear bloqueo</Button>
+            <Button disabled={pending} type="submit">
+              {pending ? 'Creando…' : 'Crear bloqueo'}
+            </Button>
           </form>
+          {feedback && <output className="mt-3 block text-sm">{feedback}</output>}
         </CardContent>
       </Card>
       <Card>

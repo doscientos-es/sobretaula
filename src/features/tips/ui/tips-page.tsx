@@ -19,12 +19,13 @@ import {
   useFormFeedback,
   FormFeedback,
 } from '@doscientos/ui'
-import { CheckCircle2, CircleDollarSign, Pencil, Trash2 } from 'lucide-react'
+import { CheckCircle2, CircleDollarSign, Download, Pencil, Trash2 } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 
 import {
   closeTipsPeriod,
   deleteTipEntry,
+  exportTipsCsv,
   saveTipEntry,
   updateTipEntry,
   type getTipsOverview,
@@ -182,6 +183,31 @@ export function TipsPage({
             Apunta sólo el total al cerrar el día. El reparto se calcula por horas fichadas.
           </PageHeaderDescription>
         </div>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => {
+            const from = window.prompt('Exportar desde (AAAA-MM-DD)', quickPeriod('month').from)
+            const to =
+              from === null
+                ? null
+                : window.prompt('Exportar hasta (AAAA-MM-DD)', quickPeriod('month').to)
+            if (!from || !to) return
+            void exportTipsCsv({ data: { tenantId, venueId, from, to } })
+              .then((csv) => {
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
+                const url = URL.createObjectURL(blob)
+                const link = document.createElement('a')
+                link.href = url
+                link.download = `propinas-${from}-${to}.csv`
+                link.click()
+                URL.revokeObjectURL(url)
+              })
+              .catch(() => feedback.setError('No se ha podido exportar el bote.'))
+          }}
+        >
+          <Download aria-hidden="true" className="mr-2 size-4" /> Exportar CSV
+        </Button>
       </PageHeader>
       <div className="grid gap-4 md:grid-cols-3">
         <Card>

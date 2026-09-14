@@ -8,10 +8,11 @@ import {
   PageHeaderDescription,
   PageHeaderTitle,
 } from '@doscientos/ui'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 
 import { useLocale } from '@/shared/lib/i18n/locale-preference'
 import { createTranslator, formatMessage } from '@/shared/lib/i18n/messages'
+import { useAsyncEffect } from '@/shared/lib/react/use-async-effect'
 
 import {
   getNotificationJobs,
@@ -48,9 +49,7 @@ export function NotificationJobsPage({ tenantId }: { tenantId: string }) {
     }
   }, [page, tenantId])
 
-  useEffect(() => {
-    void loadJobs()
-  }, [loadJobs])
+  useAsyncEffect(loadJobs, [loadJobs])
 
   async function retry(jobId: string) {
     if (retryingJobId) return

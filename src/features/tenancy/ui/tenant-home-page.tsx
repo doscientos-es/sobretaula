@@ -63,6 +63,25 @@ export function TenantHomePage({
     suspended: 'tenant.status.suspended',
     trial: 'tenant.status.trial',
   } as const
+  const setupChecks = [
+    setupStatus.hasVenue,
+    setupStatus.hasFloorPlan,
+    setupStatus.hasMenu,
+    setupStatus.hasReservations,
+    setupStatus.hasTeam,
+  ]
+  const setupCompleteCount = setupChecks.filter(Boolean).length
+  const nextSetupStep = !setupStatus.hasVenue
+    ? 'Crea tu primer local'
+    : !setupStatus.hasFloorPlan
+      ? 'Prepara el plano de sala'
+      : !setupStatus.hasMenu
+        ? 'Añade tu carta'
+        : !setupStatus.hasReservations
+          ? 'Configura reservas'
+          : !setupStatus.hasTeam
+            ? 'Invita al equipo'
+            : 'Todo preparado'
 
   return (
     <section className="space-y-7">
@@ -224,6 +243,27 @@ export function TenantHomePage({
           </p>
         </CardHeader>
         <CardContent className="p-4 pt-3">
+          <div className="bg-primary/5 mb-4 rounded-xl border border-transparent p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold">{setupCompleteCount} de 5 pasos completados</p>
+                <p className="text-muted-foreground mt-1 text-xs">
+                  {nextSetupStep === 'Todo preparado'
+                    ? 'Puedes empezar tu primer servicio.'
+                    : `Siguiente paso recomendado: ${nextSetupStep}.`}
+                </p>
+              </div>
+              <span className="text-primary text-sm font-semibold">
+                {Math.round((setupCompleteCount / 5) * 100)}%
+              </span>
+            </div>
+            <progress
+              aria-label="Progreso de configuración"
+              className="bg-muted mt-3 h-2 w-full overflow-hidden rounded-full"
+              max={5}
+              value={setupCompleteCount}
+            />
+          </div>
           <ol className="grid gap-2.5 sm:grid-cols-2">
             <li className="border-border/70 bg-surface-subtle flex items-start gap-2.5 rounded-xl border px-3 py-2.5 shadow-[var(--ui-shadow-hairline)]">
               <span
@@ -258,11 +298,11 @@ export function TenantHomePage({
                 {setupStatus.hasFloorPlan && setupStatus.hasMenu ? '✓' : '2'}
               </span>
               <div className="min-w-0">
-                <p className="text-sm font-medium">Prepara plano y carta</p>
+                <p className="text-sm font-medium">Prepara el plano de sala</p>
                 <p className="text-muted-foreground mt-1 text-xs">
-                  {setupStatus.hasFloorPlan && setupStatus.hasMenu
-                    ? 'Plano y carta preparados.'
-                    : 'Mesas, zonas, productos y precios para el equipo.'}
+                  {setupStatus.hasFloorPlan
+                    ? 'Zonas y mesas preparadas.'
+                    : 'Dibuja zonas y mesas para sentar a tus clientes.'}
                 </p>
                 {venues[0] && (
                   <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
@@ -273,13 +313,15 @@ export function TenantHomePage({
                     >
                       Abrir plano
                     </Link>
-                    <Link
-                      className="text-primary inline-block text-xs font-medium underline underline-offset-4"
-                      params={{ slug: tenant.slug }}
-                      to="/t/$slug/carta"
-                    >
-                      Preparar carta
-                    </Link>
+                    {!setupStatus.hasMenu && (
+                      <Link
+                        className="text-primary inline-block text-xs font-medium underline underline-offset-4"
+                        params={{ slug: tenant.slug }}
+                        to="/t/$slug/carta"
+                      >
+                        Añadir carta
+                      </Link>
+                    )}
                   </div>
                 )}
               </div>

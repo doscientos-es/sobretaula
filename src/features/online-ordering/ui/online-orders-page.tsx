@@ -1,5 +1,7 @@
 import { Button, Card, CardContent, CardHeader, CardTitle } from '@doscientos/ui'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
+
+import { useAsyncEffect } from '@/shared/lib/react/use-async-effect'
 
 import { listOnlineOrders, updateOnlineOrderStatus } from '../application/online-orders'
 import type { OnlineOrderStatus } from '../domain/order-status'
@@ -27,9 +29,7 @@ export function OnlineOrdersPage({ tenantId, venueId }: { tenantId: string; venu
       setError('No se han podido cargar los pedidos online.')
     }
   }, [page, tenantId, venueId])
-  useEffect(() => {
-    void load()
-  }, [load])
+  useAsyncEffect(load, [load])
   async function advance(order: Order) {
     const status = next[order.status as OnlineOrderStatus]
     if (!status) return

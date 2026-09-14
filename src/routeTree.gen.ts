@@ -385,7 +385,9 @@ const TSlugLVenuePlanoRoute = TSlugLVenuePlanoRouteImport.update({
   id: '/plano',
   path: '/plano',
   getParentRoute: () => TSlugLVenueRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/t.$slug.l.$venue.plano.lazy').then((d) => d.Route),
+)
 const TSlugLVenueProductosRoute = TSlugLVenueProductosRouteImport.update({
   id: '/productos',
   path: '/productos',

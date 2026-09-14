@@ -23,6 +23,20 @@ export default defineConfig(({ mode }) => {
         '@': fileURLToPath(new URL('./src', import.meta.url)),
       },
     },
+    build: {
+      rollupOptions: {
+        output: {
+          codeSplitting: {
+            groups: [
+              { name: 'vendor-react', test: /node_modules.*react(?:-dom)?/ },
+              { name: 'vendor-ui', test: /node_modules.*@doscientos(?:\+|\/)ui/ },
+              { name: 'vendor-icons', test: /node_modules.*lucide-react/ },
+              { name: 'vendor-supabase', test: /node_modules.*@supabase(?:\+|\/)/ },
+            ],
+          },
+        },
+      },
+    },
     server: {
       port: 3000,
     },

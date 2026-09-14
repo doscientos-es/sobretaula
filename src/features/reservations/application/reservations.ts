@@ -13,6 +13,7 @@ import {
   type AvailabilityRule,
   type ReservationWindow,
 } from '../domain/availability'
+import { buildReservationsCsv } from '../domain/reservation-export'
 import { previewReservationCsv } from '../domain/reservation-import'
 
 const tenantInput = z.object({ tenantId: z.string().uuid() })
@@ -54,6 +55,10 @@ const publishReservationTermsInput = venueInput.extend({
   body: z.string().trim().min(1).max(10000),
   locale: z.enum(['es', 'ca']).default('es'),
   title: z.string().trim().min(1).max(160),
+})
+const reservationExportInput = venueInput.extend({
+  from: z.string().date(),
+  to: z.string().date(),
 })
 
 export interface ReservationService {
@@ -286,6 +291,66 @@ export const getReservationsForDate = createServerFn({ method: 'GET' })
           }
         : null,
     }))
+  })
+
+export const exportReservationsCsv = createServerFn({ method: 'GET' })
+  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .validator(reservationExportInput)
+  .handler(async ({ context, data }) => {
+    if (!['owner', 'manager'].includes(context.tenantMembership.role))
+      throw new Response('Forbidden', { status: 403 })
+    if (data.to < data.from) throw new Response('Invalid date range', { status: 422 })
+    const toExclusive = new Date(`${data.to}T00:00:00.000Z`)
+    toExclusive.setUTCDate(toExclusive.getUTCDate() + 1)
+    const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    const [reservationsResult, tenantResult] = await Promise.all([
+      supabase
+        .from('reservations')
+        .select('created_at, ends_at, guest_id, id, party_size, source, starts_at, status')
+        .eq('tenant_id', data.tenantId)
+        .eq('venue_id', data.venueId)
+        .gte('starts_at', `${data.from}T00:00:00.000Z`)
+        .lt('starts_at', toExclusive.toISOString())
+        .order('starts_at')
+        .order('id')
+        .limit(10_000),
+      supabase.from('tenants').select('timezone').eq('id', data.tenantId).single(),
+    ])
+    if (reservationsResult.error)
+      throw new Error(`reservation_export_failed:${reservationsResult.error.code}`)
+    if (tenantResult.error)
+      throw new Error(`reservation_export_timezone_failed:${tenantResult.error.code}`)
+    const guestIds = Array.from(
+      new Set(
+        (reservationsResult.data ?? [])
+          .map((reservation) => reservation.guest_id)
+          .filter((id): id is string => Boolean(id)),
+      ),
+    )
+    const guestsResult = guestIds.length
+      ? await supabase.from('guests').select('email, full_name, id, phone').in('id', guestIds)
+      : { data: [], error: null }
+    if (guestsResult.error)
+      throw new Error(`reservation_export_guests_failed:${guestsResult.error.code}`)
+    const guests = new Map((guestsResult.data ?? []).map((guest) => [guest.id, guest]))
+    return buildReservationsCsv(
+      (reservationsResult.data ?? []).map((reservation) => {
+        const guest = reservation.guest_id ? guests.get(reservation.guest_id) : undefined
+        return {
+          createdAt: reservation.created_at,
+          email: guest?.email ?? null,
+          endsAt: reservation.ends_at,
+          guestName: guest?.full_name ?? null,
+          guestPhone: guest?.phone ?? null,
+          id: reservation.id,
+          partySize: reservation.party_size,
+          source: reservation.source,
+          startsAt: reservation.starts_at,
+          status: reservation.status,
+        }
+      }),
+      { timezone: tenantResult.data.timezone ?? 'Europe/Madrid' },
+    )
   })
 
 export const getReservationEvents = createServerFn({ method: 'GET' })

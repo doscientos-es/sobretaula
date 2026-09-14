@@ -12,11 +12,12 @@ import {
   useFormFeedback,
 } from '@doscientos/ui'
 import { RefreshCw } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 import { cancelReservation, markReservationNoShow } from '@/features/service'
 import { zonedLocalToIso } from '@/shared/lib/date/zoned-time'
 import type { Locale } from '@/shared/lib/i18n/locale'
+import { useAsyncEffect } from '@/shared/lib/react/use-async-effect'
 
 import {
   getReservationEvents,
@@ -156,17 +157,20 @@ export function ReservationAgendaCard({
     }
   }, [agendaDate, agendaRefresh, refreshToken, setError, tenantId, venueId])
 
-  useEffect(() => {
+  useAsyncEffect(() => {
     if (agendaSearch?.date && agendaSearch.date !== agendaDate) setAgendaDate(agendaSearch.date)
   }, [agendaSearch?.date, agendaDate])
 
-  useEffect(() => {
+  const refreshAgenda = useCallback(() => {
+    setAgendaLoading(true)
+    setAgendaRefresh((value) => value + 1)
+  }, [])
+  useAsyncEffect(() => {
     const interval = window.setInterval(() => {
-      setAgendaLoading(true)
-      setAgendaRefresh((value) => value + 1)
+      refreshAgenda()
     }, 60_000)
     return () => window.clearInterval(interval)
-  }, [])
+  }, [refreshAgenda])
 
   async function cancelAgendaReservation(reservationId: string) {
     if (feedback.pending) return

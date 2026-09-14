@@ -12,6 +12,11 @@ cuando tiene código, pruebas proporcionales y evidencia reproducible. Una
 migración, una pantalla o un test unitario no equivalen por sí solos a
 validación integrada, piloto, aprobación legal ni despliegue remoto.
 
+Leyenda: `[HECHO]` = código y evidencia local proporcional; `[EN CURSO]` =
+parte operativa con cierre interno pendiente; `[PENDIENTE]` = trabajo interno
+no cerrado; `[EXTERNO]` = gate que depende de asesoría, piloto, proveedor o del
+proyecto remoto autorizado.
+
 ## Estado de partida y límites
 
 - Ya existe base de tenancy/Auth/roles, plano y servicio, reservas públicas e
@@ -50,12 +55,12 @@ CI básica verde y gates externos con propietario y fecha.
 
 ### Días 8–14 · Activación del restaurante
 
-- Convertir onboarding en un recorrido único: identidad fiscal, local,
-  idioma/zona horaria, roles, zonas, mesas/plano, impuestos, carta, turnos y
-  checklist del primer servicio.
+- [EN CURSO] El asistente ya cubre identidad fiscal, local, idioma/zona horaria
+  y equipo; cerrar en un recorrido único las dependencias de zonas, mesas/plano,
+  impuestos, carta, turnos y checklist del primer servicio.
 - Añadir progreso, dependencias, reanudación, estados vacío/error/offline y
   validación server-side; no publicar reservas si falta capacidad o turnos.
-- Terminar importación de productos, modificadores y precios con preview,
+- [EN CURSO] Importación de productos, modificadores y precios con preview,
   errores por fila, límite de tamaño y persistencia atómica por carga.
 - Propagar branding por tenant a reservas, documentos y emails; no convertirlo
   en tema global.
@@ -116,13 +121,13 @@ corrección deja rastro.
 
 - Verificar terminal/PIN, pausas, cambios de centro, offline personal, límites
   de intentos, eventos inmutables y portal individual.
-- Cerrar bote diario y periodos flexibles: total contado al final del día,
+- [HECHO local / EXTERNO X2] Bote diario y periodos flexibles: total contado al final del día,
   participantes, minutos trabajados, reparto proporcional, redondeo explicado
   y ajustes auditados.
-- Implementar CSV/JSON consistentes para ventas, caja, pagos, facturas,
+- [EN CURSO] CSV/JSON consistentes para ventas, caja, pagos, facturas,
   fichajes, propinas, reservas y clientes; incluir versión, zona horaria,
   filtros, encabezados estables y permisos.
-- Definir retención, anonimización y acceso a alergias/notas; separar operación
+- [PENDIENTE / EXTERNO X2-X3] Definir retención, anonimización y acceso a alergias/notas; separar operación
   de marketing. Validar formatos con gestoría y asesoría laboral.
 
 Salida: owner/manager descarga un paquete interpretable, sujeto a aprobación
@@ -195,10 +200,20 @@ Los gates X no se cierran con mocks, tests locales, una Preview, una migración
 existente ni una pantalla funcional. Si falla uno, queda `bloqueado` con causa,
 propietario y siguiente acción; no se rebaja silenciosamente el alcance.
 
+### Estado de gates externos a 2026-09-14
+
+Todos los gates X están `[EXTERNO / ABIERTO]`. El repositorio contiene
+preparación y documentación para X1, X2, X3 y X7, y trabajo local para X4 y X5,
+pero no existe todavía aprobación escrita de asesoría, acta de piloto,
+validación remota autorizada ni certificado/expediente fiscal aplicado. X6 queda
+bloqueado hasta elegir proveedor y obtener consentimiento. Ningún `HECHO local`
+de este plan cierra un gate X.
+
 ## Backlog priorizado
 
-- [~] **P0.1 Activación:** onboarding base y equipo disponibles; falta recorrido
-  único con turnos, zonas, carta, impuestos y primer servicio.
+- [~] **P0.1 Activación:** onboarding guiado por pasos, progreso, revisión final y
+  borrador local implementados; queda completar desde el producto las dependencias
+  de zonas, mesas/plano, impuestos, carta, turnos y checklist del primer servicio.
 - [~] **P0.2 Reservas internas:** CRUD de turnos y agenda con búsqueda, estado,
   reprogramación, historial, filtros persistidos en URL e idempotencia de
   creación preparados y cubiertos por pruebas de dominio; faltan bloques con
@@ -208,11 +223,14 @@ propietario y siguiente acción; no se rebaja silenciosamente el alcance.
 - [ ] **P0.4 Seguridad:** RLS, carreras, idempotencia, auditoría y restore aislado.
 - [ ] **P1.1 Sala/cocina:** Ahora, KDS completo, handover y tablet/móvil.
 - [~] **P1.2 Cuenta/caja:** dominio preparado; falta migración autorizada y humo.
-- [ ] **P1.3 Fichaje/propinas:** cierre laboral, reparto por tiempo y exportación.
+- [~] **P1.3 Fichaje/propinas:** terminal, portal, auditoría y bote con reparto
+  proporcional por minutos implementados; falta exportación de propinas,
+  validación operativa y X2.
 - [ ] **P1.4 Fiscalidad:** VERI*FACTU E2E en test; prod solo tras X1/X7.
-- [~] **P1.5 Privacidad/exportaciones:** exportaciones de ventas, caja, jornada y
-  contactos operativas con rol y metadatos de versión/zona horaria; faltan
-  reservas/propinas, retención/anonimización y validación externa del formato.
+- [~] **P1.5 Privacidad/exportaciones:** ventas, caja, jornada, contactos y
+  reservas tienen exportación CSV con rol, versión, instante, zona horaria y
+  columnas estables; falta exportación equivalente de propinas, retención/
+  anonimización y validación externa del formato.
 - [~] **P2.1 Importación:** CSV con productos y modificadores, preview, errores por
   fila y RPC atómico preparados; falta aplicar la migración y prueba integrada.
 - [~] **P2.2 Reserva pública:** flujo, estados vacíos, gestión por token y emails

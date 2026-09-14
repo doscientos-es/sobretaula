@@ -1,4 +1,5 @@
 import { createServerFn } from '@tanstack/react-start'
+import { z } from 'zod'
 
 import { authMiddleware } from '@/features/auth/infrastructure/server/auth-middleware'
 import {
@@ -10,6 +11,7 @@ import { paginationRange } from '@/shared/lib/pagination'
 import { createRequestSupabaseClient } from '@/shared/lib/supabase/server/create-server-client'
 
 import { distributeTips } from '../domain/tips'
+import { buildTipsCsv } from '../domain/tips-export'
 import {
   closeTipsInput,
   deleteTipInput,
@@ -17,6 +19,7 @@ import {
   tipsInput,
   updateTipInput,
 } from './tips-schema'
+const tipsExportInput = tipsInput.extend({ from: z.string().date(), to: z.string().date() })
 const middleware = [
   authMiddleware,
   tenantMembershipMiddleware,
@@ -131,6 +134,44 @@ export const saveTipEntry = createServerFn({ method: 'POST' })
       })
     if (error) throw new Error(`tips_save_failed:${error.code}`)
     return { saved: true }
+  })
+export const exportTipsCsv = createServerFn({ method: 'GET' })
+  .middleware(middleware)
+  .validator(tipsExportInput)
+  .handler(async ({ context, data }) => {
+    manager(context.tenantMembership.role)
+    if (data.to < data.from) throw new Response('Invalid date range', { status: 422 })
+    const db = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    const [entriesResult, profilesResult, tenantResult] = await Promise.all([
+      db
+        .from('tip_pool_entries')
+        .select('amount_cents, created_at, id, note, paid_at, tip_date, created_by')
+        .eq('tenant_id', data.tenantId)
+        .eq('venue_id', data.venueId)
+        .gte('tip_date', data.from)
+        .lte('tip_date', data.to)
+        .order('tip_date')
+        .order('id'),
+      db.from('profiles').select('user_id, display_name'),
+      db.from('tenants').select('timezone').eq('id', data.tenantId).single(),
+    ])
+    if (entriesResult.error || profilesResult.error || tenantResult.error)
+      throw new Error('tips_export_failed')
+    const names = new Map(
+      (profilesResult.data ?? []).map((profile) => [profile.user_id, profile.display_name]),
+    )
+    return buildTipsCsv(
+      (entriesResult.data ?? []).map((entry) => ({
+        amountCents: Number(entry.amount_cents),
+        createdAt: entry.created_at,
+        date: entry.tip_date,
+        id: entry.id,
+        note: entry.note,
+        paidAt: entry.paid_at,
+        recordedBy: names.get(entry.created_by) ?? 'Usuario sin perfil',
+      })),
+      { timezone: tenantResult.data.timezone ?? 'Europe/Madrid' },
+    )
   })
 export const updateTipEntry = createServerFn({ method: 'POST' })
   .middleware(middleware)

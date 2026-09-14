@@ -8,7 +8,9 @@ import {
   FieldLabel,
   Input,
 } from '@doscientos/ui'
-import { useCallback, useEffect, useState, type FormEvent } from 'react'
+import { useCallback, useState, type FormEvent } from 'react'
+
+import { useAsyncEffect } from '@/shared/lib/react/use-async-effect'
 
 import {
   createGuestCampaign,
@@ -21,6 +23,7 @@ export function CampaignsPage({ tenantId }: { tenantId: string }) {
   const [campaigns, setCampaigns] = useState<CampaignSummary[]>([])
   const [loading, setLoading] = useState(true)
   const [feedback, setFeedback] = useState<string | null>(null)
+  const [pendingAction, setPendingAction] = useState<string | null>(null)
   const [page, setPage] = useState(1)
   const [total, setTotal] = useState(0)
   const load = useCallback(async () => {
@@ -35,9 +38,7 @@ export function CampaignsPage({ tenantId }: { tenantId: string }) {
       setLoading(false)
     }
   }, [page, tenantId])
-  useEffect(() => {
-    void load()
-  }, [load])
+  useAsyncEffect(load, [load])
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const values = new FormData(event.currentTarget)
@@ -46,6 +47,8 @@ export function CampaignsPage({ tenantId }: { tenantId: string }) {
       return typeof field === 'string' ? field : fallback
     }
     setFeedback(null)
+    if (pendingAction) return
+    setPendingAction('save')
     try {
       await createGuestCampaign({
         data: {
@@ -60,16 +63,22 @@ export function CampaignsPage({ tenantId }: { tenantId: string }) {
       setPage(1)
     } catch {
       setFeedback('No se ha podido crear la campaña.')
+    } finally {
+      setPendingAction(null)
     }
   }
   async function sendCampaign(campaignId: string) {
     setFeedback(null)
+    if (pendingAction) return
+    setPendingAction(campaignId)
     try {
       await updateGuestCampaignStatus({ data: { tenantId, campaignId, status: 'sent' } })
       setFeedback('Campaña enviada a los contactos con consentimiento.')
       await load()
     } catch {
       setFeedback('No se ha podido enviar la campaña.')
+    } finally {
+      setPendingAction(null)
     }
   }
   return (
@@ -117,7 +126,9 @@ export function CampaignsPage({ tenantId }: { tenantId: string }) {
               </select>
             </Field>
             <div className="flex items-end">
-              <Button type="submit">Guardar borrador</Button>
+              <Button disabled={pendingAction !== null} type="submit">
+                {pendingAction === 'save' ? 'Guardando…' : 'Guardar borrador'}
+              </Button>
             </div>
           </form>
           {feedback && <output className="mt-3 block text-sm">{feedback}</output>}
@@ -145,8 +156,13 @@ export function CampaignsPage({ tenantId }: { tenantId: string }) {
                     {(campaign.attributedRevenueCents / 100).toFixed(2)} € atribuibles
                   </span>
                   {campaign.status === 'draft' ? (
-                    <Button onClick={() => void sendCampaign(campaign.id)} size="sm" type="button">
-                      Marcar enviada
+                    <Button
+                      disabled={pendingAction !== null}
+                      onClick={() => void sendCampaign(campaign.id)}
+                      size="sm"
+                      type="button"
+                    >
+                      {pendingAction === campaign.id ? 'Enviando…' : 'Marcar enviada'}
                     </Button>
                   ) : null}
                 </li>

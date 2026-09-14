@@ -1,7 +1,7 @@
 import { createFileRoute, notFound } from '@tanstack/react-router'
 
 import { tenantRouteState } from '@/app/tenant-route-loader'
-import { FloorPlanPage, getFloorPlan } from '@/features/floor-plan'
+import { getFloorPlan } from '@/features/floor-plan'
 import { loadVenueRouteContext } from '@/features/venues'
 
 export const Route = createFileRoute('/t/$slug/l/$venue/plano')({
@@ -15,12 +15,5 @@ export const Route = createFileRoute('/t/$slug/l/$venue/plano')({
       venue,
     }
   },
-  component: FloorPlanRoute,
   ...tenantRouteState,
 })
-
-function FloorPlanRoute() {
-  const { data, tenant, venue } = Route.useLoaderData()
-
-  return <FloorPlanPage data={data} tenantId={tenant.id} venueId={venue.id} />
-}

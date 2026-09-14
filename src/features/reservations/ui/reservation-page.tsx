@@ -32,6 +32,7 @@ import { reservationServiceErrorMessage } from '../application/reservation-servi
 import {
   createReservation,
   createReservationService,
+  exportReservationsCsv,
   importReservationCsv,
   publishReservationTerms,
   type ReservationService,
@@ -97,6 +98,33 @@ export function ReservationPage({
   const [reservationOperationId, setReservationOperationId] = useState(() => crypto.randomUUID())
   const [agendaRefreshToken, setAgendaRefreshToken] = useState(0)
   const [newReservationOpen, setNewReservationOpen] = useState(false)
+  const [exportFrom, setExportFrom] = useState(() => new Date().toISOString().slice(0, 10))
+  const [exportTo, setExportTo] = useState(() => new Date().toISOString().slice(0, 10))
+  const [exporting, setExporting] = useState(false)
+
+  async function exportReservations() {
+    if (exportTo < exportFrom) {
+      feedback.setError('El final de la exportación debe ser posterior al inicio.')
+      return
+    }
+    setExporting(true)
+    try {
+      const content = await exportReservationsCsv({
+        data: { from: exportFrom, tenantId, to: exportTo, venueId },
+      })
+      const url = URL.createObjectURL(new Blob([content], { type: 'text/csv;charset=utf-8' }))
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `sobretaula-reservas-${exportFrom}-${exportTo}.csv`
+      link.click()
+      URL.revokeObjectURL(url)
+      feedback.setSuccess('CSV de reservas descargado.')
+    } catch {
+      feedback.setError('No se ha podido exportar la agenda de reservas.')
+    } finally {
+      setExporting(false)
+    }
+  }
 
   async function loadReservationFile(file: File | undefined) {
     if (!file) return
@@ -239,6 +267,42 @@ export function ReservationPage({
         </TabsList>
         <TabsPanels>
           <TabsContent id="agenda">
+            <Card className="mb-5">
+              <CardHeader>
+                <CardTitle>Exportar agenda</CardTitle>
+                <CardDescription>
+                  Descarga las reservas del periodo para operación y revisión. No incluye mesas ni
+                  tokens de gestión.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-wrap items-end gap-3">
+                <Field>
+                  <FieldLabel htmlFor="reservation-export-from">Desde</FieldLabel>
+                  <Input
+                    id="reservation-export-from"
+                    onChange={(event) => setExportFrom(event.target.value)}
+                    type="date"
+                    value={exportFrom}
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="reservation-export-to">Hasta</FieldLabel>
+                  <Input
+                    id="reservation-export-to"
+                    onChange={(event) => setExportTo(event.target.value)}
+                    type="date"
+                    value={exportTo}
+                  />
+                </Field>
+                <Button
+                  disabled={exporting}
+                  onClick={() => void exportReservations()}
+                  type="button"
+                >
+                  {exporting ? 'Preparando exportación…' : 'Descargar CSV'}
+                </Button>
+              </CardContent>
+            </Card>
             {services.length > 0 ? (
               <ReservationAgendaCard
                 {...(agendaSearch ? { agendaSearch } : {})}

@@ -47,6 +47,11 @@ export function ChannelPriceCard({
           onSubmit={(event) => {
             event.preventDefault()
             if (feedback.pending) return
+            const parsedPrice = Number(price)
+            if (!itemId || !Number.isFinite(parsedPrice) || parsedPrice < 0) {
+              feedback.setError('Selecciona un producto e introduce un precio válido.')
+              return
+            }
             feedback.setPending()
             void setMenuChannelPrice({
               data: {
@@ -55,7 +60,7 @@ export function ChannelPriceCard({
                 menuItemId: itemId,
                 channel,
                 isAvailable,
-                priceCents: Math.round(Number(price) * 100),
+                priceCents: Math.round(parsedPrice * 100),
               },
             })
               .then(() => {

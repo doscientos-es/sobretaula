@@ -44,12 +44,12 @@ el dedo, el producto no se usa.
 | Motor de reservas y web pública            | F3/F8 | Núcleo implementado; gates de producto pendientes          |
 | Vista de servicio                          | F4    | Implementado; smoke autenticado pendiente                  |
 | Cuenta, TPV, cocina, caja e informes       | F5/F7 | Implementado en navegador/tablet; hardware fuera           |
-| Facturación + VERI\*FACTU                  | F6    | Modo test; producción bloqueada                            |
-| Control horario y empleados                | F9    | Indicativo; revisión legal pendiente                       |
-| Inventario, escandallos y compras          | F10   | Implementado parcialmente; validación operativa pendiente  |
-| Pedidos online                             | F11   | Flujo y estados implementados; piloto pendiente            |
-| Clientes, campañas, fidelización y regalos | F11   | Núcleo implementado; políticas y validación pendientes     |
-| Analítica, previsión y multi-local         | F11   | Núcleo implementado; validación con datos reales pendiente |
+| Facturación + VERI\*FACTU                  | F6    | Incluido en Central; producción fiscal bloqueada           |
+| Control horario y empleados                | F9    | Incluido en Central; revisión legal pendiente              |
+| Inventario, escandallos y compras          | F10   | Incluido en Central; validación operativa pendiente        |
+| Pedidos online                             | F11   | Incluido en Central; piloto pendiente                      |
+| Clientes, campañas, fidelización y regalos | F11   | Incluido en Central; políticas y validación pendientes     |
+| Analítica, previsión y multi-local         | F11   | Incluido en Central; validación con datos reales pendiente |
 
 La regla de escalabilidad es estructural, no aspiracional: cada módulo es un
 vertical en `src/features/<modulo>` con su dominio, aplicación, infraestructura
@@ -65,9 +65,10 @@ primer local; cada local adicional suma 75 EUR/mes netos. Se reservan hasta diez
 plazas **Founders** a 99 EUR/mes netos mientras mantengan la suscripción. La
 tarifa Founder no es una promoción temporal ni se aplica a los locales extra.
 
-Las capacidades incluidas en el MVP ampliado se entregan como un flujo
-integrado. Los complementos comerciales se definirán después de validar con
-el cliente qué partes deben ser opcionales.
+Las capacidades actuales se entregan como un único módulo **Central**, sin
+recargos por funcionalidad. Los únicos suplementos definidos son los locales
+adicionales y los costes de proveedores externos contratados por el cliente.
+No se mostrarán addons de producto mientras esta política esté vigente.
 
 La ampliación de reservas (agenda, autoservicio público, avisos, espera, ficha de
 cliente y grupos) tiene su desglose de datos, seguridad, entregas y validación en

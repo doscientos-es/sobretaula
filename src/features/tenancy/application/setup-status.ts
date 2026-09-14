@@ -64,7 +64,9 @@ export const getTenantSetupStatus = createServerFn({ method: 'GET' })
     const failed = [team, categories, items, areas, tables, services].find((result) => result.error)
     if (failed?.error) throw new Error(`tenant_setup_status_failed:${failed.error.code}`)
     return {
-      hasTeam: (team.count ?? 0) > 0,
+      // The owner is created during onboarding; this step is complete only
+      // when at least one operational teammate has been invited.
+      hasTeam: (team.count ?? 0) > 1,
       hasFloorPlan: (areas.count ?? 0) > 0 && (tables.count ?? 0) > 0,
       hasMenu: (categories.count ?? 0) > 0 && (items.count ?? 0) > 0,
       hasReservations: (services.count ?? 0) > 0,

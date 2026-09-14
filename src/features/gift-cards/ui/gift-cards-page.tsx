@@ -1,5 +1,7 @@
 import { Button, Card, CardContent, CardHeader, CardTitle, Input } from '@doscientos/ui'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
+
+import { useAsyncEffect } from '@/shared/lib/react/use-async-effect'
 
 import {
   cancelGiftCard,
@@ -16,6 +18,7 @@ export function GiftCardsPage({ tenantId }: { tenantId: string }) {
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [hasMore, setHasMore] = useState(false)
+  const [pendingAction, setPendingAction] = useState<'issue' | 'redeem' | null>(null)
   const load = useCallback(
     async (requestedPage = page, requestedSearch = search) => {
       try {
@@ -35,24 +38,35 @@ export function GiftCardsPage({ tenantId }: { tenantId: string }) {
     },
     [page, search, tenantId],
   )
-  useEffect(() => {
-    void load()
-  }, [load])
+  useAsyncEffect(load, [load])
   async function run(action: 'issue' | 'redeem') {
     const euros = Number(amount.replace(',', '.'))
     const value = Math.round(euros * 100)
-    if (!code.trim() || !Number.isFinite(euros) || euros <= 0 || value <= 0) return
+    if (code.trim().length < 4 || !Number.isFinite(euros) || euros <= 0 || value <= 0) {
+      setFeedback('Introduce un código de al menos 4 caracteres y un importe mayor que 0.')
+      return
+    }
+    setPendingAction(action)
     try {
       if (action === 'issue') await issueGiftCard({ data: { tenantId, code, amountCents: value } })
       else await redeemGiftCard({ data: { tenantId, code, amountCents: value } })
       setFeedback(action === 'issue' ? 'Tarjeta emitida.' : 'Tarjeta canjeada.')
       setCode('')
       setAmount('')
-      await load()
-    } catch {
+      await load(1)
+      setPage(1)
+    } catch (error) {
       setFeedback(
-        action === 'issue' ? 'No se ha podido emitir.' : 'Saldo insuficiente o tarjeta no válida.',
+        action === 'issue'
+          ? error instanceof Error && error.message.includes('23505')
+            ? 'Ese código ya existe. Usa otro código para emitir la tarjeta.'
+            : error instanceof Error && error.message.includes('Forbidden')
+              ? 'Tu rol no permite emitir tarjetas regalo.'
+              : 'No se ha podido emitir la tarjeta. Revisa los datos e inténtalo de nuevo.'
+          : 'Saldo insuficiente o tarjeta no válida.',
       )
+    } finally {
+      setPendingAction(null)
     }
   }
   return (
@@ -65,11 +79,19 @@ export function GiftCardsPage({ tenantId }: { tenantId: string }) {
           <p className="text-muted-foreground text-sm">
             Emite ingresos por adelantado y controla cada canje con saldo real.
           </p>
-          <div className="mt-3 flex flex-wrap gap-2">
+          <form
+            className="mt-3 flex flex-wrap gap-2"
+            onSubmit={(event) => {
+              event.preventDefault()
+              void run('issue')
+            }}
+          >
             <Input
               aria-label="Código de tarjeta"
+              autoComplete="off"
               onChange={(e) => setCode(e.target.value)}
               placeholder="Código"
+              required
               value={code}
             />
             <Input
@@ -79,17 +101,23 @@ export function GiftCardsPage({ tenantId }: { tenantId: string }) {
               inputMode="decimal"
               max="10000"
               min="0.01"
+              required
               step="0.01"
               type="text"
               value={amount}
             />
-            <Button onClick={() => void run('issue')} type="button">
-              Emitir
+            <Button disabled={pendingAction !== null} type="submit">
+              {pendingAction === 'issue' ? 'Emitiendo…' : 'Emitir'}
             </Button>
-            <Button onClick={() => void run('redeem')} type="button" variant="outline">
-              Canjear
+            <Button
+              disabled={pendingAction !== null}
+              onPress={() => void run('redeem')}
+              type="button"
+              variant="outline"
+            >
+              {pendingAction === 'redeem' ? 'Canjeando…' : 'Canjear'}
             </Button>
-          </div>
+          </form>
           {feedback ? <output className="mt-2 block text-sm">{feedback}</output> : null}
         </CardContent>
       </Card>

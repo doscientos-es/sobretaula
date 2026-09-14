@@ -1,2 +1,2 @@
-export { closeTipsPeriod, getTipsOverview, saveTipEntry } from './application/tips'
+export { closeTipsPeriod, exportTipsCsv, getTipsOverview, saveTipEntry } from './application/tips'
 export { distributeTips } from './domain/tips'

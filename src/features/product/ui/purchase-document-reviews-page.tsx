@@ -1,6 +1,8 @@
 import { Button, Card, CardContent, CardHeader, CardTitle, Input } from '@doscientos/ui'
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
 
+import { useAsyncEffect } from '@/shared/lib/react/use-async-effect'
+
 import { listIngredients, listSuppliers } from '../application/product'
 import {
   applyPurchaseDocumentReview,
@@ -42,9 +44,7 @@ export function PurchaseDocumentReviewsPage({
       setError('No se han podido cargar las revisiones.')
     }
   }, [page, tenantId, venueId])
-  useEffect(() => {
-    void load()
-  }, [load])
+  useAsyncEffect(load, [load])
   useEffect(() => {
     void Promise.all([
       listIngredients({

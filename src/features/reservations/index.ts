@@ -7,6 +7,7 @@ export {
 export {
   createReservation,
   createReservationService,
+  exportReservationsCsv,
   updateReservationService,
   getReservationsForDate,
   getReservationServices,

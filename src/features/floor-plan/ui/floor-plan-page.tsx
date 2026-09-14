@@ -23,6 +23,7 @@ import {
   type KeyboardEvent,
 } from 'react'
 
+import { useAsyncEffect } from '@/shared/lib/react/use-async-effect'
 import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
 
 import {
@@ -114,7 +115,7 @@ export function FloorPlanPage({
     ? (selectFloorPlanVersion(data.versions, activeArea.id) ??
       data.versions.find((version) => version.areaId === activeArea.id))
     : undefined
-  useEffect(() => {
+  useAsyncEffect(() => {
     if (data.areas.length > 0 || initializing) return
     setInitializing(true)
     void createInitialFloorPlan({
