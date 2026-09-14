@@ -4,8 +4,10 @@ import { z } from 'zod'
 
 import { authMiddleware } from '@/features/auth/infrastructure/server/auth-middleware'
 import { tenantBySlugQuery } from '@/features/tenancy/application/get-tenant-by-slug'
-import { tenantMembershipMiddleware } from '@/features/tenancy/application/require-tenant-membership'
-import { operationalTenantMiddleware } from '@/features/tenancy/application/require-operational-tenant'
+import {
+  operationalTenantMiddleware,
+  tenantMembershipMiddleware,
+} from '@/features/tenancy/application/require-tenant-membership'
 import { createRequestSupabaseClient } from '@/shared/lib/supabase/server/create-server-client'
 import { isValidVenueSlug, parseVenueSlug } from '@/shared/lib/tenant/venue-slug'
 

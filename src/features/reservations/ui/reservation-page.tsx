@@ -483,7 +483,10 @@ export function ReservationPage({
                     {editingServiceId ? 'Editar turno' : 'Configura el primer turno'}
                   </CardTitle>
                   <CardDescription>
-                    El pacing inicial admite 20 comensales y 6 reservas cada 15 minutos.
+                    Un turno es una regla semanal que se repite automáticamente. Por ejemplo, “Cena
+                    · viernes” sirve para todos los viernes; no tienes que crear uno por cada fecha.
+                    Las reservas solo se abrirán dentro del plazo máximo configurado (ahora mismo,
+                    90 días).
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -496,6 +499,10 @@ export function ReservationPage({
                         required
                         value={serviceName}
                       />
+                      <FieldDescription>
+                        Pon un nombre fácil de reconocer, como “Comida” o “Cena”. Puedes repetirlo
+                        en otros días.
+                      </FieldDescription>
                     </Field>
                     <Field>
                       <FieldLabel htmlFor="service-weekday">Día de la semana</FieldLabel>
@@ -510,6 +517,10 @@ export function ReservationPage({
                           </option>
                         ))}
                       </select>
+                      <FieldDescription>
+                        Este turno se repetirá cada semana en el día elegido. Crea otro turno solo
+                        si ese día tiene un horario o unas condiciones diferentes.
+                      </FieldDescription>
                     </Field>
                     <div className="grid gap-4 sm:grid-cols-2">
                       <Field>
@@ -521,6 +532,9 @@ export function ReservationPage({
                           type="time"
                           value={serviceStartsAt}
                         />
+                        <FieldDescription>
+                          Hora a partir de la que se pueden reservar mesas.
+                        </FieldDescription>
                       </Field>
                       <Field>
                         <FieldLabel htmlFor="service-ends-at">Cierre del turno</FieldLabel>
@@ -531,6 +545,9 @@ export function ReservationPage({
                           type="time"
                           value={serviceEndsAt}
                         />
+                        <FieldDescription>
+                          Hora límite para iniciar reservas de este turno.
+                        </FieldDescription>
                       </Field>
                       <Field>
                         <FieldLabel htmlFor="service-slot-minutes">
@@ -545,6 +562,10 @@ export function ReservationPage({
                           type="number"
                           value={serviceSlotMinutes}
                         />
+                        <FieldDescription>
+                          Cada cuánto aparece una hora de llegada: con 30 minutos, por ejemplo,
+                          20:00, 20:30 y 21:00. No es la duración de la comida.
+                        </FieldDescription>
                       </Field>
                       <Field>
                         <FieldLabel htmlFor="service-max-covers">
@@ -558,6 +579,10 @@ export function ReservationPage({
                           type="number"
                           value={serviceMaxCovers}
                         />
+                        <FieldDescription>
+                          Máximo de personas que pueden entrar en esa franja de llegada. Ejemplo: 20
+                          permite aceptar 2 reservas de 10, pero no una de 21.
+                        </FieldDescription>
                       </Field>
                       <Field>
                         <FieldLabel htmlFor="service-max-reservations">
@@ -573,6 +598,10 @@ export function ReservationPage({
                           type="number"
                           value={serviceMaxReservations}
                         />
+                        <FieldDescription>
+                          Máximo de reservas que pueden empezar en esa misma franja, aunque aún
+                          quede aforo. Ejemplo: 6 permite hasta 6 grupos cada 15 minutos.
+                        </FieldDescription>
                       </Field>
                     </div>
                     <FormFeedback pendingLabel="Creando turno…" state={feedback.state} />
@@ -597,8 +626,9 @@ export function ReservationPage({
                   <CardHeader>
                     <CardTitle>Turnos configurados</CardTitle>
                     <CardDescription>
-                      Estas reglas determinan cuándo se aceptan reservas y cuánta capacidad se
-                      ofrece.
+                      Estas reglas se repiten cada semana y determinan cuándo se aceptan reservas y
+                      cuánta capacidad se ofrece en cada intervalo. Para cerrar una fecha concreta
+                      (festivo, vacaciones o evento), usa un bloqueo o cierre excepcional.
                     </CardDescription>
                   </CardHeader>
                   <CardContent>

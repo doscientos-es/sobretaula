@@ -136,8 +136,18 @@ export function RegisterPage() {
       </section>
       <footer className="z-[1] flex flex-wrap justify-center gap-x-4 gap-y-3 text-xs text-[#e8f6ee]/70">
         <span>© {new Date().getFullYear()} SobreTaula</span>
-        <Link className="text-[#e8f6ee] underline-offset-[0.2em] focus-visible:outline-2 focus-visible:outline-[#d7f36b] focus-visible:outline-offset-2" to="/legal/privacidad">Privacidad</Link>
-        <Link className="text-[#e8f6ee] underline-offset-[0.2em] focus-visible:outline-2 focus-visible:outline-[#d7f36b] focus-visible:outline-offset-2" to="/legal/condiciones-saas">Condiciones</Link>
+        <Link
+          className="text-[#e8f6ee] underline-offset-[0.2em] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d7f36b]"
+          to="/legal/privacidad"
+        >
+          Privacidad
+        </Link>
+        <Link
+          className="text-[#e8f6ee] underline-offset-[0.2em] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d7f36b]"
+          to="/legal/condiciones-saas"
+        >
+          Condiciones
+        </Link>
       </footer>
     </main>
   )
