@@ -21,7 +21,10 @@ export const loginInput = z.object({
 export const login = createServerFn({ method: 'POST' })
   .validator(loginInput)
   .handler(async ({ data }) => {
-    const { data: result, error } = await createAnonSupabaseClient().auth.signInWithPassword(data)
+    const { data: result, error } = await createAnonSupabaseClient().auth.signInWithPassword({
+      email: data.email,
+      password: data.password,
+    })
     if (error || !result.session) return { ok: false as const }
 
     const session = await useSession<AuthSessionData>(authSessionConfig(data.rememberSession))

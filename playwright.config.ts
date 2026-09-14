@@ -25,6 +25,7 @@ const authStatePath = fs.existsSync(path.resolve(authState)) ? authState : undef
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
+  workers: process.env.CI ? undefined : 1,
   forbidOnly: !!process.env.CI,
   reporter: process.env.CI ? 'github' : 'list',
   use: {
