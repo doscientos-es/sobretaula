@@ -22,17 +22,17 @@ Playwright guarda un estado independiente en `e2e/.auth/<rol>.json`. En caso de 
 
 ## Matriz de cobertura
 
-| # | Rol | Módulo | Prioridad | Riesgo principal |
-|---:|---|---|---|---|
-| 1 | owner | activación/operaciones | P0 | tenant o local no resoluble |
-| 2 | owner | caja | P0 | permisos o estado de apertura |
-| 3 | manager | TPV/cuenta | P0 | operación diaria incompleta |
-| 4 | manager | autorización financiera | P0 | mutación fuera de rol |
-| 5 | host | reserva pública/agenda | P0 | reserva no visible o PII expuesta |
-| 6 | host | servicio/sala | P0 | estado de mesa no operativo |
-| 7 | waiter | TPV móvil/comanda | P0 | UX móvil o duplicación |
-| 8 | waiter | fichaje | P1 | terminal inaccesible o feedback ausente |
-| 9 | accountant | facturación/informes | P1 | exportación o datos sensibles |
-| 10 | owner/anónimo | seguridad | P0 | ruta privada accesible sin sesión |
+|   # | Rol           | Módulo                  | Prioridad | Riesgo principal                        |
+| --: | ------------- | ----------------------- | --------- | --------------------------------------- |
+|   1 | owner         | activación/operaciones  | P0        | tenant o local no resoluble             |
+|   2 | owner         | caja                    | P0        | permisos o estado de apertura           |
+|   3 | manager       | TPV/cuenta              | P0        | operación diaria incompleta             |
+|   4 | manager       | autorización financiera | P0        | mutación fuera de rol                   |
+|   5 | host          | reserva pública/agenda  | P0        | reserva no visible o PII expuesta       |
+|   6 | host          | servicio/sala           | P0        | estado de mesa no operativo             |
+|   7 | waiter        | TPV móvil/comanda       | P0        | UX móvil o duplicación                  |
+|   8 | waiter        | fichaje                 | P1        | terminal inaccesible o feedback ausente |
+|   9 | accountant    | facturación/informes    | P1        | exportación o datos sensibles           |
+|  10 | owner/anónimo | seguridad               | P0        | ruta privada accesible sin sesión       |
 
 Esta primera capa no certifica fiscalidad, RLS entre tenants, concurrencia ni proveedor de correo. Esos gates requieren un entorno autorizado y pruebas específicas; un build verde no los sustituye.

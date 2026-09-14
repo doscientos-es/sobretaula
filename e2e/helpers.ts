@@ -6,7 +6,10 @@ export const operationalUrl = (path: string) => `/t/${tenant}/l/${venue}${path}`
 
 export async function expectHealthyPage(page: Page, label: string) {
   await expect(page.locator('body'), `${label}: la página no debe quedar vacía`).not.toBeEmpty()
-  await expect(page.getByText(/Something went wrong|No se ha podido cargar esta pantalla/i), `${label}: no debe mostrar error boundary`).toHaveCount(0)
+  await expect(
+    page.getByText(/Something went wrong|No se ha podido cargar esta pantalla/i),
+    `${label}: no debe mostrar error boundary`,
+  ).toHaveCount(0)
 }
 
 export async function openOperationalPage(page: Page, path: string, label: string) {
@@ -15,5 +18,8 @@ export async function openOperationalPage(page: Page, path: string, label: strin
 }
 
 export async function expectFeedback(page: Page, label: string) {
-  await expect(page.locator('[aria-live="polite"], [role="status"], [role="alert"]'), `${label}: falta feedback accesible`).toHaveCount(1, { timeout: 5000 })
+  await expect(
+    page.locator('[aria-live="polite"], [role="status"], [role="alert"]'),
+    `${label}: falta feedback accesible`,
+  ).toHaveCount(1, { timeout: 5000 })
 }

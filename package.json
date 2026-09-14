@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite dev --mode test",
     "dev:test": "vite dev --mode test",
+    "dev:e2e": "vite dev --mode test --host 127.0.0.1 --port 3001",
     "dev:production": "vite dev --mode production",
     "build": "pnpm typecheck && vite build",
     "build:test": "pnpm typecheck && vite build --mode test",

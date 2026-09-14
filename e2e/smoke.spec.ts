@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test'
 test('public reservation page renders the published booking flow', async ({ page }) => {
   await page.goto('/reservar/la-fonda-demo')
   await expect(page.getByRole('heading', { name: 'La Fonda Demo' })).toBeVisible()
-  await expect(page.locator('#public-service option')).toHaveCount(2)
+  await expect(page.locator('#public-service option:not([value=""])')).toHaveCount(2)
   await expect(page.getByRole('button', { name: 'Reservar mesa' })).toBeVisible()
 })
 

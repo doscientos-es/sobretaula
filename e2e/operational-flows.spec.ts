@@ -1,5 +1,15 @@
 import { test, expect } from '@playwright/test'
-import { expectFeedback, expectHealthyPage, openOperationalPage, operationalUrl, tenant } from './helpers'
+
+import { expectHealthyPage, openOperationalPage, operationalUrl, tenant } from './helpers'
+
+test.beforeEach(async ({ page }, testInfo) => {
+  void page
+  const required = testInfo.title.match(/^@(owner|manager|host|waiter|accountant)/)?.[1]
+  test.skip(
+    !required || testInfo.project.name !== required,
+    `requires ${required ?? 'owner'} session`,
+  )
+})
 
 test.describe.configure({ mode: 'serial' })
 

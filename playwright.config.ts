@@ -39,6 +39,12 @@ export default defineConfig({
   },
   projects: [
     {
+      name: 'public',
+      testMatch: /smoke\.spec\.ts/,
+      grep: /public reservation|cacheable/,
+      use: { ...devices['Desktop Chrome'] },
+    },
+    {
       name: 'setup-auth',
       testMatch: /auth\.setup\.ts/,
       use: { ...devices['Desktop Chrome'] },
@@ -46,7 +52,11 @@ export default defineConfig({
     {
       name: 'chromium',
       dependencies: ['setup-auth'],
-      use: { ...devices['Desktop Chrome'], storageState: process.env.E2E_STORAGE_STATE ?? 'e2e/.auth/owner.json' },
+      testMatch: /(?:authorization|smoke)\.spec\.ts/,
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: process.env.E2E_STORAGE_STATE ?? 'e2e/.auth/owner.json',
+      },
     },
     ...['owner', 'manager', 'host', 'waiter', 'accountant'].map((role) => ({
       name: role,
