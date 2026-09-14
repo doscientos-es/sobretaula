@@ -1,6 +1,5 @@
 import {
   Button,
-  Card,
   CardContent,
   CardDescription,
   CardHeader,
@@ -139,36 +138,34 @@ export function MenuForms({
           Nueva categoría
         </Button>
         <DialogContent className="max-w-2xl">
-          <Card>
-            <CardHeader>
-              <CardTitle>Nueva categoría</CardTitle>
-              <CardDescription>El nombre en castellano es obligatorio.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form className="grid gap-4" onSubmit={addCategory}>
-                <Field>
-                  <FieldLabel htmlFor="category-name-es">Nombre</FieldLabel>
-                  <Input
-                    id="category-name-es"
-                    onChange={(event) => setCategoryName(event.target.value)}
-                    required
-                    value={categoryName}
-                  />
-                </Field>
-                <Field>
-                  <FieldLabel htmlFor="category-name-ca">Nom (català, opcional)</FieldLabel>
-                  <Input
-                    id="category-name-ca"
-                    onChange={(event) => setCategoryNameCa(event.target.value)}
-                    value={categoryNameCa}
-                  />
-                </Field>
-                <Button disabled={feedback.pending} type="submit">
-                  Crear categoría
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+          <CardHeader>
+            <CardTitle>Nueva categoría</CardTitle>
+            <CardDescription>El nombre en castellano es obligatorio.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form className="grid gap-4" onSubmit={addCategory}>
+              <Field>
+                <FieldLabel htmlFor="category-name-es">Nombre</FieldLabel>
+                <Input
+                  id="category-name-es"
+                  onChange={(event) => setCategoryName(event.target.value)}
+                  required
+                  value={categoryName}
+                />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="category-name-ca">Nom (català, opcional)</FieldLabel>
+                <Input
+                  id="category-name-ca"
+                  onChange={(event) => setCategoryNameCa(event.target.value)}
+                  value={categoryNameCa}
+                />
+              </Field>
+              <Button disabled={feedback.pending} type="submit">
+                Crear categoría
+              </Button>
+            </form>
+          </CardContent>
         </DialogContent>
       </DialogRoot>
       <DialogRoot onOpenChange={setImportOpen} open={importOpen}>
@@ -176,16 +173,15 @@ export function MenuForms({
           Importar carta
         </Button>
         <DialogContent className="max-w-3xl">
-          <Card>
-            <CardHeader>
-              <CardTitle>Importar carta</CardTitle>
-              <CardDescription>
-                Suelta aquí un archivo CSV o selecciónalo. Verás los datos y los errores antes de
-                confirmar la carga. Columnas: categoria, nombre, precio, iva y opcionalmente sku y
-                descripcion. Opcionales: grupo_modificador, modificador y suplemento.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-3">
+          <CardHeader>
+            <CardTitle>Importar carta</CardTitle>
+            <CardDescription>
+              Suelta aquí un archivo CSV o selecciónalo. Verás los datos y los errores antes de
+              confirmar la carga. Columnas: categoria, nombre, precio, iva y opcionalmente sku y
+              descripcion. Opcionales: grupo_modificador, modificador y suplemento.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-3">
               <label
                 aria-label="Seleccionar archivo CSV de carta"
                 className={`grid min-h-28 cursor-pointer place-items-center rounded-lg border-2 border-dashed px-4 py-5 text-center text-sm transition-colors ${
@@ -319,8 +315,7 @@ export function MenuForms({
                   ) : null}
                 </div>
               ) : null}
-            </CardContent>
-          </Card>
+          </CardContent>
         </DialogContent>
       </DialogRoot>
       <FormFeedback pendingLabel="Guardando carta…" state={feedback.state} />

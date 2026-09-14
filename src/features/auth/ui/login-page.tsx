@@ -14,7 +14,7 @@ import {
 } from '@doscientos/ui'
 import { Link } from '@tanstack/react-router'
 import { ArrowRight, Eye, EyeOff, Mail, Utensils } from 'lucide-react'
-import { useRef, useState, type FormEvent } from 'react'
+import { useRef, useState } from 'react'
 
 const abstractRestaurant = '/abstract-restaurant-image.avif'
 
@@ -30,8 +30,7 @@ export function LoginPage({ redirectTo }: { redirectTo?: string }) {
   const emailInput = useRef<HTMLInputElement>(null)
   const isSubmitting = useRef(false)
 
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
+  async function submit() {
     if (isSubmitting.current) return
 
     isSubmitting.current = true
@@ -82,7 +81,10 @@ export function LoginPage({ redirectTo }: { redirectTo?: string }) {
               aria-labelledby="login-title"
               className="mt-10 space-y-5"
               method="post"
-              onSubmit={(event) => void submit(event)}
+              onSubmit={(event) => {
+                event.preventDefault()
+                void submit()
+              }}
             >
               <Field>
                 <FieldLabel htmlFor="email">Correo electrónico</FieldLabel>

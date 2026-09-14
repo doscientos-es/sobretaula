@@ -158,7 +158,7 @@ export function MenuPage({
           <CardHeader className="items-center gap-3 py-12 text-center">
             <div
               aria-hidden="true"
-              className="grid size-14 place-items-center rounded-2xl bg-primary/10 text-2xl"
+              className="bg-primary/10 grid size-14 place-items-center rounded-2xl text-2xl"
             >
               🍽️
             </div>

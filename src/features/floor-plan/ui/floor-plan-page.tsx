@@ -1090,8 +1090,19 @@ export function FloorPlanPage({
                       ['kitchen', 'Cocina', Soup],
                     ] as const
                   ).map(([kind, label, Icon]) => (
-                    <div draggable onDragStart={(event: DragEvent<HTMLDivElement>) => event.dataTransfer.setData('application/x-floor-element', kind)} key={kind}>
-                      <Button className="h-auto w-full justify-start gap-2 py-3" onClick={() => addElement(kind)} type="button" variant="outline">
+                    <div
+                      draggable
+                      onDragStart={(event: DragEvent<HTMLDivElement>) =>
+                        event.dataTransfer.setData('application/x-floor-element', kind)
+                      }
+                      key={kind}
+                    >
+                      <Button
+                        className="h-auto w-full justify-start gap-2 py-3"
+                        onClick={() => addElement(kind)}
+                        type="button"
+                        variant="outline"
+                      >
                         <Icon className="size-4" /> {label}
                       </Button>
                     </div>

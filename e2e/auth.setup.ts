@@ -23,9 +23,7 @@ setup('authenticate E2E owner against Supabase-dev', async ({ page }) => {
     await page.getByRole('textbox', { name: /contraseña|password/i }).fill(password)
     await page.getByRole('button', { name: /iniciar sesión|entrar|acceder/i }).click()
     try {
-      await expect
-        .poll(() => new URL(page.url()).pathname, { timeout: 10000 })
-        .not.toBe('/login')
+      await expect.poll(() => new URL(page.url()).pathname, { timeout: 10000 }).not.toBe('/login')
       break
     } catch (error) {
       if (attempt === 3) throw error
