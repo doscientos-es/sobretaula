@@ -39,7 +39,9 @@ reproducible (comando ejecutado y su resultado).
 ### Evidencia local de release candidate (2026-09-14)
 
 - `pnpm quality`: correcto; formato, estructura, tipos y **411 tests pasados**
-  (3 omitidos y 1 fichero omitido). `oxlint` termina correctamente con warnings
+  (3 omitidos y 1 fichero omitido). Tras añadir el exportador de contactos,
+  `pnpm test` queda en **417 pasados** (3 omitidos; 118 ficheros pasados y 1
+  omitido). `oxlint` termina correctamente con warnings
   no bloqueantes ya inventariados.
 - `pnpm test:e2e -- --trace=off`: **2 pasados** (flujo público publicado y
   gestión tokenizada `Cache-Control: no-store`) y **26 omitidos** por no existir
@@ -47,6 +49,10 @@ reproducible (comando ejecutado y su resultado).
 - `pnpm build`: correcto; genera el artefacto Vercel/Nitro local. Quedan como
   warnings del builder la versión de Vite, el chunk principal grande y los
   módulos `use client` de dependencias; no son una validación de despliegue.
+- Clientes: exportación CSV operativa para owner/manager, con versión, instante,
+  zona horaria y columnas estables; excluye notas internas, alergias y
+  preferencias. Ventas, caja y jornada conservan sus exportadores existentes;
+  reservas y propinas aún requieren una extracción equivalente.
 - La evidencia anterior no cierra I2/I3/I4 ni ningún gate X: no sustituye un
   smoke autenticado, una suite aislada de RLS, restore, piloto, asesoría o
   migración/verificación remota.

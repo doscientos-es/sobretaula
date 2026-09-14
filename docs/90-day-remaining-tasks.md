@@ -210,7 +210,9 @@ propietario y siguiente acción; no se rebaja silenciosamente el alcance.
 - [~] **P1.2 Cuenta/caja:** dominio preparado; falta migración autorizada y humo.
 - [ ] **P1.3 Fichaje/propinas:** cierre laboral, reparto por tiempo y exportación.
 - [ ] **P1.4 Fiscalidad:** VERI*FACTU E2E en test; prod solo tras X1/X7.
-- [ ] **P1.5 Privacidad/exportaciones:** retención, anonimización y formatos.
+- [~] **P1.5 Privacidad/exportaciones:** exportaciones de ventas, caja, jornada y
+  contactos operativas con rol y metadatos de versión/zona horaria; faltan
+  reservas/propinas, retención/anonimización y validación externa del formato.
 - [~] **P2.1 Importación:** CSV con productos y modificadores, preview, errores por
   fila y RPC atómico preparados; falta aplicar la migración y prueba integrada.
 - [~] **P2.2 Reserva pública:** flujo, estados vacíos, gestión por token y emails
