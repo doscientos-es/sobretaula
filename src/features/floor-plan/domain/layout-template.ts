@@ -8,9 +8,7 @@ export interface LayoutTemplate {
   heightCm: number
   widthCm: number
   tables: Array<Pick<FloorPlanTablePlacement, 'code' | 'heightCm' | 'widthCm' | 'xCm' | 'yCm'>>
-  elements: Array<
-    Pick<FloorPlanElement, 'heightCm' | 'kind' | 'label' | 'widthCm' | 'xCm' | 'yCm'>
-  >
+  elements: Array<Pick<FloorPlanElement, 'heightCm' | 'kind' | 'label' | 'widthCm' | 'xCm' | 'yCm'>>
 }
 
 export function createLayoutTemplate(input: {

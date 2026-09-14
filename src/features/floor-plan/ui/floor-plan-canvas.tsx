@@ -180,7 +180,7 @@ export function FloorPlanCanvas({
             Ajuste automático activo:{' '}
             {alignmentGuides.some((guide) => guide.axis === 'x') ? 'alineación vertical' : ''}
             {alignmentGuides.some((guide) => guide.axis === 'x') &&
-              alignmentGuides.some((guide) => guide.axis === 'y')
+            alignmentGuides.some((guide) => guide.axis === 'y')
               ? ' y '
               : ''}
             {alignmentGuides.some((guide) => guide.axis === 'y') ? 'alineación horizontal' : ''}
