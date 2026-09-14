@@ -15,6 +15,7 @@ import {
   SelectList,
   SelectTrigger,
   SelectValue,
+  cn,
   useFormFeedback,
 } from '@doscientos/ui'
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
@@ -283,7 +284,10 @@ export function ServiceQueue({
                     </span>
                     <output
                       aria-label={`Estado: ${timing.label}`}
-                      className={`shrink-0 rounded-full px-2 py-1 text-xs font-medium ${timing.className}`}
+                      className={cn(
+                        'shrink-0 rounded-full px-2 py-1 text-xs font-medium',
+                        timing.className,
+                      )}
                     >
                       {timing.label}
                     </output>

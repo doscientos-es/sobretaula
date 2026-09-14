@@ -1,3 +1,4 @@
+import { cn } from '@doscientos/ui'
 import { Link } from '@tanstack/react-router'
 import { CreditCard, TriangleAlert } from 'lucide-react'
 
@@ -31,17 +32,19 @@ export function TenantBillingNotice({
   return (
     <aside
       aria-labelledby="tenant-billing-notice-title"
-      className={`border-border/70 mb-6 overflow-hidden rounded-2xl border text-sm shadow-[0_8px_24px_rgb(35_39_45_/_7%)] ${
-        paymentFailed ? 'bg-destructive/8' : 'bg-primary/8'
-      }`}
+      className={cn(
+        'border-border/70 mb-6 overflow-hidden rounded-2xl border text-sm shadow-[0_8px_24px_rgb(35_39_45_/_7%)]',
+        paymentFailed ? 'bg-destructive/8' : 'bg-primary/8',
+      )}
       role="alert"
     >
       <div className="flex gap-4 p-4 sm:p-5">
         <span
           aria-hidden="true"
-          className={`grid size-10 shrink-0 place-items-center rounded-xl ${
-            paymentFailed ? 'bg-destructive/12 text-destructive' : 'bg-primary/12 text-primary'
-          }`}
+          className={cn(
+            'grid size-10 shrink-0 place-items-center rounded-xl',
+            paymentFailed ? 'bg-destructive/12 text-destructive' : 'bg-primary/12 text-primary',
+          )}
         >
           {paymentFailed ? <TriangleAlert className="size-5" /> : <CreditCard className="size-5" />}
         </span>

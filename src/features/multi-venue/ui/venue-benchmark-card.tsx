@@ -47,13 +47,11 @@ export function VenueBenchmarkCard({
                     <TableCell className="font-medium">{venue.venueName}</TableCell>
                     <TableCell className="tabular-nums">{euro(venue.netSalesCents)}</TableCell>
                     <TableCell
-                      className={`tabular-nums ${
-                        venue.contributionPercent > 0
-                          ? 'text-success'
-                          : venue.contributionPercent < 0
-                            ? 'text-destructive'
-                            : 'text-muted-foreground'
-                      }`}
+                      className={cn('tabular-nums', {
+                        'text-destructive': venue.contributionPercent < 0,
+                        'text-muted-foreground': venue.contributionPercent === 0,
+                        'text-success': venue.contributionPercent > 0,
+                      })}
                     >
                       <span className="flex items-center gap-1.5">
                         {venue.contributionPercent > 0 ? (

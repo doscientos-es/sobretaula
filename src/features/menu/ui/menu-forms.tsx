@@ -10,6 +10,7 @@ import {
   FieldLabel,
   FormFeedback,
   Input,
+  cn,
   useFormFeedback,
 } from '@doscientos/ui'
 import { useState, type DragEvent, type FormEvent } from 'react'
@@ -184,11 +185,12 @@ export function MenuForms({
           <CardContent className="grid gap-3">
             <label
               aria-label="Seleccionar archivo CSV de carta"
-              className={`grid min-h-28 cursor-pointer place-items-center rounded-lg border-2 border-dashed px-4 py-5 text-center text-sm transition-colors ${
+              className={cn(
+                'grid min-h-28 cursor-pointer place-items-center rounded-lg border-2 border-dashed px-4 py-5 text-center text-sm transition-colors',
                 isDraggingCsv
                   ? 'border-primary bg-primary/10'
-                  : 'border-muted-foreground/30 hover:border-primary/60 hover:bg-muted/40'
-              }`}
+                  : 'border-muted-foreground/30 hover:border-primary/60 hover:bg-muted/40',
+              )}
               htmlFor="menu-csv-file"
             >
               <span>

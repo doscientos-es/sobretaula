@@ -1,3 +1,4 @@
+import { cn } from '@doscientos/ui'
 import type { ChangeEvent } from 'react'
 
 import { SUPPORTED_LOCALES } from './locale'
@@ -16,7 +17,7 @@ export function LanguageSwitcher({ className = '' }: { className?: string }) {
   }
 
   return (
-    <label className={`inline-flex items-center ${className}`}>
+    <label className={cn('inline-flex items-center', className)}>
       <span className="sr-only">{t('common.language')}</span>
       <select
         aria-label={t('common.language')}

@@ -393,7 +393,10 @@ export function ReservationAgendaCard({
                   <p className="text-muted-foreground flex flex-wrap items-center gap-2 text-sm">
                     <span>{item.partySize} comensales</span>
                     <span
-                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusBadgeClass(item.status)}`}
+                      className={cn(
+                        'rounded-full px-2 py-0.5 text-xs font-medium',
+                        statusBadgeClass(item.status),
+                      )}
                     >
                       {reservationStatusLabel(item.status)}
                     </span>

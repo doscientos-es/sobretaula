@@ -1,3 +1,4 @@
+import { cn } from '@doscientos/ui'
 import { Link } from '@tanstack/react-router'
 import { Plus, Store } from 'lucide-react'
 
@@ -37,9 +38,10 @@ export function VenueSwitcher({
                 to="/t/$slug/l/$venue"
                 params={{ slug: tenantSlug, venue: venue.slug }}
                 aria-current={venue.slug === activeVenueSlug ? 'page' : undefined}
-                className={`st-saas-nav-link flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${
-                  venue.slug === activeVenueSlug ? 'st-saas-nav-link--active' : ''
-                }`}
+                className={cn(
+                  'st-saas-nav-link flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors',
+                  venue.slug === activeVenueSlug && 'st-saas-nav-link--active',
+                )}
               >
                 <Store className="size-3" />
                 <span className="truncate">{venue.name}</span>
