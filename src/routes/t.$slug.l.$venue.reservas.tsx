@@ -2,13 +2,8 @@ import { createFileRoute, notFound } from '@tanstack/react-router'
 import { z } from 'zod'
 
 import { tenantRouteState } from '@/app/tenant-route-loader'
-import {
-  getReservationServices,
-  getReservationTerms,
-  type ReservationAgendaSearch,
-} from '@/features/reservations'
+import { getReservationServices, getReservationTerms } from '@/features/reservations'
 import { loadVenueRouteContext } from '@/features/venues'
-import { useLocale } from '@/shared/lib/i18n/locale-preference'
 
 export const Route = createFileRoute('/t/$slug/l/$venue/reservas')({
   validateSearch: z.object({
