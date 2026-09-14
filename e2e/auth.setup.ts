@@ -1,6 +1,7 @@
-import { test as setup, expect } from '@playwright/test'
 import fs from 'node:fs'
 import path from 'node:path'
+
+import { test as setup, expect } from '@playwright/test'
 
 const authFile = process.env.E2E_STORAGE_STATE ?? 'e2e/.auth/owner.json'
 

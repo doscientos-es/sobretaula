@@ -1,6 +1,7 @@
-import { defineConfig, devices } from '@playwright/test'
 import fs from 'node:fs'
 import path from 'node:path'
+
+import { defineConfig, devices } from '@playwright/test'
 
 function loadTestEnv() {
   const envPath = path.resolve('.env.test')
@@ -15,6 +16,7 @@ function loadTestEnv() {
 loadTestEnv()
 
 const authState = process.env.E2E_STORAGE_STATE ?? 'e2e/.auth/owner.json'
+const authStatePath = fs.existsSync(path.resolve(authState)) ? authState : undefined
 
 export default defineConfig({
   testDir: './e2e',
@@ -34,7 +36,7 @@ export default defineConfig({
     {
       name: 'chromium',
       dependencies: ['setup-auth'],
-      use: { ...devices['Desktop Chrome'], storageState: authState },
+      use: { ...devices['Desktop Chrome'], storageState: authStatePath },
     },
   ],
 })
