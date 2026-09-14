@@ -16,6 +16,15 @@ test.describe.configure({ mode: 'serial' })
 test('@owner @activation @P0 activa y revisa el espacio operativo', async ({ page }) => {
   await openOperationalPage(page, '', 'owner activation')
   await expect(page.getByText(/operaciones|servicio|plano/i).first()).toBeVisible()
+
+  await openOperationalPage(page, '/plano', 'owner floor plan')
+  const versionName = `E2E turno ${new Date().toISOString().slice(0, 16)}`
+  const versionInput = page.getByLabel(/guardar como versión/i)
+  await versionInput.fill(versionName)
+  await page.getByRole('button', { name: /^guardar$/i }).last().click()
+  await expect(page.getByText(/versión guardada|guardado correctamente/i)).toBeVisible()
+  await page.reload({ waitUntil: 'domcontentloaded' })
+  await expect(page.getByText(versionName)).toBeVisible()
 })
 
 test('@owner @cash @P0 abre la caja y conserva el estado', async ({ page }) => {
