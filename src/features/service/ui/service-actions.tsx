@@ -46,7 +46,7 @@ import { describeSession } from './service-labels'
 export function ServiceActions({
   board,
   onDone,
-  selectedTableIds,
+  selectedTableIds: externalSelectedTableIds,
   onSuggest,
   areaOpen = true,
   isOnline = true,
@@ -67,6 +67,10 @@ export function ServiceActions({
   areaId?: string
 }) {
   const feedback = useFormFeedback()
+  const selectedTableIds = externalSelectedTableIds
+  const applySuggestedTables = (tableIds: readonly string[]) => {
+    onSuggest(tableIds)
+  }
   const offlineStore = useMemo(
     () => createServiceOfflineStore(tenantId, venueId),
     [tenantId, venueId],
@@ -161,7 +165,10 @@ export function ServiceActions({
       return
     }
     void run(
-      () => seatWalkIn({ data: { covers, tableIds: [...selectedTableIds], tenantId, venueId } }),
+      () =>
+        seatWalkIn({
+          data: { covers, tableIds: [...selectedTableIds], tenantId, venueId },
+        }),
       'Esas mesas están ocupadas o no dan para tantos comensales.',
     )
   }
@@ -185,7 +192,14 @@ export function ServiceActions({
             disabled={feedback.pending || !isOnline}
             onClick={() =>
               void run(
-                () => cleanTables({ data: { tableIds: [...selectedTableIds], tenantId, venueId } }),
+                () =>
+                  cleanTables({
+                    data: {
+                      tableIds: [...selectedTableIds],
+                      tenantId,
+                      venueId,
+                    },
+                  }),
                 'No se han podido marcar las mesas como limpias.',
               )
             }
@@ -202,7 +216,12 @@ export function ServiceActions({
               void run(
                 () =>
                   updateAreaStaff({
-                    data: { areaId: selectedAreaId, tenantId, userIds: assignedStaff, venueId },
+                    data: {
+                      areaId: selectedAreaId,
+                      tenantId,
+                      userIds: assignedStaff,
+                      venueId,
+                    },
                   }),
                 'No se ha podido guardar el equipo de la sección.',
               )
@@ -242,9 +261,13 @@ export function ServiceActions({
               Sugerencia para {covers} comensales: mesas {suggestedCodes.join(', ')}. Selecciónalas
               en el plano o en la lista.
             </p>
-            <Button onClick={() => onSuggest(suggestedIds ?? [])} type="button" variant="outline">
+            <button
+              className="border-input bg-background text-foreground hover:bg-accent inline-flex min-h-10 items-center justify-center rounded-md border px-4 py-2 text-sm font-medium shadow-sm transition-colors"
+              onClick={() => applySuggestedTables(suggestedIds ?? [])}
+              type="button"
+            >
               Seleccionar sugerencia
-            </Button>
+            </button>
           </div>
         )}
         {(board.tableGroupPresets?.length ?? 0) > 0 && (
@@ -267,7 +290,7 @@ export function ServiceActions({
                   <Button
                     aria-label={`${preset.name}: ${preflightLabel}`}
                     disabled={preflight.reason !== 'available'}
-                    onClick={() => onSuggest(preset.tableIds)}
+                    onPress={() => applySuggestedTables(preset.tableIds)}
                     type="button"
                     variant="outline"
                   >
@@ -502,11 +525,18 @@ export function ServiceActions({
                     ? !isOnline
                       ? (enqueueServiceOperation(
                           offlineStore,
-                          createCloseSessionOperation({ sessionId, tenantId, venueId }),
+                          createCloseSessionOperation({
+                            sessionId,
+                            tenantId,
+                            venueId,
+                          }),
                         ),
                         feedback.setSuccess('Cierre guardado para cuando vuelva la conexión.'))
                       : void run(
-                          () => closeSession({ data: { sessionId, tenantId, venueId } }),
+                          () =>
+                            closeSession({
+                              data: { sessionId, tenantId, venueId },
+                            }),
                           'No se ha podido cerrar. Si queda saldo pendiente, cobra la cuenta primero.',
                         )
                     : undefined

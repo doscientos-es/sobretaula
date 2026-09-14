@@ -3,12 +3,6 @@ import { test, expect } from '@playwright/test'
 import { expectHealthyPage, openOperationalPage, operationalUrl, tenant } from './helpers'
 
 test.beforeEach(async ({ page }, testInfo) => {
-  const cookies = await page.context().cookies()
-  const sessionCookies = cookies.filter((cookie) => cookie.name === 'sobretaula-session')
-  if (sessionCookies.some((cookie) => cookie.expires > 0 && cookie.expires < Date.now() / 1000)) {
-    await page.context().clearCookies({ name: 'sobretaula-session' })
-    await page.context().addCookies(sessionCookies.map((cookie) => ({ ...cookie, expires: -1 })))
-  }
   const required = testInfo.title.match(/^@(owner|manager|host|waiter|accountant)/)?.[1]
   test.skip(
     !required || testInfo.project.name !== required,
@@ -23,15 +17,25 @@ test('@owner @activation @P0 activa y revisa el espacio operativo', async ({ pag
   await expect(page.getByText(/operaciones|servicio|plano/i).first()).toBeVisible()
 
   await openOperationalPage(page, '/plano', 'owner floor plan')
-  const versionName = `E2E turno ${new Date().toISOString().slice(0, 16)}`
+  const interiorArea = page.getByRole('button', { name: /^Interior$/i })
+  if (await interiorArea.count()) await interiorArea.click()
+  const versionName = `E2E turno ${new Date().toISOString().replace(/[:.]/g, '-')}`
   const versionInput = page.getByLabel(/guardar como versión/i)
   await versionInput.fill(versionName)
   const activationInput = page.getByLabel(/activar desde/i)
-  await activationInput.fill('2030-01-01T10:00')
-  await page
-    .getByRole('button', { name: /^guardar$/i })
-    .last()
-    .click()
+  const activationDate = new Date(Date.now() + 24 * 60 * 60 * 1000)
+  const deactivationDate = new Date(activationDate.getTime() + 24 * 60 * 60 * 1000)
+  const toLocalInput = (date: Date) => {
+    const offset = date.getTimezoneOffset()
+    return new Date(date.getTime() - offset * 60_000).toISOString().slice(0, 16)
+  }
+  await activationInput.fill(toLocalInput(activationDate))
+  await page.getByLabel(/activar hasta/i).fill(toLocalInput(deactivationDate))
+  const saveButton = page.getByRole('button', { name: /^guardar$/i }).last()
+  await expect(saveButton, 'owner activation: guardar versión debe estar disponible').toBeEnabled({
+    timeout: 15000,
+  })
+  await saveButton.click()
   const feedback = page.locator('[aria-live], [role="status"], [role="alert"]')
   await expect(feedback, 'owner activation: guardar versión debe responder').toContainText(
     /guardad|solapa|corrige|fecha|no se ha podido/i,
@@ -40,7 +44,7 @@ test('@owner @activation @P0 activa y revisa el espacio operativo', async ({ pag
     /no se ha podido|solapa|corrige|fecha/i,
   )
   await page.reload({ waitUntil: 'domcontentloaded' })
-  await expect(page.getByText(versionName)).toBeVisible()
+  await expect(page.getByRole('listitem').filter({ hasText: versionName }).first()).toBeVisible()
 })
 
 test('@owner @cash @P0 abre la caja y conserva el estado', async ({ page }) => {
@@ -50,8 +54,27 @@ test('@owner @cash @P0 abre la caja y conserva el estado', async ({ page }) => {
 })
 
 test('@manager @tpv @P0 opera una mesa y llega al TPV', async ({ page }) => {
-  await openOperationalPage(page, '/tpv', 'manager tpv')
-  await expect(page.getByText(/cuenta|mesa|comanda/i).first()).toBeVisible()
+  await openOperationalPage(page, '/servicio', 'manager service')
+  await page.getByRole('button', { name: /vista lista/i }).click()
+  const freeTable = page.getByRole('button', { name: /Mesa I04 · Libre/i })
+  await expect(freeTable, 'manager service: debe existir una mesa libre').toBeVisible()
+  await freeTable.click()
+  await expect(
+    page.getByText(/1 mesa\(s\) seleccionada/i),
+    'manager service: la sugerencia debe seleccionar B01',
+  ).toBeVisible()
+  await page.getByLabel(/comensales sin reserva/i).fill('2')
+  await page.getByRole('button', { name: /sentar en las mesas seleccionadas/i }).click()
+  const feedback = page.locator('[aria-live], [role="status"], [role="alert"]')
+  await expect(feedback, 'manager service: walk-in debe confirmar').toContainText(
+    /sala actualizada|walk-in guardado/i,
+  )
+  await page.reload({ waitUntil: 'domcontentloaded' })
+  await page.getByRole('button', { name: /vista lista/i }).click()
+  await expect(
+    page.getByRole('button', { name: /Mesa .*Ocupada/i }).first(),
+    'manager service: la mesa debe persistir ocupada',
+  ).toBeVisible()
 })
 
 test('@manager @authorization @P0 ve los controles financieros protegidos', async ({ page }) => {
@@ -89,7 +112,9 @@ test('@accountant @reports @P1 consulta facturación y exportación', async ({ p
 })
 
 test('@owner @security @P0 rechaza acceso anónimo a una ruta privada', async ({ browser }) => {
-  const context = await browser.newContext({ storageState: { cookies: [], origins: [] } })
+  const context = await browser.newContext({
+    storageState: { cookies: [], origins: [] },
+  })
   const page = await context.newPage()
   await page.goto(operationalUrl('/tpv'))
   await expect(page).toHaveURL(/\/login/)

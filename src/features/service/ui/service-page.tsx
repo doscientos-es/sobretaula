@@ -54,9 +54,7 @@ export function ServicePage({
 }) {
   const [selectedTableIds, setSelectedTableIds] = useState<readonly string[]>([])
   const [serviceView, setServiceView] = useState<'plan' | 'list'>('plan')
-  const [selectedAreaId, setSelectedAreaId] = useState<string>(
-    plan.areas.length === 1 ? (plan.areas[0]?.id ?? 'all') : 'all',
-  )
+  const [selectedAreaId, setSelectedAreaId] = useState<string>(plan.areas[0]?.id ?? 'all')
   const [lastRefreshAt, setLastRefreshAt] = useState(() => new Date())
   const [clock, setClock] = useState(() => new Date())
   const [isOnline, setIsOnline] = useState(() =>
@@ -76,11 +74,8 @@ export function ServicePage({
       reload()
     }
     const interval = window.setInterval(refresh, 30_000)
-    const refreshOnFocus = refresh
-    window.addEventListener('focus', refreshOnFocus)
     return () => {
       window.clearInterval(interval)
-      window.removeEventListener('focus', refreshOnFocus)
     }
   }, [reload])
   useEffect(() => {
@@ -119,9 +114,10 @@ export function ServicePage({
         const realtimeStatus = String(status)
         if (realtimeStatus === 'SUBSCRIBED') {
           setIsOnline(true)
-          refreshFromRealtime()
         } else if (realtimeStatus === 'CHANNEL_ERROR' || realtimeStatus === 'TIMED_OUT') {
-          setIsOnline(false)
+          // A Realtime channel can fail while HTTP/server actions remain
+          // usable. Do not block room mutations on a degraded live update.
+          setIsOnline(typeof navigator === 'undefined' ? true : navigator.onLine)
         }
       })
     return () => {
@@ -143,7 +139,10 @@ export function ServicePage({
     }
   }, [reload])
   const activeVersion =
-    selectedAreaId === 'all' ? undefined : selectFloorPlanVersion(plan.versions, selectedAreaId)
+    selectedAreaId === 'all'
+      ? undefined
+      : (selectFloorPlanVersion(plan.versions, selectedAreaId) ??
+        plan.versions.find((version) => version.areaId === selectedAreaId))
   const placements = activeVersion
     ? plan.placements.filter((placement) => placement.floorPlanVersionId === activeVersion.id)
     : []
@@ -206,8 +205,25 @@ export function ServicePage({
 
   function toggleTable(tableId: string) {
     setSelectedTableIds((current) =>
-      current.includes(tableId) ? current.filter((id) => id !== tableId) : [...current, tableId],
+      current.includes(tableId) ? current.filter((id) => id !== tableId) : [tableId],
     )
+  }
+
+  function selectSuggestedTables(tableIds: readonly string[]) {
+    const tableIdByCode = new Map(
+      board.tables.map((table) => [table.code.trim().toLowerCase(), table.id]),
+    )
+    setSelectedTableIds([
+      ...new Set(
+        tableIds
+          .map(
+            (tableId) =>
+              board.tables.find((table) => table.id === tableId)?.id ??
+              tableIdByCode.get(tableId.trim().toLowerCase()),
+          )
+          .filter((tableId): tableId is string => Boolean(tableId)),
+      ),
+    ])
   }
 
   return (
@@ -725,7 +741,7 @@ export function ServicePage({
             }
             board={board}
             onDone={reload}
-            onSuggest={setSelectedTableIds}
+            onSuggest={selectSuggestedTables}
             isOnline={isOnline}
             selectedTableIds={selectedTableIds}
             tenantId={tenantId}

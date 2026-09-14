@@ -388,6 +388,7 @@ export function FloorPlanPage({
           yCm: tableYCm,
         },
       })
+      feedback.setSuccess('Mesa añadida.')
       reload()
     } catch {
       feedback.setError('La mesa queda fuera del plano, se solapa o ya existe ese código.')
@@ -744,7 +745,9 @@ export function FloorPlanPage({
       return
     }
     const scheduleConflicts = findVersionScheduleConflicts([
-      ...data.versions,
+      ...data.versions.filter(
+        (version) => version.areaId === activeVersion.areaId && version.id !== activeVersion.id,
+      ),
       { ...activeVersion, id: 'draft-version', activeFrom },
     ])
     if (scheduleConflicts.length > 0) {
@@ -770,6 +773,7 @@ export function FloorPlanPage({
           venueId,
         },
       })
+      feedback.setSuccess('Versión del plano guardada.')
       reload()
     } catch {
       feedback.setError('No se ha podido guardar la versión del plano.')
@@ -1138,13 +1142,30 @@ export function FloorPlanPage({
                     />
                     Mesa accesible
                   </label>
-                  <FormFeedback pendingLabel="Añadiendo mesa…" state={feedback.state} />
+                  <FormFeedback pendingLabel="Guardando cambios…" state={feedback.state} />
                   <Button disabled={feedback.pending} type="submit">
                     Añadir mesa
                   </Button>
                 </form>
               )}
               <div className="mt-6 border-t pt-6">
+                <div
+                  aria-label="Versiones guardadas"
+                  className="mb-4 space-y-1 text-xs"
+                  role="list"
+                >
+                  <p className="font-medium">Versiones guardadas</p>
+                  {data.versions
+                    .filter((version) => version.areaId === activeArea?.id)
+                    .map((version) => (
+                      <p key={version.id} role="listitem">
+                        {version.name} ·{' '}
+                        {version.activeFrom
+                          ? new Date(version.activeFrom).toLocaleString()
+                          : 'sin fecha'}
+                      </p>
+                    ))}
+                </div>
                 <Field>
                   <FieldLabel htmlFor="version-name">Guardar como versión</FieldLabel>
                   <Input

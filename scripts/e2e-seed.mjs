@@ -134,6 +134,17 @@ async function main() {
     venueId = created[0].id
   }
 
+  // Reset only operational state belonging to the dedicated E2E venue. This
+  // makes repeated runs deterministic without touching any non-E2E tenant.
+  const removedSessions = await request(
+    `/rest/v1/table_sessions?tenant_id=eq.${tenantId}&venue_id=eq.${venueId}&select=id`,
+    {
+      method: 'DELETE',
+      headers: { Prefer: 'return=representation' },
+    },
+  )
+  console.log(`Reset E2E table sessions: ${removedSessions?.length ?? 0}`)
+
   const areaDefinitions = [
     { name: 'Interior', assignment_priority: 10 },
     { name: 'Terraza', assignment_priority: 20 },
@@ -149,19 +160,29 @@ async function main() {
       const created = await request('/rest/v1/areas', {
         method: 'POST',
         headers: { Prefer: 'return=representation' },
-        body: JSON.stringify({ ...area, tenant_id: tenantId, venue_id: venueId }),
+        body: JSON.stringify({
+          ...area,
+          tenant_id: tenantId,
+          venue_id: venueId,
+        }),
       })
       areas.push(created[0])
     }
   }
+  // Remove only versions created by previous E2E runs; operator layouts are
+  // never touched. This keeps the schedule deterministic between runs.
+  await request(
+    `/rest/v1/floor_plan_versions?tenant_id=eq.${tenantId}&name=like.${encodeURIComponent('E2E turno')}%25`,
+    { method: 'DELETE', headers: { Prefer: 'return=minimal' } },
+  )
   const tableDefinitions = [
-    ['I01', 'round', 2, 2, 160, 120],
-    ['I02', 'square', 2, 4, 320, 120],
-    ['I03', 'rectangle', 4, 6, 480, 120],
-    ['I04', 'rectangle', 4, 8, 640, 120],
-    ['T01', 'round', 2, 4, 160, 420],
-    ['T02', 'round', 2, 4, 320, 420],
-    ['B01', 'rectangle', 1, 2, 560, 420],
+    ['I01', 'round', 2, 2, 100, 100],
+    ['I02', 'square', 2, 4, 350, 100],
+    ['I03', 'rectangle', 4, 6, 600, 100],
+    ['I04', 'rectangle', 4, 8, 100, 350],
+    ['T01', 'round', 2, 4, 350, 350],
+    ['T02', 'round', 2, 4, 600, 350],
+    ['B01', 'rectangle', 1, 2, 600, 350],
   ]
   for (const [code, shape, min_seats, max_seats, x_cm, y_cm] of tableDefinitions) {
     const area = areas[code.startsWith('T') ? 1 : code.startsWith('B') ? 2 : 0]
@@ -203,6 +224,14 @@ async function main() {
           }),
         })
       )[0]
+    await request(`/rest/v1/floor_plan_versions?id=eq.${version.id}`, {
+      method: 'PATCH',
+      headers: { Prefer: 'return=minimal' },
+      body: JSON.stringify({
+        active_from: '2020-01-01T00:00:00Z',
+        active_to: null,
+      }),
+    })
     const placements = await request(
       `/rest/v1/table_placements?floor_plan_version_id=eq.${version.id}&table_id=eq.${table.id}&select=id&limit=1`,
     )
@@ -219,6 +248,12 @@ async function main() {
           width_cm: 100,
           height_cm: 100,
         }),
+      })
+    else
+      await request(`/rest/v1/table_placements?id=eq.${placements[0].id}`, {
+        method: 'PATCH',
+        headers: { Prefer: 'return=minimal' },
+        body: JSON.stringify({ x_cm, y_cm, width_cm: 100, height_cm: 100 }),
       })
   }
 
@@ -293,8 +328,18 @@ async function main() {
   )
   if (services.length < 2) {
     const candidates = [
-      { name: 'Comida', weekday: 6, starts_at_time: '13:00:00', ends_at_time: '16:00:00' },
-      { name: 'Cena', weekday: 6, starts_at_time: '20:00:00', ends_at_time: '23:00:00' },
+      {
+        name: 'Comida',
+        weekday: 6,
+        starts_at_time: '13:00:00',
+        ends_at_time: '16:00:00',
+      },
+      {
+        name: 'Cena',
+        weekday: 6,
+        starts_at_time: '20:00:00',
+        ends_at_time: '23:00:00',
+      },
     ].filter((candidate) => !services.some((service) => service.name === candidate.name))
     const created = await request('/rest/v1/services', {
       method: 'POST',

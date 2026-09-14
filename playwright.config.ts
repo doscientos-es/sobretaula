@@ -15,6 +15,18 @@ function loadEnvFile(fileName: string) {
 
 loadEnvFile('.env.local')
 loadEnvFile('.env.test')
+
+// The application reads the canonical SUPABASE_* names while the E2E
+// environment deliberately stores isolated credentials under SUPABASE_TEST_*.
+// Bridge them only for this Playwright process so server actions cannot drift
+// to another project when the test server starts.
+for (const [testName, appName] of [
+  ['SUPABASE_TEST_URL', 'SUPABASE_URL'],
+  ['SUPABASE_TEST_PUBLISHABLE_KEY', 'SUPABASE_PUBLISHABLE_KEY'],
+  ['SUPABASE_TEST_SECRET_KEY', 'SUPABASE_SECRET_KEY'],
+] as const) {
+  if (process.env[testName]) process.env[appName] = process.env[testName]
+}
 process.env.E2E_TEST_MODE = 'true'
 process.env.E2E_TEST_ROLE ??= 'owner'
 process.env.SUPABASE_URL = process.env.SUPABASE_TEST_URL
@@ -35,7 +47,7 @@ export default defineConfig({
     : [['list'], ['html', { outputFolder: reportDir, open: 'never' }]],
   outputDir,
   use: {
-    baseURL: process.env.E2E_BASE_URL ?? 'http://127.0.0.1:3001',
+    baseURL: process.env.E2E_BASE_URL ?? 'http://localhost:3001',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
@@ -45,7 +57,7 @@ export default defineConfig({
     : {
         webServer: {
           command: 'pnpm.cmd exec vite dev --mode test --host 127.0.0.1 --port 3001',
-          url: 'http://127.0.0.1:3001/login',
+          url: 'http://localhost:3001/login',
           reuseExistingServer: true,
           timeout: 120_000,
         },
@@ -68,7 +80,7 @@ export default defineConfig({
       testMatch: /(?:authorization|smoke)\.spec\.ts/,
       use: {
         ...devices['Desktop Chrome'],
-        storageState: process.env.E2E_STORAGE_STATE ?? 'e2e/.auth/owner.json',
+        storageState: path.resolve(process.env.E2E_STORAGE_STATE ?? 'e2e/.auth/owner.json'),
       },
     },
     ...['owner', 'manager', 'host', 'waiter', 'accountant'].map((role) => ({
@@ -76,7 +88,7 @@ export default defineConfig({
       dependencies: ['setup-auth'],
       use: {
         ...devices['Desktop Chrome'],
-        storageState: `e2e/.auth/${role}.json`,
+        storageState: path.resolve(`e2e/.auth/${role}.json`),
       },
       testMatch: /operational-flows\.spec\.ts/,
     })),

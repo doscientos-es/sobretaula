@@ -105,9 +105,12 @@ export function findVersionScheduleConflicts(
 ): Array<{ areaId: string; firstVersionId: string; secondVersionId: string }> {
   const conflicts: Array<{ areaId: string; firstVersionId: string; secondVersionId: string }> = []
   const byArea = new Map<string, FloorPlanVersion[]>()
-  for (const version of versions) if (!isFloorPlanVersionScheduleValid(version)) continue
-  for (const version of versions)
+  for (const version of versions) {
+    // Un layout base sin fecha no ocupa un tramo del calendario; se puede
+    // versionar y programar sin convertirlo en un intervalo infinito.
+    if (!version.activeFrom || !isFloorPlanVersionScheduleValid(version)) continue
     byArea.set(version.areaId, [...(byArea.get(version.areaId) ?? []), version])
+  }
   for (const [areaId, areaVersions] of byArea) {
     for (let index = 0; index < areaVersions.length; index += 1) {
       const first = areaVersions[index]
