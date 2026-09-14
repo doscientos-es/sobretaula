@@ -10,8 +10,17 @@ export const Route = createLazyFileRoute('/t/$slug/l/$venue/productos')({
 })
 
 function ProductRoute() {
-  const { ingredients, menu, menuItems, stock, suppliers, forecast, purchaseOrders, tenant, venue } =
-    Route.useLoaderData()
+  const {
+    ingredients,
+    menu,
+    menuItems,
+    stock,
+    suppliers,
+    forecast,
+    purchaseOrders,
+    tenant,
+    venue,
+  } = Route.useLoaderData()
   return (
     <>
       <PurchaseOrdersPage
