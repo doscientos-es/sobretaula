@@ -22,6 +22,13 @@ test.describe('authenticated restaurant smoke', () => {
 
   test.use({ storageState: process.env.E2E_STORAGE_STATE })
 
+  test('tenant home does not render an error boundary', async ({ page }) => {
+    const slug = process.env.E2E_TENANT_SLUG ?? 'la-fonda-demo'
+    await page.goto(`/t/${slug}`)
+    await expect(page.getByText('No se ha podido cargar esta pantalla')).toHaveCount(0)
+    await expect(page.locator('body')).not.toBeEmpty()
+  })
+
   for (const path of [
     '/t/la-fonda-demo',
     '/t/la-fonda-demo/l/principal/tpv',

@@ -7,15 +7,15 @@ function loadEnv(file) {
   if (!fs.existsSync(file)) return
   for (const line of fs.readFileSync(file, 'utf8').split(/\r?\n/)) {
     const match = line.match(/^\s*([A-Z][A-Z0-9_]*)\s*=\s*(.*)\s*$/)
-    if (!match || process.env[match[1]]) continue
+    if (!match) continue
     process.env[match[1]] = match[2].replace(/^['"]|['"]$/g, '')
   }
 }
 
 loadEnv(path.resolve('.env.test'))
 
-const url = process.env.SUPABASE_URL ?? process.env.SUPABASE_TEST_URL
-const secret = process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_TEST_SECRET_KEY
+const url = process.env.SUPABASE_TEST_URL
+const secret = process.env.SUPABASE_TEST_SECRET_KEY
 const slug = process.env.E2E_TENANT_SLUG ?? 'la-fonda-demo'
 const ownerEmail = process.env.E2E_OWNER_EMAIL ?? 'e2e-owner@example.test'
 const ownerPassword = process.env.E2E_OWNER_PASSWORD ?? 'E2e-owner-password-2026!'
@@ -23,7 +23,7 @@ const managerEmail = process.env.E2E_MANAGER_EMAIL ?? 'e2e-manager@example.test'
 const managerPassword = process.env.E2E_MANAGER_PASSWORD ?? 'E2e-manager-password-2026!'
 
 if (!url || !secret)
-  throw new Error('SUPABASE_URL and SUPABASE_SECRET_KEY are required in .env.test')
+  throw new Error('SUPABASE_TEST_URL and SUPABASE_TEST_SECRET_KEY are required in .env.test')
 
 const headers = {
   apikey: secret,
@@ -81,12 +81,17 @@ async function main() {
       body: JSON.stringify({
         slug,
         name: 'La Fonda Demo',
-        status: 'trial',
+        status: 'active',
         default_locale: 'es',
         timezone: 'Europe/Madrid',
       }),
     })
     tenantId = created[0].id
+  } else {
+    await request(`/rest/v1/tenants?id=eq.${tenantId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status: 'active' }),
+    })
   }
 
   const venues = await request(

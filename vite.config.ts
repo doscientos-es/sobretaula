@@ -7,6 +7,15 @@ import { nitro } from 'nitro/vite'
 import { defineConfig, loadEnv } from 'vite'
 
 export default defineConfig(({ mode }) => {
+  if (mode === 'test') {
+    for (const name of [
+      'SUPABASE_TEST_URL',
+      'SUPABASE_TEST_PUBLISHABLE_KEY',
+      'SUPABASE_TEST_SECRET_KEY',
+    ])
+      delete process.env[name]
+  }
+
   // Vite solo expone VITE_* al bundle; el servidor de Start lee process.env,
   // así que el .env local también debe llegar allí.
   const env = loadEnv(mode, process.cwd(), '')

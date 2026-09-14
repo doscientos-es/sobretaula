@@ -58,6 +58,25 @@ async function getMembershipOrRedirect(
   }
 }
 
+function reportTenantRouteFailure(
+  operation: string,
+  error: unknown,
+  context: { slug: string; tenantId?: string },
+): never {
+  const incidentId = globalThis.crypto?.randomUUID?.() ?? `inc-${Date.now().toString(36)}`
+  const details = {
+    incidentId,
+    operation,
+    route: '/t/$slug',
+    slug: context.slug,
+    tenantId: context.tenantId,
+    error: error instanceof Error ? error.message : String(error),
+    stack: error instanceof Error ? error.stack : undefined,
+  }
+  console.error('[tenant-route-failure]', JSON.stringify(details))
+  throw new Error(`tenant_route_failed:${operation}:${incidentId}`)
+}
+
 export const Route = createFileRoute('/t/$slug')({
   beforeLoad: async ({ context, params, location }) => {
     const slug = parseTenantSlug(params.slug)
@@ -82,32 +101,47 @@ export const Route = createFileRoute('/t/$slug')({
     const tenant = await context.queryClient.ensureQueryData(tenantBySlugQuery(slug))
     if (!tenant) throw notFound()
 
-    const billingStatus = await getTenantBillingStatus({
-      data: { tenantId: tenant.id },
-    })
-    const venues = await context.queryClient.ensureQueryData(tenantVenuesQuery(tenant.id))
-    const metrics = isTenantOperational(tenant.status)
-      ? await getDashboardMetrics({
-          data: {
-            tenantId: tenant.id,
-            venueIds: venues.map((venue) => venue.id),
-          },
-        })
-      : {
-          actionItems: [],
-          nextReservationCovers: null,
-          nextReservationStartsAt: null,
-          openSessionCount: 0,
-          occupiedTables: 0,
-          paidTodayCents: 0,
-          pendingReservationsToday: 0,
-          reservationsToday: 0,
-          reservationsThisWeek: 0,
-          noShowsThisWeek: 0,
-        }
-    const setupStatus = await getTenantSetupStatus({
-      data: { tenantId: tenant.id, venueIds: venues.map((venue) => venue.id) },
-    })
+    let billingStatus
+    try {
+      billingStatus = await getTenantBillingStatus({ data: { tenantId: tenant.id } })
+    } catch (error) {
+      reportTenantRouteFailure('billing_status', error, { slug, tenantId: tenant.id })
+    }
+    let venues
+    try {
+      venues = await context.queryClient.ensureQueryData(tenantVenuesQuery(tenant.id))
+    } catch (error) {
+      reportTenantRouteFailure('venues', error, { slug, tenantId: tenant.id })
+    }
+    let metrics
+    try {
+      metrics = isTenantOperational(tenant.status)
+        ? await getDashboardMetrics({
+            data: { tenantId: tenant.id, venueIds: venues.map((venue) => venue.id) },
+          })
+        : {
+            actionItems: [],
+            nextReservationCovers: null,
+            nextReservationStartsAt: null,
+            openSessionCount: 0,
+            occupiedTables: 0,
+            paidTodayCents: 0,
+            pendingReservationsToday: 0,
+            reservationsToday: 0,
+            reservationsThisWeek: 0,
+            noShowsThisWeek: 0,
+          }
+    } catch (error) {
+      reportTenantRouteFailure('dashboard_metrics', error, { slug, tenantId: tenant.id })
+    }
+    let setupStatus
+    try {
+      setupStatus = await getTenantSetupStatus({
+        data: { tenantId: tenant.id, venueIds: venues.map((venue) => venue.id) },
+      })
+    } catch (error) {
+      reportTenantRouteFailure('setup_status', error, { slug, tenantId: tenant.id })
+    }
     return {
       billingStatus,
       membership: context.tenantMembership,
@@ -436,6 +470,10 @@ function TenantRouteError({ error, reset }: { error: unknown; reset: () => void 
         : status === 404
           ? 'El restaurante o la sección solicitada no existe.'
           : 'Ha ocurrido un problema al cargar los datos. Reintenta la operación; si continúa, contacta con soporte.'
+  const incidentId =
+    error instanceof Error
+      ? error.message.match(/(inc-[a-z0-9-]+|[0-9a-f]{8}-[0-9a-f-]{27,})$/i)?.[1]
+      : null
 
   return (
     <main aria-live="assertive" className="mx-auto w-full max-w-2xl p-6 sm:p-10">
@@ -443,6 +481,9 @@ function TenantRouteError({ error, reset }: { error: unknown; reset: () => void 
         <CardHeader>
           <CardTitle>{title}</CardTitle>
           <CardDescription>{description}</CardDescription>
+          {incidentId && (
+            <p className="text-muted-foreground font-mono text-xs">Incidencia: {incidentId}</p>
+          )}
         </CardHeader>
         <CardContent className="flex flex-wrap items-center gap-3">
           <Button onPress={reset} type="button">
