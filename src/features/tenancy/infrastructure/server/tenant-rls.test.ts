@@ -6,7 +6,10 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 const testUrl = process.env.SUPABASE_TEST_URL
 const testPublishableKey = process.env.SUPABASE_TEST_PUBLISHABLE_KEY
 const testSecretKey = process.env.SUPABASE_TEST_SECRET_KEY
-const configured = Boolean(testUrl && testPublishableKey && testSecretKey)
+// Never run destructive remote fixtures just because .env.test is present.
+// Opt in explicitly only from an isolated Supabase project.
+const configured =
+  process.env.RUN_RLS_TESTS === 'true' && Boolean(testUrl && testPublishableKey && testSecretKey)
 
 const describeRls = configured ? describe : describe.skip
 
