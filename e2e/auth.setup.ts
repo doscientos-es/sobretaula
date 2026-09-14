@@ -18,6 +18,7 @@ setup('authenticate E2E owner against Supabase-dev', async ({ page }) => {
 
   for (let attempt = 1; attempt <= 3; attempt += 1) {
     await page.goto('/login', { waitUntil: 'domcontentloaded' })
+    await page.locator('form[data-hydrated="true"]').waitFor({ state: 'visible' })
     await page.getByLabel(/correo|email/i).waitFor({ state: 'visible' })
     await page.getByLabel(/correo|email/i).fill(email)
     await page.getByRole('textbox', { name: /contraseña|password/i }).fill(password)

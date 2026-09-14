@@ -69,8 +69,8 @@ export function PwaRuntime() {
     if (!tenantSlug) return
     const manifest = document.querySelector<HTMLLinkElement>('link[rel="manifest"]')
     const icon = document.querySelector<HTMLLinkElement>('link[rel="icon"]')
-    if (manifest) manifest.href = `/t/${tenantSlug}/manifest.webmanifest`
-    if (icon) icon.href = `/t/${tenantSlug}/pwa-icon.svg?size=192`
+    if (manifest) manifest.href = `/t/${tenantSlug}/manifest/webmanifest`
+    if (icon) icon.href = `/t/${tenantSlug}/pwa-icon/svg?size=192`
   }, [tenantSlug])
 
   if (!visible) return null

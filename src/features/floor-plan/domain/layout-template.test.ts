@@ -17,7 +17,6 @@ describe('layout templates', () => {
         floorPlanVersionId: 'version',
         heightCm: 80,
         widthCm: 80,
-        rotationDeg: 0,
         xCm: 100,
         yCm: 100,
       },
@@ -30,7 +29,6 @@ describe('layout templates', () => {
         label: 'Entrada',
         heightCm: 100,
         widthCm: 20,
-        rotationDeg: 0,
         xCm: 0,
         yCm: 200,
       },
@@ -41,7 +39,23 @@ describe('layout templates', () => {
     const parsed = parseLayoutTemplate(serializeLayoutTemplate(createLayoutTemplate(input)))
     expect(parsed.version).toBe(1)
     expect(parsed.tables[0]).not.toHaveProperty('id')
+    expect(parsed.tables[0]).not.toHaveProperty('rotationDeg')
     expect(parsed.elements[0]).not.toHaveProperty('floorPlanVersionId')
+    expect(parsed.elements[0]).not.toHaveProperty('rotationDeg')
+  })
+
+  it('ignores rotation stored in legacy templates', () => {
+    const template = createLayoutTemplate(input)
+    const parsed = parseLayoutTemplate(
+      JSON.stringify({
+        ...template,
+        elements: [{ ...template.elements[0], rotationDeg: 90 }],
+        tables: [{ ...template.tables[0], rotationDeg: 45 }],
+      }),
+    )
+
+    expect(parsed.tables[0]).not.toHaveProperty('rotationDeg')
+    expect(parsed.elements[0]).not.toHaveProperty('rotationDeg')
   })
 
   it('rejects invalid JSON and unsupported versions', () => {

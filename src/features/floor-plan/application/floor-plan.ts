@@ -124,7 +124,6 @@ const createTableInput = venueInput
     maxSeats: z.number().int().min(1).max(50),
     minSeats: z.number().int().min(1).max(50),
     isAccessible: z.boolean().default(false),
-    rotationDeg: z.number().int().min(0).max(359).default(0),
     shape: z.enum(['square', 'rectangle', 'round', 'oval', 'custom']).default('square'),
     versionId: z.string().uuid(),
     widthCm: z.number().int().min(25).max(500),
@@ -138,7 +137,6 @@ const createTableInput = venueInput
 const placementInput = z.object({
   heightCm: z.number().int().min(25).max(500),
   id: z.string().uuid(),
-  rotationDeg: z.number().int().min(0).max(359),
   widthCm: z.number().int().min(25).max(500),
   xCm: z.number().int().min(0).max(10_000),
   yCm: z.number().int().min(0).max(10_000),
@@ -162,7 +160,6 @@ const planElementInput = z.object({
     'obstacle',
   ]),
   label: z.string().trim().max(100).nullable(),
-  rotationDeg: z.number().int().min(0).max(359),
   widthCm: z.number().int().min(1).max(10_000),
   xCm: z.number().int().min(0).max(10_000),
   yCm: z.number().int().min(0).max(10_000),
@@ -235,16 +232,12 @@ export async function loadFloorPlan(
       .eq('venue_id', data.venueId),
     supabase
       .from('table_placements')
-      .select(
-        'floor_plan_version_id, height_cm, id, is_locked, rotation_deg, table_id, width_cm, x_cm, y_cm',
-      )
+      .select('floor_plan_version_id, height_cm, id, is_locked, table_id, width_cm, x_cm, y_cm')
       .eq('tenant_id', data.tenantId)
       .in('floor_plan_version_id', versionIds),
     supabase
       .from('plan_elements')
-      .select(
-        'floor_plan_version_id, height_cm, id, kind, label, rotation_deg, width_cm, x_cm, y_cm',
-      )
+      .select('floor_plan_version_id, height_cm, id, kind, label, width_cm, x_cm, y_cm')
       .eq('tenant_id', data.tenantId)
       .in('floor_plan_version_id', versionIds),
     supabase
@@ -266,7 +259,7 @@ export async function loadFloorPlan(
   if (placementsResult.error?.code === '42703') {
     const legacy = await supabase
       .from('table_placements')
-      .select('floor_plan_version_id, height_cm, id, rotation_deg, table_id, width_cm, x_cm, y_cm')
+      .select('floor_plan_version_id, height_cm, id, table_id, width_cm, x_cm, y_cm')
       .eq('tenant_id', data.tenantId)
       .in('floor_plan_version_id', versionIds)
     placementsResult = {
@@ -310,7 +303,6 @@ export async function loadFloorPlan(
       id: element.id,
       kind: element.kind,
       label: element.label,
-      rotationDeg: element.rotation_deg,
       widthCm: element.width_cm,
       xCm: element.x_cm,
       yCm: element.y_cm,
@@ -321,7 +313,6 @@ export async function loadFloorPlan(
       heightCm: placement.height_cm,
       id: placement.table_id,
       isLocked: placement.is_locked,
-      rotationDeg: placement.rotation_deg,
       widthCm: placement.width_cm,
       xCm: placement.x_cm,
       yCm: placement.y_cm,
@@ -458,7 +449,7 @@ export const createFloorPlanTable = createServerFn({ method: 'POST' })
 
     const { data: existing, error: placementsError } = await supabase
       .from('table_placements')
-      .select('height_cm, rotation_deg, table_id, width_cm, x_cm, y_cm')
+      .select('height_cm, table_id, width_cm, x_cm, y_cm')
       .eq('floor_plan_version_id', data.versionId)
     if (placementsError)
       throw new Error(`floor_plan_placements_load_failed:${placementsError.code}`)
@@ -466,7 +457,6 @@ export const createFloorPlanTable = createServerFn({ method: 'POST' })
     const placement = {
       heightCm: data.heightCm,
       id: 'new-table',
-      rotationDeg: data.rotationDeg,
       widthCm: data.widthCm,
       xCm: data.xCm,
       yCm: data.yCm,
@@ -474,7 +464,6 @@ export const createFloorPlanTable = createServerFn({ method: 'POST' })
     const existingPlacements = (existing ?? []).map((current) => ({
       heightCm: current.height_cm,
       id: current.table_id,
-      rotationDeg: current.rotation_deg,
       widthCm: current.width_cm,
       xCm: current.x_cm,
       yCm: current.y_cm,
@@ -511,7 +500,6 @@ export const createFloorPlanTable = createServerFn({ method: 'POST' })
     const { error: placementError } = await supabase.from('table_placements').insert({
       floor_plan_version_id: data.versionId,
       height_cm: data.heightCm,
-      rotation_deg: data.rotationDeg,
       table_id: table.id,
       tenant_id: data.tenantId,
       width_cm: data.widthCm,
@@ -596,7 +584,6 @@ export const saveFloorPlanVersion = createServerFn({ method: 'POST' })
             data.placements.map((placement) => ({
               floor_plan_version_id: version.id,
               height_cm: placement.heightCm,
-              rotation_deg: placement.rotationDeg,
               table_id: placement.id,
               tenant_id: data.tenantId,
               width_cm: placement.widthCm,
@@ -613,7 +600,6 @@ export const saveFloorPlanVersion = createServerFn({ method: 'POST' })
               height_cm: element.heightCm,
               kind: element.kind,
               label: element.label,
-              rotation_deg: element.rotationDeg,
               tenant_id: data.tenantId,
               width_cm: element.widthCm,
               x_cm: element.xCm,
@@ -627,7 +613,6 @@ export const saveFloorPlanVersion = createServerFn({ method: 'POST' })
         data.placements.map((placement) => ({
           floor_plan_version_id: version.id,
           height_cm: placement.heightCm,
-          rotation_deg: placement.rotationDeg,
           table_id: placement.id,
           tenant_id: data.tenantId,
           width_cm: placement.widthCm,

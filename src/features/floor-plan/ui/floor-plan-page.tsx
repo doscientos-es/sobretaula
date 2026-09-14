@@ -276,43 +276,43 @@ export function FloorPlanPage({
   }
   const layoutIssues = activeVersion
     ? [
-        ...validateLayout(placements, activeVersion),
-        ...findNarrowPassages(placements, minimumAisleCm).map((passage) => ({
-          code: 'narrow_passage' as const,
-          placementId: passage.firstPlacementId,
-          relatedPlacementId: passage.secondPlacementId,
-        })),
-      ]
+      ...validateLayout(placements, activeVersion),
+      ...findNarrowPassages(placements, minimumAisleCm).map((passage) => ({
+        code: 'narrow_passage' as const,
+        placementId: passage.firstPlacementId,
+        relatedPlacementId: passage.secondPlacementId,
+      })),
+    ]
     : []
   const blockedAccesses = findBlockedAccesses(placements, elements)
   const selectedPlacement = placements.find((item) => item.id === selectedId)
   const alignmentGuides = selectedPlacement
     ? placements
-        .filter((item) => item.id !== selectedPlacement.id)
-        .flatMap((item) => {
-          const guides: Array<{ axis: 'x' | 'y'; value: number }> = []
-          const selectedX = [
-            selectedPlacement.xCm,
-            selectedPlacement.xCm + selectedPlacement.widthCm / 2,
-            selectedPlacement.xCm + selectedPlacement.widthCm,
-          ]
-          const selectedY = [
-            selectedPlacement.yCm,
-            selectedPlacement.yCm + selectedPlacement.heightCm / 2,
-            selectedPlacement.yCm + selectedPlacement.heightCm,
-          ]
-          const otherX = [item.xCm, item.xCm + item.widthCm / 2, item.xCm + item.widthCm]
-          const otherY = [item.yCm, item.yCm + item.heightCm / 2, item.yCm + item.heightCm]
-          const xMatch = otherX.find((candidate) =>
-            selectedX.some((value) => Math.abs(value - candidate) <= gridSize / 2),
-          )
-          const yMatch = otherY.find((candidate) =>
-            selectedY.some((value) => Math.abs(value - candidate) <= gridSize / 2),
-          )
-          if (xMatch !== undefined) guides.push({ axis: 'x', value: xMatch })
-          if (yMatch !== undefined) guides.push({ axis: 'y', value: yMatch })
-          return guides
-        })
+      .filter((item) => item.id !== selectedPlacement.id)
+      .flatMap((item) => {
+        const guides: Array<{ axis: 'x' | 'y'; value: number }> = []
+        const selectedX = [
+          selectedPlacement.xCm,
+          selectedPlacement.xCm + selectedPlacement.widthCm / 2,
+          selectedPlacement.xCm + selectedPlacement.widthCm,
+        ]
+        const selectedY = [
+          selectedPlacement.yCm,
+          selectedPlacement.yCm + selectedPlacement.heightCm / 2,
+          selectedPlacement.yCm + selectedPlacement.heightCm,
+        ]
+        const otherX = [item.xCm, item.xCm + item.widthCm / 2, item.xCm + item.widthCm]
+        const otherY = [item.yCm, item.yCm + item.heightCm / 2, item.yCm + item.heightCm]
+        const xMatch = otherX.find((candidate) =>
+          selectedX.some((value) => Math.abs(value - candidate) <= gridSize / 2),
+        )
+        const yMatch = otherY.find((candidate) =>
+          selectedY.some((value) => Math.abs(value - candidate) <= gridSize / 2),
+        )
+        if (xMatch !== undefined) guides.push({ axis: 'x', value: xMatch })
+        if (yMatch !== undefined) guides.push({ axis: 'y', value: yMatch })
+        return guides
+      })
     : []
   async function createArea() {
     const areaName = newAreaName.trim()
@@ -404,7 +404,7 @@ export function FloorPlanPage({
       candidates.reduce(
         (best, candidate) =>
           Math.abs(value - candidate) <= gridSize / 2 &&
-          Math.abs(value - candidate) < Math.abs(value - best)
+            Math.abs(value - candidate) < Math.abs(value - best)
             ? candidate
             : best,
         value,
@@ -510,7 +510,6 @@ export function FloorPlanPage({
                             : kind === 'exit'
                               ? 'Salida'
                               : 'Etiqueta',
-      rotationDeg: 0,
       widthCm: kind === 'wall' ? 250 : 100,
       xCm: Math.max(0, Math.round(position.x / gridSize) * gridSize),
       yCm: Math.max(0, Math.round(position.y / gridSize) * gridSize),
@@ -589,22 +588,22 @@ export function FloorPlanPage({
     const target =
       axis === 'right' || axis === 'bottom'
         ? Math.max(
-            ...selected.map((item) =>
-              axis === 'right' ? item.xCm + item.widthCm : item.yCm + item.heightCm,
-            ),
-          )
+          ...selected.map((item) =>
+            axis === 'right' ? item.xCm + item.widthCm : item.yCm + item.heightCm,
+          ),
+        )
         : Math.min(...selected.map((item) => (axis === 'x' ? item.xCm : item.yCm)))
     const next = placements.map((item) =>
       selectedIds.includes(item.id)
         ? {
-            ...item,
-            [axis === 'x' || axis === 'right' ? 'xCm' : 'yCm']:
-              axis === 'right'
-                ? target - item.widthCm
-                : axis === 'bottom'
-                  ? target - item.heightCm
-                  : target,
-          }
+          ...item,
+          [axis === 'x' || axis === 'right' ? 'xCm' : 'yCm']:
+            axis === 'right'
+              ? target - item.widthCm
+              : axis === 'bottom'
+                ? target - item.heightCm
+                : target,
+        }
         : item,
     )
     if (
@@ -647,13 +646,7 @@ export function FloorPlanPage({
   }
 
   function updateSelected(
-    values: Partial<FloorPlanElement> & {
-      xCm?: number
-      yCm?: number
-      widthCm?: number
-      heightCm?: number
-      rotationDeg?: number
-    },
+    values: Partial<Pick<FloorPlanElement, 'heightCm' | 'label' | 'widthCm' | 'xCm' | 'yCm'>>,
   ) {
     if (!selectedId || !activeVersion) return
     if (lockedIds.includes(selectedId)) {
@@ -665,13 +658,8 @@ export function FloorPlanPage({
     const selected = selectedTable ?? selectedElement
     if (!selected) return
     const candidate = { ...selected, ...values }
-    if (
-      candidate.widthCm <= 0 ||
-      candidate.heightCm <= 0 ||
-      candidate.rotationDeg < 0 ||
-      candidate.rotationDeg > 359
-    ) {
-      feedback.setError('El tamaño debe ser positivo y la rotación estar entre 0° y 359°.')
+    if (candidate.widthCm <= 0 || candidate.heightCm <= 0) {
+      feedback.setError('El tamaño debe ser positivo.')
       return
     }
     if (!isPlacementWithinBounds(candidate, activeVersion)) {
@@ -1049,19 +1037,6 @@ export function FloorPlanPage({
                           </Field>
                         ))}
                       </div>
-                      <Field>
-                        <FieldLabel htmlFor="selected-rotation">Rotación (°)</FieldLabel>
-                        <Input
-                          id="selected-rotation"
-                          max={359}
-                          min={0}
-                          onChange={(event) =>
-                            updateSelected({ rotationDeg: Number(event.target.value) })
-                          }
-                          type="number"
-                          value={selected.rotationDeg}
-                        />
-                      </Field>
                       {'label' in selected && (
                         <Field>
                           <FieldLabel htmlFor="selected-label">Etiqueta</FieldLabel>

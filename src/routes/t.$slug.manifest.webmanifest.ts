@@ -4,7 +4,7 @@ import { findTenantBySlug } from '@/features/tenancy/infrastructure/server/tenan
 import { parseTenantSlug } from '@/shared/lib/tenant/tenant-slug'
 
 function manifestIconUrl(slug: string, size: number) {
-  return `/t/${encodeURIComponent(slug)}/pwa-icon.svg?size=${size}`
+  return `/t/${encodeURIComponent(slug)}/pwa-icon/svg?size=${size}`
 }
 
 export const Route = createFileRoute('/t/$slug/manifest/webmanifest')({

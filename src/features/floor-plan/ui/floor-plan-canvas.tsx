@@ -180,7 +180,7 @@ export function FloorPlanCanvas({
             Ajuste automático activo:{' '}
             {alignmentGuides.some((guide) => guide.axis === 'x') ? 'alineación vertical' : ''}
             {alignmentGuides.some((guide) => guide.axis === 'x') &&
-            alignmentGuides.some((guide) => guide.axis === 'y')
+              alignmentGuides.some((guide) => guide.axis === 'y')
               ? ' y '
               : ''}
             {alignmentGuides.some((guide) => guide.axis === 'y') ? 'alineación horizontal' : ''}
@@ -407,7 +407,6 @@ export function FloorPlanCanvas({
                   rx="4"
                   stroke={selectedIds.includes(element.id) ? 'var(--ring)' : 'transparent'}
                   strokeWidth={selectedIds.includes(element.id) ? 4 : 0}
-                  transform={`rotate(${element.rotationDeg} ${element.xCm + element.widthCm / 2} ${element.yCm + element.heightCm / 2})`}
                   width={element.widthCm}
                   x={element.xCm}
                   y={element.yCm}
@@ -446,7 +445,6 @@ export function FloorPlanCanvas({
                   rx="12"
                   stroke={selectedIds.includes(placement.id) ? 'var(--ring)' : 'transparent'}
                   strokeWidth={selectedIds.includes(placement.id) ? 4 : 0}
-                  transform={`rotate(${placement.rotationDeg} ${placement.xCm + placement.widthCm / 2} ${placement.yCm + placement.heightCm / 2})`}
                   width={placement.widthCm}
                   x={placement.xCm}
                   y={placement.yCm}

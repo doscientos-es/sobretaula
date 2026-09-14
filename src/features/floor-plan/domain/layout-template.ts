@@ -7,14 +7,9 @@ export interface LayoutTemplate {
   version: 1
   heightCm: number
   widthCm: number
-  tables: Array<
-    Pick<FloorPlanTablePlacement, 'code' | 'heightCm' | 'rotationDeg' | 'widthCm' | 'xCm' | 'yCm'>
-  >
+  tables: Array<Pick<FloorPlanTablePlacement, 'code' | 'heightCm' | 'widthCm' | 'xCm' | 'yCm'>>
   elements: Array<
-    Pick<
-      FloorPlanElement,
-      'heightCm' | 'kind' | 'label' | 'rotationDeg' | 'widthCm' | 'xCm' | 'yCm'
-    >
+    Pick<FloorPlanElement, 'heightCm' | 'kind' | 'label' | 'widthCm' | 'xCm' | 'yCm'>
   >
 }
 
@@ -29,19 +24,17 @@ export function createLayoutTemplate(input: {
     version: FLOOR_PLAN_TEMPLATE_VERSION,
     heightCm: input.heightCm,
     widthCm: input.widthCm,
-    tables: input.tables.map(({ code, heightCm, rotationDeg, widthCm, xCm, yCm }) => ({
+    tables: input.tables.map(({ code, heightCm, widthCm, xCm, yCm }) => ({
       code,
       heightCm,
-      rotationDeg,
       widthCm,
       xCm,
       yCm,
     })),
-    elements: input.elements.map(({ heightCm, kind, label, rotationDeg, widthCm, xCm, yCm }) => ({
+    elements: input.elements.map(({ heightCm, kind, label, widthCm, xCm, yCm }) => ({
       heightCm,
       kind,
       label,
-      rotationDeg,
       widthCm,
       xCm,
       yCm,
@@ -93,5 +86,25 @@ export function parseLayoutTemplate(value: string): LayoutTemplate {
     )
   )
     throw new Error('La geometría de la plantilla no es válida.')
-  return candidate as LayoutTemplate
+  return {
+    elements: candidate.elements.map(({ heightCm, kind, label, widthCm, xCm, yCm }) => ({
+      heightCm,
+      kind,
+      label,
+      widthCm,
+      xCm,
+      yCm,
+    })),
+    format: candidate.format,
+    heightCm,
+    tables: candidate.tables.map(({ code, heightCm, widthCm, xCm, yCm }) => ({
+      code,
+      heightCm,
+      widthCm,
+      xCm,
+      yCm,
+    })),
+    version: candidate.version,
+    widthCm,
+  }
 }
