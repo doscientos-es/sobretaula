@@ -29,9 +29,9 @@ export default defineConfig(({ mode }) => {
           codeSplitting: {
             groups: [
               { name: 'vendor-react', test: /node_modules.*react(?:-dom)?/ },
-              { name: 'vendor-ui', test: /node_modules.*@doscientos(?:\+|\/)ui/ },
+              { name: 'vendor-ui', test: /node_modules.*@doscientos(?:\+|[/\\])ui/ },
               { name: 'vendor-icons', test: /node_modules.*lucide-react/ },
-              { name: 'vendor-supabase', test: /node_modules.*@supabase(?:\+|\/)/ },
+              { name: 'vendor-supabase', test: /node_modules.*@supabase(?:\+|[/\\])/ },
             ],
           },
         },
