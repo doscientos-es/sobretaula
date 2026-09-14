@@ -333,7 +333,14 @@ export function FloorPlanCanvas({
               ),
             )}
             {elements.map((element) => (
-              <g key={element.id} transform={dragPreview?.id === element.id ? `translate(${dragPreview.x - element.xCm} ${dragPreview.y - element.yCm})` : undefined}>
+              <g
+                key={element.id}
+                transform={
+                  dragPreview?.id === element.id
+                    ? `translate(${dragPreview.x - element.xCm} ${dragPreview.y - element.yCm})`
+                    : undefined
+                }
+              >
                 <rect
                   fill={element.kind === 'wall' ? 'var(--foreground)' : 'var(--muted-foreground)'}
                   height={element.heightCm}
@@ -363,7 +370,14 @@ export function FloorPlanCanvas({
               </g>
             ))}
             {placements.map((placement) => (
-              <g key={placement.id} transform={dragPreview?.id === placement.id ? `translate(${dragPreview.x - placement.xCm} ${dragPreview.y - placement.yCm})` : undefined}>
+              <g
+                key={placement.id}
+                transform={
+                  dragPreview?.id === placement.id
+                    ? `translate(${dragPreview.x - placement.xCm} ${dragPreview.y - placement.yCm})`
+                    : undefined
+                }
+              >
                 <rect
                   fill={
                     layoutIssues.some((issue) => issue.placementId === placement.id)
