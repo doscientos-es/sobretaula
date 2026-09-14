@@ -26,6 +26,16 @@ export default defineConfig(({ mode }) => {
     build: {
       rollupOptions: {
         output: {
+          manualChunks(id) {
+            if (!id.includes('node_modules')) return undefined
+            if (id.includes('lucide-react')) return 'vendor-icons'
+            if (id.includes('@doscientos/ui') || id.includes('@doscientos+ui')) return 'vendor-ui'
+            if (id.includes('@supabase/') || id.includes('@supabase+')) return 'vendor-supabase'
+            if (id.includes('react-aria') || id.includes('react-dom') || id.includes('react/')) {
+              return 'vendor-react'
+            }
+            return 'vendor'
+          },
           codeSplitting: {
             groups: [
               { name: 'vendor-react', test: /node_modules.*react(?:-dom)?/ },

@@ -36,11 +36,13 @@ archivos ni el índice.
 ## Migraciones
 
 SQL versionado en `supabase/migrations`, aplicadas en orden lexicográfico.
-Nunca se edita una migración ya aplicada: se añade una nueva. Hay proyectos
-Supabase separados de pruebas y producción: las migraciones se ensayan primero
-en pruebas y solo se aplican a producción de forma individual, tras confirmar
-expresamente el destino y verificar el esquema. Nunca se usan fixtures, humo,
-carga ni pruebas de concurrencia sobre producción.
+Nunca se edita una migración ya aplicada: se añade una nueva. El esquema, las
+políticas RLS, funciones y definición de buckets se sincronizan desde estas
+migraciones; los datos, usuarios y objetos de Storage no se copian de
+producción. Las migraciones se ensayan primero en pruebas y solo se aplican a
+producción de forma individual, tras confirmar expresamente el destino y
+verificar el esquema. Nunca se usan fixtures, humo, carga ni pruebas de
+concurrencia sobre producción.
 
 ## Cuentas demo
 
@@ -105,9 +107,10 @@ Requisitos del runtime (ADR-0001): Node 22+, módulos nativos disponibles y
 soporte del artefacto `dist/server/server.js`. No basta publicar assets
 estáticos: el servidor Node es parte del producto (fiscalidad, PDF, webhooks).
 
-1. Los proyectos Supabase de pruebas y producción tienen las migraciones
-   aplicadas y storage `invoice_documents` creado (migraciones
-   `20260909000001` a `20260909000003`).
+1. Antes del despliegue, los proyectos Supabase de pruebas y producción deben
+   tener aplicadas las migraciones del release y el bucket `invoice_documents`
+   creado por dichas migraciones. Los datos de prueba se crean únicamente en el
+   proyecto de pruebas.
 2. Secretos del servidor configurados en el gestor del entorno; nunca en el
    repositorio.
 3. En Supabase Auth, añadir `${APP_URL}/activar-cuenta` y

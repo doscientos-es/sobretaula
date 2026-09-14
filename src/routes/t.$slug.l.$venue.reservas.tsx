@@ -2,7 +2,10 @@ import { createFileRoute, notFound } from '@tanstack/react-router'
 import { z } from 'zod'
 
 import { tenantRouteState } from '@/app/tenant-route-loader'
-import { getReservationServices, getReservationTerms } from '@/features/reservations'
+import {
+  getReservationServices,
+  getReservationTerms,
+} from '@/features/reservations/application/reservations'
 import { loadVenueRouteContext } from '@/features/venues'
 
 export const Route = createFileRoute('/t/$slug/l/$venue/reservas')({

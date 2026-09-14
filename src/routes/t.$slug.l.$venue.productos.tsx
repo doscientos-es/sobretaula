@@ -1,13 +1,13 @@
 import { createFileRoute, notFound } from '@tanstack/react-router'
 
 import { getDemandForecast } from '@/features/forecasting'
-import { getMenu } from '@/features/menu'
+import { getMenu } from '@/features/menu/application/menu'
 import {
   getInventory,
   listIngredients,
   listPurchaseOrders,
   listSuppliers,
-} from '@/features/product'
+} from '@/features/product/application/product'
 import { loadVenueRouteContext } from '@/features/venues'
 
 export const Route = createFileRoute('/t/$slug/l/$venue/productos')({

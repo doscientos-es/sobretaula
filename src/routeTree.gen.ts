@@ -341,7 +341,9 @@ const TSlugLVenueClientesRoute = TSlugLVenueClientesRouteImport.update({
   id: '/clientes',
   path: '/clientes',
   getParentRoute: () => TSlugLVenueRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/t.$slug.l.$venue.clientes.lazy').then((d) => d.Route),
+)
 const TSlugLVenueComunicacionesRoute =
   TSlugLVenueComunicacionesRouteImport.update({
     id: '/comunicaciones',
@@ -358,13 +360,19 @@ const TSlugLVenueFichajeRoute = TSlugLVenueFichajeRouteImport.update({
   id: '/fichaje',
   path: '/fichaje',
   getParentRoute: () => TSlugLVenueRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/t.$slug.l.$venue.fichaje.lazy').then((d) => d.Route),
+)
 const TSlugLVenueFichajeTerminalRoute =
   TSlugLVenueFichajeTerminalRouteImport.update({
     id: '/fichaje-terminal',
     path: '/fichaje-terminal',
     getParentRoute: () => TSlugLVenueRoute,
-  } as any)
+  } as any).lazy(() =>
+    import('./routes/t.$slug.l.$venue.fichaje-terminal.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 const TSlugLVenueFidelizacionRoute = TSlugLVenueFidelizacionRouteImport.update({
   id: '/fidelizacion',
   path: '/fidelizacion',
@@ -392,12 +400,16 @@ const TSlugLVenueProductosRoute = TSlugLVenueProductosRouteImport.update({
   id: '/productos',
   path: '/productos',
   getParentRoute: () => TSlugLVenueRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/t.$slug.l.$venue.productos.lazy').then((d) => d.Route),
+)
 const TSlugLVenuePropinasRoute = TSlugLVenuePropinasRouteImport.update({
   id: '/propinas',
   path: '/propinas',
   getParentRoute: () => TSlugLVenueRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/t.$slug.l.$venue.propinas.lazy').then((d) => d.Route),
+)
 const TSlugLVenueReservasRoute = TSlugLVenueReservasRouteImport.update({
   id: '/reservas',
   path: '/reservas',
