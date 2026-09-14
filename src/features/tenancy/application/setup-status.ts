@@ -4,10 +4,7 @@ import { z } from 'zod'
 import { authMiddleware } from '@/features/auth/infrastructure/server/auth-middleware'
 import { createRequestSupabaseClient } from '@/shared/lib/supabase/server/create-server-client'
 
-import {
-  operationalTenantMiddleware,
-  tenantMembershipMiddleware,
-} from './require-tenant-membership'
+import { tenantMembershipMiddleware } from './require-tenant-membership'
 
 const setupStatusInput = z.object({
   tenantId: z.string().uuid(),
@@ -23,7 +20,7 @@ export interface TenantSetupStatus {
 }
 
 export const getTenantSetupStatus = createServerFn({ method: 'GET' })
-  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .middleware([authMiddleware, tenantMembershipMiddleware])
   .validator(setupStatusInput)
   .handler(async ({ context, data }): Promise<TenantSetupStatus> => {
     const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)

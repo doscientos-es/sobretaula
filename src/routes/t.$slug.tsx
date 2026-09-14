@@ -45,17 +45,21 @@ import { tenantVenuesQuery } from '@/features/venues'
 import { LocaleProvider } from '@/shared/lib/i18n/locale-preference'
 import { parseTenantSlug } from '@/shared/lib/tenant/tenant-slug'
 
-async function getMembershipOrRedirect(tenantId: string, tenantSlug: string) {
+async function getMembershipOrRedirect(
+  tenantId: string,
+  tenantSlug: string,
+  redirectTo = `/t/${tenantSlug}`,
+) {
   try {
     return await getTenantMembership({ data: { tenantId } })
   } catch (error) {
     if (error instanceof Response && error.status === 403) throw error
-    throw redirect({ to: '/login', search: { redirect: `/t/${tenantSlug}` } })
+    throw redirect({ to: '/login', search: { redirect: redirectTo } })
   }
 }
 
 export const Route = createFileRoute('/t/$slug')({
-  beforeLoad: async ({ context, params }) => {
+  beforeLoad: async ({ context, params, location }) => {
     const slug = parseTenantSlug(params.slug)
     if (!slug) throw notFound()
 
@@ -64,7 +68,11 @@ export const Route = createFileRoute('/t/$slug')({
     context.queryClient.setQueryData(tenantBySlugQuery(slug).queryKey, tenant)
 
     return {
-      tenantMembership: await getMembershipOrRedirect(tenant.id, tenant.slug),
+      tenantMembership: await getMembershipOrRedirect(
+        tenant.id,
+        tenant.slug,
+        `${location.pathname}${location.search}`,
+      ),
     }
   },
   loader: async ({ context, params }) => {
@@ -77,9 +85,7 @@ export const Route = createFileRoute('/t/$slug')({
     const billingStatus = await getTenantBillingStatus({
       data: { tenantId: tenant.id },
     })
-    const venues = isTenantOperational(tenant.status)
-      ? await context.queryClient.ensureQueryData(tenantVenuesQuery(tenant.id))
-      : []
+    const venues = await context.queryClient.ensureQueryData(tenantVenuesQuery(tenant.id))
     const metrics = isTenantOperational(tenant.status)
       ? await getDashboardMetrics({
           data: {
@@ -99,17 +105,9 @@ export const Route = createFileRoute('/t/$slug')({
           reservationsThisWeek: 0,
           noShowsThisWeek: 0,
         }
-    const setupStatus = isTenantOperational(tenant.status)
-      ? await getTenantSetupStatus({
-          data: { tenantId: tenant.id, venueIds: venues.map((venue) => venue.id) },
-        })
-      : {
-          hasTeam: false,
-          hasFloorPlan: false,
-          hasMenu: false,
-          hasReservations: false,
-          hasVenue: false,
-        }
+    const setupStatus = await getTenantSetupStatus({
+      data: { tenantId: tenant.id, venueIds: venues.map((venue) => venue.id) },
+    })
     return {
       billingStatus,
       membership: context.tenantMembership,
@@ -373,10 +371,18 @@ function TenantLayoutContent() {
   })
   const isSubscriptionInvoicesRoute = pathname === `/t/${tenant.slug}/suscripcion/facturas`
   const isTeamRoute = pathname === `/t/${tenant.slug}/equipo`
+  const isMenuRoute = pathname === `/t/${tenant.slug}/carta`
+  const isFloorPlanRoute = pathname.endsWith('/plano')
   const isBillingRoute = pathname === `/t/${tenant.slug}/facturacion`
 
   if (!isTenantOperational(tenant.status)) {
-    if (isBillingRoute || isSubscriptionInvoicesRoute || isTeamRoute) {
+    if (
+      isBillingRoute ||
+      isSubscriptionInvoicesRoute ||
+      isTeamRoute ||
+      isMenuRoute ||
+      isFloorPlanRoute
+    ) {
       return (
         <TenantPendingRouteFrame isSetupStep={tenant.status === 'setup_pending'} tenant={tenant}>
           <Outlet />

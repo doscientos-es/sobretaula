@@ -4,10 +4,8 @@ import { z } from 'zod'
 
 import { authMiddleware } from '@/features/auth/infrastructure/server/auth-middleware'
 import { tenantBySlugQuery } from '@/features/tenancy/application/get-tenant-by-slug'
-import {
-  operationalTenantMiddleware,
-  tenantMembershipMiddleware,
-} from '@/features/tenancy/application/require-tenant-membership'
+import { tenantMembershipMiddleware } from '@/features/tenancy/application/require-tenant-membership'
+import { operationalTenantMiddleware } from '@/features/tenancy/application/require-operational-tenant'
 import { createRequestSupabaseClient } from '@/shared/lib/supabase/server/create-server-client'
 import { isValidVenueSlug, parseVenueSlug } from '@/shared/lib/tenant/venue-slug'
 
@@ -25,7 +23,7 @@ function requireManager(role: string): void {
 
 /** Lists only the locals the caller can reach: RLS applies the venue filter. */
 export const getTenantVenues = createServerFn({ method: 'GET' })
-  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .middleware([authMiddleware, tenantMembershipMiddleware])
   .validator(tenantInput)
   .handler(async ({ context, data }): Promise<Venue[]> => {
     const { data: venues, error } = await createRequestSupabaseClient(

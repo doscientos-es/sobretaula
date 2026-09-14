@@ -19,8 +19,12 @@ import { createTranslator } from '@/shared/lib/i18n/messages'
 
 /** Validates the local addressed by the URL before rendering its nested routes. */
 export const Route = createFileRoute('/t/$slug/l/$venue')({
-  beforeLoad: async ({ context, params }) => {
-    requireTenantRouteAccess(context.tenantMembership.role, 'operations')
+  beforeLoad: async ({ context, location, params }) => {
+    const isFloorPlan = location.pathname.endsWith('/plano')
+    requireTenantRouteAccess(
+      context.tenantMembership.role,
+      isFloorPlan ? 'venue_management' : 'operations',
+    )
     const routeContext = await loadVenueRouteContext(context.queryClient, params.slug, params.venue)
     if (!routeContext) throw notFound()
     return routeContext

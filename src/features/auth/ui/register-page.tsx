@@ -6,6 +6,7 @@ import {
   CardHeader,
   CardTitle,
   Field,
+  FieldDescription,
   FieldLabel,
   FormFeedback,
   Input,
@@ -51,8 +52,8 @@ export function RegisterPage() {
     <main className="st-auth-shell">
       <span aria-hidden="true" className="st-auth-orb st-auth-orb--lime" />
       <span aria-hidden="true" className="st-auth-orb st-auth-orb--mint" />
-      <section className="relative grid w-full max-w-5xl overflow-hidden rounded-[1.5rem] lg:grid-cols-[1.12fr_0.88fr]">
-        <div className="st-auth-intro hidden flex-col justify-between p-10 lg:flex">
+      <section className="relative grid w-full max-w-xl overflow-hidden rounded-[1.25rem] xl:max-w-5xl xl:grid-cols-[1.12fr_0.88fr]">
+        <div className="st-auth-intro hidden flex-col justify-between p-10 xl:flex">
           <div>
             <span className="st-brand-mark bg-white/10 text-white shadow-none">
               <Utensils className="size-5" />
@@ -67,10 +68,11 @@ export function RegisterPage() {
             Crea tu espacio y prepara la sala para el siguiente servicio.
           </p>
         </div>
-        <Card className="st-auth-card w-full rounded-[1.5rem] border-0 lg:rounded-l-none">
+        <Card className="st-auth-card w-full max-w-[30rem] justify-self-center border-0">
           <CardHeader>
-            <div className="st-brand-mark mb-3 lg:hidden">
-              <Utensils className="size-5" />
+            <div className="mb-3 flex items-center gap-2">
+              <img alt="" aria-hidden="true" className="size-9 rounded-xl" src="/icon.svg" />
+              <span className="text-sm font-semibold tracking-[-0.02em]">SobreTaula</span>
             </div>
             <CardTitle>Crea tu restaurante</CardTitle>
             <CardDescription>
@@ -88,6 +90,7 @@ export function RegisterPage() {
                   required
                   value={displayName}
                 />
+                <FieldDescription>La persona responsable de este espacio.</FieldDescription>
               </Field>
               <Field>
                 <FieldLabel htmlFor="register-email">Correo profesional</FieldLabel>
@@ -99,6 +102,7 @@ export function RegisterPage() {
                   type="email"
                   value={email}
                 />
+                <FieldDescription>Usaremos este correo para entrar y ayudarte.</FieldDescription>
               </Field>
               <Field>
                 <FieldLabel htmlFor="register-password">Contraseña</FieldLabel>
@@ -111,6 +115,9 @@ export function RegisterPage() {
                   type="password"
                   value={password}
                 />
+                <FieldDescription>
+                  Mínimo 12 caracteres. No la compartas con el equipo.
+                </FieldDescription>
               </Field>
               <FormFeedback pendingLabel="Creando cuenta…" state={feedback.state} />
               <Button className="w-full" disabled={feedback.pending} size="lg" type="submit">
@@ -127,6 +134,11 @@ export function RegisterPage() {
           </CardContent>
         </Card>
       </section>
+      <footer className="z-[1] flex flex-wrap justify-center gap-x-4 gap-y-3 text-xs text-[#e8f6ee]/70">
+        <span>© {new Date().getFullYear()} SobreTaula</span>
+        <Link className="text-[#e8f6ee] underline-offset-[0.2em] focus-visible:outline-2 focus-visible:outline-[#d7f36b] focus-visible:outline-offset-2" to="/legal/privacidad">Privacidad</Link>
+        <Link className="text-[#e8f6ee] underline-offset-[0.2em] focus-visible:outline-2 focus-visible:outline-[#d7f36b] focus-visible:outline-offset-2" to="/legal/condiciones-saas">Condiciones</Link>
+      </footer>
     </main>
   )
 }

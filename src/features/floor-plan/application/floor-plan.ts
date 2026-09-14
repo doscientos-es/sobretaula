@@ -3,10 +3,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 
 import { authMiddleware } from '@/features/auth/infrastructure/server/auth-middleware'
-import {
-  operationalTenantMiddleware,
-  tenantMembershipMiddleware,
-} from '@/features/tenancy/application/require-tenant-membership'
+import { tenantMembershipMiddleware } from '@/features/tenancy/application/require-tenant-membership'
 import { createRequestSupabaseClient } from '@/shared/lib/supabase/server/create-server-client'
 
 import type { FloorPlanData } from '../domain/floor-plan'
@@ -24,7 +21,7 @@ export const eventLayoutTemplateInput = venueInput.extend({
 })
 
 export const listEventLayoutTemplates = createServerFn({ method: 'GET' })
-  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .middleware([authMiddleware, tenantMembershipMiddleware])
   .validator(venueInput)
   .handler(async ({ context, data }) => {
     requireManager(context.tenantMembership.role)
@@ -41,7 +38,7 @@ export const listEventLayoutTemplates = createServerFn({ method: 'GET' })
   })
 
 export const createEventLayoutTemplate = createServerFn({ method: 'POST' })
-  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .middleware([authMiddleware, tenantMembershipMiddleware])
   .validator(eventLayoutTemplateInput)
   .handler(async ({ context, data }) => {
     requireManager(context.tenantMembership.role)
@@ -74,7 +71,7 @@ const updateEventLayoutTemplateInput = eventLayoutTemplateInput.extend({
 const deleteEventLayoutTemplateInput = venueInput.extend({ templateId: z.string().uuid() })
 
 export const updateEventLayoutTemplate = createServerFn({ method: 'POST' })
-  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .middleware([authMiddleware, tenantMembershipMiddleware])
   .validator(updateEventLayoutTemplateInput)
   .handler(async ({ context, data }) => {
     requireManager(context.tenantMembership.role)
@@ -98,7 +95,7 @@ export const updateEventLayoutTemplate = createServerFn({ method: 'POST' })
   })
 
 export const deleteEventLayoutTemplate = createServerFn({ method: 'POST' })
-  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .middleware([authMiddleware, tenantMembershipMiddleware])
   .validator(deleteEventLayoutTemplateInput)
   .handler(async ({ context, data }) => {
     requireManager(context.tenantMembership.role)
@@ -349,14 +346,14 @@ export async function loadFloorPlan(
 }
 
 export const getFloorPlan = createServerFn({ method: 'GET' })
-  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .middleware([authMiddleware, tenantMembershipMiddleware])
   .validator(venueInput)
   .handler(({ context, data }) =>
     loadFloorPlan(createRequestSupabaseClient(context.tenantMembership.accessToken), data),
   )
 
 export const createTableGroupPreset = createServerFn({ method: 'POST' })
-  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .middleware([authMiddleware, tenantMembershipMiddleware])
   .validator(tableGroupPresetInput)
   .handler(async ({ context, data }) => {
     requireManager(context.tenantMembership.role)
@@ -390,7 +387,7 @@ export const createTableGroupPreset = createServerFn({ method: 'POST' })
 const deleteTableGroupPresetInput = venueInput.extend({ presetId: z.string().uuid() })
 
 export const deleteTableGroupPreset = createServerFn({ method: 'POST' })
-  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .middleware([authMiddleware, tenantMembershipMiddleware])
   .validator(deleteTableGroupPresetInput)
   .handler(async ({ context, data }) => {
     requireManager(context.tenantMembership.role)
@@ -404,7 +401,7 @@ export const deleteTableGroupPreset = createServerFn({ method: 'POST' })
   })
 
 export const createInitialFloorPlan = createServerFn({ method: 'POST' })
-  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .middleware([authMiddleware, tenantMembershipMiddleware])
   .validator(initialFloorPlanInput)
   .handler(async ({ context, data }) => {
     requireManager(context.tenantMembership.role)
@@ -444,7 +441,7 @@ export const createInitialFloorPlan = createServerFn({ method: 'POST' })
   })
 
 export const createFloorPlanTable = createServerFn({ method: 'POST' })
-  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .middleware([authMiddleware, tenantMembershipMiddleware])
   .validator(createTableInput)
   .handler(async ({ context, data }) => {
     requireManager(context.tenantMembership.role)
@@ -531,7 +528,7 @@ export const createFloorPlanTable = createServerFn({ method: 'POST' })
 
 /** Saves the editor state as a new version instead of mutating a published layout. */
 export const saveFloorPlanVersion = createServerFn({ method: 'POST' })
-  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .middleware([authMiddleware, tenantMembershipMiddleware])
   .validator(saveFloorPlanVersionInput)
   .handler(async ({ context, data }) => {
     requireManager(context.tenantMembership.role)

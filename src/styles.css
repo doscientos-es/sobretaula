@@ -166,12 +166,6 @@ select:not([data-slot]):focus-visible {
   box-shadow: 0 1.5rem 4rem rgb(3 25 18 / 28%);
 }
 
-@media (max-width: 79.999rem) {
-  .st-auth-shell > section {
-    grid-template-columns: minmax(0, 1fr) !important;
-  }
-}
-
 .st-auth-layout {
   isolation: isolate;
 }
