@@ -402,12 +402,16 @@ const TSlugLVenueReservasRoute = TSlugLVenueReservasRouteImport.update({
   id: '/reservas',
   path: '/reservas',
   getParentRoute: () => TSlugLVenueRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/t.$slug.l.$venue.reservas.lazy').then((d) => d.Route),
+)
 const TSlugLVenueServicioRoute = TSlugLVenueServicioRouteImport.update({
   id: '/servicio',
   path: '/servicio',
   getParentRoute: () => TSlugLVenueRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/t.$slug.l.$venue.servicio.lazy').then((d) => d.Route),
+)
 const TSlugLVenueTarjetasRegaloRoute =
   TSlugLVenueTarjetasRegaloRouteImport.update({
     id: '/tarjetas-regalo',

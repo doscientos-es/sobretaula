@@ -4,8 +4,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite dev",
+    "dev": "vite dev --mode test",
+    "dev:test": "vite dev --mode test",
+    "dev:production": "vite dev --mode production",
     "build": "pnpm typecheck && vite build",
+    "build:test": "pnpm typecheck && vite build --mode test",
     "start": "node .output/server/index.mjs",
     "format": "oxfmt -c node_modules/@doscientos/configs/oxfmt.json --write .",
     "format:check": "oxfmt -c node_modules/@doscientos/configs/oxfmt.json --check .",
