@@ -58,8 +58,23 @@ async function getMembershipOrRedirect(
   }
 }
 
-function reportTenantRouteFailure(operation: string): never {
+function reportTenantRouteFailure(
+  operation: string,
+  error: unknown,
+  context: { slug: string; tenantId?: string },
+): never {
   const incidentId = globalThis.crypto?.randomUUID?.() ?? `inc-${Date.now().toString(36)}`
+  const details = {
+    incidentId,
+    operation,
+    route: '/t/$slug',
+    slug: context.slug,
+    tenantId: context.tenantId,
+    error: error instanceof Error ? error.message : String(error),
+    stack: error instanceof Error ? error.stack : undefined,
+  }
+  // oxlint-disable-next-line no-console -- structured incident logging for route failures
+  console.error('[tenant-route-failure]', JSON.stringify(details))
   throw new Error(`tenant_route_failed:${operation}:${incidentId}`)
 }
 
@@ -86,43 +101,43 @@ export const Route = createFileRoute('/t/$slug')({
     let billingStatus
     try {
       billingStatus = await getTenantBillingStatus({ data: { tenantId: tenant.id } })
-    } catch {
-      reportTenantRouteFailure('billing_status')
+    } catch (error) {
+      reportTenantRouteFailure('billing_status', error, { slug, tenantId: tenant.id })
     }
     let venues
     try {
       venues = await context.queryClient.ensureQueryData(tenantVenuesQuery(tenant.id))
-    } catch {
-      reportTenantRouteFailure('venues')
+    } catch (error) {
+      reportTenantRouteFailure('venues', error, { slug, tenantId: tenant.id })
     }
     let metrics
     try {
       metrics = isTenantOperational(tenant.status)
         ? await getDashboardMetrics({
-            data: { tenantId: tenant.id, venueIds: venues.map((venue) => venue.id) },
-          })
+          data: { tenantId: tenant.id, venueIds: venues.map((venue) => venue.id) },
+        })
         : {
-            actionItems: [],
-            nextReservationCovers: null,
-            nextReservationStartsAt: null,
-            openSessionCount: 0,
-            occupiedTables: 0,
-            paidTodayCents: 0,
-            pendingReservationsToday: 0,
-            reservationsToday: 0,
-            reservationsThisWeek: 0,
-            noShowsThisWeek: 0,
-          }
-    } catch {
-      reportTenantRouteFailure('dashboard_metrics')
+          actionItems: [],
+          nextReservationCovers: null,
+          nextReservationStartsAt: null,
+          openSessionCount: 0,
+          occupiedTables: 0,
+          paidTodayCents: 0,
+          pendingReservationsToday: 0,
+          reservationsToday: 0,
+          reservationsThisWeek: 0,
+          noShowsThisWeek: 0,
+        }
+    } catch (error) {
+      reportTenantRouteFailure('dashboard_metrics', error, { slug, tenantId: tenant.id })
     }
     let setupStatus
     try {
       setupStatus = await getTenantSetupStatus({
         data: { tenantId: tenant.id, venueIds: venues.map((venue) => venue.id) },
       })
-    } catch {
-      reportTenantRouteFailure('setup_status')
+    } catch (error) {
+      reportTenantRouteFailure('setup_status', error, { slug, tenantId: tenant.id })
     }
     return {
       billingStatus,
@@ -173,13 +188,12 @@ function OnboardingStep({
     <div>
       <div className="flex items-start gap-4 py-4">
         <span
-          className={`mt-0.5 inline-flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${
-            status === 'done'
+          className={`mt-0.5 inline-flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${status === 'done'
               ? 'bg-success/15 text-success'
               : status === 'active'
                 ? 'bg-primary text-primary-foreground'
                 : 'bg-muted text-muted-foreground'
-          }`}
+            }`}
         >
           {status === 'done' ? <Check className="size-4" /> : index}
         </span>

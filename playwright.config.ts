@@ -19,8 +19,6 @@ process.env.SUPABASE_SECRET_KEY = process.env.SUPABASE_TEST_SECRET_KEY
 process.env.VITE_SUPABASE_URL = process.env.SUPABASE_TEST_URL
 process.env.VITE_SUPABASE_PUBLISHABLE_KEY = process.env.SUPABASE_TEST_PUBLISHABLE_KEY
 
-const authState = process.env.E2E_STORAGE_STATE ?? 'e2e/.auth/owner.json'
-const authStatePath = fs.existsSync(path.resolve(authState)) ? authState : undefined
 const outputDir = process.env.PLAYWRIGHT_OUTPUT_DIR ?? 'test-results'
 const reportDir = process.env.PLAYWRIGHT_REPORT_DIR ?? 'playwright-report'
 
@@ -48,7 +46,13 @@ export default defineConfig({
     {
       name: 'chromium',
       dependencies: ['setup-auth'],
-      use: { ...devices['Desktop Chrome'], storageState: authStatePath },
+      use: { ...devices['Desktop Chrome'], storageState: process.env.E2E_STORAGE_STATE ?? 'e2e/.auth/owner.json' },
     },
+    ...['owner', 'manager', 'host', 'waiter', 'accountant'].map((role) => ({
+      name: role,
+      dependencies: ['setup-auth'],
+      use: { ...devices['Desktop Chrome'], storageState: `e2e/.auth/${role}.json` },
+      testMatch: /operational-flows\.spec\.ts/,
+    })),
   ],
 })

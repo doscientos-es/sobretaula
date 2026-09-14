@@ -21,6 +21,13 @@ const ownerEmail = process.env.E2E_OWNER_EMAIL ?? 'e2e-owner@example.test'
 const ownerPassword = process.env.E2E_OWNER_PASSWORD ?? 'E2e-owner-password-2026!'
 const managerEmail = process.env.E2E_MANAGER_EMAIL ?? 'e2e-manager@example.test'
 const managerPassword = process.env.E2E_MANAGER_PASSWORD ?? 'E2e-manager-password-2026!'
+const roleCredentials = {
+  owner: [ownerEmail, ownerPassword, 'E2E Owner'],
+  manager: [managerEmail, managerPassword, 'E2E Manager'],
+  host: [process.env.E2E_HOST_EMAIL ?? 'e2e-host@example.test', process.env.E2E_HOST_PASSWORD ?? 'E2e-host-password-2026!', 'E2E Host'],
+  waiter: [process.env.E2E_WAITER_EMAIL ?? 'e2e-waiter@example.test', process.env.E2E_WAITER_PASSWORD ?? 'E2e-waiter-password-2026!', 'E2E Waiter'],
+  accountant: [process.env.E2E_ACCOUNTANT_EMAIL ?? 'e2e-accountant@example.test', process.env.E2E_ACCOUNTANT_PASSWORD ?? 'E2e-accountant-password-2026!', 'E2E Accountant'],
+}
 
 if (!url || !secret)
   throw new Error('SUPABASE_TEST_URL and SUPABASE_TEST_SECRET_KEY are required in .env.test')
@@ -151,19 +158,20 @@ async function main() {
       })),
     ),
   })
-  const ownerId = await ensureUser(ownerEmail, ownerPassword, 'E2E Owner')
-  const managerId = await ensureUser(managerEmail, managerPassword, 'E2E Manager')
+  const users = {}
+  for (const [role, [email, password, displayName]] of Object.entries(roleCredentials)) {
+    users[role] = await ensureUser(email, password, displayName)
+  }
 
   await request('/rest/v1/memberships?on_conflict=tenant_id,user_id', {
     method: 'POST',
     headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
     body: JSON.stringify([
-      { tenant_id: tenantId, user_id: ownerId, role: 'owner', status: 'active' },
-      { tenant_id: tenantId, user_id: managerId, role: 'manager', status: 'active' },
+      ...Object.entries(users).map(([role, userId]) => ({ tenant_id: tenantId, user_id: userId, role, status: 'active' })),
     ]),
   })
 
-  console.log(JSON.stringify({ tenant: slug, tenantId, ownerEmail, managerEmail }, null, 2))
+  console.log(JSON.stringify({ tenant: slug, tenantId, roles: Object.fromEntries(Object.entries(roleCredentials).map(([role, [email]]) => [role, email])) }, null, 2))
 }
 
 main().catch((error) => {
