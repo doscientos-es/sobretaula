@@ -1,4 +1,12 @@
-import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from '@doscientos/ui'
+import {
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  cn,
+} from '@doscientos/ui'
 import { useRef, useState, type PointerEvent } from 'react'
 
 import {
@@ -10,6 +18,12 @@ import {
 } from '../domain/floor-plan'
 import type { LayoutIssue } from '../domain/geometry'
 import type { FloorPlanPreviewDevice } from './floor-plan-setup-card'
+
+const previewDeviceClasses: Record<FloorPlanPreviewDevice, string> = {
+  desktop: 'max-w-none',
+  mobile: 'max-w-[390px]',
+  tablet: 'max-w-[768px]',
+}
 
 interface AlignmentGuide {
   axis: 'x' | 'y'
@@ -224,9 +238,7 @@ export function FloorPlanCanvas({
             </ul>
           </div>
         )}
-        <div
-          className={`mx-auto transition-[max-width] ${previewDevice === 'mobile' ? 'max-w-[390px]' : previewDevice === 'tablet' ? 'max-w-[768px]' : 'max-w-none'}`}
-        >
+        <div className={cn('mx-auto transition-[max-width]', previewDeviceClasses[previewDevice])}>
           <svg
             aria-hidden="true"
             className="border-border bg-background h-[min(72vh,760px)] w-full touch-none rounded-lg border select-none"

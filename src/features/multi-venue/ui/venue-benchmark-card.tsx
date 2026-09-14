@@ -9,6 +9,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  cn,
 } from '@doscientos/ui'
 import { AlertTriangle, ArrowDownRight, ArrowUpRight, CheckCircle2, Minus } from 'lucide-react'
 
@@ -66,7 +67,10 @@ export function VenueBenchmarkCard({
                       </span>
                     </TableCell>
                     <TableCell
-                      className={`tabular-nums ${venue.wastePercent > 0 ? 'text-warning' : 'text-success'}`}
+                      className={cn(
+                        'tabular-nums',
+                        venue.wastePercent > 0 ? 'text-warning' : 'text-success',
+                      )}
                     >
                       <span className="flex items-center gap-1.5">
                         {venue.wastePercent > 0 ? (

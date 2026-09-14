@@ -1,4 +1,4 @@
-import { Button } from '@doscientos/ui'
+import { Button, cn } from '@doscientos/ui'
 import { Link } from '@tanstack/react-router'
 import { CalendarCheck2, CircleAlert, MapPin } from 'lucide-react'
 import { useState } from 'react'
@@ -115,7 +115,10 @@ export function PublicReservationManagementPage({
       >
         <span
           aria-hidden="true"
-          className={`mx-auto grid size-16 place-items-center rounded-full text-white ${cancelled ? 'bg-destructive' : 'bg-success'}`}
+          className={cn(
+            'mx-auto grid size-16 place-items-center rounded-full text-white',
+            cancelled ? 'bg-destructive' : 'bg-success',
+          )}
         >
           {cancelled ? <CircleAlert className="size-7" /> : <CalendarCheck2 className="size-7" />}
         </span>

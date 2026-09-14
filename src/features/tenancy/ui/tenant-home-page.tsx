@@ -7,6 +7,7 @@ import {
   PageHeader,
   PageHeaderDescription,
   PageHeaderTitle,
+  cn,
 } from '@doscientos/ui'
 import { Link } from '@tanstack/react-router'
 import {
@@ -293,7 +294,12 @@ export function TenantHomePage({
             <li className="border-border/70 bg-surface-subtle flex items-start gap-2.5 rounded-xl border px-3 py-2.5 shadow-[var(--ui-shadow-hairline)]">
               <span
                 aria-hidden="true"
-                className={`${setupStatus.hasFloorPlan && setupStatus.hasMenu ? 'bg-success/15 text-success' : 'bg-primary/10 text-primary'} grid size-6 shrink-0 place-items-center rounded-full text-xs font-semibold`}
+                className={cn(
+                  'grid size-6 shrink-0 place-items-center rounded-full text-xs font-semibold',
+                  setupStatus.hasFloorPlan && setupStatus.hasMenu
+                    ? 'bg-success/15 text-success'
+                    : 'bg-primary/10 text-primary',
+                )}
               >
                 {setupStatus.hasFloorPlan && setupStatus.hasMenu ? '✓' : '2'}
               </span>
@@ -329,7 +335,12 @@ export function TenantHomePage({
             <li className="border-border/70 bg-surface-subtle flex items-start gap-2.5 rounded-xl border px-3 py-2.5 shadow-[var(--ui-shadow-hairline)]">
               <span
                 aria-hidden="true"
-                className={`${setupStatus.hasReservations ? 'bg-success/15 text-success' : 'bg-primary/10 text-primary'} grid size-6 shrink-0 place-items-center rounded-full text-xs font-semibold`}
+                className={cn(
+                  'grid size-6 shrink-0 place-items-center rounded-full text-xs font-semibold',
+                  setupStatus.hasReservations
+                    ? 'bg-success/15 text-success'
+                    : 'bg-primary/10 text-primary',
+                )}
               >
                 {setupStatus.hasReservations ? '✓' : '3'}
               </span>
@@ -354,7 +365,10 @@ export function TenantHomePage({
             <li className="border-border/70 bg-surface-subtle flex items-start gap-2.5 rounded-xl border px-3 py-2.5 shadow-[var(--ui-shadow-hairline)]">
               <span
                 aria-hidden="true"
-                className={`${setupStatus.hasTeam ? 'bg-success/15 text-success' : 'bg-primary/10 text-primary'} grid size-6 shrink-0 place-items-center rounded-full text-xs font-semibold`}
+                className={cn(
+                  'grid size-6 shrink-0 place-items-center rounded-full text-xs font-semibold',
+                  setupStatus.hasTeam ? 'bg-success/15 text-success' : 'bg-primary/10 text-primary',
+                )}
               >
                 {setupStatus.hasTeam ? '✓' : '4'}
               </span>

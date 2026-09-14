@@ -10,7 +10,7 @@
     "dev:production": "vite dev --mode production",
     "build": "pnpm typecheck && vite build",
     "build:test": "pnpm typecheck && vite build --mode test",
-    "start": "node .output/server/index.mjs",
+    "start": "node dist/server/server.js",
     "format": "oxfmt -c node_modules/@doscientos/configs/oxfmt.json --write .",
     "format:check": "oxfmt -c node_modules/@doscientos/configs/oxfmt.json --check .",
     "lint": "oxlint",

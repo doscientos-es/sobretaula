@@ -5,6 +5,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  cn,
   DialogContent,
   DialogRoot,
   Field,
@@ -384,7 +385,12 @@ export function ReservationPage({
                   <CardContent className="grid gap-3">
                     <label
                       aria-label="Seleccionar archivo CSV de reservas"
-                      className={`grid min-h-24 cursor-pointer place-items-center rounded-lg border-2 border-dashed px-4 py-4 text-center text-sm ${isDraggingReservations ? 'border-primary bg-primary/10' : 'border-muted-foreground/30 hover:border-primary/60'}`}
+                      className={cn(
+                        'grid min-h-24 cursor-pointer place-items-center rounded-lg border-2 border-dashed px-4 py-4 text-center text-sm',
+                        isDraggingReservations
+                          ? 'border-primary bg-primary/10'
+                          : 'border-muted-foreground/30 hover:border-primary/60',
+                      )}
                       htmlFor="reservation-csv-file"
                     >
                       <span>

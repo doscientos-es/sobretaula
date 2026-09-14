@@ -2,6 +2,7 @@ import {
   Card,
   CardContent,
   Badge,
+  cn,
   PageHeader,
   PageHeaderDescription,
   PageHeaderTitle,
@@ -214,7 +215,7 @@ function MarketingLanding() {
             const definition = MODULE_DEFINITIONS[key]
             return (
               <Card
-                className={key === 'core' ? 'border-primary/40 ring-primary/10 ring-2' : ''}
+                className={cn(key === 'core' && 'border-primary/40 ring-primary/10 ring-2')}
                 key={key}
               >
                 <CardContent className="pt-6">

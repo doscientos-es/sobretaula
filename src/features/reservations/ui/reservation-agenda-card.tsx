@@ -9,6 +9,7 @@ import {
   FieldLabel,
   FormFeedback,
   Input,
+  cn,
   useFormFeedback,
 } from '@doscientos/ui'
 import { RefreshCw } from 'lucide-react'
@@ -273,7 +274,10 @@ export function ReservationAgendaCard({
           >
             <RefreshCw
               aria-hidden="true"
-              className={`mr-2 size-3.5 ${agendaLoading ? 'animate-spin motion-reduce:animate-none' : ''}`}
+              className={cn(
+                'mr-2 size-3.5',
+                agendaLoading && 'animate-spin motion-reduce:animate-none',
+              )}
             />
             {agendaLoading ? 'Actualizando…' : 'Actualizar agenda'}
           </Button>
@@ -404,7 +408,11 @@ export function ReservationAgendaCard({
                   </div>
                   {item.deposit ? (
                     <div
-                      className={`mt-1 text-xs ${['failed', 'partially_refunded'].includes(item.deposit.status) ? 'text-destructive font-medium' : ''}`}
+                      className={cn('mt-1 text-xs', {
+                        'text-destructive font-medium': ['failed', 'partially_refunded'].includes(
+                          item.deposit.status,
+                        ),
+                      })}
                     >
                       Depósito: {(item.deposit.amountCents / 100).toFixed(2)} € ·{' '}
                       {item.deposit.status}

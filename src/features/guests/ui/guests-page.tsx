@@ -5,6 +5,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  cn,
   Input,
   PageHeader,
   PageHeaderDescription,
@@ -143,7 +144,12 @@ export function GuestsPage({ tenantId, venueId }: { tenantId: string; venueId: s
         <CardContent className="grid gap-3">
           <label
             aria-label="Seleccionar archivo CSV de clientes"
-            className={`grid min-h-24 cursor-pointer place-items-center rounded-lg border-2 border-dashed px-4 py-4 text-center text-sm ${isDraggingCsv ? 'border-primary bg-primary/10' : 'border-muted-foreground/30 hover:border-primary/60'}`}
+            className={cn(
+              'grid min-h-24 cursor-pointer place-items-center rounded-lg border-2 border-dashed px-4 py-4 text-center text-sm',
+              isDraggingCsv
+                ? 'border-primary bg-primary/10'
+                : 'border-muted-foreground/30 hover:border-primary/60',
+            )}
             htmlFor="guest-csv-file"
           >
             <span>
@@ -304,7 +310,10 @@ export function GuestsPage({ tenantId, venueId }: { tenantId: string; venueId: s
                           const active = guest.tags.includes(tag.label)
                           return (
                             <button
-                              className={`rounded-full px-2 py-0.5 text-xs ${active ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}
+                              className={cn('rounded-full px-2 py-0.5 text-xs', {
+                                'bg-muted text-muted-foreground': !active,
+                                'bg-primary/10 text-primary': active,
+                              })}
                               key={tag.id}
                               onClick={() =>
                                 void toggleGuestTag({

@@ -9,6 +9,7 @@ import {
   FieldLabel,
   FormFeedback,
   Input,
+  cn,
   useFormFeedback,
 } from '@doscientos/ui'
 import { Building2, CircleCheck } from 'lucide-react'
@@ -165,7 +166,7 @@ export function TenantOnboardingPage() {
               <div className="text-primary mb-1 text-xs font-semibold">0{index + 1}</div>
               <div className="text-sm font-medium">{label}</div>
               <div className="bg-muted mt-2 h-1 overflow-hidden rounded-full">
-                <div className={`bg-primary h-full ${index === 0 ? 'w-full' : 'w-0'}`} />
+                <div className={cn('bg-primary h-full', index === 0 ? 'w-full' : 'w-0')} />
               </div>
             </div>
           ))}

@@ -8,6 +8,7 @@ import {
   PageHeader,
   PageHeaderDescription,
   PageHeaderTitle,
+  cn,
 } from '@doscientos/ui'
 import { useState } from 'react'
 
@@ -58,7 +59,10 @@ export function PublicWaitlistOfferPage({ offer, token }: { offer: WaitlistOffer
           {result ? (
             <p
               aria-live="polite"
-              className={`rounded-lg border p-3 text-sm ${result === 'accepted' ? 'border-success/30 bg-success/10 text-success' : 'border-border bg-muted/50 text-foreground'}`}
+              className={cn('rounded-lg border p-3 text-sm', {
+                'border-border bg-muted/50 text-foreground': result !== 'accepted',
+                'border-success/30 bg-success/10 text-success': result === 'accepted',
+              })}
             >
               {t(`public.waitlist.${result}`)}
             </p>
