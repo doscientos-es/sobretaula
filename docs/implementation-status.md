@@ -38,17 +38,16 @@ reproducible (comando ejecutado y su resultado).
 
 ### Evidencia local de release candidate (2026-09-14)
 
-- `pnpm quality` se había validado antes de estas exportaciones; la ejecución
-  completa posterior de `pnpm test` queda en **418 pasados** (3 omitidos; 119
-  ficheros pasados y 1 omitido). Formato, estructura y tipos también pasan;
-  `oxlint` termina correctamente con warnings
-  no bloqueantes ya inventariados.
+- `pnpm quality`: **correcto**; formato, lint, estructura, tipos y tests pasan.
+  La ejecución actual queda en **419 pasados** (3 omitidos; 120 ficheros
+  pasados y 1 omitido).
 - `pnpm test:e2e -- --trace=off`: **2 pasados** (flujo público publicado y
   gestión tokenizada `Cache-Control: no-store`) y **26 omitidos** por no existir
   `E2E_STORAGE_STATE` de una cuenta de pruebas no productiva.
-- `pnpm build`: correcto; genera el artefacto Vercel/Nitro local. Quedan como
-  warnings del builder la versión de Vite, el chunk principal grande y los
-  módulos `use client` de dependencias; no son una validación de despliegue.
+- `pnpm build`: correcto con Vite 8.3.0; genera el artefacto Vercel/Nitro
+  local. El chunk cliente principal grande y los módulos `use client` de
+  dependencias siguen siendo deuda de optimización, pero no bloquean la
+  compatibilidad del builder ni constituyen validación de despliegue.
 - Clientes: exportación CSV operativa para owner/manager, con versión, instante,
   zona horaria y columnas estables; excluye notas internas, alergias y
   preferencias. Ventas, caja y jornada conservan sus exportadores existentes;
@@ -329,10 +328,10 @@ transforma silenciosamente en `test` ni puede emitir por accidente.
 `pnpm format:check`, `pnpm lint`, `pnpm structure:check`, `pnpm typecheck`,
 `pnpm test`, `pnpm quality`, `pnpm build`.
 
-### Última ejecución local (2026-09-13)
+### Última ejecución local (2026-09-14)
 
-La última ejecución de `pnpm test` completa correctamente con 115 archivos
-aprobados y 1 omitido, y 404 pruebas correctas con 3 omitidas. Las pruebas RLS
+La última ejecución de `pnpm quality` completa correctamente con 120 archivos
+aprobados y 1 omitido, y 419 pruebas correctas con 3 omitidas. Las pruebas RLS
 siguen omitidas de forma deliberada para no conectarlas al proyecto con datos
 reales.
 
@@ -341,7 +340,7 @@ reales.
 | `pnpm format:check`    | Correcto                                                                                     |
 | `pnpm lint`            | Correcto                                                                                     |
 | `pnpm structure:check` | Correcto localmente; el asset de login vive en `public/` y los módulos usan nombres estándar |
-| `pnpm test`            | 115 archivos aprobados, 1 omitido; 404 pruebas correctas y 3 omitidas                        |
+| `pnpm test`            | 120 archivos aprobados, 1 omitido; 419 pruebas correctas y 3 omitidas                        |
 | `pnpm typecheck`       | Correcto                                                                                     |
 | `pnpm quality`         | Correcto                                                                                     |
 | `pnpm build`           | Correcto localmente                                                                          |

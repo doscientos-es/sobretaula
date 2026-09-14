@@ -14,6 +14,10 @@ function loadTestEnv() {
 }
 
 loadTestEnv()
+process.env.SUPABASE_URL ??= process.env.SUPABASE_TEST_URL
+process.env.SUPABASE_SECRET_KEY ??= process.env.SUPABASE_TEST_SECRET_KEY
+process.env.VITE_SUPABASE_URL ??= process.env.SUPABASE_TEST_URL
+process.env.VITE_SUPABASE_PUBLISHABLE_KEY ??= process.env.SUPABASE_TEST_PUBLISHABLE_KEY
 
 const authState = process.env.E2E_STORAGE_STATE ?? 'e2e/.auth/owner.json'
 const authStatePath = fs.existsSync(path.resolve(authState)) ? authState : undefined

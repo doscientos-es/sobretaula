@@ -56,6 +56,8 @@ export function AccountLines({
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editQuantity, setEditQuantity] = useState(1)
   const [editNotes, setEditNotes] = useState('')
+  const [removingId, setRemovingId] = useState<string | null>(null)
+  const [removalReason, setRemovalReason] = useState('')
 
   function beginEdit(line: AccountLine) {
     setEditingId(line.id)
@@ -86,11 +88,13 @@ export function AccountLines({
 
   async function remove(orderItemId: string) {
     if (feedback.pending) return
-    const reason = window.prompt('Motivo de la anulación')?.trim()
+    const reason = removalReason.trim()
     if (!reason) return
     feedback.setPending()
     try {
       await removeOrderItem({ data: { orderItemId, reason, sessionId, tenantId, venueId } })
+      setRemovingId(null)
+      setRemovalReason('')
       onDone()
     } catch {
       feedback.setError('No se ha podido anular. Si ya hay cobros, la cuenta queda fija.')
@@ -200,17 +204,51 @@ export function AccountLines({
                             Editar
                           </Button>
                         ))}
-                      {canRemove && line.status !== 'cancelled' && (
-                        <Button
-                          disabled={feedback.pending}
-                          onClick={() => void remove(line.id)}
-                          size="sm"
-                          type="button"
-                          variant="ghost"
-                        >
-                          Anular
-                        </Button>
-                      )}
+                      {canRemove &&
+                        line.status !== 'cancelled' &&
+                        (removingId === line.id ? (
+                          <span className="flex items-center gap-2">
+                            <Input
+                              aria-label={`Motivo para anular ${line.name}`}
+                              className="h-8 w-44"
+                              onChange={(event) => setRemovalReason(event.target.value)}
+                              placeholder="Motivo obligatorio"
+                              value={removalReason}
+                            />
+                            <Button
+                              disabled={feedback.pending || !removalReason.trim()}
+                              onClick={() => void remove(line.id)}
+                              size="sm"
+                              type="button"
+                            >
+                              Confirmar
+                            </Button>
+                            <Button
+                              onClick={() => {
+                                setRemovingId(null)
+                                setRemovalReason('')
+                              }}
+                              size="sm"
+                              type="button"
+                              variant="ghost"
+                            >
+                              Cancelar
+                            </Button>
+                          </span>
+                        ) : (
+                          <Button
+                            disabled={feedback.pending}
+                            onClick={() => {
+                              setRemovingId(line.id)
+                              setRemovalReason('')
+                            }}
+                            size="sm"
+                            type="button"
+                            variant="ghost"
+                          >
+                            Anular
+                          </Button>
+                        ))}
                     </span>
                   </TableCell>
                 </TableRow>
