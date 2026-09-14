@@ -37,13 +37,19 @@ setup('authenticate E2E roles against Supabase-test', async ({ page }) => {
       await page.goto('/login', { waitUntil: 'domcontentloaded' })
       await page.locator('form[aria-labelledby="login-title"]').waitFor({ state: 'visible' })
       await page.getByLabel(/correo|email/i).waitFor({ state: 'visible' })
-      await page.getByLabel(/correo|email/i).fill(email)
-      await page.getByRole('textbox', { name: /contraseña|password/i }).fill(password)
+      const emailInput = page.getByLabel(/correo|email/i)
+      const passwordInput = page.getByRole('textbox', { name: /contraseña|password/i })
+      await emailInput.fill('')
+      await passwordInput.fill('')
+      await emailInput.pressSequentially(email)
+      await passwordInput.pressSequentially(password)
+      await expect(emailInput).toHaveValue(email)
+      await expect(passwordInput).toHaveValue(password)
       await page.getByRole('button', { name: /iniciar sesión|entrar|acceder/i }).click()
       try {
         await page.waitForURL((url) => url.pathname !== '/login', { timeout: 15000 })
         break
-      } catch (error) {
+      } catch {
         if (attempt === 3) {
           await page.goto(`/t/${tenantSlug}`, { waitUntil: 'domcontentloaded' })
           await expect(page).not.toHaveURL(/\/login/)

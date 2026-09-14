@@ -8,6 +8,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  cn,
   DataViewState,
   DataViewStateDescription,
   DataViewStateTitle,
@@ -155,6 +156,12 @@ export const Route = createFileRoute('/t/$slug')({
 
 type StepStatus = 'done' | 'active' | 'upcoming'
 
+const stepIndicatorClasses: Record<StepStatus, string> = {
+  active: 'bg-primary text-primary-foreground',
+  done: 'bg-success/15 text-success',
+  upcoming: 'bg-muted text-muted-foreground',
+}
+
 function StepStatusBadge({ status }: { status: StepStatus }) {
   const label: Record<StepStatus, string> = {
     active: 'Ahora',
@@ -188,20 +195,19 @@ function OnboardingStep({
     <div>
       <div className="flex items-start gap-4 py-4">
         <span
-          className={`mt-0.5 inline-flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${
-            status === 'done'
-              ? 'bg-success/15 text-success'
-              : status === 'active'
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-muted text-muted-foreground'
-          }`}
+          className={cn(
+            'mt-0.5 inline-flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold',
+            stepIndicatorClasses[status],
+          )}
         >
           {status === 'done' ? <Check className="size-4" /> : index}
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p
-              className={`text-sm font-medium ${status === 'upcoming' ? 'text-muted-foreground' : ''}`}
+              className={cn('text-sm font-medium', {
+                'text-muted-foreground': status === 'upcoming',
+              })}
             >
               {title}
             </p>
