@@ -182,139 +182,135 @@ export function MenuForms({
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-3">
-              <label
-                aria-label="Seleccionar archivo CSV de carta"
-                className={`grid min-h-28 cursor-pointer place-items-center rounded-lg border-2 border-dashed px-4 py-5 text-center text-sm transition-colors ${
-                  isDraggingCsv
-                    ? 'border-primary bg-primary/10'
-                    : 'border-muted-foreground/30 hover:border-primary/60 hover:bg-muted/40'
-                }`}
-                htmlFor="menu-csv-file"
-              >
-                <span>
-                  <strong>{csvFileName || 'Suelta el CSV aquí'}</strong>
-                  <br />
-                  <span className="text-muted-foreground">
-                    {csvFileName
-                      ? 'Archivo cargado · puedes reemplazarlo'
-                      : 'o haz clic para buscarlo'}
-                  </span>
+            <label
+              aria-label="Seleccionar archivo CSV de carta"
+              className={`grid min-h-28 cursor-pointer place-items-center rounded-lg border-2 border-dashed px-4 py-5 text-center text-sm transition-colors ${
+                isDraggingCsv
+                  ? 'border-primary bg-primary/10'
+                  : 'border-muted-foreground/30 hover:border-primary/60 hover:bg-muted/40'
+              }`}
+              htmlFor="menu-csv-file"
+            >
+              <span>
+                <strong>{csvFileName || 'Suelta el CSV aquí'}</strong>
+                <br />
+                <span className="text-muted-foreground">
+                  {csvFileName
+                    ? 'Archivo cargado · puedes reemplazarlo'
+                    : 'o haz clic para buscarlo'}
                 </span>
-                <input
-                  accept=".csv,text/csv"
-                  aria-label="Archivo CSV de carta"
-                  className="sr-only"
-                  id="menu-csv-file"
-                  onDragEnter={(event) => {
-                    event.preventDefault()
-                    setIsDraggingCsv(true)
-                  }}
-                  onDragLeave={(event) => {
-                    event.preventDefault()
-                    setIsDraggingCsv(false)
-                  }}
-                  onDragOver={(event) => event.preventDefault()}
-                  onChange={(event) => void loadCsvFile(event.target.files?.[0])}
-                  onDrop={dropCsv}
-                  type="file"
-                />
-              </label>
-              <div className="flex flex-wrap items-center gap-2">
-                <Button onClick={downloadTemplate} type="button" variant="ghost">
-                  Descargar plantilla CSV
-                </Button>
-                <span className="text-muted-foreground text-xs">
-                  Incluye una fila de ejemplo que puedes sustituir.
-                </span>
-              </div>
-              <textarea
-                aria-label="CSV de carta"
-                className="min-h-32 w-full rounded-md border px-3 py-2 font-mono text-xs"
-                onChange={(event) => {
-                  setCsv(event.target.value)
-                  setCsvFileName('')
-                  setCsvPreview(null)
+              </span>
+              <input
+                accept=".csv,text/csv"
+                aria-label="Archivo CSV de carta"
+                className="sr-only"
+                id="menu-csv-file"
+                onDragEnter={(event) => {
+                  event.preventDefault()
+                  setIsDraggingCsv(true)
                 }}
-                placeholder="categoria;nombre;precio;iva\nEntrantes;Croquetas;8,50;10"
-                value={csv}
+                onDragLeave={(event) => {
+                  event.preventDefault()
+                  setIsDraggingCsv(false)
+                }}
+                onDragOver={(event) => event.preventDefault()}
+                onChange={(event) => void loadCsvFile(event.target.files?.[0])}
+                onDrop={dropCsv}
+                type="file"
               />
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  disabled={!csv.trim() || feedback.pending}
-                  onClick={previewImport}
-                  type="button"
-                  variant="outline"
-                >
-                  Volver a validar
-                </Button>
-                <Button
-                  disabled={!csvPreview || csvPreview.errors.length > 0 || feedback.pending}
-                  onClick={importCatalog}
-                  type="button"
-                >
-                  Confirmar importación
-                </Button>
-              </div>
-              {csvPreview ? (
-                <div className="grid gap-3">
-                  <output className="text-sm">
-                    {csvPreview.rows.length} filas válidas · {csvPreview.errors.length} errores
-                    {csvPreview.errors.length
-                      ? ` (${csvPreview.errors.map((error) => `fila ${error.row}: ${error.message}`).join('; ')})`
-                      : ''}
-                  </output>
-                  {csvPreview.rows.length ? (
-                    <div className="overflow-x-auto rounded-md border">
-                      <table className="w-full min-w-[34rem] text-left text-xs">
-                        <caption className="sr-only">
-                          Previsualización de la carta importada
-                        </caption>
-                        <thead className="bg-muted/50 text-muted-foreground">
-                          <tr>
-                            <th className="px-3 py-2 font-medium" scope="col">
-                              Categoría
-                            </th>
-                            <th className="px-3 py-2 font-medium" scope="col">
-                              Plato
-                            </th>
-                            <th className="px-3 py-2 text-right font-medium" scope="col">
-                              Precio
-                            </th>
-                            <th className="px-3 py-2 text-right font-medium" scope="col">
-                              IVA
-                            </th>
-                            <th className="px-3 py-2 font-medium" scope="col">
-                              Modificador
-                            </th>
+            </label>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button onClick={downloadTemplate} type="button" variant="ghost">
+                Descargar plantilla CSV
+              </Button>
+              <span className="text-muted-foreground text-xs">
+                Incluye una fila de ejemplo que puedes sustituir.
+              </span>
+            </div>
+            <textarea
+              aria-label="CSV de carta"
+              className="min-h-32 w-full rounded-md border px-3 py-2 font-mono text-xs"
+              onChange={(event) => {
+                setCsv(event.target.value)
+                setCsvFileName('')
+                setCsvPreview(null)
+              }}
+              placeholder="categoria;nombre;precio;iva\nEntrantes;Croquetas;8,50;10"
+              value={csv}
+            />
+            <div className="flex flex-wrap gap-2">
+              <Button
+                disabled={!csv.trim() || feedback.pending}
+                onClick={previewImport}
+                type="button"
+                variant="outline"
+              >
+                Volver a validar
+              </Button>
+              <Button
+                disabled={!csvPreview || csvPreview.errors.length > 0 || feedback.pending}
+                onClick={importCatalog}
+                type="button"
+              >
+                Confirmar importación
+              </Button>
+            </div>
+            {csvPreview ? (
+              <div className="grid gap-3">
+                <output className="text-sm">
+                  {csvPreview.rows.length} filas válidas · {csvPreview.errors.length} errores
+                  {csvPreview.errors.length
+                    ? ` (${csvPreview.errors.map((error) => `fila ${error.row}: ${error.message}`).join('; ')})`
+                    : ''}
+                </output>
+                {csvPreview.rows.length ? (
+                  <div className="overflow-x-auto rounded-md border">
+                    <table className="w-full min-w-[34rem] text-left text-xs">
+                      <caption className="sr-only">Previsualización de la carta importada</caption>
+                      <thead className="bg-muted/50 text-muted-foreground">
+                        <tr>
+                          <th className="px-3 py-2 font-medium" scope="col">
+                            Categoría
+                          </th>
+                          <th className="px-3 py-2 font-medium" scope="col">
+                            Plato
+                          </th>
+                          <th className="px-3 py-2 text-right font-medium" scope="col">
+                            Precio
+                          </th>
+                          <th className="px-3 py-2 text-right font-medium" scope="col">
+                            IVA
+                          </th>
+                          <th className="px-3 py-2 font-medium" scope="col">
+                            Modificador
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {csvPreview.rows.slice(0, 10).map((row, index) => (
+                          <tr className="border-t" key={`${row.nameEs}-${index}`}>
+                            <td className="px-3 py-2">{row.category}</td>
+                            <td className="px-3 py-2">{row.nameEs}</td>
+                            <td className="px-3 py-2 text-right">
+                              {(row.priceCents / 100).toFixed(2).replace('.', ',')} €
+                            </td>
+                            <td className="px-3 py-2 text-right">{row.vatRateBps / 100}%</td>
+                            <td className="px-3 py-2">
+                              {row.modifierName ? `${row.modifierGroup}: ${row.modifierName}` : '—'}
+                            </td>
                           </tr>
-                        </thead>
-                        <tbody>
-                          {csvPreview.rows.slice(0, 10).map((row, index) => (
-                            <tr className="border-t" key={`${row.nameEs}-${index}`}>
-                              <td className="px-3 py-2">{row.category}</td>
-                              <td className="px-3 py-2">{row.nameEs}</td>
-                              <td className="px-3 py-2 text-right">
-                                {(row.priceCents / 100).toFixed(2).replace('.', ',')} €
-                              </td>
-                              <td className="px-3 py-2 text-right">{row.vatRateBps / 100}%</td>
-                              <td className="px-3 py-2">
-                                {row.modifierName
-                                  ? `${row.modifierGroup}: ${row.modifierName}`
-                                  : '—'}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                      {csvPreview.rows.length > 10 ? (
-                        <p className="text-muted-foreground border-t px-3 py-2 text-xs">
-                          Mostrando 10 de {csvPreview.rows.length} filas válidas.
-                        </p>
-                      ) : null}
-                    </div>
-                  ) : null}
-                </div>
-              ) : null}
+                        ))}
+                      </tbody>
+                    </table>
+                    {csvPreview.rows.length > 10 ? (
+                      <p className="text-muted-foreground border-t px-3 py-2 text-xs">
+                        Mostrando 10 de {csvPreview.rows.length} filas válidas.
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
           </CardContent>
         </DialogContent>
       </DialogRoot>
