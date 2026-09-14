@@ -5,7 +5,10 @@ import { expectHealthyPage, openOperationalPage, operationalUrl, tenant } from '
 test.beforeEach(async ({ page }, testInfo) => {
   const cookies = await page.context().cookies()
   const sessionCookies = cookies.filter((cookie) => cookie.name === 'sobretaula-session')
-  if (sessionCookies.length > 0 && sessionCookies.some((cookie) => cookie.expires > 0 && cookie.expires < Date.now() / 1000)) {
+  if (
+    sessionCookies.length > 0 &&
+    sessionCookies.some((cookie) => cookie.expires > 0 && cookie.expires < Date.now() / 1000)
+  ) {
     await page.context().clearCookies({ name: 'sobretaula-session' })
     await page.context().addCookies(sessionCookies.map((cookie) => ({ ...cookie, expires: -1 })))
   }
