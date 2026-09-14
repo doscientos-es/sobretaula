@@ -195,7 +195,10 @@ export function TenantOnboardingPage() {
                 </p>
                 <div className="flex flex-wrap gap-3">
                   <Button
-                    onPress={() => window.location.assign(`/t/${createdTenant.slug}/facturacion`)}
+                    // The tenant is still setup_pending here. The billing route is protected by
+                    // the operational-tenant middleware, while the tenant home renders the
+                    // activation checklist and its payment authorization action.
+                    onPress={() => window.location.assign(`/t/${createdTenant.slug}`)}
                     size="lg"
                   >
                     Continuar con el pago seguro
