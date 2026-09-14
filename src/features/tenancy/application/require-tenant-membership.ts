@@ -55,32 +55,30 @@ export const tenantMembershipMiddleware = createMiddleware({ type: 'function' })
   })
 
 /** Blocks operational server functions after the billing grace period expires. */
-export const operationalTenantMiddleware = createMiddleware({ type: 'function' }).server(
-  async ({ context, next }) => {
-    const tenantMembership = (context as unknown as { tenantMembership?: TenantMembership })
-      .tenantMembership
-    if (!tenantMembership) throw new Response('Unauthenticated', { status: 401 })
+export const operationalTenantMiddleware = createMiddleware({
+  type: 'function',
+}).server(async ({ context, next }) => {
+  const tenantMembership = (context as unknown as { tenantMembership?: TenantMembership })
+    .tenantMembership
+  if (!tenantMembership) throw new Response('Unauthenticated', { status: 401 })
 
-    const supabase = createRequestSupabaseClient(tenantMembership.accessToken)
-    const [{ data: tenant, error }, { data: subscription, error: subscriptionError }] =
-      await Promise.all([
-        supabase.from('tenants').select('status').eq('id', tenantMembership.tenantId).single(),
-        supabase
-          .from('subscriptions')
-          .select('payment_method_id, status')
-          .eq('tenant_id', tenantMembership.tenantId)
-          .maybeSingle(),
-      ])
-    if (error || subscriptionError || !tenant) throw new Response('Forbidden', { status: 403 })
-    if (tenant.status === 'suspended') throw new Response('Tenant suspended', { status: 423 })
-    if (!isTenantOperational(tenant.status))
-      throw new Response('Payment method required', { status: 402 })
-    if (subscription?.status === 'trialing' && !subscription.payment_method_id) {
-      throw new Response('Payment method required', { status: 402 })
-    }
-    return next()
-  },
-)
+  const supabase = createRequestSupabaseClient(tenantMembership.accessToken)
+  const [{ data: tenant, error }, { error: subscriptionError }] = await Promise.all([
+    supabase.from('tenants').select('status').eq('id', tenantMembership.tenantId).single(),
+    supabase
+      .from('subscriptions')
+      .select('id')
+      .eq('tenant_id', tenantMembership.tenantId)
+      .maybeSingle(),
+  ])
+  if (error || subscriptionError || !tenant) throw new Response('Forbidden', { status: 403 })
+  if (tenant.status === 'suspended') throw new Response('Tenant suspended', { status: 423 })
+  if (!isTenantOperational(tenant.status))
+    throw new Response('Onboarding and payment required', { status: 402 })
+  // A paid subscription activates the tenant. A legacy trialing subscription
+  // must not make a non-paid tenant operational.
+  return next()
+})
 
 /** Returns only the caller's role after enforcing active membership under RLS. */
 export const getTenantMembership = createServerFn({ method: 'GET' })

@@ -21,6 +21,8 @@ process.env.VITE_SUPABASE_PUBLISHABLE_KEY ??= process.env.SUPABASE_TEST_PUBLISHA
 
 const authState = process.env.E2E_STORAGE_STATE ?? 'e2e/.auth/owner.json'
 const authStatePath = fs.existsSync(path.resolve(authState)) ? authState : undefined
+const outputDir = process.env.PLAYWRIGHT_OUTPUT_DIR ?? 'test-results'
+const reportDir = process.env.PLAYWRIGHT_REPORT_DIR ?? 'playwright-report'
 
 export default defineConfig({
   testDir: './e2e',
@@ -28,9 +30,9 @@ export default defineConfig({
   workers: process.env.CI ? undefined : 1,
   forbidOnly: !!process.env.CI,
   reporter: process.env.CI
-    ? [['github'], ['html', { outputFolder: 'playwright-report', open: 'never' }]]
-    : [['list'], ['html', { outputFolder: 'playwright-report', open: 'never' }]],
-  outputDir: 'test-results',
+    ? [['github'], ['html', { outputFolder: reportDir, open: 'never' }]]
+    : [['list'], ['html', { outputFolder: reportDir, open: 'never' }]],
+  outputDir,
   use: {
     baseURL: process.env.E2E_BASE_URL ?? 'http://localhost:3000',
     trace: 'retain-on-failure',

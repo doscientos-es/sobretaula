@@ -64,7 +64,7 @@ export function FloorPlanCanvas({
     if (!draggingItemId) return
     const transform = event.currentTarget.getScreenCTM()
     if (!transform) {
-      setDraggingTableId(undefined)
+      setDraggingItemId(undefined)
       return
     }
     const point = event.currentTarget.createSVGPoint()
@@ -203,7 +203,7 @@ export function FloorPlanCanvas({
         >
           <svg
             aria-hidden="true"
-            className="border-border bg-background h-[min(72vh,760px)] w-full touch-none select-none rounded-lg border"
+            className="border-border bg-background h-[min(72vh,760px)] w-full touch-none rounded-lg border select-none"
             focusable="false"
             onPointerDown={(event) => {
               if (event.button !== 1 && !event.altKey) return

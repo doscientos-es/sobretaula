@@ -27,5 +27,6 @@ export interface Tenant {
 
 /** A suspended tenant keeps its data but stops serving the operational app. */
 export function isTenantOperational(status: TenantStatus): boolean {
-  return status === 'trial' || status === 'active'
+  // Payment activation moves the tenant to active. Trial is a legacy state.
+  return status === 'active'
 }

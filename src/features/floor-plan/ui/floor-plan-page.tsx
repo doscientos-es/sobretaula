@@ -349,9 +349,18 @@ export function FloorPlanPage({
     }
     const element = elements.find((item) => item.id === id)
     if (!element || !activeVersion || lockedIds.includes(id)) return
-    const next = { ...element, xCm: Math.round(xCm / gridSize) * gridSize, yCm: Math.round(yCm / gridSize) * gridSize }
+    const next = {
+      ...element,
+      xCm: Math.round(xCm / gridSize) * gridSize,
+      yCm: Math.round(yCm / gridSize) * gridSize,
+    }
     if (!isPlacementWithinBounds(next, activeVersion)) return
-    setHistory((current) => commitEditorHistory(current, { ...current.present, elements: current.present.elements.map((item) => item.id === id ? next : item) }))
+    setHistory((current) =>
+      commitEditorHistory(current, {
+        ...current.present,
+        elements: current.present.elements.map((item) => (item.id === id ? next : item)),
+      }),
+    )
   }
 
   async function createTable(event: FormEvent<HTMLFormElement>) {
@@ -1240,16 +1249,34 @@ export function FloorPlanPage({
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Nueva planta o zona</DialogTitle>
-            <DialogDescription>Prepara un plano independiente para esta zona del local.</DialogDescription>
+            <DialogDescription>
+              Prepara un plano independiente para esta zona del local.
+            </DialogDescription>
           </DialogHeader>
-          <form className="grid gap-4" onSubmit={(event) => { event.preventDefault(); void createArea() }}>
+          <form
+            className="grid gap-4"
+            onSubmit={(event) => {
+              event.preventDefault()
+              void createArea()
+            }}
+          >
             <Field>
               <FieldLabel htmlFor="new-area-name">Nombre</FieldLabel>
-              <Input id="new-area-name" onChange={(event) => setNewAreaName(event.target.value)} value={newAreaName} autoFocus required />
+              <Input
+                id="new-area-name"
+                onChange={(event) => setNewAreaName(event.target.value)}
+                value={newAreaName}
+                autoFocus
+                required
+              />
             </Field>
             <DialogFooter>
-              <Button onClick={() => setCreateAreaOpen(false)} type="button" variant="outline">Cancelar</Button>
-              <Button disabled={creatingArea || feedback.pending} type="submit">{creatingArea ? 'Creando plano…' : 'Crear planta'}</Button>
+              <Button onClick={() => setCreateAreaOpen(false)} type="button" variant="outline">
+                Cancelar
+              </Button>
+              <Button disabled={creatingArea || feedback.pending} type="submit">
+                {creatingArea ? 'Creando plano…' : 'Crear planta'}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
