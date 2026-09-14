@@ -27,10 +27,15 @@ export default defineConfig({
   fullyParallel: true,
   workers: process.env.CI ? undefined : 1,
   forbidOnly: !!process.env.CI,
-  reporter: process.env.CI ? 'github' : 'list',
+  reporter: process.env.CI
+    ? [['github'], ['html', { outputFolder: 'playwright-report', open: 'never' }]]
+    : [['list'], ['html', { outputFolder: 'playwright-report', open: 'never' }]],
+  outputDir: 'test-results',
   use: {
     baseURL: process.env.E2E_BASE_URL ?? 'http://localhost:3000',
     trace: 'retain-on-failure',
+    screenshot: 'only-on-failure',
+    video: 'retain-on-failure',
   },
   projects: [
     {
