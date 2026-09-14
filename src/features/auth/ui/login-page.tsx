@@ -36,9 +36,13 @@ export function LoginPage({ redirectTo }: { redirectTo?: string }) {
 
     isSubmitting.current = true
     feedback.setPending()
+    const submittedPassword = password
+    setPassword('')
 
     try {
-      const result = await login({ data: { email: email.trim(), password, rememberSession } })
+      const result = await login({
+        data: { email: email.trim(), password: submittedPassword, rememberSession },
+      })
       if (!result.ok) {
         feedback.setError('El correo o la contraseña no son correctos.')
         isSubmitting.current = false

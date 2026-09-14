@@ -83,10 +83,12 @@ export function FloorPlanCanvas({
     setDragPreview(undefined)
   }
 
-  function planPointFromEvent(event: PointerEvent<SVGSVGElement>) {
-    const transform = event.currentTarget.getScreenCTM()
+  function planPointFromEvent(event: { currentTarget: SVGSVGElement | SVGRectElement; clientX: number; clientY: number }) {
+    const svg = event.currentTarget instanceof SVGSVGElement ? event.currentTarget : event.currentTarget.ownerSVGElement
+    const transform = svg?.getScreenCTM()
     if (!transform) return undefined
-    const point = event.currentTarget.createSVGPoint()
+    if (!svg) return undefined
+    const point = svg.createSVGPoint()
     point.x = event.clientX
     point.y = event.clientY
     return point.matrixTransform(transform.inverse())
@@ -276,7 +278,9 @@ export function FloorPlanCanvas({
             onDragLeave={() => setDropGhost(undefined)}
             onDrop={(event) => {
               event.preventDefault()
-              const kind = event.dataTransfer.getData('application/x-floor-element') as PlanElementKind
+              const kind = event.dataTransfer.getData(
+                'application/x-floor-element',
+              ) as PlanElementKind
               const point = planPointFromEvent(event)
               if (point && kind) onDropElement(kind, point.x, point.y)
               setDropGhost(undefined)

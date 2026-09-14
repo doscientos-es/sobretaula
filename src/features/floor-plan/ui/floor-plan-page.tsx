@@ -1077,8 +1077,29 @@ export function FloorPlanPage({
               <div className="mt-6 space-y-2">
                 <p className="text-muted-foreground text-sm">Elementos estructurales</p>
                 <div className="grid grid-cols-2 gap-2">
-                  {([['wall', 'Pared', Square], ['door', 'Puerta', DoorOpen], ['bar', 'Barra', PanelTop], ['stairs', 'Escalera', StairUp], ['plant', 'Planta', LayoutGrid], ['pillar', 'Pilar', Grid2X2], ['bathroom', 'Baño', Square], ['kitchen', 'Cocina', Soup]] as const).map(([kind, label, Icon]) => (
-                    <Button className="h-auto justify-start gap-2 py-3" draggable onDragStart={(event) => event.dataTransfer.setData('application/x-floor-element', kind)} key={kind} onClick={() => addElement(kind)} type="button" variant="outline">
+                  {(
+                    [
+                      ['wall', 'Pared', Square],
+                      ['door', 'Puerta', DoorOpen],
+                      ['bar', 'Barra', PanelTop],
+                      ['stairs', 'Escalera', StairUp],
+                      ['plant', 'Planta', LayoutGrid],
+                      ['pillar', 'Pilar', Grid2X2],
+                      ['bathroom', 'Baño', Square],
+                      ['kitchen', 'Cocina', Soup],
+                    ] as const
+                  ).map(([kind, label, Icon]) => (
+                    <Button
+                      className="h-auto justify-start gap-2 py-3"
+                      draggable
+                      onDragStart={(event) =>
+                        event.dataTransfer.setData('application/x-floor-element', kind)
+                      }
+                      key={kind}
+                      onClick={() => addElement(kind)}
+                      type="button"
+                      variant="outline"
+                    >
                       <Icon className="size-4" /> {label}
                     </Button>
                   ))}
@@ -1254,11 +1275,44 @@ export function FloorPlanPage({
           </form>
         </DialogContent>
       </DialogRoot>
-      <DialogRoot onOpenChange={(open) => !open && setAddElementAt(undefined)} open={Boolean(addElementAt)}>
+      <DialogRoot
+        onOpenChange={(open) => !open && setAddElementAt(undefined)}
+        open={Boolean(addElementAt)}
+      >
         <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>Añadir al plano</DialogTitle><DialogDescription>Elige un elemento para colocarlo en el punto seleccionado.</DialogDescription></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Añadir al plano</DialogTitle>
+            <DialogDescription>
+              Elige un elemento para colocarlo en el punto seleccionado.
+            </DialogDescription>
+          </DialogHeader>
           <div className="grid grid-cols-2 gap-2">
-            {([['wall', 'Pared', Square], ['door', 'Puerta', DoorOpen], ['bar', 'Barra', PanelTop], ['stairs', 'Escalera', StairUp], ['plant', 'Planta', LayoutGrid], ['pillar', 'Pilar', Grid2X2], ['bathroom', 'Baño', Square], ['kitchen', 'Cocina', Soup]] as const).map(([kind, label, Icon]) => <Button className="h-auto justify-start gap-2 py-4" key={kind} onClick={() => { addElement(kind, addElementAt); setAddElementAt(undefined) }} type="button" variant="outline"><Icon className="size-5" />{label}</Button>)}
+            {(
+              [
+                ['wall', 'Pared', Square],
+                ['door', 'Puerta', DoorOpen],
+                ['bar', 'Barra', PanelTop],
+                ['stairs', 'Escalera', StairUp],
+                ['plant', 'Planta', LayoutGrid],
+                ['pillar', 'Pilar', Grid2X2],
+                ['bathroom', 'Baño', Square],
+                ['kitchen', 'Cocina', Soup],
+              ] as const
+            ).map(([kind, label, Icon]) => (
+              <Button
+                className="h-auto justify-start gap-2 py-4"
+                key={kind}
+                onClick={() => {
+                  addElement(kind, addElementAt)
+                  setAddElementAt(undefined)
+                }}
+                type="button"
+                variant="outline"
+              >
+                <Icon className="size-5" />
+                {label}
+              </Button>
+            ))}
           </div>
         </DialogContent>
       </DialogRoot>
