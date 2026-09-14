@@ -173,12 +173,7 @@ export function LoginPage({ redirectTo }: { redirectTo?: string }) {
               type="button"
               variant="outline"
             >
-              <img
-                alt=""
-                aria-hidden="true"
-                className="size-5"
-                src="https://developers.google.com/identity/sign-in/g-normal.png"
-              />
+              <img alt="" aria-hidden="true" className="size-5" src="/icon.svg" />
               Continuar con Google
               <span className="bg-muted text-muted-foreground absolute -top-2 right-3 rounded-full px-1.5 py-0.5 text-[0.625rem] font-semibold">
                 Próximamente

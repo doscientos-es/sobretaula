@@ -337,6 +337,7 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                   <select
                     id="public-service"
                     className="min-h-12 bg-white"
+                    name="serviceId"
                     onChange={(event) => selectService(event.target.value)}
                     value={serviceId}
                   >
@@ -360,6 +361,7 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                     <select
                       id="public-area"
                       className="min-h-12 bg-white"
+                      name="areaId"
                       onChange={(event) => {
                         setAreaId(event.target.value)
                         if (date) void selectDate(date, partySize, event.target.value)
@@ -384,6 +386,7 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                     <select
                       id="public-date"
                       className="min-h-12 bg-white"
+                      name="date"
                       onChange={(event) => void selectDate(event.target.value)}
                       required
                       value={date}
@@ -400,9 +403,11 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                     <FieldLabel htmlFor="public-time">{t('public.time')}</FieldLabel>
                     <select
                       aria-describedby="public-availability-status"
+                      aria-invalid={availabilityError}
                       disabled={!date || availabilityLoading || availableSlots.length === 0}
                       id="public-time"
                       className="min-h-12 bg-white"
+                      name="time"
                       onChange={(event) => setTime(event.target.value)}
                       required
                       value={time}
@@ -492,6 +497,7 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                   <Input
                     id="public-party"
                     className="min-h-12"
+                    name="partySize"
                     max={50}
                     min={1}
                     onChange={(event) => {
@@ -510,6 +516,7 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                     <Input
                       autoComplete="name"
                       id="public-name"
+                      name="guestName"
                       maxLength={200}
                       minLength={2}
                       onChange={(event) => setGuestName(event.target.value)}
@@ -522,6 +529,7 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                     <Input
                       autoComplete="tel"
                       id="public-phone"
+                      name="phone"
                       inputMode="tel"
                       maxLength={40}
                       minLength={6}
@@ -535,6 +543,7 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                   <Input
                     autoComplete="email"
                     id="public-email"
+                    name="email"
                     maxLength={200}
                     onChange={(event) => setEmail(event.target.value)}
                     required
@@ -547,6 +556,7 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                   <textarea
                     className="min-h-20 w-full rounded-md border bg-white px-3 py-2"
                     id="public-notes"
+                    name="notes"
                     maxLength={1000}
                     onChange={(event) => setNotes(event.target.value)}
                     value={notes}

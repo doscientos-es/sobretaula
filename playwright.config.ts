@@ -3,8 +3,8 @@ import path from 'node:path'
 
 import { defineConfig, devices } from '@playwright/test'
 
-function loadTestEnv() {
-  const envPath = path.resolve('.env.test')
+function loadEnvFile(fileName: string) {
+  const envPath = path.resolve(fileName)
   if (!fs.existsSync(envPath)) return
   for (const line of fs.readFileSync(envPath, 'utf8').split(/\r?\n/)) {
     const match = line.match(/^\s*([A-Z][A-Z0-9_]*)\s*=\s*(.*)\s*$/)
@@ -13,8 +13,10 @@ function loadTestEnv() {
   }
 }
 
-loadTestEnv()
+loadEnvFile('.env.local')
+loadEnvFile('.env.test')
 process.env.E2E_TEST_MODE = 'true'
+process.env.E2E_TEST_ROLE ??= 'owner'
 process.env.SUPABASE_URL = process.env.SUPABASE_TEST_URL
 process.env.SUPABASE_SECRET_KEY = process.env.SUPABASE_TEST_SECRET_KEY
 process.env.VITE_SUPABASE_URL = process.env.SUPABASE_TEST_URL
@@ -38,12 +40,16 @@ export default defineConfig({
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
   },
-  webServer: {
-    command: 'pnpm dev:e2e',
-    url: 'http://127.0.0.1:3001/login',
-    reuseExistingServer: true,
-    timeout: 120_000,
-  },
+  ...(process.env.E2E_NO_SERVER
+    ? {}
+    : {
+        webServer: {
+          command: 'pnpm.cmd exec vite dev --mode test --host 127.0.0.1 --port 3001',
+          url: 'http://127.0.0.1:3001/login',
+          reuseExistingServer: true,
+          timeout: 120_000,
+        },
+      }),
   projects: [
     {
       name: 'public',
@@ -63,7 +69,6 @@ export default defineConfig({
       use: {
         ...devices['Desktop Chrome'],
         storageState: process.env.E2E_STORAGE_STATE ?? 'e2e/.auth/owner.json',
-        extraHTTPHeaders: { 'x-e2e-role': 'owner' },
       },
     },
     ...['owner', 'manager', 'host', 'waiter', 'accountant'].map((role) => ({
@@ -72,7 +77,6 @@ export default defineConfig({
       use: {
         ...devices['Desktop Chrome'],
         storageState: `e2e/.auth/${role}.json`,
-        extraHTTPHeaders: { 'x-e2e-role': role },
       },
       testMatch: /operational-flows\.spec\.ts/,
     })),

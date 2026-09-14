@@ -27,6 +27,7 @@ import { Route as AdminFacturacionRouteImport } from './routes/admin.facturacion
 import { Route as AdminFacturasRouteImport } from './routes/admin.facturas'
 import { Route as AdminInvitacionRouteImport } from './routes/admin.invitacion'
 import { Route as AdminModulosRouteImport } from './routes/admin.modulos'
+import { Route as ApiE2eLoginRouteImport } from './routes/api.e2e-login'
 import { Route as EsperaTokenRouteImport } from './routes/espera.$token'
 import { Route as LegalCondicionesSaasRouteImport } from './routes/legal.condiciones-saas'
 import { Route as LegalCookiesRouteImport } from './routes/legal.cookies'
@@ -166,6 +167,11 @@ const AdminModulosRoute = AdminModulosRouteImport.update({
   id: '/modulos',
   path: '/modulos',
   getParentRoute: () => AdminRoute,
+} as any)
+const ApiE2eLoginRoute = ApiE2eLoginRouteImport.update({
+  id: '/api/e2e-login',
+  path: '/api/e2e-login',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const EsperaTokenRoute = EsperaTokenRouteImport.update({
   id: '/espera/$token',
@@ -460,6 +466,7 @@ export interface FileRoutesByFullPath {
   '/admin/facturas': typeof AdminFacturasRoute
   '/admin/invitacion': typeof AdminInvitacionRoute
   '/admin/modulos': typeof AdminModulosRoute
+  '/api/e2e-login': typeof ApiE2eLoginRoute
   '/espera/$token': typeof EsperaTokenRoute
   '/legal/condiciones-saas': typeof LegalCondicionesSaasRoute
   '/legal/cookies': typeof LegalCookiesRoute
@@ -528,6 +535,7 @@ export interface FileRoutesByTo {
   '/admin/facturas': typeof AdminFacturasRoute
   '/admin/invitacion': typeof AdminInvitacionRoute
   '/admin/modulos': typeof AdminModulosRoute
+  '/api/e2e-login': typeof ApiE2eLoginRoute
   '/espera/$token': typeof EsperaTokenRoute
   '/legal/condiciones-saas': typeof LegalCondicionesSaasRoute
   '/legal/cookies': typeof LegalCookiesRoute
@@ -596,6 +604,7 @@ export interface FileRoutesById {
   '/admin/facturas': typeof AdminFacturasRoute
   '/admin/invitacion': typeof AdminInvitacionRoute
   '/admin/modulos': typeof AdminModulosRoute
+  '/api/e2e-login': typeof ApiE2eLoginRoute
   '/espera/$token': typeof EsperaTokenRoute
   '/legal/condiciones-saas': typeof LegalCondicionesSaasRoute
   '/legal/cookies': typeof LegalCookiesRoute
@@ -667,6 +676,7 @@ export interface FileRouteTypes {
     | '/admin/facturas'
     | '/admin/invitacion'
     | '/admin/modulos'
+    | '/api/e2e-login'
     | '/espera/$token'
     | '/legal/condiciones-saas'
     | '/legal/cookies'
@@ -735,6 +745,7 @@ export interface FileRouteTypes {
     | '/admin/facturas'
     | '/admin/invitacion'
     | '/admin/modulos'
+    | '/api/e2e-login'
     | '/espera/$token'
     | '/legal/condiciones-saas'
     | '/legal/cookies'
@@ -802,6 +813,7 @@ export interface FileRouteTypes {
     | '/admin/facturas'
     | '/admin/invitacion'
     | '/admin/modulos'
+    | '/api/e2e-login'
     | '/espera/$token'
     | '/legal/condiciones-saas'
     | '/legal/cookies'
@@ -865,6 +877,7 @@ export interface RootRouteChildren {
   RecuperarContrasenaRoute: typeof RecuperarContrasenaRoute
   RegistroRoute: typeof RegistroRoute
   RestablecerContrasenaRoute: typeof RestablecerContrasenaRoute
+  ApiE2eLoginRoute: typeof ApiE2eLoginRoute
   EsperaTokenRoute: typeof EsperaTokenRoute
   LegalCondicionesSaasRoute: typeof LegalCondicionesSaasRoute
   LegalCookiesRoute: typeof LegalCookiesRoute
@@ -1008,6 +1021,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/modulos'
       preLoaderRoute: typeof AdminModulosRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/api/e2e-login': {
+      id: '/api/e2e-login'
+      path: '/api/e2e-login'
+      fullPath: '/api/e2e-login'
+      preLoaderRoute: typeof ApiE2eLoginRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/espera/$token': {
       id: '/espera/$token'
@@ -1488,6 +1508,7 @@ const rootRouteChildren: RootRouteChildren = {
   RecuperarContrasenaRoute: RecuperarContrasenaRoute,
   RegistroRoute: RegistroRoute,
   RestablecerContrasenaRoute: RestablecerContrasenaRoute,
+  ApiE2eLoginRoute: ApiE2eLoginRoute,
   EsperaTokenRoute: EsperaTokenRoute,
   LegalCondicionesSaasRoute: LegalCondicionesSaasRoute,
   LegalCookiesRoute: LegalCookiesRoute,

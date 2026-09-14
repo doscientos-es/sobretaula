@@ -57,6 +57,31 @@ body {
   background: var(--canvas);
 }
 
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--ring) 72%, white);
+  outline-offset: 2px;
+}
+
+.st-skip-link {
+  position: fixed;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 100;
+  transform: translateY(-160%);
+  padding: 0.625rem 0.875rem;
+  border-radius: 0.625rem;
+  color: var(--primary-foreground);
+  background: var(--foreground);
+  box-shadow: var(--ui-shadow-floating);
+  font-size: 0.875rem;
+  font-weight: 650;
+  transition: transform 160ms ease;
+}
+
+.st-skip-link:focus-visible {
+  transform: translateY(0);
+}
+
 ::selection {
   color: var(--primary-foreground);
   background: var(--primary);
@@ -877,6 +902,15 @@ select:not([data-slot]):focus-visible {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
   .st-login-review {
     animation: none;
   }

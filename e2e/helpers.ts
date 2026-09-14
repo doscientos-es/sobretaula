@@ -13,7 +13,8 @@ export async function expectHealthyPage(page: Page, label: string) {
 }
 
 export async function openOperationalPage(page: Page, path: string, label: string) {
-  await page.goto(operationalUrl(path), { waitUntil: 'domcontentloaded' })
+  await page.goto(operationalUrl(path), { waitUntil: 'commit' })
+  await page.locator('body').waitFor({ state: 'visible' })
   await expectHealthyPage(page, label)
 }
 

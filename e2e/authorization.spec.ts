@@ -5,7 +5,7 @@ test.describe('protected route boundaries', () => {
 
   for (const path of ['/admin', '/t/la-fonda-demo', '/t/la-fonda-demo/l/principal/tpv']) {
     test(`${path} redirects anonymous users to login`, async ({ page }) => {
-      await page.goto(path)
+      await page.goto(path, { waitUntil: 'domcontentloaded' })
       await expect(page).toHaveURL(new RegExp('/login'))
     })
   }
@@ -18,7 +18,7 @@ test.describe('authenticated tenant boundaries', () => {
   )
 
   test('owner can open the tenant dashboard', async ({ page }) => {
-    await page.goto('/t/la-fonda-demo')
+    await page.goto('/t/la-fonda-demo', { waitUntil: 'domcontentloaded' })
     await expect(page).not.toHaveURL(/\/login/)
     await expect(page.locator('body')).not.toContainText(/Unauthenticated|Something went wrong/i)
   })

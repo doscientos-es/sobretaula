@@ -2,6 +2,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useRef,
   useSyncExternalStore,
@@ -95,6 +96,10 @@ export function LocaleProvider({
   )
   const getServerSnapshot = useCallback(() => defaultLocale, [defaultLocale])
   const locale = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
+
+  useEffect(() => {
+    document.documentElement.lang = locale
+  }, [locale])
 
   const setLocale = useCallback(
     (nextLocale: Locale) => {

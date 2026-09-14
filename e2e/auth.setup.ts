@@ -48,6 +48,16 @@ setup('authenticate E2E roles against Supabase-test', async ({ page }) => {
       )
         continue
     }
+    if (process.env.E2E_TEST_MODE === 'true') {
+      const response = await page.request.post('/api/e2e-login', { data: { email, password } })
+      expect(response.ok(), `${role}: E2E login must return a session`).toBeTruthy()
+      await page.goto(`/t/${tenantSlug}`, { waitUntil: 'domcontentloaded' })
+      await expect(page).not.toHaveURL(/\/login/)
+      fs.mkdirSync(path.dirname(statePath), { recursive: true })
+      await page.context().storageState({ path: statePath })
+      await page.context().clearCookies()
+      continue
+    }
     for (let attempt = 1; attempt <= 3; attempt += 1) {
       await page.goto('/login', { waitUntil: 'domcontentloaded' })
       await page.locator('form[aria-labelledby="login-title"]').waitFor({ state: 'visible' })
