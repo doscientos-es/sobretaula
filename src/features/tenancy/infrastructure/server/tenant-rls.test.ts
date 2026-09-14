@@ -22,6 +22,7 @@ interface Fixture {
 }
 
 let fixture: Fixture | undefined
+const cleanup = { tenantIds: [] as string[], userIds: [] as string[] }
 
 function requiredEnvironment(value: string | undefined, name: string): string {
   if (!value) throw new Error(`Missing ${name}.`)
@@ -51,6 +52,7 @@ async function createAuthenticatedClient(
     password,
   })
   if (createError || !created.user) throw createError ?? new Error('Test user was not created.')
+  cleanup.userIds.push(created.user.id)
 
   const { data: signedIn, error: signInError } = await anonymous.auth.signInWithPassword({
     email,
@@ -82,6 +84,7 @@ describeRls('tenant RLS isolation', () => {
     const platformOwner = await createAuthenticatedClient(`rls-platform-${nonce}@example.test`)
     const userA = await createAuthenticatedClient(`rls-a-${nonce}@example.test`)
     const userB = await createAuthenticatedClient(`rls-b-${nonce}@example.test`)
+    cleanup.tenantIds.push(tenantAId, tenantBId)
 
     const { error: tenantError } = await admin.from('tenants').insert([
       {
@@ -138,14 +141,9 @@ describeRls('tenant RLS isolation', () => {
   })
 
   afterAll(async () => {
-    if (!fixture) return
     const admin = createAdminClient()
-    await admin.from('tenants').delete().in('id', [fixture.tenantAId, fixture.tenantBId])
-    await Promise.all([
-      admin.auth.admin.deleteUser(fixture.platformOwnerId),
-      admin.auth.admin.deleteUser(fixture.userAId),
-      admin.auth.admin.deleteUser(fixture.userBId),
-    ])
+    await admin.from('tenants').delete().in('id', cleanup.tenantIds)
+    await Promise.all(cleanup.userIds.map((userId) => admin.auth.admin.deleteUser(userId)))
   })
 
   it('only returns rows from the signed-in user tenant', async () => {
