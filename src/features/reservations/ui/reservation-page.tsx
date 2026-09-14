@@ -623,39 +623,68 @@ export function ReservationPage({
             ) : (
               <>
                 <Card>
-                  <CardHeader>
-                    <CardTitle>Turnos configurados</CardTitle>
-                    <CardDescription>
-                      Estas reglas se repiten cada semana y determinan cuándo se aceptan reservas y
-                      cuánta capacidad se ofrece en cada intervalo. Para cerrar una fecha concreta
-                      (festivo, vacaciones o evento), usa un bloqueo o cierre excepcional.
-                    </CardDescription>
+                  <CardHeader className="flex flex-row items-start justify-between gap-4">
+                    <div>
+                      <CardTitle>Turnos configurados</CardTitle>
+                      <CardDescription>
+                        Estas reglas se repiten cada semana y determinan cuándo se aceptan reservas
+                        y cuánta capacidad se ofrece en cada intervalo. Para cerrar una fecha
+                        concreta (festivo, vacaciones o evento), usa un bloqueo o cierre
+                        excepcional.
+                      </CardDescription>
+                    </div>
+                    <Button onClick={() => setEditingServiceId(null)} type="button">
+                      Añadir turno
+                    </Button>
                   </CardHeader>
                   <CardContent>
-                    <ul className="grid gap-3 sm:grid-cols-2">
-                      {services.map((service) => (
-                        <li className="rounded-lg border p-4" key={service.id}>
-                          <p className="font-medium">{service.name}</p>
-                          <p className="text-muted-foreground mt-1 text-sm">
-                            {weekdays[service.weekday]} · {service.startsAtTime.slice(0, 5)}–
-                            {service.endsAtTime.slice(0, 5)}
-                          </p>
-                          <p className="text-muted-foreground mt-2 text-xs">
-                            Cada {service.slotMinutes} min ·{' '}
-                            {service.maxCoversPerSlot ?? 'Aforo flexible'} cubiertos ·{' '}
-                            {service.maxReservationsPerSlot ?? 'Reservas flexibles'} reservas por
-                            intervalo
-                          </p>
-                          <Button
-                            className="mt-3"
-                            onClick={() => loadService(service)}
-                            type="button"
-                            variant="outline"
+                    <ul className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                      {weekdays.map((weekdayName, weekdayIndex) => {
+                        const weekdayServices = services.filter(
+                          (service) => service.weekday === weekdayIndex,
+                        )
+
+                        return (
+                          <li
+                            className="bg-muted/20 min-h-32 rounded-lg border p-3"
+                            key={weekdayName}
                           >
-                            Editar turno
-                          </Button>
-                        </li>
-                      ))}
+                            <p className="font-medium">{weekdayName}</p>
+                            {weekdayServices.length > 0 ? (
+                              <ul className="mt-2 grid gap-2">
+                                {weekdayServices.map((service) => (
+                                  <li
+                                    className="bg-background rounded-md border p-3"
+                                    key={service.id}
+                                  >
+                                    <p className="font-medium">{service.name}</p>
+                                    <p className="text-muted-foreground mt-1 text-sm">
+                                      {service.startsAtTime.slice(0, 5)}–
+                                      {service.endsAtTime.slice(0, 5)}
+                                    </p>
+                                    <p className="text-muted-foreground mt-2 text-xs">
+                                      Cada {service.slotMinutes} min ·{' '}
+                                      {service.maxCoversPerSlot ?? 'Aforo flexible'} cubiertos ·{' '}
+                                      {service.maxReservationsPerSlot ?? 'Reservas flexibles'}{' '}
+                                      reservas
+                                    </p>
+                                    <Button
+                                      className="mt-3"
+                                      onClick={() => loadService(service)}
+                                      type="button"
+                                      variant="outline"
+                                    >
+                                      Editar
+                                    </Button>
+                                  </li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <p className="text-muted-foreground mt-2 text-sm">Sin turnos</p>
+                            )}
+                          </li>
+                        )
+                      })}
                     </ul>
                   </CardContent>
                 </Card>

@@ -5,6 +5,12 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogRoot,
+  DialogTitle,
   Field,
   FieldLabel,
   FormFeedback,
@@ -109,6 +115,9 @@ export function FloorPlanPage({
   const [minimumAisleCm, setMinimumAisleCm] = useState(90)
   const [selectedAreaId, setSelectedAreaId] = useState(data.areas[0]?.id)
   const [initializing, setInitializing] = useState(false)
+  const [createAreaOpen, setCreateAreaOpen] = useState(false)
+  const [newAreaName, setNewAreaName] = useState('Terraza')
+  const [creatingArea, setCreatingArea] = useState(false)
   const activeArea = data.areas.find((area) => area.id === selectedAreaId) ?? data.areas[0]
   const activePresets = data.tableGroupPresets.filter((preset) => preset.areaId === activeArea?.id)
   const activeVersion = activeArea
@@ -303,8 +312,9 @@ export function FloorPlanPage({
         })
     : []
   async function createArea() {
-    const areaName = window.prompt('Nombre de la nueva planta o zona', 'Terraza')?.trim()
+    const areaName = newAreaName.trim()
     if (!areaName) return
+    setCreatingArea(true)
     feedback.setPending()
     try {
       await createInitialFloorPlan({
@@ -322,10 +332,26 @@ export function FloorPlanPage({
         },
       })
       feedback.setSuccess(`${areaName} preparada.`)
+      setCreateAreaOpen(false)
+      setNewAreaName('Terraza')
       reload()
     } catch {
       feedback.setError('No se ha podido crear la nueva zona.')
+    } finally {
+      setCreatingArea(false)
     }
+  }
+
+  function moveItem(id: string, xCm: number, yCm: number) {
+    if (placements.some((item) => item.id === id)) {
+      changePlacement(id, xCm, yCm)
+      return
+    }
+    const element = elements.find((item) => item.id === id)
+    if (!element || !activeVersion || lockedIds.includes(id)) return
+    const next = { ...element, xCm: Math.round(xCm / gridSize) * gridSize, yCm: Math.round(yCm / gridSize) * gridSize }
+    if (!isPlacementWithinBounds(next, activeVersion)) return
+    setHistory((current) => commitEditorHistory(current, { ...current.present, elements: current.present.elements.map((item) => item.id === id ? next : item) }))
   }
 
   async function createTable(event: FormEvent<HTMLFormElement>) {
@@ -804,7 +830,7 @@ export function FloorPlanPage({
                 {area.name}
               </Button>
             ))}
-            <Button onClick={() => void createArea()} type="button" variant="outline">
+            <Button onClick={() => setCreateAreaOpen(true)} type="button" variant="outline">
               + Añadir planta o zona
             </Button>
           </div>
@@ -824,7 +850,7 @@ export function FloorPlanPage({
             }}
             onGridSizeChange={setGridSize}
             onMinimumAisleChange={setMinimumAisleCm}
-            onMovePlacement={changePlacement}
+            onMoveItem={moveItem}
             onSelectItem={selectItem}
             placements={placements}
             previewDevice={previewDevice}
@@ -1210,6 +1236,24 @@ export function FloorPlanPage({
           </Card>
         </div>
       )}
+      <DialogRoot onOpenChange={setCreateAreaOpen} open={createAreaOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Nueva planta o zona</DialogTitle>
+            <DialogDescription>Prepara un plano independiente para esta zona del local.</DialogDescription>
+          </DialogHeader>
+          <form className="grid gap-4" onSubmit={(event) => { event.preventDefault(); void createArea() }}>
+            <Field>
+              <FieldLabel htmlFor="new-area-name">Nombre</FieldLabel>
+              <Input id="new-area-name" onChange={(event) => setNewAreaName(event.target.value)} value={newAreaName} autoFocus required />
+            </Field>
+            <DialogFooter>
+              <Button onClick={() => setCreateAreaOpen(false)} type="button" variant="outline">Cancelar</Button>
+              <Button disabled={creatingArea || feedback.pending} type="submit">{creatingArea ? 'Creando plano…' : 'Crear planta'}</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </DialogRoot>
     </section>
   )
 }

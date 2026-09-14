@@ -28,7 +28,7 @@ export function FloorPlanCanvas({
   onClearSelection,
   onGridSizeChange,
   onMinimumAisleChange,
-  onMovePlacement,
+  onMoveItem,
   onSelectItem,
   placements,
   previewDevice,
@@ -47,7 +47,7 @@ export function FloorPlanCanvas({
   onClearSelection: () => void
   onGridSizeChange: (value: number) => void
   onMinimumAisleChange: (value: number) => void
-  onMovePlacement: (id: string, xCm: number, yCm: number) => void
+  onMoveItem: (id: string, xCm: number, yCm: number) => void
   onSelectItem: (id: string, additive?: boolean) => void
   placements: readonly FloorPlanTablePlacement[]
   previewDevice: FloorPlanPreviewDevice
@@ -56,12 +56,12 @@ export function FloorPlanCanvas({
 }) {
   const [zoom, setZoom] = useState(1)
   const [pan, setPan] = useState({ x: 0, y: 0 })
-  const [draggingTableId, setDraggingTableId] = useState<string>()
+  const [draggingItemId, setDraggingItemId] = useState<string>()
   const panPointer = useRef<{ id: number; x: number; y: number } | undefined>(undefined)
   const viewBox = `${Math.max(0, Math.min(activeVersion.widthCm * (1 - 1 / zoom), (activeVersion.widthCm * (1 - 1 / zoom)) / 2 + pan.x)).toFixed(2)} ${Math.max(0, Math.min(activeVersion.heightCm * (1 - 1 / zoom), (activeVersion.heightCm * (1 - 1 / zoom)) / 2 + pan.y)).toFixed(2)} ${(activeVersion.widthCm / zoom).toFixed(2)} ${(activeVersion.heightCm / zoom).toFixed(2)}`
 
   function finishDrag(event: PointerEvent<SVGSVGElement>) {
-    if (!draggingTableId) return
+    if (!draggingItemId) return
     const transform = event.currentTarget.getScreenCTM()
     if (!transform) {
       setDraggingTableId(undefined)
@@ -71,8 +71,8 @@ export function FloorPlanCanvas({
     point.x = event.clientX
     point.y = event.clientY
     const planPoint = point.matrixTransform(transform.inverse())
-    onMovePlacement(draggingTableId, planPoint.x, planPoint.y)
-    setDraggingTableId(undefined)
+    onMoveItem(draggingItemId, planPoint.x, planPoint.y)
+    setDraggingItemId(undefined)
   }
 
   const selected =
@@ -203,7 +203,7 @@ export function FloorPlanCanvas({
         >
           <svg
             aria-hidden="true"
-            className="border-border bg-background h-auto w-full rounded-lg border"
+            className="border-border bg-background h-[min(72vh,760px)] w-full touch-none select-none rounded-lg border"
             focusable="false"
             onPointerDown={(event) => {
               if (event.button !== 1 && !event.altKey) return
@@ -227,7 +227,7 @@ export function FloorPlanCanvas({
             }}
             onPointerCancel={() => {
               panPointer.current = undefined
-              setDraggingTableId(undefined)
+              setDraggingItemId(undefined)
             }}
             onPointerUp={(event) => {
               if (panPointer.current?.id === event.pointerId) {
@@ -321,7 +321,10 @@ export function FloorPlanCanvas({
                   fill={element.kind === 'wall' ? 'var(--foreground)' : 'var(--muted-foreground)'}
                   height={element.heightCm}
                   onPointerDown={(event) =>
-                    onSelectItem(element.id, event.ctrlKey || event.metaKey)
+                    (() => {
+                      onSelectItem(element.id, event.ctrlKey || event.metaKey)
+                      if (!lockedIds.includes(element.id)) setDraggingItemId(element.id)
+                    })()
                   }
                   opacity={lockedIds.includes(element.id) ? 0.48 : 0.65}
                   rx="4"
@@ -351,7 +354,7 @@ export function FloorPlanCanvas({
                   onPointerDown={(event) => {
                     onSelectItem(placement.id, event.ctrlKey || event.metaKey)
                     if (!lockedIds.includes(placement.id)) {
-                      setDraggingTableId(placement.id)
+                      setDraggingItemId(placement.id)
                     }
                   }}
                   opacity={lockedIds.includes(placement.id) ? 0.62 : 0.85}
