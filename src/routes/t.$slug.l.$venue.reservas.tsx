@@ -5,7 +5,6 @@ import { tenantRouteState } from '@/app/tenant-route-loader'
 import {
   getReservationServices,
   getReservationTerms,
-  ReservationPage,
   type ReservationAgendaSearch,
 } from '@/features/reservations'
 import { loadVenueRouteContext } from '@/features/venues'
@@ -28,39 +27,5 @@ export const Route = createFileRoute('/t/$slug/l/$venue/reservas')({
     ])
     return { services, terms, tenant, venue }
   },
-  component: ReservationsRoute,
   ...tenantRouteState,
 })
-
-function ReservationsRoute() {
-  const { services, terms, tenant, venue } = Route.useLoaderData()
-  const locale = useLocale(tenant.defaultLocale)
-  const search = Route.useSearch()
-  const navigate = Route.useNavigate()
-  const agendaSearch: ReservationAgendaSearch = {
-    ...(search.date ? { date: search.date } : {}),
-    ...(search.q ? { query: search.q } : {}),
-    ...(search.status ? { status: search.status } : {}),
-  }
-
-  return (
-    <ReservationPage
-      agendaSearch={agendaSearch}
-      locale={locale}
-      onAgendaSearchChange={(next) =>
-        void navigate({
-          search: {
-            date: next.date,
-            q: next.query || undefined,
-            status: next.status === 'all' ? undefined : next.status,
-          },
-        })
-      }
-      services={services}
-      tenantId={tenant.id}
-      timezone={tenant.timezone}
-      venueId={venue.id}
-      terms={terms}
-    />
-  )
-}

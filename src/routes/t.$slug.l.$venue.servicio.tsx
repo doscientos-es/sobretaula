@@ -2,7 +2,6 @@ import { createFileRoute, notFound } from '@tanstack/react-router'
 
 import { tenantRouteState } from '@/app/tenant-route-loader'
 import { loadFloorPlan } from '@/features/floor-plan/application/floor-plan'
-import { ServicePage } from '@/features/service'
 import { loadServiceBoard } from '@/features/service/infrastructure/server/service-board-repository'
 import { loadVenueRouteContext } from '@/features/venues'
 import { createRequestSupabaseClient } from '@/shared/lib/supabase/server/create-server-client'
@@ -23,22 +22,5 @@ export const Route = createFileRoute('/t/$slug/l/$venue/servicio')({
 
     return { board, plan, tenant, venue }
   },
-  component: ServiceRoute,
   ...tenantRouteState,
 })
-
-function ServiceRoute() {
-  const { board, plan, tenant, venue } = Route.useLoaderData()
-  const { slug: tenantSlug, venue: venueSlug } = Route.useParams()
-
-  return (
-    <ServicePage
-      board={board}
-      plan={plan}
-      tenantId={tenant.id}
-      venueId={venue.id}
-      tenantSlug={tenantSlug}
-      venueSlug={venueSlug}
-    />
-  )
-}
