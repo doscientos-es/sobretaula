@@ -24,10 +24,14 @@ export function MenuForms({
   categories,
   onDone,
   tenantId,
+  categoryOpen,
+  onCategoryOpenChange,
 }: {
   categories: readonly MenuCategory[]
   onDone: () => void
   tenantId: string
+  categoryOpen?: boolean
+  onCategoryOpenChange?: (open: boolean) => void
 }) {
   const feedback = useFormFeedback()
   const [categoryName, setCategoryName] = useState('')
@@ -36,8 +40,10 @@ export function MenuForms({
   const [csvPreview, setCsvPreview] = useState<MenuImportPreview | null>(null)
   const [csvFileName, setCsvFileName] = useState('')
   const [isDraggingCsv, setIsDraggingCsv] = useState(false)
-  const [categoryOpen, setCategoryOpen] = useState(false)
+  const [localCategoryOpen, setLocalCategoryOpen] = useState(false)
   const [importOpen, setImportOpen] = useState(false)
+  const isCategoryOpen = categoryOpen ?? localCategoryOpen
+  const setCategoryOpen = onCategoryOpenChange ?? setLocalCategoryOpen
 
   async function run(action: () => Promise<unknown>, message: string) {
     if (feedback.pending) return
@@ -128,7 +134,7 @@ export function MenuForms({
 
   return (
     <div className="flex flex-wrap gap-2">
-      <DialogRoot onOpenChange={setCategoryOpen} open={categoryOpen}>
+      <DialogRoot onOpenChange={setCategoryOpen} open={isCategoryOpen}>
         <Button onClick={() => setCategoryOpen(true)} type="button">
           Nueva categoría
         </Button>

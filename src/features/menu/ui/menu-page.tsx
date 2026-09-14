@@ -57,6 +57,7 @@ export function MenuPage({
   const [query, setQuery] = useState('')
   const [visibility, setVisibility] = useState<'all' | 'active' | 'inactive'>('all')
   const [station, setStation] = useState<KitchenStation | 'all'>('all')
+  const [categoryOpen, setCategoryOpen] = useState(false)
   const visibleSections = filterMenuSections(sections, {
     isActive: visibility === 'all' ? undefined : visibility === 'active',
     kitchenStation: station === 'all' ? undefined : station,
@@ -81,7 +82,13 @@ export function MenuPage({
             Mantén tus platos, precios e IVA preparados para que sala pueda cobrar con fluidez.
           </PageHeaderDescription>
         </div>
-        <MenuForms categories={catalog.categories} onDone={reload} tenantId={tenantId} />
+        <MenuForms
+          categories={catalog.categories}
+          categoryOpen={categoryOpen}
+          onCategoryOpenChange={setCategoryOpen}
+          onDone={reload}
+          tenantId={tenantId}
+        />
       </PageHeader>
       <Card>
         <CardHeader>
@@ -147,12 +154,25 @@ export function MenuPage({
         </CardContent>
       </Card>
       {sections.length === 0 ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>La carta está vacía</CardTitle>
-            <CardDescription>
-              Crea la primera categoría y después añade sus platos desde la propia categoría.
+        <Card className="border-dashed">
+          <CardHeader className="items-center gap-3 py-12 text-center">
+            <div
+              aria-hidden="true"
+              className="grid size-14 place-items-center rounded-2xl bg-primary/10 text-2xl"
+            >
+              🍽️
+            </div>
+            <CardTitle>Empieza a construir tu carta</CardTitle>
+            <CardDescription className="max-w-md">
+              Crea una categoría —por ejemplo, Entrantes o Postres— y añade sus platos desde ahí.
             </CardDescription>
+            <button
+              className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex h-10 items-center justify-center rounded-md px-4 text-sm font-medium shadow-sm transition-colors"
+              onClick={() => setCategoryOpen(true)}
+              type="button"
+            >
+              Crear primera categoría
+            </button>
           </CardHeader>
         </Card>
       ) : visibleSections.length === 0 ? (

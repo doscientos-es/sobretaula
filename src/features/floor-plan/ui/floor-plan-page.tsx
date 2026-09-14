@@ -20,7 +20,7 @@ import {
   PageHeaderTitle,
   useFormFeedback,
 } from '@doscientos/ui'
-import { DoorOpen, Grid2X2, LayoutGrid, PanelTop, Soup, Square, StairUp } from 'lucide-react'
+import { DoorOpen, Footprints, Grid2X2, LayoutGrid, PanelTop, Soup, Square } from 'lucide-react'
 import {
   useEffect,
   useRef,
@@ -28,6 +28,7 @@ import {
   type FormEvent,
   type ChangeEvent,
   type KeyboardEvent,
+  type DragEvent,
 } from 'react'
 
 import { useAsyncEffect } from '@/shared/lib/react/use-async-effect'
@@ -1082,26 +1083,18 @@ export function FloorPlanPage({
                       ['wall', 'Pared', Square],
                       ['door', 'Puerta', DoorOpen],
                       ['bar', 'Barra', PanelTop],
-                      ['stairs', 'Escalera', StairUp],
+                      ['stairs', 'Escalera', Footprints],
                       ['plant', 'Planta', LayoutGrid],
                       ['pillar', 'Pilar', Grid2X2],
                       ['bathroom', 'Baño', Square],
                       ['kitchen', 'Cocina', Soup],
                     ] as const
                   ).map(([kind, label, Icon]) => (
-                    <Button
-                      className="h-auto justify-start gap-2 py-3"
-                      draggable
-                      onDragStart={(event) =>
-                        event.dataTransfer.setData('application/x-floor-element', kind)
-                      }
-                      key={kind}
-                      onClick={() => addElement(kind)}
-                      type="button"
-                      variant="outline"
-                    >
-                      <Icon className="size-4" /> {label}
-                    </Button>
+                    <div draggable onDragStart={(event: DragEvent<HTMLDivElement>) => event.dataTransfer.setData('application/x-floor-element', kind)} key={kind}>
+                      <Button className="h-auto w-full justify-start gap-2 py-3" onClick={() => addElement(kind)} type="button" variant="outline">
+                        <Icon className="size-4" /> {label}
+                      </Button>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -1292,7 +1285,7 @@ export function FloorPlanPage({
                 ['wall', 'Pared', Square],
                 ['door', 'Puerta', DoorOpen],
                 ['bar', 'Barra', PanelTop],
-                ['stairs', 'Escalera', StairUp],
+                ['stairs', 'Escalera', Footprints],
                 ['plant', 'Planta', LayoutGrid],
                 ['pillar', 'Pilar', Grid2X2],
                 ['bathroom', 'Baño', Square],

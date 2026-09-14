@@ -81,6 +81,7 @@ export function LoginPage({ redirectTo }: { redirectTo?: string }) {
               aria-describedby="login-description login-feedback"
               aria-labelledby="login-title"
               className="mt-10 space-y-5"
+              method="post"
               onSubmit={(event) => void submit(event)}
             >
               <Field>

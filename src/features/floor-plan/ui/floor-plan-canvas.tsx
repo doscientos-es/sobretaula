@@ -83,8 +83,15 @@ export function FloorPlanCanvas({
     setDragPreview(undefined)
   }
 
-  function planPointFromEvent(event: { currentTarget: SVGSVGElement | SVGRectElement; clientX: number; clientY: number }) {
-    const svg = event.currentTarget instanceof SVGSVGElement ? event.currentTarget : event.currentTarget.ownerSVGElement
+  function planPointFromEvent(event: {
+    currentTarget: SVGSVGElement | SVGRectElement
+    clientX: number
+    clientY: number
+  }) {
+    const svg =
+      event.currentTarget instanceof SVGSVGElement
+        ? event.currentTarget
+        : event.currentTarget.ownerSVGElement
     const transform = svg?.getScreenCTM()
     if (!transform) return undefined
     if (!svg) return undefined
