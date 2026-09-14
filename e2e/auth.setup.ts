@@ -14,7 +14,7 @@ setup('authenticate E2E owner against Supabase-dev', async ({ page }) => {
 
   await page.goto('/login')
   await page.getByLabel(/correo|email/i).fill(email)
-  await page.getByLabel(/contraseña|password/i).fill(password)
+  await page.getByRole('textbox', { name: /contraseña|password/i }).fill(password)
   await page.getByRole('button', { name: /iniciar sesión|entrar|acceder/i }).click()
   await expect(page).not.toHaveURL(/\/login/)
 

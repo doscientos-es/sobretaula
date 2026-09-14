@@ -70,7 +70,7 @@ async function ensureUser(email, password, displayName) {
 }
 
 async function main() {
-  let tenants = await request(
+  const tenants = await request(
     `/rest/v1/tenants?slug=eq.${encodeURIComponent(slug)}&select=id,slug,status`,
   )
   let tenantId = tenants[0]?.id
@@ -89,7 +89,9 @@ async function main() {
     tenantId = created[0].id
   }
 
-  const venues = await request(`/rest/v1/venues?tenant_id=eq.${tenantId}&select=id&order=created_at.asc&limit=1`)
+  const venues = await request(
+    `/rest/v1/venues?tenant_id=eq.${tenantId}&select=id&order=created_at.asc&limit=1`,
+  )
   let venueId = venues[0]?.id
   if (!venueId) {
     const created = await request('/rest/v1/venues', {
@@ -108,7 +110,9 @@ async function main() {
     venueId = created[0].id
   }
 
-  const services = await request(`/rest/v1/services?tenant_id=eq.${tenantId}&venue_id=eq.${venueId}&select=id,name,weekday`)
+  const services = await request(
+    `/rest/v1/services?tenant_id=eq.${tenantId}&venue_id=eq.${venueId}&select=id,name,weekday`,
+  )
   if (services.length < 2) {
     const candidates = [
       { name: 'Comida', weekday: 6, starts_at_time: '13:00:00', ends_at_time: '16:00:00' },
@@ -117,14 +121,30 @@ async function main() {
     const created = await request('/rest/v1/services', {
       method: 'POST',
       headers: { Prefer: 'return=representation' },
-      body: JSON.stringify(candidates.map((service) => ({ ...service, tenant_id: tenantId, venue_id: venueId, is_active: true }))),
+      body: JSON.stringify(
+        candidates.map((service) => ({
+          ...service,
+          tenant_id: tenantId,
+          venue_id: venueId,
+          is_active: true,
+        })),
+      ),
     })
     services.push(...created)
   }
   await request('/rest/v1/availability_rules?on_conflict=service_id', {
     method: 'POST',
     headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
-    body: JSON.stringify(services.map((service) => ({ tenant_id: tenantId, service_id: service.id, slot_minutes: 15, max_covers_per_slot: 30, max_reservations_per_slot: 8, max_lead_days: 90 }))),
+    body: JSON.stringify(
+      services.map((service) => ({
+        tenant_id: tenantId,
+        service_id: service.id,
+        slot_minutes: 15,
+        max_covers_per_slot: 30,
+        max_reservations_per_slot: 8,
+        max_lead_days: 90,
+      })),
+    ),
   })
   const ownerId = await ensureUser(ownerEmail, ownerPassword, 'E2E Owner')
   const managerId = await ensureUser(managerEmail, managerPassword, 'E2E Manager')
