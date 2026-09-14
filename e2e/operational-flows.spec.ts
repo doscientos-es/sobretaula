@@ -3,7 +3,12 @@ import { test, expect } from '@playwright/test'
 import { expectHealthyPage, openOperationalPage, operationalUrl, tenant } from './helpers'
 
 test.beforeEach(async ({ page }, testInfo) => {
-  void page
+  const cookies = await page.context().cookies()
+  const sessionCookies = cookies.filter((cookie) => cookie.name === 'sobretaula-session')
+  if (sessionCookies.length > 0 && sessionCookies.some((cookie) => cookie.expires > 0 && cookie.expires < Date.now() / 1000)) {
+    await page.context().clearCookies({ name: 'sobretaula-session' })
+    await page.context().addCookies(sessionCookies.map((cookie) => ({ ...cookie, expires: -1 })))
+  }
   const required = testInfo.title.match(/^@(owner|manager|host|waiter|accountant)/)?.[1]
   test.skip(
     !required || testInfo.project.name !== required,
@@ -21,7 +26,10 @@ test('@owner @activation @P0 activa y revisa el espacio operativo', async ({ pag
   const versionName = `E2E turno ${new Date().toISOString().slice(0, 16)}`
   const versionInput = page.getByLabel(/guardar como versión/i)
   await versionInput.fill(versionName)
-  await page.getByRole('button', { name: /^guardar$/i }).last().click()
+  await page
+    .getByRole('button', { name: /^guardar$/i })
+    .last()
+    .click()
   await expect(page.getByText(/versión guardada|guardado correctamente/i)).toBeVisible()
   await page.reload({ waitUntil: 'domcontentloaded' })
   await expect(page.getByText(versionName)).toBeVisible()

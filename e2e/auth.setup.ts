@@ -36,9 +36,17 @@ setup('authenticate E2E roles against Supabase-test', async ({ page }) => {
     const statePath = path.resolve(`e2e/.auth/${role}.json`)
     if (process.env.E2E_REUSE_STORAGE_STATE !== 'false' && fs.existsSync(statePath)) {
       const state = JSON.parse(fs.readFileSync(statePath, 'utf8')) as { cookies?: unknown[] }
-      if (Array.isArray(state.cookies) && state.cookies.some((cookie) =>
-        typeof cookie === 'object' && cookie !== null && 'name' in cookie &&
-        (cookie as { name?: unknown }).name === 'sobretaula-session')) continue
+      if (
+        Array.isArray(state.cookies) &&
+        state.cookies.some(
+          (cookie) =>
+            typeof cookie === 'object' &&
+            cookie !== null &&
+            'name' in cookie &&
+            (cookie as { name?: unknown }).name === 'sobretaula-session',
+        )
+      )
+        continue
     }
     for (let attempt = 1; attempt <= 3; attempt += 1) {
       await page.goto('/login', { waitUntil: 'domcontentloaded' })

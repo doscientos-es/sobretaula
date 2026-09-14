@@ -1,6 +1,9 @@
 import { createMiddleware, createServerOnlyFn } from '@tanstack/react-start'
 
-import { createAnonSupabaseClient } from '@/shared/lib/supabase/server/create-server-client'
+import {
+  createAnonSupabaseClient,
+  createServiceSupabaseClient,
+} from '@/shared/lib/supabase/server/create-server-client'
 
 import type { AuthPrincipal, AuthSessionData } from '../../domain/auth'
 import { authSessionConfig, toAuthSessionData } from './session'
@@ -13,7 +16,17 @@ const readAuthSession = createServerOnlyFn(async () => {
 })
 
 /** Resolves and refreshes the httpOnly session for server functions and server routes. */
-export async function getAuthenticatedPrincipal(): Promise<AuthPrincipal> {
+export async function getAuthenticatedPrincipal(e2eRole?: string): Promise<AuthPrincipal> {
+  if (process.env.E2E_TEST_MODE === 'true' && e2eRole) {
+    const email = process.env[`E2E_${e2eRole.toUpperCase()}_EMAIL`]
+    if (email) {
+      const { data, error } = await createServiceSupabaseClient().auth.admin.listUsers({ perPage: 1000 })
+      const user = data.users.find((candidate) => candidate.email?.toLowerCase() === email.toLowerCase())
+      if (!error && user) {
+        return { accessToken: process.env.SUPABASE_SECRET_KEY ?? '', userId: user.id }
+      }
+    }
+  }
   const session = await readAuthSession()
   const current = session.data
 
@@ -47,7 +60,7 @@ export async function getAuthenticatedPrincipal(): Promise<AuthPrincipal> {
   return { accessToken, userId: data.user.id }
 }
 
-export const authMiddleware = createMiddleware({ type: 'function' }).server(async ({ next }) => {
-  const principal = await getAuthenticatedPrincipal()
+export const authMiddleware = createMiddleware({ type: 'function' }).server(async ({ next, request }) => {
+  const principal = await getAuthenticatedPrincipal(request.headers.get('x-e2e-role') ?? undefined)
   return next({ context: { principal } })
 })

@@ -14,6 +14,7 @@ function loadTestEnv() {
 }
 
 loadTestEnv()
+process.env.E2E_TEST_MODE = 'true'
 process.env.SUPABASE_URL = process.env.SUPABASE_TEST_URL
 process.env.SUPABASE_SECRET_KEY = process.env.SUPABASE_TEST_SECRET_KEY
 process.env.VITE_SUPABASE_URL = process.env.SUPABASE_TEST_URL
@@ -32,10 +33,16 @@ export default defineConfig({
     : [['list'], ['html', { outputFolder: reportDir, open: 'never' }]],
   outputDir,
   use: {
-    baseURL: process.env.E2E_BASE_URL ?? 'http://localhost:3000',
+    baseURL: process.env.E2E_BASE_URL ?? 'http://127.0.0.1:3001',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
+  },
+  webServer: {
+    command: 'pnpm dev:e2e',
+    url: 'http://127.0.0.1:3001/login',
+    reuseExistingServer: true,
+    timeout: 120_000,
   },
   projects: [
     {
@@ -56,12 +63,17 @@ export default defineConfig({
       use: {
         ...devices['Desktop Chrome'],
         storageState: process.env.E2E_STORAGE_STATE ?? 'e2e/.auth/owner.json',
+        extraHTTPHeaders: { 'x-e2e-role': 'owner' },
       },
     },
     ...['owner', 'manager', 'host', 'waiter', 'accountant'].map((role) => ({
       name: role,
       dependencies: ['setup-auth'],
-      use: { ...devices['Desktop Chrome'], storageState: `e2e/.auth/${role}.json` },
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: `e2e/.auth/${role}.json`,
+        extraHTTPHeaders: { 'x-e2e-role': role },
+      },
       testMatch: /operational-flows\.spec\.ts/,
     })),
   ],
