@@ -57,6 +57,7 @@ export function FloorPlanCanvas({
   const [zoom, setZoom] = useState(1)
   const [pan, setPan] = useState({ x: 0, y: 0 })
   const [draggingItemId, setDraggingItemId] = useState<string>()
+  const [dragPreview, setDragPreview] = useState<{ id: string; x: number; y: number }>()
   const panPointer = useRef<{ id: number; x: number; y: number } | undefined>(undefined)
   const viewBox = `${Math.max(0, Math.min(activeVersion.widthCm * (1 - 1 / zoom), (activeVersion.widthCm * (1 - 1 / zoom)) / 2 + pan.x)).toFixed(2)} ${Math.max(0, Math.min(activeVersion.heightCm * (1 - 1 / zoom), (activeVersion.heightCm * (1 - 1 / zoom)) / 2 + pan.y)).toFixed(2)} ${(activeVersion.widthCm / zoom).toFixed(2)} ${(activeVersion.heightCm / zoom).toFixed(2)}`
 
@@ -73,6 +74,16 @@ export function FloorPlanCanvas({
     const planPoint = point.matrixTransform(transform.inverse())
     onMoveItem(draggingItemId, planPoint.x, planPoint.y)
     setDraggingItemId(undefined)
+    setDragPreview(undefined)
+  }
+
+  function planPointFromEvent(event: PointerEvent<SVGSVGElement>) {
+    const transform = event.currentTarget.getScreenCTM()
+    if (!transform) return undefined
+    const point = event.currentTarget.createSVGPoint()
+    point.x = event.clientX
+    point.y = event.clientY
+    return point.matrixTransform(transform.inverse())
   }
 
   const selected =
@@ -212,6 +223,11 @@ export function FloorPlanCanvas({
               event.currentTarget.setPointerCapture(event.pointerId)
             }}
             onPointerMove={(event) => {
+              if (draggingItemId) {
+                const point = planPointFromEvent(event)
+                if (point) setDragPreview({ id: draggingItemId, x: point.x, y: point.y })
+                return
+              }
               const start = panPointer.current
               if (!start || start.id !== event.pointerId) return
               const bounds = event.currentTarget.getBoundingClientRect()
@@ -228,6 +244,7 @@ export function FloorPlanCanvas({
             onPointerCancel={() => {
               panPointer.current = undefined
               setDraggingItemId(undefined)
+              setDragPreview(undefined)
             }}
             onPointerUp={(event) => {
               if (panPointer.current?.id === event.pointerId) {
@@ -316,14 +333,17 @@ export function FloorPlanCanvas({
               ),
             )}
             {elements.map((element) => (
-              <g key={element.id}>
+              <g key={element.id} transform={dragPreview?.id === element.id ? `translate(${dragPreview.x - element.xCm} ${dragPreview.y - element.yCm})` : undefined}>
                 <rect
                   fill={element.kind === 'wall' ? 'var(--foreground)' : 'var(--muted-foreground)'}
                   height={element.heightCm}
                   onPointerDown={(event) =>
                     (() => {
                       onSelectItem(element.id, event.ctrlKey || event.metaKey)
-                      if (!lockedIds.includes(element.id)) setDraggingItemId(element.id)
+                      if (!lockedIds.includes(element.id)) {
+                        setDraggingItemId(element.id)
+                        event.currentTarget.ownerSVGElement?.setPointerCapture(event.pointerId)
+                      }
                     })()
                   }
                   opacity={lockedIds.includes(element.id) ? 0.48 : 0.65}
@@ -343,7 +363,7 @@ export function FloorPlanCanvas({
               </g>
             ))}
             {placements.map((placement) => (
-              <g key={placement.id}>
+              <g key={placement.id} transform={dragPreview?.id === placement.id ? `translate(${dragPreview.x - placement.xCm} ${dragPreview.y - placement.yCm})` : undefined}>
                 <rect
                   fill={
                     layoutIssues.some((issue) => issue.placementId === placement.id)
@@ -355,6 +375,7 @@ export function FloorPlanCanvas({
                     onSelectItem(placement.id, event.ctrlKey || event.metaKey)
                     if (!lockedIds.includes(placement.id)) {
                       setDraggingItemId(placement.id)
+                      event.currentTarget.ownerSVGElement?.setPointerCapture(event.pointerId)
                     }
                   }}
                   opacity={lockedIds.includes(placement.id) ? 0.62 : 0.85}
