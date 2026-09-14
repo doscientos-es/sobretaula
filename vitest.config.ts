@@ -1,7 +1,8 @@
 import { fileURLToPath, URL } from 'node:url'
 
 import { createVitestConfig } from '@doscientos/configs/vitest'
-import { defineConfig, loadEnv } from 'vitest/config'
+import { loadEnv } from 'vite'
+import { defineConfig } from 'vitest/config'
 
 Object.assign(process.env, loadEnv('test', process.cwd(), ''))
 

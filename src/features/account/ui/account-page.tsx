@@ -41,8 +41,8 @@ export function AccountPage({
 
   return (
     <section className="space-y-6">
-      <PageHeader className="border-border/70 border-b pb-6">
-        <div>
+      <PageHeader className="border-border/70 flex-col items-start gap-4 border-b pb-6 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
           <PageHeaderTitle>{`Cuenta${tablesLabel}`}</PageHeaderTitle>
           <PageHeaderDescription>
             {`${session.covers} comensales · abierta a las ${openedAt}${open ? '' : ' · cerrada'}`}
@@ -57,7 +57,7 @@ export function AccountPage({
           Reimprimir ticket
         </Button>
       </PageHeader>
-      <div className="st-no-print grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+      <div className="st-no-print grid gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="space-y-6">
           <AccountOrderWorkspace
             account={account}
@@ -67,7 +67,7 @@ export function AccountPage({
             venueId={venueId}
           />
         </div>
-        <aside className="space-y-6 lg:sticky lg:top-6 lg:self-start">
+        <aside className="space-y-6 xl:sticky xl:top-6 xl:self-start">
           <AccountPayments
             account={account}
             canManageAdjustments={canManageAdjustments}

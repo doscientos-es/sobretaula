@@ -103,6 +103,7 @@ export function AccountPayments({
   const [selectedShareIndex, setSelectedShareIndex] = useState<number | null>(null)
   const [discountDraft, setDiscountDraft] = useState('')
   const [discountReason, setDiscountReason] = useState('')
+  const [refundPaymentId, setRefundPaymentId] = useState<string | null>(null)
   const open = session.status === 'open'
   const settled = totals.balanceCents === 0
   let shares: number[] = []
@@ -223,7 +224,7 @@ export function AccountPayments({
   }
 
   function refund(paymentId: string, amountCents: number) {
-    if (feedback.pending || !window.confirm('¿Devolver este cobro completo?')) return
+    if (feedback.pending) return
     feedback.setPending()
     void refundPayment({
       data: {
@@ -236,6 +237,7 @@ export function AccountPayments({
       },
     })
       .then(() => {
+        setRefundPaymentId(null)
         feedback.setSuccess('Devolución registrada.')
         onDone()
       })
@@ -347,7 +349,7 @@ export function AccountPayments({
           </div>
         </dl>
         {open && canManageAdjustments && (
-          <form className="flex flex-wrap items-end gap-2 border-b pb-4" onSubmit={discount}>
+          <form className="grid gap-3 border-b pb-4 sm:grid-cols-2" onSubmit={discount}>
             <Field>
               <FieldLabel htmlFor="discount-amount">Descuento (€)</FieldLabel>
               <Input
@@ -378,7 +380,7 @@ export function AccountPayments({
                 value={discountReason}
               />
             </Field>
-            <Button disabled={feedback.pending} size="sm" type="submit">
+            <Button className="sm:col-span-2" disabled={feedback.pending} size="sm" type="submit">
               Aplicar descuento
             </Button>
           </form>
@@ -389,75 +391,77 @@ export function AccountPayments({
         )}
         {open && !settled && (
           <form className="grid gap-4 border-t pt-4" onSubmit={charge}>
-            <Field>
-              <FieldLabel htmlFor="payment-method">Método</FieldLabel>
-              <Select
-                className="w-full"
-                id="payment-method"
-                onSelectionChange={(key) => setMethod(String(key) as PaymentMethod)}
-                selectedKey={method}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectList>
-                    {PAYMENT_METHODS.map((option) => (
-                      <SelectItem id={option} key={option}>
-                        {PAYMENT_METHOD_LABEL[option]}
-                      </SelectItem>
-                    ))}
-                  </SelectList>
-                </SelectContent>
-              </Select>
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="payment-parts">Dividir la cuenta</FieldLabel>
-              <Select
-                className="w-full"
-                id="payment-parts"
-                onSelectionChange={(key) => setParts(Number(key))}
-                selectedKey={String(parts)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectList>
-                    {SPLIT_OPTIONS.map((option) => (
-                      <SelectItem id={String(option)} key={option}>
-                        {`${option} partes`}
-                      </SelectItem>
-                    ))}
-                  </SelectList>
-                </SelectContent>
-              </Select>
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="payment-split-mode">Tipo de división</FieldLabel>
-              <Select
-                className="w-full"
-                id="payment-split-mode"
-                onSelectionChange={(key) => {
-                  const mode = String(key) as typeof splitMode
-                  setSplitMode(mode)
-                  if (mode === 'equal') setSplitValues('50,50')
-                }}
-                selectedKey={splitMode}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectList>
-                    <SelectItem id="equal">Partes iguales</SelectItem>
-                    <SelectItem id="percentage">Por porcentaje</SelectItem>
-                    <SelectItem id="amount">Por importe</SelectItem>
-                    <SelectItem id="product">Por producto/persona</SelectItem>
-                  </SelectList>
-                </SelectContent>
-              </Select>
-            </Field>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field>
+                <FieldLabel htmlFor="payment-method">Método</FieldLabel>
+                <Select
+                  className="w-full"
+                  id="payment-method"
+                  onSelectionChange={(key) => setMethod(String(key) as PaymentMethod)}
+                  selectedKey={method}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectList>
+                      {PAYMENT_METHODS.map((option) => (
+                        <SelectItem id={option} key={option}>
+                          {PAYMENT_METHOD_LABEL[option]}
+                        </SelectItem>
+                      ))}
+                    </SelectList>
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="payment-parts">Dividir la cuenta</FieldLabel>
+                <Select
+                  className="w-full"
+                  id="payment-parts"
+                  onSelectionChange={(key) => setParts(Number(key))}
+                  selectedKey={String(parts)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectList>
+                      {SPLIT_OPTIONS.map((option) => (
+                        <SelectItem id={String(option)} key={option}>
+                          {`${option} partes`}
+                        </SelectItem>
+                      ))}
+                    </SelectList>
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="payment-split-mode">Tipo de división</FieldLabel>
+                <Select
+                  className="w-full"
+                  id="payment-split-mode"
+                  onSelectionChange={(key) => {
+                    const mode = String(key) as typeof splitMode
+                    setSplitMode(mode)
+                    if (mode === 'equal') setSplitValues('50,50')
+                  }}
+                  selectedKey={splitMode}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectList>
+                      <SelectItem id="equal">Partes iguales</SelectItem>
+                      <SelectItem id="percentage">Por porcentaje</SelectItem>
+                      <SelectItem id="amount">Por importe</SelectItem>
+                      <SelectItem id="product">Por producto/persona</SelectItem>
+                    </SelectList>
+                  </SelectContent>
+                </Select>
+              </Field>
+            </div>
             {splitMode === 'product' ? (
               <div className="grid gap-2 rounded-lg border p-3">
                 <p className="text-sm font-medium">Asigna cada línea a una persona</p>
@@ -502,7 +506,7 @@ export function AccountPayments({
                 />
               </Field>
             ) : null}
-            <div className="flex flex-wrap gap-2">
+            <div className="grid gap-2 sm:grid-cols-2" aria-label="Importes sugeridos">
               {shares.map((share, index) => (
                 <Button
                   key={`${parts}-${index}`}
@@ -518,26 +522,28 @@ export function AccountPayments({
                 </Button>
               ))}
             </div>
-            <Field>
-              <FieldLabel htmlFor="payment-amount">Importe a cobrar (euros)</FieldLabel>
-              <Input
-                id="payment-amount"
-                inputMode="decimal"
-                onChange={(event) => setAmountDraft(event.target.value)}
-                required
-                value={amountDraft}
-              />
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="payment-tip">Propina (opcional)</FieldLabel>
-              <Input
-                id="payment-tip"
-                inputMode="decimal"
-                onChange={(event) => setTipDraft(event.target.value)}
-                placeholder="0,00"
-                value={tipDraft}
-              />
-            </Field>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field>
+                <FieldLabel htmlFor="payment-amount">Importe a cobrar (euros)</FieldLabel>
+                <Input
+                  id="payment-amount"
+                  inputMode="decimal"
+                  onChange={(event) => setAmountDraft(event.target.value)}
+                  required
+                  value={amountDraft}
+                />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="payment-tip">Propina (opcional)</FieldLabel>
+                <Input
+                  id="payment-tip"
+                  inputMode="decimal"
+                  onChange={(event) => setTipDraft(event.target.value)}
+                  placeholder="0,00"
+                  value={tipDraft}
+                />
+              </Field>
+            </div>
             <FormFeedback pendingLabel="Registrando cobro…" state={feedback.state} />
             <Button disabled={feedback.pending} type="submit">
               Registrar cobro
@@ -665,17 +671,37 @@ export function AccountPayments({
                   {(payment.refundedCents ?? 0) > 0 &&
                     ` · devuelto ${formatMoney(payment.refundedCents ?? 0, locale)}`}
                   {payment.tipCents > 0 && ` + ${formatMoney(payment.tipCents, locale)} propina`}
-                  {canManageAdjustments && (
+                  {canManageAdjustments && refundPaymentId === payment.id ? (
+                    <span className="flex items-center gap-1">
+                      <Button
+                        disabled={feedback.pending}
+                        onClick={() => refund(payment.id, payment.amountCents)}
+                        size="sm"
+                        type="button"
+                      >
+                        Confirmar devolución
+                      </Button>
+                      <Button
+                        disabled={feedback.pending}
+                        onClick={() => setRefundPaymentId(null)}
+                        size="sm"
+                        type="button"
+                        variant="ghost"
+                      >
+                        Cancelar
+                      </Button>
+                    </span>
+                  ) : canManageAdjustments ? (
                     <Button
                       disabled={feedback.pending}
-                      onClick={() => refund(payment.id, payment.amountCents)}
+                      onClick={() => setRefundPaymentId(payment.id)}
                       size="sm"
                       type="button"
                       variant="ghost"
                     >
                       Devolver
                     </Button>
-                  )}
+                  ) : null}
                 </span>
               </li>
             ))}
