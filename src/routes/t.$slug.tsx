@@ -35,8 +35,6 @@ import { getTenantBillingStatus, TenantBillingNotice } from '@/features/platform
 import { RedsysSubscriptionButton } from '@/features/platform-billing/ui/redsys-subscription-button'
 import {
   getTenantBySlug,
-  getDashboardMetrics,
-  getTenantSetupStatus,
   getTenantMembership,
   isTenantAdministrator,
   isTenantOperational,
@@ -89,6 +87,7 @@ export const Route = createFileRoute('/t/$slug')({
     context.queryClient.setQueryData(tenantBySlugQuery(slug).queryKey, tenant)
 
     return {
+      tenant,
       tenantMembership: await getMembershipOrRedirect(tenant.id, tenant.slug, location.href),
     }
   },
@@ -111,40 +110,9 @@ export const Route = createFileRoute('/t/$slug')({
     } catch (error) {
       reportTenantRouteFailure('venues', error, { slug, tenantId: tenant.id })
     }
-    let metrics
-    try {
-      metrics = isTenantOperational(tenant.status)
-        ? await getDashboardMetrics({
-            data: { tenantId: tenant.id, venueIds: venues.map((venue) => venue.id) },
-          })
-        : {
-            actionItems: [],
-            nextReservationCovers: null,
-            nextReservationStartsAt: null,
-            openSessionCount: 0,
-            occupiedTables: 0,
-            paidTodayCents: 0,
-            pendingReservationsToday: 0,
-            reservationsToday: 0,
-            reservationsThisWeek: 0,
-            noShowsThisWeek: 0,
-          }
-    } catch (error) {
-      reportTenantRouteFailure('dashboard_metrics', error, { slug, tenantId: tenant.id })
-    }
-    let setupStatus
-    try {
-      setupStatus = await getTenantSetupStatus({
-        data: { tenantId: tenant.id, venueIds: venues.map((venue) => venue.id) },
-      })
-    } catch (error) {
-      reportTenantRouteFailure('setup_status', error, { slug, tenantId: tenant.id })
-    }
     return {
       billingStatus,
       membership: context.tenantMembership,
-      metrics,
-      setupStatus,
       tenant,
       venues,
     }

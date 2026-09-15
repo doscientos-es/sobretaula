@@ -1,16 +1,11 @@
-import { createFileRoute, notFound } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 
 import { GiftCardsPage } from '@/features/gift-cards'
 import { requireTenantRouteAccess } from '@/features/tenancy/application/tenant-route-access'
-import { loadVenueRouteContext } from '@/features/venues'
 export const Route = createFileRoute('/t/$slug/l/$venue/tarjetas-regalo')({
   beforeLoad: ({ context }) =>
     requireTenantRouteAccess(context.tenantMembership.role, 'administration'),
-  loader: async ({ context, params }) => {
-    const routeContext = await loadVenueRouteContext(context.queryClient, params.slug, params.venue)
-    if (!routeContext) throw notFound()
-    return routeContext
-  },
+  loader: ({ context }) => ({ tenant: context.tenant, venue: context.venue }),
   component: GiftCardsRoute,
 })
 function GiftCardsRoute() {

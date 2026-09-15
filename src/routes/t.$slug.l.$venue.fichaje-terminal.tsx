@@ -1,13 +1,10 @@
-import { createFileRoute, notFound } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 
 import { getTimekeepingTerminalStaff } from '@/features/timekeeping'
-import { loadVenueRouteContext } from '@/features/venues'
 
 export const Route = createFileRoute('/t/$slug/l/$venue/fichaje-terminal')({
-  loader: async ({ context, params }) => {
-    const routeContext = await loadVenueRouteContext(context.queryClient, params.slug, params.venue)
-    if (!routeContext) throw notFound()
-    const { tenant, venue } = routeContext
+  loader: async ({ context }) => {
+    const { tenant, venue } = context
     return {
       staff: await getTimekeepingTerminalStaff({
         data: { tenantId: tenant.id, venueId: venue.id },

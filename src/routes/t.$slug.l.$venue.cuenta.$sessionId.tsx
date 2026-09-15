@@ -1,10 +1,9 @@
-import { createFileRoute, notFound } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 
 import { AccountPage, getAccount } from '@/features/account'
 import { getBillingOverview } from '@/features/invoices'
 import { getMenu } from '@/features/menu'
 import { requireTenantRouteAccess } from '@/features/tenancy'
-import { loadVenueRouteContext } from '@/features/venues'
 import { useLocale } from '@/shared/lib/i18n/locale-preference'
 
 export const Route = createFileRoute('/t/$slug/l/$venue/cuenta/$sessionId')({
@@ -12,9 +11,7 @@ export const Route = createFileRoute('/t/$slug/l/$venue/cuenta/$sessionId')({
     requireTenantRouteAccess(context.tenantMembership.role, 'table_account')
   },
   loader: async ({ context, params }) => {
-    const routeContext = await loadVenueRouteContext(context.queryClient, params.slug, params.venue)
-    if (!routeContext) throw notFound()
-    const { tenant, venue } = routeContext
+    const { tenant, venue } = context
     const data = {
       sessionId: params.sessionId,
       tenantId: tenant.id,

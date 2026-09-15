@@ -1,15 +1,10 @@
-import { createFileRoute, notFound } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 
 import { CampaignsPage } from '@/features/guests'
 import { NotificationJobsPage } from '@/features/notifications'
-import { loadVenueRouteContext } from '@/features/venues'
 
 export const Route = createFileRoute('/t/$slug/l/$venue/comunicaciones')({
-  loader: async ({ context, params }) => {
-    const routeContext = await loadVenueRouteContext(context.queryClient, params.slug, params.venue)
-    if (!routeContext) throw notFound()
-    return routeContext
-  },
+  loader: ({ context }) => ({ tenant: context.tenant, venue: context.venue }),
   component: CommunicationsRoute,
 })
 

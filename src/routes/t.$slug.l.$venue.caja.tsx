@@ -1,17 +1,14 @@
-import { createFileRoute, notFound } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 
 import { getCashRegister, listClosedCashRegisters } from '@/features/cash-register'
 import { CashMethodSummary } from '@/features/cash-register/ui/cash-method-summary'
 import { CashMovementForm } from '@/features/cash-register/ui/cash-movement-form'
 import { CashRegisterPage } from '@/features/cash-register/ui/cash-register-page'
 import { ClosedRegisterSummary } from '@/features/cash-register/ui/closed-register-summary'
-import { loadVenueRouteContext } from '@/features/venues'
 
 export const Route = createFileRoute('/t/$slug/l/$venue/caja')({
-  loader: async ({ context, params }) => {
-    const routeContext = await loadVenueRouteContext(context.queryClient, params.slug, params.venue)
-    if (!routeContext) throw notFound()
-    const { tenant, venue } = routeContext
+  loader: async ({ context }) => {
+    const { tenant, venue } = context
     const data = { tenantId: tenant.id, venueId: venue.id }
     const [register, history] = await Promise.all([
       getCashRegister({ data }),

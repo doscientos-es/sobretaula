@@ -1,17 +1,16 @@
-import { createFileRoute, notFound } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 
 import { tenantRouteState } from '@/app/tenant-route-loader'
 import { getEmailBranding } from '@/features/communications/application/email-branding'
 import { EmailBrandingPage } from '@/features/communications/ui/email-branding-page'
-import { requireTenantRouteAccess, tenantBySlugQuery } from '@/features/tenancy'
+import { requireTenantRouteAccess } from '@/features/tenancy'
 
 export const Route = createFileRoute('/t/$slug/comunicaciones')({
   beforeLoad: ({ context }) => {
     requireTenantRouteAccess(context.tenantMembership.role, 'administration')
   },
-  loader: async ({ context, params }) => {
-    const tenant = await context.queryClient.ensureQueryData(tenantBySlugQuery(params.slug))
-    if (!tenant) throw notFound()
+  loader: async ({ context }) => {
+    const { tenant } = context
     return { branding: await getEmailBranding({ data: { tenantId: tenant.id } }), tenant }
   },
   component: CommunicationsRoute,

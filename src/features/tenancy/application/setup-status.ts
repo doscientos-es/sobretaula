@@ -1,3 +1,4 @@
+import { queryOptions } from '@tanstack/react-query'
 import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 
@@ -69,4 +70,11 @@ export const getTenantSetupStatus = createServerFn({ method: 'GET' })
       hasReservations: (services.count ?? 0) > 0,
       hasVenue: data.venueIds.length > 0,
     }
+  })
+
+export const tenantSetupStatusQuery = (tenantId: string, venueIds: readonly string[]) =>
+  queryOptions({
+    queryKey: ['tenant-setup-status', tenantId, [...venueIds]],
+    queryFn: () => getTenantSetupStatus({ data: { tenantId, venueIds: [...venueIds] } }),
+    staleTime: 30_000,
   })

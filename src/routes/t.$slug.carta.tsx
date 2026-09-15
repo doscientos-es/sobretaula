@@ -1,17 +1,16 @@
-import { createFileRoute, notFound } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 
 import { tenantRouteState } from '@/app/tenant-route-loader'
 import { getMenu, MenuPage } from '@/features/menu'
-import { requireTenantRouteAccess, tenantBySlugQuery } from '@/features/tenancy'
+import { requireTenantRouteAccess } from '@/features/tenancy'
 import { useLocale } from '@/shared/lib/i18n/locale-preference'
 
 export const Route = createFileRoute('/t/$slug/carta')({
   beforeLoad: ({ context }) => {
     requireTenantRouteAccess(context.tenantMembership.role, 'administration')
   },
-  loader: async ({ context, params }) => {
-    const tenant = await context.queryClient.ensureQueryData(tenantBySlugQuery(params.slug))
-    if (!tenant) throw notFound()
+  loader: async ({ context }) => {
+    const { tenant } = context
     const catalog = await getMenu({ data: { tenantId: tenant.id } })
     return { catalog, tenant }
   },

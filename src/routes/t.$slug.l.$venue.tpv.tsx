@@ -1,4 +1,4 @@
-import { createFileRoute, notFound } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
 
 import { tenantRouteState } from '@/app/tenant-route-loader'
@@ -19,7 +19,6 @@ import { getSalesReport, ProductSalesSummary, SalesReportPage } from '@/features
 import { KitchenQueue, type ServiceBoard } from '@/features/service'
 import { loadServiceBoard } from '@/features/service/infrastructure/server/service-board-repository'
 import { requireTenantRouteAccess } from '@/features/tenancy/application/tenant-route-access'
-import { loadVenueRouteContext } from '@/features/venues'
 import { useLocale } from '@/shared/lib/i18n/locale-preference'
 import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
 import { createRequestSupabaseClient } from '@/shared/lib/supabase/server/create-server-client'
@@ -29,10 +28,8 @@ export const Route = createFileRoute('/t/$slug/l/$venue/tpv')({
   loaderDeps: ({ search }) => ({ sessionId: search.sessionId }),
   beforeLoad: ({ context }) =>
     requireTenantRouteAccess(context.tenantMembership.role, 'operations'),
-  loader: async ({ context, deps, params }) => {
-    const routeContext = await loadVenueRouteContext(context.queryClient, params.slug, params.venue)
-    if (!routeContext) throw notFound()
-    const { tenant, venue } = routeContext
+  loader: async ({ context, deps }) => {
+    const { tenant, venue } = context
     const data = { tenantId: tenant.id, venueId: venue.id }
     const canManage = ['owner', 'manager'].includes(context.tenantMembership.role)
     const now = new Date()

@@ -1,8 +1,8 @@
-import { createFileRoute, notFound } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 
 import { tenantRouteState } from '@/app/tenant-route-loader'
 import { BillingPage, getBillingOverview } from '@/features/invoices'
-import { requireTenantRouteAccess, tenantBySlugQuery } from '@/features/tenancy'
+import { requireTenantRouteAccess } from '@/features/tenancy'
 import { useLocale } from '@/shared/lib/i18n/locale-preference'
 import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
 
@@ -10,9 +10,8 @@ export const Route = createFileRoute('/t/$slug/facturacion')({
   beforeLoad: ({ context }) => {
     requireTenantRouteAccess(context.tenantMembership.role, 'administration')
   },
-  loader: async ({ context, params }) => {
-    const tenant = await context.queryClient.ensureQueryData(tenantBySlugQuery(params.slug))
-    if (!tenant) throw notFound()
+  loader: async ({ context }) => {
+    const { tenant } = context
     const overview = await getBillingOverview({ data: { tenantId: tenant.id } })
     return { overview, tenant }
   },

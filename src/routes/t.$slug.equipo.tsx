@@ -1,12 +1,7 @@
 import { createFileRoute, getRouteApi } from '@tanstack/react-router'
 
 import { tenantRouteState } from '@/app/tenant-route-loader'
-import {
-  getTenantTeam,
-  requireTenantRouteAccess,
-  TenantTeamPage,
-  tenantBySlugQuery,
-} from '@/features/tenancy'
+import { getTenantTeam, requireTenantRouteAccess, TenantTeamPage } from '@/features/tenancy'
 
 const tenantRoute = getRouteApi('/t/$slug')
 
@@ -14,9 +9,8 @@ export const Route = createFileRoute('/t/$slug/equipo')({
   beforeLoad: ({ context }) => {
     requireTenantRouteAccess(context.tenantMembership.role, 'administration')
   },
-  loader: async ({ context, params }) => {
-    const tenant = await context.queryClient.ensureQueryData(tenantBySlugQuery(params.slug))
-    if (!tenant) throw new Response('Not Found', { status: 404 })
+  loader: async ({ context }) => {
+    const { tenant } = context
     return getTenantTeam({ data: { tenantId: tenant.id } })
   },
   component: TenantTeamRoute,

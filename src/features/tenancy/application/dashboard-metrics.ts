@@ -1,3 +1,4 @@
+import { queryOptions } from '@tanstack/react-query'
 import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 
@@ -180,4 +181,11 @@ export const getDashboardMetrics = createServerFn({ method: 'GET' })
       nextReservationCovers: nextReservation.data?.[0]?.party_size ?? null,
       nextReservationStartsAt: nextReservation.data?.[0]?.starts_at ?? null,
     }
+  })
+
+export const dashboardMetricsQuery = (tenantId: string, venueIds: readonly string[]) =>
+  queryOptions({
+    queryKey: ['tenant-dashboard-metrics', tenantId, [...venueIds]],
+    queryFn: () => getDashboardMetrics({ data: { tenantId, venueIds: [...venueIds] } }),
+    staleTime: 15_000,
   })
