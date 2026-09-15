@@ -1,5 +1,4 @@
 import { PASSWORD_MIN_LENGTH, passwordRequirements } from '../domain/password-policy'
-
 import { PasswordRequirementsIndicator } from './password-requirements-indicator'
 
 /** Connects SobreTaula's password policy to the generic visual indicator. */
