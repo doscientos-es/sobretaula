@@ -246,13 +246,10 @@ export async function loadFloorPlan(
     }
   }
 
-  const [
-    tablesResult,
-    initialPlacementsResult,
-    elementsResult,
-    presetsResult,
-    eventTemplatesResult,
-  ] = await Promise.all([
+  // The operational map only needs tables, placements and visual markers.
+  // Event layouts and table presets remain legacy data but are intentionally
+  // not loaded here: they are not part of the reliable day-to-day workflow.
+  const [tablesResult, initialPlacementsResult, elementsResult] = await Promise.all([
     supabase
       .from('tables')
       .select('code, id')
@@ -268,21 +265,7 @@ export async function loadFloorPlan(
       .select('floor_plan_version_id, height_cm, id, kind, label, width_cm, x_cm, y_cm')
       .eq('tenant_id', data.tenantId)
       .in('floor_plan_version_id', versionIds),
-    supabase
-      .from('table_group_presets')
-      .select('area_id, id, max_seats, name, table_ids')
-      .eq('tenant_id', data.tenantId)
-      .order('name'),
-    supabase
-      .from('event_layout_templates')
-      .select('active_from, active_to, area_ids, id, layout, name')
-      .eq('tenant_id', data.tenantId)
-      .eq('venue_id', data.venueId)
-      .order('active_from', { ascending: false }),
   ])
-  const eventTemplatesUnavailable =
-    eventTemplatesResult.error?.code === '42P01' || eventTemplatesResult.error?.code === '42703'
-  const eventTemplates = eventTemplatesUnavailable ? [] : (eventTemplatesResult.data ?? [])
   let placementsResult = initialPlacementsResult
   if (placementsResult.error?.code === '42703') {
     const legacy = await supabase
@@ -300,8 +283,6 @@ export async function loadFloorPlan(
     tablesResult.error,
     placementsResult.error,
     elementsResult.error,
-    presetsResult.error,
-    eventTemplatesUnavailable ? null : eventTemplatesResult.error,
   ].find(Boolean)
   if (error) throw new Error(`floor_plan_load_failed:${error.code}`)
 
@@ -317,14 +298,7 @@ export async function loadFloorPlan(
       spaceType: (area.space_type ?? 'indoor') as FloorPlanData['areas'][number]['spaceType'],
       venueId: area.venue_id,
     })),
-    eventLayoutTemplates: eventTemplates.map((template) => ({
-      activeFrom: template.active_from,
-      activeTo: template.active_to,
-      areaIds: template.area_ids as string[],
-      id: template.id,
-      layout: template.layout as never,
-      name: template.name,
-    })),
+    eventLayoutTemplates: [],
     elements: (elementsResult.data ?? []).map((element) => ({
       floorPlanVersionId: element.floor_plan_version_id,
       heightCm: element.height_cm,
@@ -345,13 +319,7 @@ export async function loadFloorPlan(
       xCm: placement.x_cm,
       yCm: placement.y_cm,
     })),
-    tableGroupPresets: (presetsResult.data ?? []).map((preset) => ({
-      areaId: preset.area_id,
-      id: preset.id,
-      maxSeats: preset.max_seats,
-      name: preset.name,
-      tableIds: preset.table_ids as string[],
-    })),
+    tableGroupPresets: [],
     versions: (versionsResult.data ?? []).map((version) => ({
       activeFrom: version.active_from,
       activeTo: version.active_to,

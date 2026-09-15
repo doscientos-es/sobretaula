@@ -786,28 +786,30 @@ export function FloorPlanPage({
         <div>
           <PageHeaderTitle>Plano de sala</PageHeaderTitle>
           <PageHeaderDescription>
-            Dibuja el recorrido de tu equipo y guarda versiones antes de cada cambio.
+            Coloca las mesas y algunos puntos de referencia para orientarte durante el servicio.
           </PageHeaderDescription>
         </div>
       </PageHeader>
-      <FloorPlanEventTemplates
-        activeArea={activeArea}
-        activeVersion={activeVersion}
-        onDelete={async (template) => {
-          feedback.setPending()
-          try {
-            await deleteEventLayoutTemplate({
-              data: { templateId: template.id, tenantId, venueId },
-            })
-            feedback.setSuccess('Plantilla eliminada.')
-            reload()
-          } catch {
-            feedback.setError('No se ha podido borrar la plantilla.')
-          }
-        }}
-        onSave={createEventTemplate}
-        templates={data.eventLayoutTemplates ?? []}
-      />
+      {false && (
+        <FloorPlanEventTemplates
+          activeArea={activeArea}
+          activeVersion={activeVersion}
+          onDelete={async (template) => {
+            feedback.setPending()
+            try {
+              await deleteEventLayoutTemplate({
+                data: { templateId: template.id, tenantId, venueId },
+              })
+              feedback.setSuccess('Plantilla eliminada.')
+              reload()
+            } catch {
+              feedback.setError('No se ha podido borrar la plantilla.')
+            }
+          }}
+          onSave={createEventTemplate}
+          templates={data.eventLayoutTemplates ?? []}
+        />
+      )}
       {!activeVersion ? (
         <Card className="border-dashed">
           <CardContent className="flex min-h-48 items-center justify-center text-center">
@@ -905,30 +907,36 @@ export function FloorPlanPage({
                   <Button onClick={removeSelected} type="button">
                     Eliminar
                   </Button>
-                  <Button
-                    onClick={() => {
-                      const ids = selectedIds.length > 0 ? selectedIds : [selectedId]
-                      setLockedIds((current) => {
-                        const allLocked = ids.every((id) => current.includes(id))
-                        return allLocked
-                          ? current.filter((id) => !ids.includes(id))
-                          : [...new Set([...current, ...ids])]
-                      })
-                    }}
-                    type="button"
-                    variant="outline"
-                  >
-                    {selectedIds.length > 1 && selectedIds.every((id) => lockedIds.includes(id))
-                      ? 'Desbloquear selección'
-                      : lockedIds.includes(selectedId)
-                        ? 'Desbloquear'
-                        : selectedIds.length > 1
-                          ? 'Bloquear selección'
-                          : 'Bloquear'}
-                  </Button>
+                  {false && (
+                    <Button
+                      onClick={() => {
+                        const ids =
+                          selectedIds.length > 0
+                            ? selectedIds
+                            : [selectedId].filter((id): id is string => Boolean(id))
+                        if (ids.length === 0) return
+                        setLockedIds((current) => {
+                          const allLocked = ids.every((id) => current.includes(id))
+                          return allLocked
+                            ? current.filter((id) => !ids.includes(id))
+                            : [...new Set([...current, ...ids])]
+                        })
+                      }}
+                      type="button"
+                      variant="outline"
+                    >
+                      {selectedIds.length > 1 && selectedIds.every((id) => lockedIds.includes(id))
+                        ? 'Desbloquear selección'
+                        : lockedIds.includes(selectedId ?? '')
+                          ? 'Desbloquear'
+                          : selectedIds.length > 1
+                            ? 'Bloquear selección'
+                            : 'Bloquear'}
+                    </Button>
+                  )}
                 </div>
               )}
-              {selectedIds.length > 1 && (
+              {false && selectedIds.length > 1 && (
                 <div className="mt-3 flex flex-wrap gap-2">
                   <Button onClick={() => alignSelected('x')} type="button" variant="outline">
                     Alinear izquierda
@@ -975,7 +983,7 @@ export function FloorPlanPage({
                   </Button>
                 </div>
               )}
-              {activePresets.length > 0 && (
+              {false && activePresets.length > 0 && (
                 <div className="border-border mt-4 grid gap-2 rounded-lg border p-3">
                   <p className="text-sm font-medium">Combinaciones guardadas</p>
                   {activePresets.map((preset) => (
@@ -1216,9 +1224,11 @@ export function FloorPlanPage({
                   >
                     Guardar
                   </Button>
-                  <Button onClick={exportTemplate} type="button" variant="outline">
-                    Exportar plantilla
-                  </Button>
+                  {false && (
+                    <Button onClick={exportTemplate} type="button" variant="outline">
+                      Exportar plantilla
+                    </Button>
+                  )}
                   <Button
                     onClick={() => templateInputRef.current?.click()}
                     type="button"
@@ -1256,12 +1266,14 @@ export function FloorPlanPage({
           >
             <Field>
               <FieldLabel htmlFor="new-area-name">Nombre</FieldLabel>
-              <Input
-                id="new-area-name"
-                onChange={(event) => setNewAreaName(event.target.value)}
-                value={newAreaName}
-                required
-              />
+              {false && (
+                <Input
+                  id="new-area-name"
+                  onChange={(event) => setNewAreaName(event.target.value)}
+                  value={newAreaName}
+                  required
+                />
+              )}
             </Field>
             <DialogFooter>
               <Button onClick={() => setCreateAreaOpen(false)} type="button" variant="outline">
