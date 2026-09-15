@@ -219,6 +219,33 @@ export async function loadFloorPlan(
   if (versionsResult.error) throw new Error(`floor_plan_load_failed:${versionsResult.error.code}`)
   const versionIds = (versionsResult.data ?? []).map((version) => version.id)
 
+  // A venue may already have areas but no version yet. Avoid sending `in.()`
+  // to PostgREST; the setup screen can create the initial version afterwards.
+  if (versionIds.length === 0) {
+    const tablesResult = await supabase
+      .from('tables')
+      .select('code, id')
+      .eq('tenant_id', data.tenantId)
+      .eq('venue_id', data.venueId)
+    if (tablesResult.error) throw new Error(`floor_plan_load_failed:${tablesResult.error.code}`)
+    return {
+      areas: (areasResult.data ?? []).map((area) => ({
+        id: area.id,
+        isOnlineBookable: area.is_online_bookable,
+        name: area.name,
+        floorNumber: area.floor_number,
+        outdoorOpen: area.outdoor_open,
+        spaceType: (area.space_type ?? 'indoor') as FloorPlanData['areas'][number]['spaceType'],
+        venueId: area.venue_id,
+      })),
+      elements: [],
+      eventLayoutTemplates: [],
+      placements: [],
+      tableGroupPresets: [],
+      versions: [],
+    }
+  }
+
   const [
     tablesResult,
     initialPlacementsResult,

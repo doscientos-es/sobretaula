@@ -6,6 +6,13 @@ function errorMessage(error: unknown): string {
   return typeof message === 'string' ? message : ''
 }
 
+export function safeErrorDetails(error: unknown): string {
+  const message = errorMessage(error).trim()
+  if (message) return message.slice(0, 240)
+  if (error instanceof Response) return `HTTP ${error.status}`
+  return 'Se ha producido un error sin mensaje disponible.'
+}
+
 /** Returns only a safe environment-variable name, never its value. */
 export function missingEnvironmentVariable(error: unknown): string | null {
   const message = errorMessage(error)

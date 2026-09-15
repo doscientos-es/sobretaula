@@ -12,6 +12,7 @@ import {
 import { createFileRoute, Link, notFound, Outlet, useParams } from '@tanstack/react-router'
 
 import { tenantRouteState } from '@/app/tenant-route-loader'
+import { safeErrorDetails } from '@/app/root-error'
 import { requireTenantRouteAccess } from '@/features/tenancy'
 import { loadVenueRouteContext } from '@/features/venues'
 import { DEFAULT_LOCALE } from '@/shared/lib/i18n/locale'
@@ -65,6 +66,14 @@ function VenueRouteError({ error, reset }: { error: unknown; reset: () => void }
           <CardDescription>{description}</CardDescription>
         </CardHeader>
         <CardContent>
+          {status !== 402 && status !== 403 && status !== 404 ? (
+            <details className="mb-4 text-sm">
+              <summary className="cursor-pointer font-medium">Ver detalles técnicos</summary>
+              <p className="mt-2 rounded-lg border bg-muted/40 p-3 font-mono text-xs break-words">
+                {safeErrorDetails(error)}
+              </p>
+            </details>
+          ) : null}
           <div className="flex flex-wrap items-center gap-3">
             <Button onPress={reset} type="button">
               Reintentar

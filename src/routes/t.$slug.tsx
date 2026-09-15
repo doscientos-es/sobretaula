@@ -17,6 +17,7 @@ import {
   PageHeaderTitle,
   Separator,
 } from '@doscientos/ui'
+import { useQuery } from '@tanstack/react-query'
 import {
   createFileRoute,
   Link,
@@ -26,7 +27,6 @@ import {
   useParams,
   useRouterState,
 } from '@tanstack/react-router'
-import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, Check, FileText, Store, TriangleAlert, Users } from 'lucide-react'
 import type { ReactNode } from 'react'
 
@@ -410,7 +410,7 @@ function TenantLayoutContent() {
       <TenantSetupPendingOnboarding billingStatus={billingStatus} tenant={tenant} />
     ) : tenant.status === 'setup_pending' ? (
       <TenantPendingRouteFrame isSetupStep tenant={tenant}>
-        <div className="h-40 animate-pulse rounded-xl bg-muted" />
+        <div className="bg-muted h-40 animate-pulse rounded-xl" />
       </TenantPendingRouteFrame>
     ) : (
       <TenantSuspendedNotice canAuthorizePayment={membership.role === 'owner'} tenant={tenant} />
@@ -421,9 +421,7 @@ function TenantLayoutContent() {
   return (
     <Frame
       locale={tenant.defaultLocale}
-      navigationLocked={
-        billingStatus?.status === 'trialing' && !billingStatus.hasPaymentMethod
-      }
+      navigationLocked={billingStatus?.status === 'trialing' && !billingStatus.hasPaymentMethod}
       role={membership.role}
       slug={tenant.slug}
       title={tenant.name}

@@ -56,7 +56,10 @@ test('@owner @cash @P0 abre la caja y conserva el estado', async ({ page }) => {
 test('@manager @tpv @P0 opera una mesa y llega al TPV', async ({ page }) => {
   await openOperationalPage(page, '/servicio', 'manager service')
   await page.getByRole('button', { name: /vista lista/i }).click()
-  const freeTable = page.getByRole('button', { name: /Mesa I04 · Libre/i })
+  // The dedicated E2E database may carry a different seeded layout after a
+  // previous run. Select the first accessible free table instead of coupling
+  // this performance/flow check to one fixture label.
+  const freeTable = page.getByRole('button', { name: /Mesa .* · .*Libre/i }).first()
   await expect(freeTable, 'manager service: debe existir una mesa libre').toBeVisible()
   await freeTable.click()
   await expect(

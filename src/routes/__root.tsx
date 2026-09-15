@@ -11,7 +11,7 @@ import { CircleAlert, House, RefreshCw, Utensils } from 'lucide-react'
 import { lazy, Suspense, useSyncExternalStore, type ReactNode } from 'react'
 
 import { PwaRuntime } from '@/app/pwa-runtime'
-import { missingEnvironmentVariable } from '@/app/root-error'
+import { missingEnvironmentVariable, safeErrorDetails } from '@/app/root-error'
 import { isPasswordRecoveryHash } from '@/features/auth/domain/password-recovery'
 import { DEFAULT_LOCALE } from '@/shared/lib/i18n/locale'
 import { LocaleProvider } from '@/shared/lib/i18n/locale-preference'
@@ -95,6 +95,7 @@ function RootError({ error, reset }: { error: unknown; reset: () => void }) {
   }
 
   const missingVariable = missingEnvironmentVariable(error)
+  const incidentId = globalThis.crypto?.randomUUID?.() ?? `inc-${Date.now().toString(36)}`
 
   return (
     <main aria-labelledby="error-title" className="st-error-page">
@@ -123,6 +124,14 @@ function RootError({ error, reset }: { error: unknown; reset: () => void }) {
             </p>
           )}
           <p className="st-error-reassurance">{t('error.reassurance')}</p>
+          <details className="mt-4 text-left text-sm">
+            <summary className="cursor-pointer font-medium">Ver detalles técnicos</summary>
+            <div className="mt-2 rounded-lg border bg-muted/40 p-3 font-mono text-xs break-words">
+              <p>incidente: {incidentId}</p>
+              <p>ruta: {typeof window !== 'undefined' ? window.location.pathname : 'servidor'}</p>
+              <p>error: {safeErrorDetails(error)}</p>
+            </div>
+          </details>
           <div aria-describedby="error-description" className="st-error-actions">
             <Button className="h-11 px-5" onPress={reset}>
               <RefreshCw aria-hidden="true" className="size-4" />
