@@ -147,6 +147,53 @@ select:not([data-slot]):focus-visible {
     #0a2a20;
 }
 
+.st-auth-shell--orange {
+  background:
+    radial-gradient(circle at 12% 15%, rgb(255 255 255 / 96%), transparent 34%),
+    linear-gradient(125deg, #fffaf7 0%, #fff 48%, #ffe4d8 100%);
+}
+
+.st-auth-shell--orange::after {
+  position: absolute;
+  inset: -28%;
+  z-index: -1;
+  content: '';
+  opacity: 0.78;
+  background:
+    radial-gradient(circle at 18% 22%, rgb(255 145 104 / 70%) 0, transparent 24%),
+    radial-gradient(circle at 78% 30%, rgb(255 95 77 / 48%) 0, transparent 25%),
+    radial-gradient(circle at 58% 82%, rgb(255 192 151 / 76%) 0, transparent 28%);
+  filter: blur(34px);
+  animation: st-auth-gradient-drift 18s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+.st-auth-shell--orange .st-auth-orb {
+  position: absolute;
+  z-index: 0;
+  display: block;
+  width: 18rem;
+  height: 18rem;
+  border-radius: 9999px;
+  opacity: 0.42;
+  filter: blur(28px);
+  pointer-events: none;
+  animation: st-auth-orb-drift 14s ease-in-out infinite alternate;
+}
+
+.st-auth-shell--orange .st-auth-orb--lime {
+  top: -8rem;
+  right: 8%;
+  background: #ff9a78;
+}
+
+.st-auth-shell--orange .st-auth-orb--mint {
+  bottom: -10rem;
+  left: 4%;
+  background: #ffc39f;
+  animation-delay: -7s;
+}
+
 .st-auth-shell::before {
   position: absolute;
   inset: 0;
@@ -158,6 +205,26 @@ select:not([data-slot]):focus-visible {
     linear-gradient(90deg, rgb(255 255 255 / 0.055) 1px, transparent 1px);
   background-size: 3rem 3rem;
   mask-image: linear-gradient(90deg, black, transparent 75%);
+}
+
+@keyframes st-auth-gradient-drift {
+  0% {
+    transform: translate3d(-3%, -2%, 0) scale(0.98);
+  }
+
+  100% {
+    transform: translate3d(4%, 3%, 0) scale(1.04);
+  }
+}
+
+@keyframes st-auth-orb-drift {
+  0% {
+    transform: translate3d(-1rem, 0, 0) scale(0.96);
+  }
+
+  100% {
+    transform: translate3d(1.5rem, 1rem, 0) scale(1.06);
+  }
 }
 
 .st-saas-preview-link {
@@ -190,6 +257,10 @@ select:not([data-slot]):focus-visible {
   z-index: 1;
   width: min(100%, 32rem);
   box-shadow: 0 1.5rem 4rem rgb(3 25 18 / 28%);
+}
+
+.st-auth-shell > .st-onboarding-content {
+  box-shadow: none;
 }
 
 .st-auth-layout {
@@ -361,6 +432,14 @@ select:not([data-slot]):focus-visible {
   color: #f7fbef;
   background: #12372a;
   box-shadow: var(--ui-shadow-surface);
+}
+
+.st-auth-shell--orange .st-auth-intro {
+  border-color: rgb(255 255 255 / 22%);
+  background:
+    radial-gradient(circle at 86% 12%, rgb(255 205 170 / 34%), transparent 28%),
+    linear-gradient(145deg, #d94732 0%, #f45d43 52%, #ff8b62 100%);
+  box-shadow: 0 1.5rem 3rem rgb(188 63 37 / 24%);
 }
 
 .st-app-frame [data-slot='app-shell-sidebar'] {

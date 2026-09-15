@@ -57,7 +57,7 @@ export function RegisterPage() {
   }
 
   return (
-    <main className="st-auth-shell">
+    <main className="st-auth-shell st-auth-shell--orange">
       <span aria-hidden="true" className="st-auth-orb st-auth-orb--lime" />
       <span aria-hidden="true" className="st-auth-orb st-auth-orb--mint" />
       <section className="relative grid w-full max-w-xl overflow-hidden rounded-[1.25rem] xl:max-w-5xl xl:grid-cols-[1.12fr_0.88fr]">
@@ -66,13 +66,13 @@ export function RegisterPage() {
             <span className="st-brand-mark bg-white/10 text-white shadow-none">
               <Utensils className="size-5" />
             </span>
-            <p className="mt-8 text-sm font-medium text-lime-100">Tu restaurante, en orden</p>
+            <p className="mt-8 text-sm font-medium text-orange-100">Tu restaurante, en orden</p>
             <h1 className="mt-3 max-w-md text-5xl leading-[0.96] tracking-[-0.055em]">
               Empieza una operativa más tranquila.
             </h1>
           </div>
-          <p className="flex max-w-sm items-center gap-3 text-sm leading-6 text-emerald-50/75">
-            <Sparkles className="size-4 shrink-0 text-lime-200" />
+          <p className="flex max-w-sm items-center gap-3 text-sm leading-6 text-white/75">
+            <Sparkles className="size-4 shrink-0 text-orange-100" />
             Crea tu espacio y prepara la sala para el siguiente servicio.
           </p>
         </div>

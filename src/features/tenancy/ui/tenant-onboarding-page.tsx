@@ -148,10 +148,10 @@ export function TenantOnboardingPage() {
   }
 
   return (
-    <main className="st-auth-shell py-10">
+    <main className="st-auth-shell st-auth-shell--orange py-10">
       <span aria-hidden="true" className="st-auth-orb st-auth-orb--lime" />
       <span aria-hidden="true" className="st-auth-orb st-auth-orb--mint" />
-      <section className="relative w-full max-w-3xl">
+      <section className="st-onboarding-content relative w-full max-w-3xl">
         <div className="mb-6 max-w-xl">
           <h1 className="text-foreground mt-2 text-4xl tracking-[-0.05em]">
             Vamos a preparar tu casa.
