@@ -33,12 +33,30 @@ describe('login input', () => {
 
 describe('requestPasswordResetInput', () => {
   it('normalizes a pasted email before requesting the recovery link', () => {
-    const input = requestPasswordResetInput.parse({ email: '  MARIA@EXAMPLE.COM ' })
+    const input = requestPasswordResetInput.parse({
+      email: '  MARIA@EXAMPLE.COM ',
+      redirectTo: 'https://app.example.com/restablecer-contrasena',
+    })
     expect(input.email).toBe('maria@example.com')
+    expect(input.redirectTo).toBe('https://app.example.com/restablecer-contrasena')
   })
 
   it('rejects a value that is not an email', () => {
-    expect(requestPasswordResetInput.safeParse({ email: 'not-an-email' }).success).toBe(false)
+    expect(
+      requestPasswordResetInput.safeParse({
+        email: 'not-an-email',
+        redirectTo: 'https://app.example.com/restablecer-contrasena',
+      }).success,
+    ).toBe(false)
+  })
+
+  it('rejects a redirect outside the password reset page', () => {
+    expect(
+      requestPasswordResetInput.safeParse({
+        email: 'maria@example.com',
+        redirectTo: 'https://app.example.com/login',
+      }).success,
+    ).toBe(false)
   })
 })
 

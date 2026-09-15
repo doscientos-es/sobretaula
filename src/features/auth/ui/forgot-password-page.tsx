@@ -34,7 +34,12 @@ export function ForgotPasswordPage() {
     feedback.setPending()
 
     try {
-      await requestPasswordReset({ data: { email: email.trim() } })
+      await requestPasswordReset({
+        data: {
+          email: email.trim(),
+          redirectTo: new URL('/restablecer-contrasena', window.location.origin).toString(),
+        },
+      })
       setSubmitted(true)
       feedback.setSuccess(CONFIRMATION_MESSAGE)
     } catch (error) {
@@ -44,9 +49,7 @@ export function ForgotPasswordPage() {
         )
         return
       }
-      // Delivery failures still show the generic message so the response never leaks account existence.
-      setSubmitted(true)
-      feedback.setSuccess(CONFIRMATION_MESSAGE)
+      feedback.setError('No se ha podido enviar el enlace. Inténtalo de nuevo más tarde.')
     }
   }
 
