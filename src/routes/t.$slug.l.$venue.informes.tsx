@@ -4,7 +4,6 @@ import { createFileRoute, getRouteApi } from '@tanstack/react-router'
 import { useState } from 'react'
 
 import { tenantRouteState } from '@/app/tenant-route-loader'
-import { recommendationHistoryQuery } from '@/features/ai-operations'
 import { getSalesReport, salesReportQuery } from '@/features/reports'
 import { ProductSalesSummary } from '@/features/reports/ui/product-sales-summary'
 import { ProfitCockpit } from '@/features/reports/ui/profit-cockpit'
@@ -28,10 +27,6 @@ function ReportRoute() {
   const report = useQuery({
     ...salesReportQuery({ tenantId: tenant.id, venueId: venue.id, from, to }),
     enabled: ['ventas', 'rentabilidad', 'productos'].includes(selectedSection),
-  })
-  const recommendationHistory = useQuery({
-    ...recommendationHistoryQuery({ tenantId: tenant.id, venueId: venue.id }),
-    enabled: selectedSection === 'rentabilidad',
   })
   return (
     <Tabs
@@ -61,12 +56,7 @@ function ReportRoute() {
         </TabsContent>
         <TabsContent id="rentabilidad">
           {report.data ? (
-            <ProfitCockpit
-              report={report.data}
-              tenantId={tenant.id}
-              venueId={venue.id}
-              recommendationHistory={recommendationHistory.data ?? []}
-            />
+            <ProfitCockpit report={report.data} tenantId={tenant.id} venueId={venue.id} />
           ) : (
             <ReportBlockState isError={report.isError} label="la rentabilidad" />
           )}
