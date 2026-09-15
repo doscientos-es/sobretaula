@@ -6,7 +6,7 @@ const input = {
   addressLine: 'Calle Mayor 1',
   city: 'Valencia',
   countryCode: 'es',
-  issuerNif: 'B12345678',
+  issuerNif: 'B12345674',
   legalName: 'Restaurante SL',
   postalCode: '46001',
   tenantId: '00000000-0000-4000-8000-000000000000',

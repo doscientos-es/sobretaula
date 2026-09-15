@@ -1,3 +1,4 @@
+import { isValidSpanishTaxId, normalizeSpanishTaxId } from '@/shared/lib/fiscal/spanish-tax-id'
 import { assertMinorUnits, type MinorUnits } from '@/shared/lib/money/money'
 
 export const INVOICE_STATUSES = ['draft', 'issued', 'registered', 'rejected', 'voided'] as const
@@ -31,16 +32,13 @@ export function formatInvoiceReference(series: string, number: number): string {
   return `${series}/${number.toString().padStart(6, '0')}`
 }
 
-/** NIF format shared with the database constraint: 9 alphanumeric characters. */
-const NIF_PATTERN = /^[A-Z0-9]{9}$/
-
-/** Canonical form: trimmed, upper-cased, without inner spaces or dashes. */
+/** Canonical form: trimmed, upper-cased, without whitespace or dashes. */
 export function normalizeNif(rawNif: string): string {
-  return rawNif.trim().toUpperCase().replaceAll(' ', '').replaceAll('-', '')
+  return normalizeSpanishTaxId(rawNif)
 }
 
 export function isValidNifFormat(rawNif: string): boolean {
-  return NIF_PATTERN.test(normalizeNif(rawNif))
+  return isValidSpanishTaxId(rawNif)
 }
 
 /** Fiscal year a series counter belongs to; series reset every January. */

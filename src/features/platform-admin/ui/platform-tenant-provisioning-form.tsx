@@ -167,7 +167,7 @@ export function PlatformTenantProvisioningForm() {
               <Input
                 id="platform-tenant-tax-id"
                 onChange={(event) => setTaxId(event.target.value)}
-                placeholder="Ej. B12345678"
+                placeholder="Ej. B12345674"
                 required
                 value={taxId}
               />

@@ -106,7 +106,7 @@ export function PlatformSettingsPage({ settings }: { settings: PlatformFiscalSet
                 id="platform-nif"
                 maxLength={9}
                 name="issuerNif"
-                placeholder="Ej. B12345678"
+                placeholder="Ej. B12345674"
                 required
               />
             </Field>

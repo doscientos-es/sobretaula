@@ -13,7 +13,7 @@ const validInput = {
   ownerName: 'Ana Example',
   postalCode: '46001',
   slug: 'restaurante-example',
-  taxId: 'B12345678',
+  taxId: 'B12345674',
   timezone: 'Europe/Madrid',
 }
 

@@ -12,11 +12,12 @@ import {
 
 describe('normalizeNif / isValidNifFormat', () => {
   it('trims, uppercases and strips separators', () => {
-    expect(normalizeNif(' b-12345678 ')).toBe('B12345678')
+    expect(normalizeNif(' b-12345674 ')).toBe('B12345674')
   })
 
-  it('accepts 9 alphanumeric characters and nothing else', () => {
-    expect(isValidNifFormat('B12345678')).toBe(true)
+  it('validates its Spanish check character', () => {
+    expect(isValidNifFormat('B12345674')).toBe(true)
+    expect(isValidNifFormat('B12345678')).toBe(false)
     expect(isValidNifFormat('B1234567')).toBe(false)
     expect(isValidNifFormat('12345678Z')).toBe(true)
   })
@@ -76,7 +77,7 @@ describe('validateFiscalSettings', () => {
     addressLine: 'C/ Mayor 1',
     city: 'Valencia',
     countryCode: 'es',
-    issuerNif: ' b12345678 ',
+    issuerNif: ' b12345674 ',
     legalName: 'La Terrassa SL',
     postalCode: '46001',
   }
@@ -95,14 +96,14 @@ describe('validateFiscalSettings fields', () => {
     addressLine: 'C/ Mayor 1',
     city: 'Valencia',
     countryCode: 'es',
-    issuerNif: ' b12345678 ',
+    issuerNif: ' b12345674 ',
     legalName: 'La Terrassa SL',
     postalCode: '46001',
   }
 
   it('normalizes the fields it accepts', () => {
     const settings = validateFiscalSettings(base)
-    expect(settings.issuerNif).toBe('B12345678')
+    expect(settings.issuerNif).toBe('B12345674')
     expect(settings.countryCode).toBe('ES')
     expect(settings.environment).toBe('test')
   })

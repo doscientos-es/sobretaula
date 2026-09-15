@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import { isValidSpanishTaxId, normalizeSpanishTaxId } from '@/shared/lib/fiscal/spanish-tax-id'
 import { SUPPORTED_LOCALES } from '@/shared/lib/i18n/locale'
 
 export const tenantOnboardingInput = z.object({
@@ -9,9 +10,17 @@ export const tenantOnboardingInput = z.object({
   email: z.string().trim().email().max(254),
   legalName: z.string().trim().min(1).max(200),
   name: z.string().trim().min(1).max(120),
-  postalCode: z.string().trim().min(1).max(20),
+  postalCode: z
+    .string()
+    .trim()
+    .regex(/^\d{5}$/),
   slug: z.string().regex(/^[a-z0-9](?:[a-z0-9-]{1,48}[a-z0-9])$/),
-  taxId: z.string().trim().min(1).max(32),
+  taxId: z
+    .string()
+    .trim()
+    .max(32)
+    .transform(normalizeSpanishTaxId)
+    .refine(isValidSpanishTaxId, 'Invalid Spanish tax identifier'),
   timezone: z.string().trim().min(1).max(64),
 })
 

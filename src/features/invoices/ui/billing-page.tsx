@@ -328,11 +328,11 @@ function FiscalSettingsCard({
       <CardContent>
         <form className="grid gap-4 md:grid-cols-2" onSubmit={save}>
           <Field>
-            <FieldLabel htmlFor="fiscal-nif">NIF</FieldLabel>
+            <FieldLabel htmlFor="fiscal-nif">NIF/CIF</FieldLabel>
             <Input
               id="fiscal-nif"
               onChange={(event) => setIssuerNif(event.target.value)}
-              placeholder="Ej. B12345678"
+              placeholder="Ej. B12345674"
               required
               value={issuerNif}
             />

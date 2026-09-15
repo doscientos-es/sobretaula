@@ -16,7 +16,8 @@
   --foreground: #292d34;
   --card: #ffffff;
   --card-foreground: #292d34;
-  --primary: #ff5f4d;
+  /* Dark enough for white action text while keeping the SobreTaula coral hue. */
+  --primary: #b83f32;
   --primary-foreground: #ffffff;
   --secondary: #f2f2f3;
   --secondary-foreground: #343840;
@@ -32,7 +33,7 @@
   --border: #e8e8e9;
   --border-strong: #d8d9dc;
   --input: #dadbdd;
-  --ring: #ff8c80;
+  --ring: #a93228;
   --sidebar: #ffffff;
   --sidebar-foreground: #292d34;
   --surface-subtle: #f8f8f8;
@@ -59,8 +60,19 @@ body {
 }
 
 :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
-  outline: 3px solid color-mix(in srgb, var(--ring) 72%, white);
+  outline: 3px solid var(--ring);
   outline-offset: 2px;
+}
+
+/* Keep interactive controls usable on touch devices and keyboard-visible in
+ * dense operational screens. Icon-only controls can opt out with .size-*.
+ */
+:where(button, [role='button'], a):not(.st-compact-control) {
+  min-height: 2.5rem;
+}
+
+:where(input, select, textarea) {
+  min-height: 2.5rem;
 }
 
 .st-skip-link {
@@ -117,6 +129,19 @@ select:not([data-slot]):focus-visible {
 [data-slot='page-header-title'] {
   font-weight: 600;
   letter-spacing: -0.045em;
+  text-wrap: balance;
+}
+
+:where(
+  [data-slot='page-header-description'],
+  [data-slot='card-description'],
+  [data-slot='data-view-state-description']
+) {
+  text-wrap: pretty;
+}
+
+:where([data-slot='card-title'], [data-slot='data-view-state-title']) {
+  text-wrap: balance;
 }
 
 [data-slot='card'] {
@@ -542,16 +567,20 @@ select:not([data-slot]):focus-visible {
 
 .st-saas-nav-link {
   color: #606671;
+  min-height: 2.5rem;
+  line-height: 1.35;
 }
 
 .st-saas-nav-link:hover {
-  color: #25282e;
-  background: #f6f6f6;
+  color: #1d2025;
+  background: #f1f1f2;
 }
 
 .st-saas-nav-link--active {
-  color: #24272d;
-  background: #eeeeef;
+  color: #17191d;
+  background: color-mix(in srgb, var(--primary) 12%, white);
+  box-shadow: inset 3px 0 0 var(--primary);
+  font-weight: 650;
 }
 
 .st-saas-sidebar nav[inert] {
@@ -564,7 +593,7 @@ select:not([data-slot]):focus-visible {
 }
 
 .st-saas-empty-state {
-  color: #818792;
+  color: #5f6671;
   font-size: 0.75rem;
 }
 
@@ -711,6 +740,8 @@ select:not([data-slot]):focus-visible {
 
 .st-platform-nav-link {
   color: #606671;
+  min-height: 2.5rem;
+  line-height: 1.35;
 }
 
 .st-platform-nav-link:hover {
@@ -719,8 +750,10 @@ select:not([data-slot]):focus-visible {
 }
 
 .st-platform-nav-link--active {
-  color: #24272d;
-  background: #eeeeef;
+  color: #17191d;
+  background: color-mix(in srgb, var(--primary) 12%, white);
+  box-shadow: inset 3px 0 0 var(--primary);
+  font-weight: 650;
 }
 
 .st-platform-user-menu {
@@ -997,6 +1030,18 @@ select:not([data-slot]):focus-visible {
 
   .st-login-review--one {
     opacity: 1;
+  }
+}
+
+@media (forced-colors: active) {
+  :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 2px solid CanvasText;
+  }
+
+  .st-saas-nav-link--active,
+  .st-platform-nav-link--active {
+    box-shadow: inset 3px 0 0 Highlight;
+    forced-color-adjust: none;
   }
 }
 

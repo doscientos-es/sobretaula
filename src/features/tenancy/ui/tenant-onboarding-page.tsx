@@ -15,6 +15,7 @@ import {
 import { Building2, CircleCheck } from 'lucide-react'
 import { useEffect, useState, type FormEvent } from 'react'
 
+import { isValidSpanishTaxId, normalizeSpanishTaxId } from '@/shared/lib/fiscal/spanish-tax-id'
 import { SUPPORTED_LOCALES, type Locale } from '@/shared/lib/i18n/locale'
 import { useLocale, useLocalePreference } from '@/shared/lib/i18n/locale-preference'
 import { createTranslator } from '@/shared/lib/i18n/messages'
@@ -24,6 +25,45 @@ import { getTenantBySlug } from '../application/get-tenant-by-slug'
 import { tenantOnboardingErrorMessage } from '../application/onboarding-error'
 import { tenantSlugCandidate } from '../application/onboarding-schema'
 import { provisionTenantOnboarding } from '../application/provision-tenant-onboarding'
+import { TENANT_ONBOARDING_STAGES, tenantOnboardingStageStatus } from './tenant-onboarding-progress'
+
+type OnboardingField =
+  | 'addressLine'
+  | 'city'
+  | 'email'
+  | 'legalName'
+  | 'name'
+  | 'postalCode'
+  | 'slug'
+  | 'taxId'
+
+const ONBOARDING_FIELD_IDS: Record<OnboardingField, string> = {
+  addressLine: 'address',
+  city: 'city',
+  email: 'billing-email',
+  legalName: 'legal-name',
+  name: 'tenant-name',
+  postalCode: 'postal-code',
+  slug: 'tenant-slug',
+  taxId: 'tax-id',
+}
+
+const ONBOARDING_FIELDS = Object.keys(ONBOARDING_FIELD_IDS) as OnboardingField[]
+
+function OnboardingFieldError({
+  error,
+  field,
+}: {
+  error: string | undefined
+  field: OnboardingField
+}) {
+  if (!error) return null
+  return (
+    <p className="text-destructive text-sm" id={`${ONBOARDING_FIELD_IDS[field]}-error`}>
+      {error}
+    </p>
+  )
+}
 
 export function TenantOnboardingPage() {
   const interfaceLocale = useLocale('es')
@@ -42,7 +82,30 @@ export function TenantOnboardingPage() {
   const [city, setCity] = useState('')
   const [postalCode, setPostalCode] = useState('')
   const [createdTenant, setCreatedTenant] = useState<{ slug: string } | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<OnboardingField, string>>>({})
   const defaultLocale = selectedLocale ?? interfaceLocale
+  const stageStatuses = tenantOnboardingStageStatus(step, Boolean(createdTenant))
+  const header = createdTenant
+    ? {
+        description:
+          'Tu restaurante está listo. Autoriza el pago seguro para activar el acceso a la sala, las reservas y el equipo.',
+        title: 'Activa tu restaurante',
+      }
+    : step === 1
+      ? {
+          description: 'Empieza por los datos básicos. No se realiza ningún cargo en este paso.',
+          title: 'Configura tu restaurante',
+        }
+      : step === 2
+        ? {
+            description:
+              'Necesitamos estos datos para preparar tu suscripción; el pago se autoriza después.',
+            title: 'Datos de facturación',
+          }
+        : {
+            description: 'Comprueba los datos antes de crear tu restaurante.',
+            title: 'Revisa los datos del alta',
+          }
   const draft = {
     name,
     slug,
@@ -95,32 +158,65 @@ export function TenantOnboardingPage() {
 
   function changeName(value: string) {
     setName(value)
-    if (!slugEdited) setSlug(tenantSlugCandidate(value))
+    clearFieldError('name')
+    if (!slugEdited) {
+      setSlug(tenantSlugCandidate(value))
+      clearFieldError('slug')
+    }
+  }
+
+  function clearFieldError(field: OnboardingField) {
+    setFieldErrors((current) => {
+      if (!current[field]) return current
+      const { [field]: _removed, ...remaining } = current
+      return remaining
+    })
+  }
+
+  function focusField(field: OnboardingField) {
+    window.requestAnimationFrame(() =>
+      document.getElementById(ONBOARDING_FIELD_IDS[field])?.focus(),
+    )
+  }
+
+  function validateStep(): Partial<Record<OnboardingField, string>> {
+    const errors: Partial<Record<OnboardingField, string>> = {}
+    if (step === 1) {
+      if (!name.trim()) errors.name = 'Indica el nombre comercial del restaurante.'
+      if (!slug.trim()) errors.slug = 'Indica el identificador para la URL del restaurante.'
+      else if (!/^[a-z0-9](?:[a-z0-9-]{1,48}[a-z0-9])$/.test(slug))
+        errors.slug = 'Usa minúsculas, números y guiones; entre 3 y 50 caracteres.'
+      return errors
+    }
+
+    if (!legalName.trim()) errors.legalName = 'Indica la razón social.'
+    if (!taxId.trim()) errors.taxId = 'Indica el NIF, NIE o CIF.'
+    else if (!isValidSpanishTaxId(taxId))
+      errors.taxId = 'Revisa el formato y el carácter de control del NIF, NIE o CIF.'
+    if (!email.trim()) errors.email = 'Indica el correo de facturación.'
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()))
+      errors.email = 'Escribe un correo de facturación válido.'
+    if (!addressLine.trim()) errors.addressLine = 'Indica la dirección fiscal.'
+    if (!city.trim()) errors.city = 'Indica la ciudad.'
+    if (!postalCode.trim()) errors.postalCode = 'Indica el código postal.'
+    else if (!/^\d{5}$/.test(postalCode.trim()))
+      errors.postalCode = 'El código postal debe tener cinco cifras.'
+    return errors
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (step < 3) {
       if (feedback.pending) return
-      const valid =
-        step === 1
-          ? Boolean(name.trim() && slug.trim())
-          : Boolean(
-              legalName.trim() &&
-              taxId.trim() &&
-              email.trim() &&
-              addressLine.trim() &&
-              city.trim() &&
-              postalCode.trim(),
-            )
-      if (!valid) {
-        feedback.setError(
-          step === 1
-            ? 'Completa el nombre y el identificador del restaurante.'
-            : 'Completa todos los datos de facturación.',
-        )
+      const errors = validateStep()
+      const firstInvalidField = ONBOARDING_FIELDS.find((field) => errors[field])
+      if (firstInvalidField) {
+        setFieldErrors(errors)
+        feedback.setError('Revisa los campos marcados antes de continuar.')
+        focusField(firstInvalidField)
         return
       }
+      setFieldErrors({})
       if (step === 1) {
         feedback.setPending()
         try {
@@ -138,6 +234,7 @@ export function TenantOnboardingPage() {
           return
         }
       }
+      feedback.reset()
       setStep((current) => (current + 1) as 1 | 2 | 3)
       return
     }
@@ -180,17 +277,57 @@ export function TenantOnboardingPage() {
             Completa los datos esenciales. Configurarás la sala y el equipo justo después.
           </p>
         </div>
-        <div className="mb-4 grid grid-cols-3 gap-2" aria-label="Progreso del alta">
-          {['Restaurante', 'Facturación', 'Activación'].map((label, index) => (
-            <div className="bg-background/70 rounded-xl border p-3" key={label}>
-              <div className="text-primary mb-1 text-xs font-semibold">0{index + 1}</div>
-              <div className="text-sm font-medium">{label}</div>
-              <div className="bg-muted mt-2 h-1 overflow-hidden rounded-full">
-                <div className={cn('bg-primary h-full', index === 0 ? 'w-full' : 'w-0')} />
-              </div>
-            </div>
-          ))}
-        </div>
+        <p aria-live="polite" className="sr-only">
+          {createdTenant
+            ? 'Restaurante creado. Paso 3 de 3: activación.'
+            : `Paso ${step} de 3: ${header.title}.`}
+        </p>
+        <ol className="mb-4 grid grid-cols-3 gap-2" aria-label="Progreso del alta">
+          {TENANT_ONBOARDING_STAGES.map((label, index) => {
+            const status = stageStatuses[index]
+            return (
+              <li
+                aria-current={status === 'active' ? 'step' : undefined}
+                className={cn(
+                  'rounded-xl border p-3',
+                  status === 'active' && 'border-primary/50 bg-background shadow-sm',
+                  status === 'done' && 'border-success/40 bg-background/70',
+                  status === 'upcoming' && 'bg-background/70',
+                )}
+                key={label}
+              >
+                <div
+                  className={cn(
+                    'mb-1 text-xs font-semibold',
+                    status === 'active' && 'text-primary',
+                    status === 'done' && 'text-success',
+                    status === 'upcoming' && 'text-muted-foreground',
+                  )}
+                >
+                  0{index + 1}
+                </div>
+                <div className="text-sm font-medium">{label}</div>
+                <span className="sr-only">
+                  {status === 'done'
+                    ? 'Completado'
+                    : status === 'active'
+                      ? 'Paso actual'
+                      : 'Pendiente'}
+                </span>
+                <div aria-hidden="true" className="bg-muted mt-2 h-1 overflow-hidden rounded-full">
+                  <div
+                    className={cn(
+                      'h-full transition-[width] duration-200',
+                      status === 'active' && 'bg-primary w-1/2',
+                      status === 'done' && 'bg-success w-full',
+                      status === 'upcoming' && 'w-0',
+                    )}
+                  />
+                </div>
+              </li>
+            )
+          })}
+        </ol>
         <Card className="st-auth-card">
           <CardHeader>
             <div className="flex items-center gap-3">
@@ -201,11 +338,8 @@ export function TenantOnboardingPage() {
                 <CircleCheck className="size-4" /> Datos protegidos
               </span>
             </div>
-            <CardTitle>Configura tu restaurante</CardTitle>
-            <CardDescription>
-              Empieza por los datos básicos. Después prepararemos juntos tu sala, carta, turnos y
-              equipo. No se realiza ningún cargo en este paso.
-            </CardDescription>
+            <CardTitle>{header.title}</CardTitle>
+            <CardDescription>{header.description}</CardDescription>
           </CardHeader>
           <CardContent>
             {createdTenant ? (
@@ -240,26 +374,33 @@ export function TenantOnboardingPage() {
                       <Field>
                         <FieldLabel htmlFor="tenant-name">Nombre comercial</FieldLabel>
                         <Input
+                          aria-errormessage={fieldErrors.name ? 'tenant-name-error' : undefined}
+                          aria-invalid={Boolean(fieldErrors.name)}
                           id="tenant-name"
                           onChange={(event) => changeName(event.target.value)}
                           placeholder="Ej. Casa Muntaner"
                           required
                           value={name}
                         />
+                        <OnboardingFieldError error={fieldErrors.name} field="name" />
                       </Field>
                       <Field>
                         <FieldLabel htmlFor="tenant-slug">Identificador del restaurante</FieldLabel>
                         <Input
+                          aria-errormessage={fieldErrors.slug ? 'tenant-slug-error' : undefined}
+                          aria-invalid={Boolean(fieldErrors.slug)}
                           id="tenant-slug"
                           onChange={(event) => {
                             setSlugEdited(true)
                             setSlug(event.target.value)
+                            clearFieldError('slug')
                           }}
                           pattern="[a-z0-9][a-z0-9-]{1,48}[a-z0-9]"
                           placeholder="ej. casa-muntaner"
                           required
                           value={slug}
                         />
+                        <OnboardingFieldError error={fieldErrors.slug} field="slug" />
                       </Field>
                     </div>
                     <Field>
@@ -297,64 +438,116 @@ export function TenantOnboardingPage() {
                       <Field>
                         <FieldLabel htmlFor="legal-name">Razón social</FieldLabel>
                         <Input
+                          aria-errormessage={fieldErrors.legalName ? 'legal-name-error' : undefined}
+                          aria-invalid={Boolean(fieldErrors.legalName)}
+                          autoComplete="organization"
                           id="legal-name"
-                          onChange={(event) => setLegalName(event.target.value)}
+                          onChange={(event) => {
+                            setLegalName(event.target.value)
+                            clearFieldError('legalName')
+                          }}
                           placeholder="Ej. Casa Muntaner, S.L."
                           required
                           value={legalName}
                         />
+                        <OnboardingFieldError error={fieldErrors.legalName} field="legalName" />
                       </Field>
                       <Field>
                         <FieldLabel htmlFor="tax-id">NIF/CIF</FieldLabel>
                         <Input
+                          aria-describedby="tax-id-help"
+                          aria-errormessage={fieldErrors.taxId ? 'tax-id-error' : undefined}
+                          aria-invalid={Boolean(fieldErrors.taxId)}
+                          autoCapitalize="characters"
                           id="tax-id"
-                          onChange={(event) => setTaxId(event.target.value)}
-                          placeholder="Ej. B12345678"
+                          maxLength={32}
+                          onBlur={() => setTaxId(normalizeSpanishTaxId(taxId))}
+                          onChange={(event) => {
+                            setTaxId(event.target.value)
+                            clearFieldError('taxId')
+                          }}
+                          placeholder="Ej. B12345674"
                           required
+                          spellCheck={false}
                           value={taxId}
                         />
+                        <p className="text-muted-foreground text-xs text-pretty" id="tax-id-help">
+                          Ejemplos: 12345678Z, X1234567L o B12345674. Comprobamos su formato.
+                        </p>
+                        <OnboardingFieldError error={fieldErrors.taxId} field="taxId" />
                       </Field>
                       <Field>
                         <FieldLabel htmlFor="billing-email">Correo de facturación</FieldLabel>
                         <Input
+                          aria-errormessage={fieldErrors.email ? 'billing-email-error' : undefined}
+                          aria-invalid={Boolean(fieldErrors.email)}
                           autoComplete="email"
                           id="billing-email"
-                          onChange={(event) => setEmail(event.target.value)}
+                          onChange={(event) => {
+                            setEmail(event.target.value)
+                            clearFieldError('email')
+                          }}
                           placeholder="facturacion@casamuntaner.com"
                           required
                           type="email"
                           value={email}
                         />
+                        <OnboardingFieldError error={fieldErrors.email} field="email" />
                       </Field>
                       <Field>
                         <FieldLabel htmlFor="address">Dirección fiscal</FieldLabel>
                         <Input
+                          aria-errormessage={fieldErrors.addressLine ? 'address-error' : undefined}
+                          aria-invalid={Boolean(fieldErrors.addressLine)}
+                          autoComplete="address-line1"
                           id="address"
-                          onChange={(event) => setAddressLine(event.target.value)}
+                          onChange={(event) => {
+                            setAddressLine(event.target.value)
+                            clearFieldError('addressLine')
+                          }}
                           placeholder="Ej. Carrer de Mallorca, 123"
                           required
                           value={addressLine}
                         />
+                        <OnboardingFieldError error={fieldErrors.addressLine} field="addressLine" />
                       </Field>
                       <Field>
                         <FieldLabel htmlFor="city">Ciudad</FieldLabel>
                         <Input
+                          aria-errormessage={fieldErrors.city ? 'city-error' : undefined}
+                          aria-invalid={Boolean(fieldErrors.city)}
+                          autoComplete="address-level2"
                           id="city"
-                          onChange={(event) => setCity(event.target.value)}
+                          onChange={(event) => {
+                            setCity(event.target.value)
+                            clearFieldError('city')
+                          }}
                           placeholder="Ej. Barcelona"
                           required
                           value={city}
                         />
+                        <OnboardingFieldError error={fieldErrors.city} field="city" />
                       </Field>
                       <Field>
                         <FieldLabel htmlFor="postal-code">Código postal</FieldLabel>
                         <Input
+                          aria-errormessage={
+                            fieldErrors.postalCode ? 'postal-code-error' : undefined
+                          }
+                          aria-invalid={Boolean(fieldErrors.postalCode)}
+                          autoComplete="postal-code"
                           id="postal-code"
-                          onChange={(event) => setPostalCode(event.target.value)}
+                          inputMode="numeric"
+                          maxLength={5}
+                          onChange={(event) => {
+                            setPostalCode(event.target.value)
+                            clearFieldError('postalCode')
+                          }}
                           placeholder="Ej. 08008"
                           required
                           value={postalCode}
                         />
+                        <OnboardingFieldError error={fieldErrors.postalCode} field="postalCode" />
                       </Field>
                     </div>
                   </>

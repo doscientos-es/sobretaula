@@ -74,7 +74,12 @@ export function AppShellFrame({
             </div>
           </AppShellHeader>
           {mobileTabs}
-          <AppShellContent className={contentClassName} id="main-content" tabIndex={-1}>
+          <AppShellContent
+            aria-label={t('common.mainContent')}
+            className={contentClassName}
+            id="main-content"
+            tabIndex={-1}
+          >
             {children}
           </AppShellContent>
         </AppShellMain>
