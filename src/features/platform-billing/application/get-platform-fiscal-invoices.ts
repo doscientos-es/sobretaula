@@ -23,6 +23,7 @@ export interface PlatformFiscalInvoice {
   periodStart: string
   reviewReason: string | null
   status: PlatformFiscalInvoiceStatus
+  tenantId: string
   tenantName?: string
   tenantSlug?: string
   totalCents: number
@@ -39,6 +40,7 @@ function toPlatformFiscalInvoice(row: {
   payment_status: PlatformBillingInvoiceStatus
   review_reason: string | null
   status: PlatformFiscalInvoiceStatus
+  tenant_id: string
   total_cents: number
 }): PlatformFiscalInvoice {
   return {
@@ -52,6 +54,7 @@ function toPlatformFiscalInvoice(row: {
     periodStart: row.period_start,
     reviewReason: row.review_reason,
     status: row.status,
+    tenantId: row.tenant_id,
     totalCents: row.total_cents,
   }
 }
@@ -68,6 +71,7 @@ async function addPaymentStatus(
     platform_billing_invoice_id: string
     review_reason: string | null
     status: PlatformFiscalInvoiceStatus
+    tenant_id: string
     total_cents: number
   }>,
 ): Promise<PlatformFiscalInvoice[]> {
@@ -106,7 +110,7 @@ export const getTenantPlatformFiscalInvoices = createServerFn({ method: 'GET' })
     const { data: invoices, error } = await supabase
       .from('platform_fiscal_invoices')
       .select(
-        'customer_name, full_number, id, issued_at, period_end, period_start, platform_billing_invoice_id, review_reason, status, total_cents',
+        'customer_name, full_number, id, issued_at, period_end, period_start, platform_billing_invoice_id, review_reason, status, tenant_id, total_cents',
       )
       .eq('tenant_id', data.tenantId)
       .order('period_end', { ascending: false })
@@ -130,7 +134,7 @@ export const getPlatformFiscalInvoices = createServerFn({ method: 'GET' })
     const { data: invoices, error } = await supabase
       .from('platform_fiscal_invoices')
       .select(
-        'customer_name, full_number, id, issued_at, period_end, period_start, platform_billing_invoice_id, review_reason, status, total_cents, tenants!inner(name, slug)',
+        'customer_name, full_number, id, issued_at, period_end, period_start, platform_billing_invoice_id, review_reason, status, tenant_id, total_cents, tenants!inner(name, slug)',
       )
       .order('period_end', { ascending: false })
     if (error) throw new Error(`platform_fiscal_invoices_load_failed:${error.code}`)

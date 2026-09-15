@@ -168,7 +168,10 @@ export async function loadFloorPlan(
       .in('floor_plan_version_id', versionIds)
     placementsResult = {
       ...legacy,
-      data: (legacy.data ?? []).map((placement) => ({ ...placement, is_locked: false })),
+      data: (legacy.data ?? []).map((placement) => ({
+        ...placement,
+        is_locked: false,
+      })),
     } as typeof placementsResult
   }
 
@@ -233,7 +236,6 @@ export function floorPlanQuery(tenantId: string, venueId: string) {
     staleTime: 60_000,
   })
 }
-
 
 export const createInitialFloorPlan = createServerFn({ method: 'POST' })
   .middleware([authMiddleware, tenantMembershipMiddleware])

@@ -55,6 +55,12 @@ export default defineConfig(({ mode }) => {
         : {}),
     },
     plugins: [tailwindcss(), tanstackStart(), react(), nitro({ preset: 'vercel' })],
+    ssr: {
+      // The Windows prebuilt output contains pnpm junctions. Bundle tslib into
+      // the server function so Vercel does not need to resolve that junction
+      // after upload.
+      noExternal: ['tslib'],
+    },
     resolve: {
       alias: {
         '@': fileURLToPath(new URL('./src', import.meta.url)),

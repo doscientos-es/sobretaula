@@ -55,31 +55,37 @@ export function ProfitCockpit({
         ) : null}
       </div>
       {decisions.length ? (
-        <Card>
-          <CardHeader className="px-4 py-3">
-            <CardTitle>Decisiones recientes</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 px-4 pb-4 text-sm">
-            {decisions.map((decision) => (
-              <div
-                className="flex flex-wrap justify-between gap-2 border-b pb-2 last:border-0"
-                key={decision.id}
-              >
-                <span>
-                  <strong>{decision.title}</strong>
-                  <span className="text-muted-foreground ml-2">{decision.detail}</span>
-                </span>
-                <span className="font-medium">
-                  {decision.status === 'accepted'
-                    ? 'Aceptada'
-                    : decision.status === 'ignored'
-                      ? 'Ignorada'
-                      : 'Pospuesta'}
-                </span>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+        <details className="group">
+          <summary className="text-muted-foreground hover:text-foreground cursor-pointer list-none text-sm font-medium">
+            <span className="group-open:hidden">Ver decisiones recientes</span>
+            <span className="hidden group-open:inline">Ocultar decisiones recientes</span>
+          </summary>
+          <Card className="mt-3">
+            <CardHeader className="px-4 py-3">
+              <CardTitle>Decisiones recientes</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 px-4 pb-4 text-sm">
+              {decisions.map((decision) => (
+                <div
+                  className="flex flex-wrap justify-between gap-2 border-b pb-2 last:border-0"
+                  key={decision.id}
+                >
+                  <span>
+                    <strong>{decision.title}</strong>
+                    <span className="text-muted-foreground ml-2">{decision.detail}</span>
+                  </span>
+                  <span className="font-medium">
+                    {decision.status === 'accepted'
+                      ? 'Aceptada'
+                      : decision.status === 'ignored'
+                        ? 'Ignorada'
+                        : 'Pospuesta'}
+                  </span>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </details>
       ) : null}
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard

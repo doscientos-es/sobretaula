@@ -21,15 +21,7 @@ import {
   useFormFeedback,
 } from '@doscientos/ui'
 import { DoorOpen, Footprints, Grid2X2, LayoutGrid, PanelTop, Soup, Square } from 'lucide-react'
-import {
-  useEffect,
-  useRef,
-  useState,
-  type FormEvent,
-  type ChangeEvent,
-  type KeyboardEvent,
-  type DragEvent,
-} from 'react'
+import { useState, type FormEvent, type KeyboardEvent, type DragEvent } from 'react'
 
 import { useAsyncEffect } from '@/shared/lib/react/use-async-effect'
 import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
@@ -39,7 +31,6 @@ import {
   createInitialFloorPlan,
   saveFloorPlanVersion,
 } from '../application/floor-plan'
-import { detectLayoutSourceKind } from '../application/layout-source-parser'
 import {
   commitEditorHistory,
   createEditorHistory,
@@ -62,24 +53,8 @@ import {
   movePlacement,
   validateLayout,
 } from '../domain/geometry'
-import {
-  createLayoutTemplate,
-  parseLayoutTemplate,
-  serializeLayoutTemplate,
-} from '../domain/layout-template'
 import { FloorPlanCanvas } from './floor-plan-canvas'
 import type { FloorPlanPreviewDevice } from './floor-plan-setup-card'
-
-function readLockedIds(lockStorageKey: string | undefined): string[] {
-  if (!lockStorageKey || typeof window === 'undefined') return []
-  try {
-    const raw = window.localStorage.getItem(lockStorageKey)
-    const parsed = raw ? JSON.parse(raw) : []
-    return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === 'string') : []
-  } catch {
-    return []
-  }
-}
 
 export function FloorPlanPage({
   data,
@@ -100,7 +75,6 @@ export function FloorPlanPage({
   const [versionName, setVersionName] = useState('Nueva versión')
   const [versionActivation, setVersionActivation] = useState('')
   const [versionDeactivation, setVersionDeactivation] = useState('')
-  const templateInputRef = useRef<HTMLInputElement>(null)
   const [previewDevice] = useState<FloorPlanPreviewDevice>('desktop')
   const [selectedId, setSelectedId] = useState<string>()
   const [selectedIds, setSelectedIds] = useState<string[]>([])
@@ -135,24 +109,6 @@ export function FloorPlanPage({
       .then(() => reload())
       .catch(() => feedback.setError('No se ha podido preparar el plano inicial.'))
   }, [data.areas.length, feedback, initializing, reload, tenantId, venueId])
-  const lockStorageKey = activeVersion
-    ? `sobretaula:floor-plan-locks:${activeVersion.id}`
-    : undefined
-  const [lockedIds, setLockedIds] = useState(() => {
-    const local = readLockedIds(lockStorageKey)
-    const persisted = data.placements
-      .filter((placement) => placement.isLocked)
-      .map((placement) => placement.id)
-    return [...new Set([...persisted, ...local])]
-  })
-  useEffect(() => {
-    if (!lockStorageKey || typeof window === 'undefined') return
-    try {
-      window.localStorage.setItem(lockStorageKey, JSON.stringify(lockedIds))
-    } catch {
-      // Private browsing and full storage must not prevent editing the plan.
-    }
-  }, [lockStorageKey, lockedIds])
   const savedPlacements = activeVersion
     ? data.placements.filter((placement) => placement.floorPlanVersionId === activeVersion.id)
     : []
@@ -160,7 +116,10 @@ export function FloorPlanPage({
     ? data.elements.filter((element) => element.floorPlanVersionId === activeVersion.id)
     : []
   const [history, setHistory] = useState(() =>
-    createEditorHistory({ elements: savedElements, placements: savedPlacements }),
+    createEditorHistory({
+      elements: savedElements,
+      placements: savedPlacements,
+    }),
   )
   const { elements, placements } = history.present
   function selectItem(id: string, additive = false) {
@@ -172,61 +131,6 @@ export function FloorPlanPage({
           : [...current, id]
         : [id],
     )
-  }
-  function exportTemplate() {
-    if (!activeVersion) return
-    const template = createLayoutTemplate({
-      widthCm: activeVersion.widthCm,
-      heightCm: activeVersion.heightCm,
-      tables: placements,
-      elements,
-    })
-    const blob = new Blob([serializeLayoutTemplate(template)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const anchor = document.createElement('a')
-    anchor.href = url
-    anchor.download = `${activeVersion.name.toLowerCase().replace(/[^a-z0-9]+/gi, '-') || 'plano'}.json`
-    anchor.click()
-    URL.revokeObjectURL(url)
-  }
-  function importTemplate(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0]
-    event.target.value = ''
-    if (!file || !activeVersion) return
-    const sourceKind = detectLayoutSourceKind(file.type, file.name)
-    if (sourceKind && sourceKind !== 'json') {
-      feedback.setError('Las imágenes y PDFs requieren extracción asistida antes de publicarse.')
-      return
-    }
-    if (!sourceKind) {
-      feedback.setError('Formato no compatible. Usa JSON, imagen o PDF.')
-      return
-    }
-    void file.text().then((value) => {
-      try {
-        const template = parseLayoutTemplate(value)
-        const nextPlacements = template.tables.map((table) => ({
-          ...table,
-          id: crypto.randomUUID(),
-          floorPlanVersionId: activeVersion.id,
-        }))
-        const nextElements = template.elements.map((element) => ({
-          ...element,
-          id: crypto.randomUUID(),
-          floorPlanVersionId: activeVersion.id,
-        }))
-        setHistory((current) =>
-          commitEditorHistory(current, { placements: nextPlacements, elements: nextElements }),
-        )
-        setSelectedId(undefined)
-        setSelectedIds([])
-        feedback.setSuccess('Plantilla cargada en el editor. Revísala antes de guardar.')
-      } catch (error) {
-        feedback.setError(
-          error instanceof Error ? error.message : 'No se ha podido leer la plantilla.',
-        )
-      }
-    })
   }
   const layoutIssues = activeVersion
     ? [
@@ -305,7 +209,7 @@ export function FloorPlanPage({
       return
     }
     const element = elements.find((item) => item.id === id)
-    if (!element || !activeVersion || lockedIds.includes(id)) return
+    if (!element || !activeVersion) return
     const next = {
       ...element,
       xCm: Math.round(xCm / gridSize) * gridSize,
@@ -350,7 +254,6 @@ export function FloorPlanPage({
   }
 
   function changePlacement(id: string, xCm: number, yCm: number) {
-    if (lockedIds.includes(id)) return
     if (!activeVersion) return
     const moving = placements.find((placement) => placement.id === id)
     if (!moving) return
@@ -404,7 +307,6 @@ export function FloorPlanPage({
     setSelectedAreaId(areaId)
     setSelectedId(undefined)
     setSelectedIds([])
-    setLockedIds(readLockedIds(version ? `sobretaula:floor-plan-locks:${version.id}` : undefined))
     setHistory(
       createEditorHistory({
         elements: data.elements.filter((element) => element.floorPlanVersionId === version?.id),
@@ -416,12 +318,11 @@ export function FloorPlanPage({
   }
 
   function moveWithKeyboard(event: KeyboardEvent<HTMLButtonElement>, id: string) {
-    if (lockedIds.includes(id)) return
     const distance = event.shiftKey ? 5 : gridSize
     const current = placements.find((placement) => placement.id === id)
     const currentElement = elements.find((element) => element.id === id)
     const movable = current ?? currentElement
-    if (!movable || lockedIds.includes(id)) return
+    if (!movable) return
     const displacement = {
       ArrowDown: { x: 0, y: distance },
       ArrowLeft: { x: -distance, y: 0 },
@@ -431,7 +332,11 @@ export function FloorPlanPage({
     if (!displacement) return
     event.preventDefault()
     if (current) changePlacement(id, current.xCm + displacement.x, current.yCm + displacement.y)
-    else updateSelected({ xCm: movable.xCm + displacement.x, yCm: movable.yCm + displacement.y })
+    else
+      updateSelected({
+        xCm: movable.xCm + displacement.x,
+        yCm: movable.yCm + displacement.y,
+      })
   }
 
   function addElement(kind: PlanElementKind, position = { x: 0, y: 0 }) {
@@ -470,16 +375,15 @@ export function FloorPlanPage({
       yCm: Math.max(0, Math.round(position.y / gridSize) * gridSize),
     }
     setHistory((current) =>
-      commitEditorHistory(current, { ...current.present, elements: [...elements, element] }),
+      commitEditorHistory(current, {
+        ...current.present,
+        elements: [...elements, element],
+      }),
     )
   }
 
   function duplicateSelected() {
     if (!selectedId || !activeVersion) return
-    if (lockedIds.includes(selectedId)) {
-      feedback.setError('Desbloquea el elemento antes de duplicarlo.')
-      return
-    }
     const table = placements.find((item) => item.id === selectedId)
     if (table) {
       const copyId = crypto.randomUUID()
@@ -499,7 +403,10 @@ export function FloorPlanPage({
         return
       }
       setHistory((current) =>
-        commitEditorHistory(current, { ...current.present, placements: [...placements, copy] }),
+        commitEditorHistory(current, {
+          ...current.present,
+          placements: [...placements, copy],
+        }),
       )
       selectItem(copy.id)
       return
@@ -513,7 +420,10 @@ export function FloorPlanPage({
         yCm: element.yCm + 25,
       }
       setHistory((current) =>
-        commitEditorHistory(current, { ...current.present, elements: [...elements, copy] }),
+        commitEditorHistory(current, {
+          ...current.present,
+          elements: [...elements, copy],
+        }),
       )
       selectItem(copy.id)
     }
@@ -522,11 +432,6 @@ export function FloorPlanPage({
   function removeSelected() {
     if (!selectedId) return
     const ids = selectedIds.length > 0 ? selectedIds : [selectedId]
-    const locked = ids.filter((id) => lockedIds.includes(id))
-    if (locked.length > 0) {
-      feedback.setError('Desbloquea los elementos seleccionados antes de eliminarlos.')
-      return
-    }
     setHistory((current) =>
       commitEditorHistory(current, {
         elements: elements.filter((item) => !ids.includes(item.id)),
@@ -537,77 +442,10 @@ export function FloorPlanPage({
     setSelectedIds([])
   }
 
-  function alignSelected(axis: 'x' | 'y' | 'right' | 'bottom') {
-    if (!activeVersion || selectedIds.length < 2) return
-    const selected = placements.filter((item) => selectedIds.includes(item.id))
-    const target =
-      axis === 'right' || axis === 'bottom'
-        ? Math.max(
-            ...selected.map((item) =>
-              axis === 'right' ? item.xCm + item.widthCm : item.yCm + item.heightCm,
-            ),
-          )
-        : Math.min(...selected.map((item) => (axis === 'x' ? item.xCm : item.yCm)))
-    const next = placements.map((item) =>
-      selectedIds.includes(item.id)
-        ? {
-            ...item,
-            [axis === 'x' || axis === 'right' ? 'xCm' : 'yCm']:
-              axis === 'right'
-                ? target - item.widthCm
-                : axis === 'bottom'
-                  ? target - item.heightCm
-                  : target,
-          }
-        : item,
-    )
-    if (
-      next.some((item) => !isPlacementWithinBounds(item, activeVersion)) ||
-      next.some((item) => findPlacementCollisions(item, next).length > 0)
-    ) {
-      feedback.setError('La alineación provocaría un solape o saldría del plano.')
-      return
-    }
-    setHistory((current) => commitEditorHistory(current, { ...current.present, placements: next }))
-  }
-
-  function distributeSelected(axis: 'x' | 'y') {
-    if (!activeVersion || selectedIds.length < 3) return
-    const selected = placements
-      .filter((item) => selectedIds.includes(item.id))
-      .sort((a, b) => (axis === 'x' ? a.xCm - b.xCm : a.yCm - b.yCm))
-    const first = selected[0]
-    const last = selected[selected.length - 1]
-    if (!first || !last) return
-    const span =
-      (axis === 'x' ? last.xCm - first.xCm : last.yCm - first.yCm) / (selected.length - 1)
-    const next = placements.map((item) => {
-      const index = selected.findIndex((candidate) => candidate.id === item.id)
-      if (index <= 0 || index === selected.length - 1) return item
-      return {
-        ...item,
-        [axis === 'x' ? 'xCm' : 'yCm']:
-          Math.round((first[axis === 'x' ? 'xCm' : 'yCm'] + span * index) / gridSize) * gridSize,
-      }
-    })
-    if (
-      next.some((item) => !isPlacementWithinBounds(item, activeVersion)) ||
-      next.some((item) => findPlacementCollisions(item, next).length > 0)
-    ) {
-      feedback.setError('La distribución provocaría un solape o saldría del plano.')
-      return
-    }
-    setHistory((current) => commitEditorHistory(current, { ...current.present, placements: next }))
-  }
-
   function updateSelected(
     values: Partial<Pick<FloorPlanElement, 'heightCm' | 'label' | 'widthCm' | 'xCm' | 'yCm'>>,
   ) {
     if (!selectedId || !activeVersion) return
-    if (lockedIds.includes(selectedId)) {
-      feedback.setError('Desbloquea el elemento para editar sus propiedades.')
-      return
-    }
     const selectedTable = placements.find((item) => item.id === selectedId)
     const selectedElement = elements.find((item) => item.id === selectedId)
     const selected = selectedTable ?? selectedElement
@@ -638,7 +476,10 @@ export function FloorPlanPage({
       item.id === selectedId ? { ...item, ...values } : item,
     )
     setHistory((current) =>
-      commitEditorHistory(current, { elements: nextElements, placements: nextPlacements }),
+      commitEditorHistory(current, {
+        elements: nextElements,
+        placements: nextPlacements,
+      }),
     )
   }
 
@@ -682,10 +523,7 @@ export function FloorPlanPage({
           activeTo: deactivationDate?.toISOString() ?? null,
           elements,
           name: versionName,
-          placements: placements.map((placement) => ({
-            ...placement,
-            isLocked: lockedIds.includes(placement.id),
-          })),
+          placements,
           sourceVersionId: activeVersion.id,
           tenantId,
           venueId,
@@ -746,7 +584,6 @@ export function FloorPlanPage({
             elements={elements}
             gridSize={gridSize}
             layoutIssues={layoutIssues}
-            lockedIds={lockedIds}
             minimumAisleCm={minimumAisleCm}
             onClearSelection={() => {
               setSelectedId(undefined)
@@ -805,55 +642,6 @@ export function FloorPlanPage({
                   <Button onClick={removeSelected} type="button">
                     Eliminar
                   </Button>
-                  {false && (
-                    <Button
-                      onClick={() => {
-                        const ids =
-                          selectedIds.length > 0
-                            ? selectedIds
-                            : [selectedId].filter((id): id is string => Boolean(id))
-                        if (ids.length === 0) return
-                        setLockedIds((current) => {
-                          const allLocked = ids.every((id) => current.includes(id))
-                          return allLocked
-                            ? current.filter((id) => !ids.includes(id))
-                            : [...new Set([...current, ...ids])]
-                        })
-                      }}
-                      type="button"
-                      variant="outline"
-                    >
-                      {selectedIds.length > 1 && selectedIds.every((id) => lockedIds.includes(id))
-                        ? 'Desbloquear selección'
-                        : lockedIds.includes(selectedId ?? '')
-                          ? 'Desbloquear'
-                          : selectedIds.length > 1
-                            ? 'Bloquear selección'
-                            : 'Bloquear'}
-                    </Button>
-                  )}
-                </div>
-              )}
-              {false && selectedIds.length > 1 && (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <Button onClick={() => alignSelected('x')} type="button" variant="outline">
-                    Alinear izquierda
-                  </Button>
-                  <Button onClick={() => alignSelected('y')} type="button" variant="outline">
-                    Alinear arriba
-                  </Button>
-                  <Button onClick={() => alignSelected('right')} type="button" variant="outline">
-                    Alinear derecha
-                  </Button>
-                  <Button onClick={() => alignSelected('bottom')} type="button" variant="outline">
-                    Alinear abajo
-                  </Button>
-                  <Button onClick={() => distributeSelected('x')} type="button" variant="outline">
-                    Distribuir horizontal
-                  </Button>
-                  <Button onClick={() => distributeSelected('y')} type="button" variant="outline">
-                    Distribuir vertical
-                  </Button>
                 </div>
               )}
               {selectedId &&
@@ -875,7 +663,9 @@ export function FloorPlanPage({
                               id={`selected-${key}`}
                               min={0}
                               onChange={(event) =>
-                                updateSelected({ [key]: Number(event.target.value) })
+                                updateSelected({
+                                  [key]: Number(event.target.value),
+                                })
                               }
                               type="number"
                               value={selected[key]}
@@ -1056,25 +846,6 @@ export function FloorPlanPage({
                   >
                     Guardar
                   </Button>
-                  {false && (
-                    <Button onClick={exportTemplate} type="button" variant="outline">
-                      Exportar plantilla
-                    </Button>
-                  )}
-                  <Button
-                    onClick={() => templateInputRef.current?.click()}
-                    type="button"
-                    variant="outline"
-                  >
-                    Importar plantilla
-                  </Button>
-                  <input
-                    accept="application/json,.json,image/*,application/pdf"
-                    className="hidden"
-                    onChange={importTemplate}
-                    ref={templateInputRef}
-                    type="file"
-                  />
                 </div>
               </div>
             </CardContent>
@@ -1098,14 +869,12 @@ export function FloorPlanPage({
           >
             <Field>
               <FieldLabel htmlFor="new-area-name">Nombre</FieldLabel>
-              {false && (
-                <Input
-                  id="new-area-name"
-                  onChange={(event) => setNewAreaName(event.target.value)}
-                  value={newAreaName}
-                  required
-                />
-              )}
+              <Input
+                id="new-area-name"
+                onChange={(event) => setNewAreaName(event.target.value)}
+                value={newAreaName}
+                required
+              />
             </Field>
             <DialogFooter>
               <Button onClick={() => setCreateAreaOpen(false)} type="button" variant="outline">

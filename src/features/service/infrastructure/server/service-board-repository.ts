@@ -371,7 +371,6 @@ export async function loadServiceBoard(
       tables,
       windowMinutes: SERVICE_SHIFT_WINDOW_MINUTES,
     }),
-    tableGroupPresets: [],
     staff,
     waitlist,
   }

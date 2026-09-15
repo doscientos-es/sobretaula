@@ -328,23 +328,30 @@ export function ProductPage({
           )}
         </CardContent>
       </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle>Previsión de demanda</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-wrap gap-4 text-sm">
-          <span>
-            <strong>{forecast.expectedCovers}</strong> cubiertos previstos
-          </span>
-          <span>
-            <strong>{(forecast.expectedSalesCents / 100).toFixed(2)} €</strong> de ventas estimadas
-          </span>
-          <span className="text-muted-foreground">
-            Confianza {forecast.confidence} ·{' '}
-            {forecast.sources.join(' · ') || 'sin datos históricos'}
-          </span>
-        </CardContent>
-      </Card>
+      <details className="group">
+        <summary className="text-muted-foreground hover:text-foreground cursor-pointer list-none text-sm font-medium">
+          <span className="group-open:hidden">Ver previsión de demanda</span>
+          <span className="hidden group-open:inline">Ocultar previsión de demanda</span>
+        </summary>
+        <Card className="mt-3">
+          <CardHeader>
+            <CardTitle>Previsión de demanda</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-wrap gap-4 text-sm">
+            <span>
+              <strong>{forecast.expectedCovers}</strong> cubiertos previstos
+            </span>
+            <span>
+              <strong>{(forecast.expectedSalesCents / 100).toFixed(2)} €</strong> de ventas
+              estimadas
+            </span>
+            <span className="text-muted-foreground">
+              Confianza {forecast.confidence} ·{' '}
+              {forecast.sources.join(' · ') || 'sin datos históricos'}
+            </span>
+          </CardContent>
+        </Card>
+      </details>
       <Card>
         <CardHeader>
           <CardTitle>Ingredientes e inventario</CardTitle>

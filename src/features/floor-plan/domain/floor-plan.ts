@@ -102,7 +102,11 @@ export function selectActiveFloorPlanVersion(
 export function findVersionScheduleConflicts(
   versions: readonly FloorPlanVersion[],
 ): Array<{ areaId: string; firstVersionId: string; secondVersionId: string }> {
-  const conflicts: Array<{ areaId: string; firstVersionId: string; secondVersionId: string }> = []
+  const conflicts: Array<{
+    areaId: string
+    firstVersionId: string
+    secondVersionId: string
+  }> = []
   const byArea = new Map<string, FloorPlanVersion[]>()
   for (const version of versions) {
     // Un layout base sin fecha no ocupa un tramo del calendario; se puede
@@ -126,7 +130,11 @@ export function findVersionScheduleConflicts(
           ? new Date(second.activeTo).getTime()
           : Number.POSITIVE_INFINITY
         if (firstFrom < secondTo && secondFrom < firstTo)
-          conflicts.push({ areaId, firstVersionId: first.id, secondVersionId: second.id })
+          conflicts.push({
+            areaId,
+            firstVersionId: first.id,
+            secondVersionId: second.id,
+          })
       }
     }
   }

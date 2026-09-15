@@ -13,12 +13,16 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  Button,
+  FormFeedback,
+  useFormFeedback,
 } from '@doscientos/ui'
 
 import type { Locale } from '@/shared/lib/i18n/locale'
 import { createTranslator, type MessageKey } from '@/shared/lib/i18n/messages'
 import { formatMoney } from '@/shared/lib/money/money'
 
+import { getPlatformFiscalInvoiceDocument } from '../application/get-platform-fiscal-invoice-document'
 import type {
   PlatformBillingInvoiceStatus,
   PlatformFiscalInvoice,
@@ -56,6 +60,35 @@ function formatDate(value: string | null, locale: Locale): string {
   return new Intl.DateTimeFormat(locale === 'ca' ? 'ca-ES' : 'es-ES', {
     dateStyle: 'medium',
   }).format(new Date(value))
+}
+
+function InvoicePdfButton({ invoice, locale }: { invoice: PlatformFiscalInvoice; locale: Locale }) {
+  const feedback = useFormFeedback()
+  if (invoice.status === 'pending_review') {
+    return <span className="text-muted-foreground text-xs">—</span>
+  }
+
+  function download() {
+    if (feedback.pending) return
+    feedback.setPending()
+    void getPlatformFiscalInvoiceDocument({
+      data: { invoiceId: invoice.id, tenantId: invoice.tenantId },
+    })
+      .then((result) => {
+        feedback.reset()
+        window.open(result.signedUrl, '_blank', 'noopener,noreferrer')
+      })
+      .catch(() => feedback.setError('No se ha podido preparar el PDF.'))
+  }
+
+  return (
+    <span className="inline-flex items-center gap-2">
+      <FormFeedback pendingLabel="Preparando PDF…" state={feedback.state} />
+      <Button onClick={download} size="sm" type="button" variant="ghost">
+        {locale === 'ca' ? 'Descarregar PDF' : 'Descargar PDF'}
+      </Button>
+    </span>
+  )
 }
 
 export function PlatformFiscalInvoiceList({
@@ -99,6 +132,9 @@ export function PlatformFiscalInvoiceList({
                   <TableHead>{t('platform.total')}</TableHead>
                   <TableHead>{t('platform.payment')}</TableHead>
                   <TableHead>{t('platform.status')}</TableHead>
+                  <TableHead>
+                    <span className="sr-only">PDF</span>
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -128,6 +164,9 @@ export function PlatformFiscalInvoiceList({
                       <TableCell>
                         {statusLabel(invoice.status, locale)}
                         {reviewReason ? ` · ${reviewReason}` : ''}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <InvoicePdfButton invoice={invoice} locale={locale} />
                       </TableCell>
                     </TableRow>
                   )

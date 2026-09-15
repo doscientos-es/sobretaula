@@ -38,7 +38,6 @@ export function FloorPlanCanvas({
   elements,
   gridSize,
   layoutIssues,
-  lockedIds,
   minimumAisleCm,
   onClearSelection,
   onGridSizeChange,
@@ -59,7 +58,6 @@ export function FloorPlanCanvas({
   elements: readonly FloorPlanElement[]
   gridSize: number
   layoutIssues: readonly LayoutIssue[]
-  lockedIds: readonly string[]
   minimumAisleCm: number
   onClearSelection: () => void
   onGridSizeChange: (value: number) => void
@@ -409,13 +407,11 @@ export function FloorPlanCanvas({
                   onPointerDown={(event) =>
                     (() => {
                       onSelectItem(element.id, event.ctrlKey || event.metaKey)
-                      if (!lockedIds.includes(element.id)) {
-                        setDraggingItemId(element.id)
-                        event.currentTarget.ownerSVGElement?.setPointerCapture(event.pointerId)
-                      }
+                      setDraggingItemId(element.id)
+                      event.currentTarget.ownerSVGElement?.setPointerCapture(event.pointerId)
                     })()
                   }
-                  opacity={lockedIds.includes(element.id) ? 0.48 : 0.65}
+                  opacity={0.65}
                   rx="4"
                   stroke={selectedIds.includes(element.id) ? 'var(--ring)' : 'transparent'}
                   strokeWidth={selectedIds.includes(element.id) ? 4 : 0}
@@ -448,12 +444,10 @@ export function FloorPlanCanvas({
                   height={placement.heightCm}
                   onPointerDown={(event) => {
                     onSelectItem(placement.id, event.ctrlKey || event.metaKey)
-                    if (!lockedIds.includes(placement.id)) {
-                      setDraggingItemId(placement.id)
-                      event.currentTarget.ownerSVGElement?.setPointerCapture(event.pointerId)
-                    }
+                    setDraggingItemId(placement.id)
+                    event.currentTarget.ownerSVGElement?.setPointerCapture(event.pointerId)
                   }}
-                  opacity={lockedIds.includes(placement.id) ? 0.62 : 0.85}
+                  opacity={0.85}
                   rx="12"
                   stroke={selectedIds.includes(placement.id) ? 'var(--ring)' : 'transparent'}
                   strokeWidth={selectedIds.includes(placement.id) ? 4 : 0}

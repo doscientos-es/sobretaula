@@ -5,7 +5,6 @@ import { useState } from 'react'
 
 import { tenantRouteState } from '@/app/tenant-route-loader'
 import { recommendationHistoryQuery } from '@/features/ai-operations'
-import { venueBenchmarkQuery, VenueBenchmarkCard } from '@/features/multi-venue'
 import { getSalesReport, salesReportQuery } from '@/features/reports'
 import { ProductSalesSummary } from '@/features/reports/ui/product-sales-summary'
 import { ProfitCockpit } from '@/features/reports/ui/profit-cockpit'
@@ -30,10 +29,6 @@ function ReportRoute() {
     ...salesReportQuery({ tenantId: tenant.id, venueId: venue.id, from, to }),
     enabled: ['ventas', 'rentabilidad', 'productos'].includes(selectedSection),
   })
-  const benchmark = useQuery({
-    ...venueBenchmarkQuery({ tenantId: tenant.id, from, to }),
-    enabled: selectedSection === 'locales',
-  })
   const recommendationHistory = useQuery({
     ...recommendationHistoryQuery({ tenantId: tenant.id, venueId: venue.id }),
     enabled: selectedSection === 'rentabilidad',
@@ -48,7 +43,6 @@ function ReportRoute() {
         <TabsTrigger id="ventas">Ventas</TabsTrigger>
         <TabsTrigger id="rentabilidad">Rentabilidad</TabsTrigger>
         <TabsTrigger id="productos">Productos</TabsTrigger>
-        <TabsTrigger id="locales">Locales</TabsTrigger>
       </TabsList>
       <TabsPanels>
         <TabsContent id="ventas">
@@ -82,13 +76,6 @@ function ReportRoute() {
             <ProductSalesSummary products={report.data.productSummary} />
           ) : (
             <ReportBlockState isError={report.isError} label="los productos vendidos" />
-          )}
-        </TabsContent>
-        <TabsContent id="locales">
-          {benchmark.data ? (
-            <VenueBenchmarkCard benchmark={benchmark.data} />
-          ) : (
-            <ReportBlockState isError={benchmark.isError} label="la comparativa de locales" />
           )}
         </TabsContent>
       </TabsPanels>

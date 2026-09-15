@@ -9,6 +9,7 @@ export {
   getPlatformFiscalInvoices,
   getTenantPlatformFiscalInvoices,
 } from './application/get-platform-fiscal-invoices'
+export { getPlatformFiscalInvoiceDocument } from './application/get-platform-fiscal-invoice-document'
 export type {
   PlatformBillingInvoiceStatus,
   PlatformFiscalInvoice,

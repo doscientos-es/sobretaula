@@ -79,7 +79,7 @@ export const MODULE_DEFINITIONS: Record<ModuleKey, ModuleDefinition> = {
   analytics: {
     key: 'analytics',
     label: 'Analítica avanzada',
-    description: 'Rentabilidad, previsiones y comparativa de locales.',
+    description: 'Rentabilidad y previsiones del propio restaurante.',
     dependencies: ['core'],
     roles: managementRoles,
   },

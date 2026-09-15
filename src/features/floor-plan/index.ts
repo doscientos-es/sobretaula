@@ -15,8 +15,6 @@ export {
 export {
   createFloorPlanTable,
   createInitialFloorPlan,
-  createTableGroupPreset,
-  deleteTableGroupPreset,
   getFloorPlan,
   floorPlanQuery,
   saveFloorPlanVersion,
@@ -29,15 +27,7 @@ export type {
   FloorPlanElement,
   FloorPlanTablePlacement,
   FloorPlanVersion,
-  TableGroupPreset,
-  PlanElementKind,
 } from './domain/floor-plan'
-export {
-  inspectTableGroupPresetAvailability,
-  normalizeTableGroupPreset,
-  type TableGroupPresetInput,
-  type NormalizedTableGroupPreset,
-} from './domain/table-group-presets'
 export {
   describeSpaceType,
   findVersionScheduleConflicts,
