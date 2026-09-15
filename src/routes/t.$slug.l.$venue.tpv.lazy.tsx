@@ -53,7 +53,13 @@ function PosTerminalRoute() {
   )
 }
 
-function PosTerminalAccountWorkspace({ account, menu }: { account: AccountView; menu: MenuCatalog }) {
+function PosTerminalAccountWorkspace({
+  account,
+  menu,
+}: {
+  account: AccountView
+  menu: MenuCatalog
+}) {
   const { tenantMembership } = Route.useRouteContext()
   const { venue } = Route.useLoaderData()
   const { tenant } = tenantRoute.useLoaderData()
@@ -74,8 +80,21 @@ function PosTerminalAccountWorkspace({ account, menu }: { account: AccountView; 
   return (
     <div className="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_22rem]">
       <span className="sr-only">{`Mesa ${account.session.tableCodes.join(' + ')}`}</span>
-      <AccountOrderWorkspace account={account} locale={locale} menu={menu} tenantId={tenant.id} venueId={venue.id} />
-      <AccountPayments account={account} canManageAdjustments={['owner', 'manager'].includes(tenantMembership.role)} locale={locale} onDone={refresh} tenantId={tenant.id} venueId={venue.id} />
+      <AccountOrderWorkspace
+        account={account}
+        locale={locale}
+        menu={menu}
+        tenantId={tenant.id}
+        venueId={venue.id}
+      />
+      <AccountPayments
+        account={account}
+        canManageAdjustments={['owner', 'manager'].includes(tenantMembership.role)}
+        locale={locale}
+        onDone={refresh}
+        tenantId={tenant.id}
+        venueId={venue.id}
+      />
     </div>
   )
 }
@@ -86,9 +105,18 @@ function PosTerminalKitchenWorkspace({ board }: { board: ServiceBoard }) {
   const queryClient = useQueryClient()
   const reload = useLoaderReload()
   const refresh = () => {
-    void queryClient.invalidateQueries({ queryKey: ['tenant', tenant.id, 'venue', venue.id, 'pos-workspace'] }).then(reload)
+    void queryClient
+      .invalidateQueries({ queryKey: ['tenant', tenant.id, 'venue', venue.id, 'pos-workspace'] })
+      .then(reload)
   }
-  return <KitchenQueue onDone={refresh} tenantId={tenant.id} tickets={board.kitchenTickets ?? []} venueId={venue.id} />
+  return (
+    <KitchenQueue
+      onDone={refresh}
+      tenantId={tenant.id}
+      tickets={board.kitchenTickets ?? []}
+      venueId={venue.id}
+    />
+  )
 }
 
 function PosTerminalManagementWorkspace() {
@@ -100,17 +128,53 @@ function PosTerminalManagementWorkspace() {
     const bounds = getZonedWeekBounds(new Date(), tenant.timezone)
     return { from: bounds.dayStartIso, to: bounds.dayEndIso }
   })
-  const management = useQuery(posManagementQuery({ ...period, tenantId: tenant.id, venueId: venue.id }))
-  if (management.isPending) return <div aria-live="polite" className="border-border/70 text-muted-foreground rounded-xl border p-6 text-sm">Cargando caja e informes…</div>
-  if (management.error) return <div aria-live="polite" className="border-destructive/40 text-destructive rounded-xl border p-6 text-sm">No se ha podido cargar la gestión del turno.</div>
+  const management = useQuery(
+    posManagementQuery({ ...period, tenantId: tenant.id, venueId: venue.id }),
+  )
+  if (management.isPending)
+    return (
+      <div
+        aria-live="polite"
+        className="border-border/70 text-muted-foreground rounded-xl border p-6 text-sm"
+      >
+        Cargando caja e informes…
+      </div>
+    )
+  if (management.error)
+    return (
+      <div
+        aria-live="polite"
+        className="border-destructive/40 text-destructive rounded-xl border p-6 text-sm"
+      >
+        No se ha podido cargar la gestión del turno.
+      </div>
+    )
   const { history, register, report } = management.data
   const refresh = () => {
-    void queryClient.invalidateQueries({ queryKey: posManagementQuery({ ...period, tenantId: tenant.id, venueId: venue.id }).queryKey }).then(reload)
+    void queryClient
+      .invalidateQueries({
+        queryKey: posManagementQuery({ ...period, tenantId: tenant.id, venueId: venue.id })
+          .queryKey,
+      })
+      .then(reload)
   }
   return (
     <div className="space-y-6">
-      <CashRegisterPage history={history.items} onDone={refresh} register={register ?? null} tenantId={tenant.id} venueId={venue.id} />
-      <SalesReportPage initialPeriod={period} onRange={(from, to) => getSalesReport({ data: { from, tenantId: tenant.id, to, venueId: venue.id } })} report={report} timeZone={tenant.timezone} />
+      <CashRegisterPage
+        history={history.items}
+        onDone={refresh}
+        register={register ?? null}
+        tenantId={tenant.id}
+        venueId={venue.id}
+      />
+      <SalesReportPage
+        initialPeriod={period}
+        onRange={(from, to) =>
+          getSalesReport({ data: { from, tenantId: tenant.id, to, venueId: venue.id } })
+        }
+        report={report}
+        timeZone={tenant.timezone}
+      />
       <ProductSalesSummary products={report.productSummary} />
     </div>
   )
