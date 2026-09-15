@@ -1,4 +1,12 @@
-import { Button, Card, CardContent, CardHeader, CardTitle, Input } from '@doscientos/ui'
+import {
+  AutocompleteCombobox,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Input,
+} from '@doscientos/ui'
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
 
 import { useAsyncEffect } from '@/shared/lib/react/use-async-effect'
@@ -167,19 +175,17 @@ export function PurchaseDocumentReviewsPage({
                 {row.status === 'approved' && row.extraction.lines.length ? (
                   <div className="grid w-full gap-2 rounded-md border p-3 text-sm">
                     <div className="flex flex-wrap gap-2">
-                      <select
+                      <AutocompleteCombobox
                         aria-label="Proveedor"
-                        className="rounded border px-2 py-1"
-                        onChange={(event) => setSupplierId(event.target.value)}
-                        value={supplierId}
-                      >
-                        <option value="">Proveedor…</option>
-                        {suppliers.map((supplier) => (
-                          <option key={supplier.id} value={supplier.id}>
-                            {supplier.name}
-                          </option>
-                        ))}
-                      </select>
+                        className="w-56"
+                        emptyState="No hay proveedores que coincidan."
+                        getItemKey={(supplier) => supplier.id}
+                        getItemLabel={(supplier) => supplier.name}
+                        items={suppliers}
+                        onSelectionChange={(key) => setSupplierId(key ? String(key) : '')}
+                        placeholder="Buscar proveedor…"
+                        selectedKey={supplierId || null}
+                      />
                       <input
                         aria-label="Referencia"
                         className="rounded border px-2 py-1"
@@ -203,24 +209,22 @@ export function PurchaseDocumentReviewsPage({
                         <span className="min-w-48">
                           {line.description} · {line.quantity} {line.unit}
                         </span>
-                        <select
+                        <AutocompleteCombobox
                           aria-label={`Ingrediente para ${line.description}`}
-                          className="rounded border px-2 py-1"
-                          onChange={(event) =>
+                          className="w-56"
+                          emptyState="No hay ingredientes que coincidan."
+                          getItemKey={(ingredient) => ingredient.id}
+                          getItemLabel={(ingredient) => ingredient.name}
+                          items={ingredients}
+                          onSelectionChange={(key) =>
                             setMappings((current) => ({
                               ...current,
-                              [`${row.id}:${lineIndex}`]: event.target.value,
+                              [`${row.id}:${lineIndex}`]: key ? String(key) : '',
                             }))
                           }
-                          value={mappings[`${row.id}:${lineIndex}`] ?? ''}
-                        >
-                          <option value="">Ingrediente…</option>
-                          {ingredients.map((ingredient) => (
-                            <option key={ingredient.id} value={ingredient.id}>
-                              {ingredient.name}
-                            </option>
-                          ))}
-                        </select>
+                          placeholder="Buscar ingrediente…"
+                          selectedKey={mappings[`${row.id}:${lineIndex}`] || null}
+                        />
                       </label>
                     ))}
                     <Button onClick={() => void apply(row)} size="sm" type="button">

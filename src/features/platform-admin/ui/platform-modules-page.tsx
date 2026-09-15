@@ -1,4 +1,12 @@
-import { Button, Card, CardContent, CardHeader, CardTitle, Input } from '@doscientos/ui'
+import {
+  AutocompleteCombobox,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Input,
+} from '@doscientos/ui'
 import { useState } from 'react'
 
 import {
@@ -17,7 +25,7 @@ export function PlatformModulesPage({
   tenants: Tenant[]
 }) {
   const [modules, setModules] = useState(initialModules)
-  const [selectedTenant, setSelectedTenant] = useState(tenants[0]?.id ?? '')
+  const [selectedTenant, setSelectedTenant] = useState('')
   const [message, setMessage] = useState('')
   const [saving, setSaving] = useState<string | null>(null)
 
@@ -131,19 +139,16 @@ export function PlatformModulesPage({
           <CardTitle>Activación por tenant</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <select
+          <AutocompleteCombobox
             aria-label="Tenant"
-            className="border-border bg-background rounded-md border px-3 py-2 text-sm"
-            onChange={(event) => setSelectedTenant(event.target.value)}
-            value={selectedTenant}
-          >
-            <option value="">Selecciona un tenant</option>
-            {tenants.map((tenant) => (
-              <option key={tenant.id} value={tenant.id}>
-                {tenant.name} · {tenant.slug}
-              </option>
-            ))}
-          </select>
+            emptyState="No hay tenants que coincidan."
+            getItemKey={(tenant) => tenant.id}
+            getItemLabel={(tenant) => `${tenant.name} · ${tenant.slug}`}
+            items={tenants}
+            onSelectionChange={(key) => setSelectedTenant(key ? String(key) : '')}
+            placeholder="Buscar tenant…"
+            selectedKey={selectedTenant || null}
+          />
           <div className="grid gap-2 sm:grid-cols-2">
             {modules
               .filter((module) => module.isAddon)

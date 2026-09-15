@@ -1,4 +1,5 @@
 import {
+  AutocompleteCombobox,
   Button,
   Card,
   CardContent,
@@ -69,7 +70,7 @@ export function TimekeepingTerminalPage({
   const locale = useLocale('es')
   const t = createTranslator(locale)
   const feedback = useFormFeedback()
-  const [employeeId, setEmployeeId] = useState(staff[0]?.userId ?? '')
+  const [employeeId, setEmployeeId] = useState('')
   const [pin, setPin] = useState('')
 
   async function clock(eventType: TimeEventType) {
@@ -105,29 +106,17 @@ export function TimekeepingTerminalPage({
         </CardHeader>
         <CardContent className="space-y-4">
           <Field>
-            <FieldLabel htmlFor="terminal-employee">
-              {t('timekeeping.terminal.employee')}
-            </FieldLabel>
-            <Select
+            <AutocompleteCombobox
+              emptyState="No hay empleados que coincidan."
+              getItemKey={(member) => member.userId}
+              getItemLabel={(member) => `${member.displayName} · ${member.role}`}
               isDisabled={feedback.pending}
-              id="terminal-employee"
-              className="w-full"
-              onSelectionChange={(key) => setEmployeeId(String(key))}
-              selectedKey={employeeId}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectList>
-                  {staff.map((member) => (
-                    <SelectItem id={member.userId} key={member.userId}>
-                      {member.displayName} · {member.role}
-                    </SelectItem>
-                  ))}
-                </SelectList>
-              </SelectContent>
-            </Select>
+              items={staff}
+              label={t('timekeeping.terminal.employee')}
+              onSelectionChange={(key) => setEmployeeId(key ? String(key) : '')}
+              placeholder="Buscar empleado…"
+              selectedKey={employeeId || null}
+            />
           </Field>
           <Field>
             <FieldLabel htmlFor="terminal-pin">{t('timekeeping.terminal.pin')}</FieldLabel>
@@ -147,7 +136,7 @@ export function TimekeepingTerminalPage({
           <div className="grid gap-2 sm:grid-cols-2">
             {actions.map((action) => (
               <Button
-                disabled={feedback.pending || staff.length === 0}
+                disabled={feedback.pending || !employeeId}
                 key={action}
                 onClick={() => void clock(action)}
                 type="button"

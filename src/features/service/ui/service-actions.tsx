@@ -1,4 +1,5 @@
 import {
+  AutocompleteCombobox,
   Button,
   Card,
   CardContent,
@@ -77,8 +78,8 @@ export function ServiceActions({
   const params = useParams({ strict: false })
   const [covers, setCovers] = useState(2)
   const [splitCovers, setSplitCovers] = useState(1)
-  const [sessionId, setSessionId] = useState(board.sessions[0]?.id ?? '')
-  const [mergeSourceId, setMergeSourceId] = useState(board.sessions[1]?.id ?? '')
+  const [sessionId, setSessionId] = useState('')
+  const [mergeSourceId, setMergeSourceId] = useState('')
   const selectedSession = board.sessions.find((session) => session.id === sessionId)
   const pacingNow = now ?? new Date()
   const [internalNote, setInternalNote] = useState(selectedSession?.internalNote ?? '')
@@ -111,14 +112,14 @@ export function ServiceActions({
   const suggestedIds =
     selectedTableIds.length === 0
       ? suggestTableCombination(
-          board.tables,
-          covers,
-          areaId,
-          accessibleOnly,
-          pacingNow,
-          120,
-          areaLoads,
-        )
+        board.tables,
+        covers,
+        areaId,
+        accessibleOnly,
+        pacingNow,
+        120,
+        areaLoads,
+      )
       : undefined
   const suggestedCodes = suggestedIds
     ?.map((id) => board.tables.find((table) => table.id === id)?.code)
@@ -358,18 +359,19 @@ export function ServiceActions({
         {board.sessions.length > 0 && (
           <div className="space-y-3 border-t pt-6">
             <Field>
-              <FieldLabel htmlFor="session-id">Cuenta abierta</FieldLabel>
-              <select
-                id="session-id"
-                onChange={(event) => setSessionId(event.target.value)}
-                value={sessionId}
-              >
-                {board.sessions.map((session) => (
-                  <option key={session.id} value={session.id}>
-                    {describeSession(session, board.tables)}
-                  </option>
-                ))}
-              </select>
+              <AutocompleteCombobox
+                emptyState="No hay cuentas que coincidan."
+                getItemKey={(session) => session.id}
+                getItemLabel={(session) => describeSession(session, board.tables)}
+                items={board.sessions}
+                label="Cuenta abierta"
+                onSelectionChange={(key, session) => {
+                  setSessionId(key ? String(key) : '')
+                  setInternalNote(session?.internalNote ?? '')
+                }}
+                placeholder="Buscar cuenta o mesa…"
+                selectedKey={sessionId || null}
+              />
             </Field>
             {sessionId && (
               <output className="text-muted-foreground text-xs">
@@ -431,27 +433,27 @@ export function ServiceActions({
                 onClick={() =>
                   !isOnline
                     ? (enqueueServiceOperation(
-                        offlineStore,
-                        createMoveSessionOperation({
-                          sessionId,
-                          tableIds: [...selectedTableIds],
-                          tenantId,
-                          venueId,
-                        }),
-                      ),
+                      offlineStore,
+                      createMoveSessionOperation({
+                        sessionId,
+                        tableIds: [...selectedTableIds],
+                        tenantId,
+                        venueId,
+                      }),
+                    ),
                       feedback.setSuccess('Movimiento guardado para cuando vuelva la conexión.'))
                     : void run(
-                        () =>
-                          moveSession({
-                            data: {
-                              sessionId,
-                              tableIds: [...selectedTableIds],
-                              tenantId,
-                              venueId,
-                            },
-                          }),
-                        'No se puede mover la cuenta a esas mesas.',
-                      )
+                      () =>
+                        moveSession({
+                          data: {
+                            sessionId,
+                            tableIds: [...selectedTableIds],
+                            tenantId,
+                            venueId,
+                          },
+                        }),
+                      'No se puede mover la cuenta a esas mesas.',
+                    )
                 }
                 type="button"
               >
@@ -490,21 +492,21 @@ export function ServiceActions({
                   window.confirm('¿Cerrar esta cuenta y liberar sus mesas?')
                     ? !isOnline
                       ? (enqueueServiceOperation(
-                          offlineStore,
-                          createCloseSessionOperation({
-                            sessionId,
-                            tenantId,
-                            venueId,
-                          }),
-                        ),
+                        offlineStore,
+                        createCloseSessionOperation({
+                          sessionId,
+                          tenantId,
+                          venueId,
+                        }),
+                      ),
                         feedback.setSuccess('Cierre guardado para cuando vuelva la conexión.'))
                       : void run(
-                          () =>
-                            closeSession({
-                              data: { sessionId, tenantId, venueId },
-                            }),
-                          'No se ha podido cerrar. Si queda saldo pendiente, cobra la cuenta primero.',
-                        )
+                        () =>
+                          closeSession({
+                            data: { sessionId, tenantId, venueId },
+                          }),
+                        'No se ha podido cerrar. Si queda saldo pendiente, cobra la cuenta primero.',
+                      )
                     : undefined
                 }
                 type="button"
@@ -528,47 +530,43 @@ export function ServiceActions({
             {board.sessions.length > 1 && (
               <div className="space-y-2">
                 <Field>
-                  <FieldLabel htmlFor="merge-source">Unir con esta cuenta</FieldLabel>
-                  <select
-                    id="merge-source"
-                    onChange={(event) => setMergeSourceId(event.target.value)}
-                    value={mergeSourceId}
-                  >
-                    {board.sessions
-                      .filter((session) => session.id !== sessionId)
-                      .map((session) => (
-                        <option key={session.id} value={session.id}>
-                          {describeSession(session, board.tables)}
-                        </option>
-                      ))}
-                  </select>
+                  <AutocompleteCombobox
+                    emptyState="No hay otras cuentas que coincidan."
+                    getItemKey={(session) => session.id}
+                    getItemLabel={(session) => describeSession(session, board.tables)}
+                    items={board.sessions.filter((session) => session.id !== sessionId)}
+                    label="Unir con esta cuenta"
+                    onSelectionChange={(key) => setMergeSourceId(key ? String(key) : '')}
+                    placeholder="Buscar cuenta o mesa…"
+                    selectedKey={mergeSourceId || null}
+                  />
                 </Field>
                 <Button
                   disabled={feedback.pending || !sessionId || mergeSourceId === sessionId}
                   onClick={() =>
                     !isOnline
                       ? (enqueueServiceOperation(
-                          offlineStore,
-                          createMergeSessionsOperation({
-                            sourceSessionId: mergeSourceId,
-                            targetSessionId: sessionId,
-                            tenantId,
-                            venueId,
-                          }),
-                        ),
+                        offlineStore,
+                        createMergeSessionsOperation({
+                          sourceSessionId: mergeSourceId,
+                          targetSessionId: sessionId,
+                          tenantId,
+                          venueId,
+                        }),
+                      ),
                         feedback.setSuccess('Unión guardada para cuando vuelva la conexión.'))
                       : void run(
-                          () =>
-                            mergeSessions({
-                              data: {
-                                sourceSessionId: mergeSourceId,
-                                targetSessionId: sessionId,
-                                tenantId,
-                                venueId,
-                              },
-                            }),
-                          'No se han podido unir las cuentas.',
-                        )
+                        () =>
+                          mergeSessions({
+                            data: {
+                              sourceSessionId: mergeSourceId,
+                              targetSessionId: sessionId,
+                              tenantId,
+                              venueId,
+                            },
+                          }),
+                        'No se han podido unir las cuentas.',
+                      )
                   }
                   type="button"
                 >

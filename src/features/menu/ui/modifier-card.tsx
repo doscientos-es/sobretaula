@@ -1,4 +1,5 @@
 import {
+  AutocompleteCombobox,
   Button,
   Card,
   CardContent,
@@ -99,27 +100,17 @@ export function ModifierCard({
       <CardContent>
         <form className="grid gap-4 md:grid-cols-2" onSubmit={(event) => void submit(event)}>
           <Field>
-            <FieldLabel htmlFor="modifier-item">Plato</FieldLabel>
-            <Select
-              id="modifier-item"
-              className="w-full"
+            <AutocompleteCombobox
+              emptyState="No hay platos que coincidan."
+              getItemKey={(item) => item.id}
+              getItemLabel={(item) => localizedText(item.nameI18n, 'es')}
               isRequired
-              onSelectionChange={(key) => setMenuItemId(String(key))}
-              selectedKey={menuItemId}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectList>
-                  {menu.items.map((item) => (
-                    <SelectItem id={item.id} key={item.id}>
-                      {localizedText(item.nameI18n, 'es')}
-                    </SelectItem>
-                  ))}
-                </SelectList>
-              </SelectContent>
-            </Select>
+              items={menu.items}
+              label="Plato"
+              onSelectionChange={(key) => setMenuItemId(key ? String(key) : '')}
+              placeholder="Buscar plato…"
+              selectedKey={menuItemId || null}
+            />
           </Field>
           <Field>
             <FieldLabel htmlFor="modifier-group">Grupo</FieldLabel>
@@ -177,59 +168,29 @@ export function ModifierCard({
           {ingredients.length > 0 ? (
             <>
               <Field>
-                <FieldLabel htmlFor="modifier-replaces">
-                  Sustituye ingrediente (opcional)
-                </FieldLabel>
-                <p className="text-muted-foreground text-xs">
-                  Para que el stock se descuente bien, completa también el ingrediente que consume.
-                </p>
-                <Select
-                  id="modifier-replaces"
-                  onSelectionChange={(key) =>
-                    setReplacesIngredientId(String(key) === 'none' ? '' : String(key))
-                  }
-                  selectedKey={replacesIngredientId || 'none'}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectList>
-                      <SelectItem id="none">No sustituye ninguno</SelectItem>
-                      {ingredients.map((ingredient) => (
-                        <SelectItem id={ingredient.id} key={ingredient.id}>
-                          {ingredient.name}
-                        </SelectItem>
-                      ))}
-                    </SelectList>
-                  </SelectContent>
-                </Select>
+                <AutocompleteCombobox
+                  description="Para que el stock se descuente bien, completa también el ingrediente que consume."
+                  emptyState="No hay ingredientes que coincidan."
+                  getItemKey={(ingredient) => ingredient.id}
+                  getItemLabel={(ingredient) => ingredient.name}
+                  items={ingredients}
+                  label="Sustituye ingrediente (opcional)"
+                  onSelectionChange={(key) => setReplacesIngredientId(key ? String(key) : '')}
+                  placeholder="Buscar ingrediente…"
+                  selectedKey={replacesIngredientId || null}
+                />
               </Field>
               <Field>
-                <FieldLabel htmlFor="modifier-ingredient">
-                  Ingrediente que consume (opcional)
-                </FieldLabel>
-                <Select
-                  id="modifier-ingredient"
-                  onSelectionChange={(key) =>
-                    setIngredientId(String(key) === 'none' ? '' : String(key))
-                  }
-                  selectedKey={ingredientId || 'none'}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectList>
-                      <SelectItem id="none">Sin sustitución de stock</SelectItem>
-                      {ingredients.map((ingredient) => (
-                        <SelectItem id={ingredient.id} key={ingredient.id}>
-                          {ingredient.name}
-                        </SelectItem>
-                      ))}
-                    </SelectList>
-                  </SelectContent>
-                </Select>
+                <AutocompleteCombobox
+                  emptyState="No hay ingredientes que coincidan."
+                  getItemKey={(ingredient) => ingredient.id}
+                  getItemLabel={(ingredient) => ingredient.name}
+                  items={ingredients}
+                  label="Ingrediente que consume (opcional)"
+                  onSelectionChange={(key) => setIngredientId(key ? String(key) : '')}
+                  placeholder="Buscar ingrediente…"
+                  selectedKey={ingredientId || null}
+                />
               </Field>
             </>
           ) : null}

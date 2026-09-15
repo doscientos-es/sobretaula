@@ -1,4 +1,5 @@
 import {
+  AutocompleteCombobox,
   Button,
   Card,
   CardContent,
@@ -151,28 +152,21 @@ export function AccountAddItem({
       <CardContent>
         <form className="grid gap-4" onSubmit={add}>
           <Field>
-            <FieldLabel htmlFor="account-item">Plato</FieldLabel>
-            <select
-              id="account-item"
-              onChange={(event) => {
-                setMenuItemId(event.target.value)
+            <AutocompleteCombobox
+              emptyState="No hay platos activos que coincidan."
+              getItemKey={(item) => item.id}
+              getItemLabel={(item) =>
+                `${localizedText(item.nameI18n, locale)} · ${formatMoney(item.priceCents, locale)}`
+              }
+              items={sections.flatMap((section) => section.items)}
+              label="Plato"
+              onSelectionChange={(key) => {
+                setMenuItemId(key ? String(key) : '')
                 setModifierOptionIds([])
               }}
-              value={menuItemId}
-            >
-              {sections.map((section) => (
-                <optgroup
-                  key={section.category.id}
-                  label={localizedText(section.category.nameI18n, locale)}
-                >
-                  {section.items.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {`${localizedText(item.nameI18n, locale)} · ${formatMoney(item.priceCents, locale)}`}
-                    </option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
+              placeholder="Buscar plato…"
+              selectedKey={menuItemId || null}
+            />
           </Field>
           {selectedItem?.modifierGroups?.map((group) => (
             <fieldset className="grid gap-2" key={group.id}>

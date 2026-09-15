@@ -1,4 +1,5 @@
 import {
+  AutocompleteCombobox,
   Button,
   Card,
   CardContent,
@@ -428,27 +429,16 @@ export function ProductPage({
         </CardHeader>
         <CardContent className="space-y-4">
           <Field>
-            <FieldLabel htmlFor="recipe-menu-item">Producto</FieldLabel>
-            <Select
-              id="recipe-menu-item"
-              className="w-full"
-              onSelectionChange={(key) => setMenuItemId(String(key) === 'empty' ? '' : String(key))}
-              selectedKey={menuItemId || 'empty'}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectList>
-                  <SelectItem id="empty">Seleccionar producto…</SelectItem>
-                  {menuItems.map((item) => (
-                    <SelectItem id={item.id} key={item.id}>
-                      {item.name}
-                    </SelectItem>
-                  ))}
-                </SelectList>
-              </SelectContent>
-            </Select>
+            <AutocompleteCombobox
+              emptyState="No hay productos que coincidan."
+              getItemKey={(item) => item.id}
+              getItemLabel={(item) => item.name}
+              items={menuItems}
+              label="Producto"
+              onSelectionChange={(key) => setMenuItemId(key ? String(key) : '')}
+              placeholder="Buscar producto…"
+              selectedKey={menuItemId || null}
+            />
           </Field>
           <form
             className="flex flex-wrap items-end gap-3"
@@ -468,11 +458,14 @@ export function ProductPage({
             }}
           >
             <Field>
-              <FieldLabel htmlFor="delivery-purchase-order">Pedido relacionado</FieldLabel>
-              <Select
-                id="delivery-purchase-order"
+              <AutocompleteCombobox
+                emptyState="No hay pedidos disponibles que coincidan."
+                getItemKey={(order) => order.id}
+                getItemLabel={(order) => `Pedido ${order.id.slice(0, 8)}`}
+                items={purchaseOrders.items.filter((order) => ['approved', 'sent'].includes(order.status))}
+                label="Pedido relacionado (opcional)"
                 onSelectionChange={(key) => {
-                  const id = String(key) === 'none' ? '' : String(key)
+                  const id = key ? String(key) : ''
                   setPurchaseOrderId(id)
                   const order = purchaseOrders.items.find((candidate) => candidate.id === id)
                   if (!order) return
@@ -484,49 +477,21 @@ export function ProductPage({
                     setDeliveryCost(String(line.unitCostCents))
                   }
                 }}
-                selectedKey={purchaseOrderId || 'none'}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectList>
-                    <SelectItem id="none">Sin pedido</SelectItem>
-                    {purchaseOrders.items
-                      .filter((order) => ['approved', 'sent'].includes(order.status))
-                      .map((order) => (
-                        <SelectItem id={order.id} key={order.id}>
-                          Pedido {order.id.slice(0, 8)}
-                        </SelectItem>
-                      ))}
-                  </SelectList>
-                </SelectContent>
-              </Select>
+                placeholder="Buscar pedido…"
+                selectedKey={purchaseOrderId || null}
+              />
             </Field>
             <Field>
-              <FieldLabel htmlFor="recipe-ingredient">Ingrediente</FieldLabel>
-              <Select
-                id="recipe-ingredient"
-                className="w-full"
-                onSelectionChange={(key) =>
-                  setRecipeIngredientId(String(key) === 'empty' ? '' : String(key))
-                }
-                selectedKey={recipeIngredientId || 'empty'}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectList>
-                    <SelectItem id="empty">Seleccionar…</SelectItem>
-                    {ingredientItems.map((item) => (
-                      <SelectItem id={item.id} key={item.id}>
-                        {item.name}
-                      </SelectItem>
-                    ))}
-                  </SelectList>
-                </SelectContent>
-              </Select>
+              <AutocompleteCombobox
+                emptyState="No hay ingredientes que coincidan."
+                getItemKey={(item) => item.id}
+                getItemLabel={(item) => item.name}
+                items={ingredientItems}
+                label="Ingrediente"
+                onSelectionChange={(key) => setRecipeIngredientId(key ? String(key) : '')}
+                placeholder="Buscar ingrediente…"
+                selectedKey={recipeIngredientId || null}
+              />
             </Field>
             <Field>
               <FieldLabel htmlFor="recipe-quantity">Cantidad</FieldLabel>
@@ -604,30 +569,17 @@ export function ProductPage({
             }}
           >
             <Field>
-              <FieldLabel htmlFor="movement-ingredient">Ingrediente</FieldLabel>
-              <Select
-                id="movement-ingredient"
-                className="w-full"
+              <AutocompleteCombobox
+                emptyState="No hay ingredientes que coincidan."
+                getItemKey={(ingredient) => ingredient.id}
+                getItemLabel={(ingredient) => ingredient.name}
                 isRequired
-                onSelectionChange={(key) =>
-                  setIngredientId(String(key) === 'empty' ? '' : String(key))
-                }
-                selectedKey={ingredientId || 'empty'}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectList>
-                    <SelectItem id="empty">Seleccionar…</SelectItem>
-                    {ingredientItems.map((ingredient) => (
-                      <SelectItem id={ingredient.id} key={ingredient.id}>
-                        {ingredient.name}
-                      </SelectItem>
-                    ))}
-                  </SelectList>
-                </SelectContent>
-              </Select>
+                items={ingredientItems}
+                label="Ingrediente"
+                onSelectionChange={(key) => setIngredientId(key ? String(key) : '')}
+                placeholder="Buscar ingrediente…"
+                selectedKey={ingredientId || null}
+              />
             </Field>
             {movementKind === 'waste' ? (
               <Field>
@@ -724,28 +676,16 @@ export function ProductPage({
               onSubmit={(event) => void receiveDelivery(event)}
             >
               <Field>
-                <FieldLabel htmlFor="delivery-supplier">Proveedor</FieldLabel>
-                <Select
-                  id="delivery-supplier"
-                  onSelectionChange={(key) =>
-                    setSupplierId(String(key) === 'new' ? '' : String(key))
-                  }
-                  selectedKey={supplierId || 'new'}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectList>
-                      <SelectItem id="new">Nuevo proveedor…</SelectItem>
-                      {suppliers.items.map((supplier) => (
-                        <SelectItem id={supplier.id} key={supplier.id}>
-                          {supplier.name}
-                        </SelectItem>
-                      ))}
-                    </SelectList>
-                  </SelectContent>
-                </Select>
+                <AutocompleteCombobox
+                  emptyState="No hay proveedores que coincidan."
+                  getItemKey={(supplier) => supplier.id}
+                  getItemLabel={(supplier) => supplier.name}
+                  items={suppliers.items}
+                  label="Proveedor"
+                  onSelectionChange={(key) => setSupplierId(key ? String(key) : '')}
+                  placeholder="Nuevo proveedor o buscar uno existente…"
+                  selectedKey={supplierId || null}
+                />
               </Field>
               {!supplierId ? (
                 <Field>
@@ -770,28 +710,16 @@ export function ProductPage({
                 />
               </Field>
               <Field>
-                <FieldLabel htmlFor="delivery-ingredient">Ingrediente</FieldLabel>
-                <Select
-                  id="delivery-ingredient"
-                  onSelectionChange={(key) =>
-                    setDeliveryIngredientId(String(key) === 'empty' ? '' : String(key))
-                  }
-                  selectedKey={deliveryIngredientId || 'empty'}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectList>
-                      <SelectItem id="empty">Seleccionar…</SelectItem>
-                      {ingredientItems.map((ingredient) => (
-                        <SelectItem id={ingredient.id} key={ingredient.id}>
-                          {ingredient.name}
-                        </SelectItem>
-                      ))}
-                    </SelectList>
-                  </SelectContent>
-                </Select>
+                <AutocompleteCombobox
+                  emptyState="No hay ingredientes que coincidan."
+                  getItemKey={(ingredient) => ingredient.id}
+                  getItemLabel={(ingredient) => ingredient.name}
+                  items={ingredientItems}
+                  label="Ingrediente"
+                  onSelectionChange={(key) => setDeliveryIngredientId(key ? String(key) : '')}
+                  placeholder="Buscar ingrediente…"
+                  selectedKey={deliveryIngredientId || null}
+                />
               </Field>
               <Field>
                 <FieldLabel htmlFor="delivery-quantity">Cantidad</FieldLabel>
