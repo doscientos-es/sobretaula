@@ -175,6 +175,7 @@ export function AccountLines({
                               aria-label="Nota editada"
                               className="h-8 w-32"
                               onChange={(event) => setEditNotes(event.target.value)}
+                              placeholder="Nota para cocina"
                               value={editNotes}
                             />
                             <Button

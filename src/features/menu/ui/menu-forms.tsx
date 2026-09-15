@@ -150,6 +150,7 @@ export function MenuForms({
                 <Input
                   id="category-name-es"
                   onChange={(event) => setCategoryName(event.target.value)}
+                  placeholder="Ej. Entrantes"
                   required
                   value={categoryName}
                 />
@@ -159,6 +160,7 @@ export function MenuForms({
                 <Input
                   id="category-name-ca"
                   onChange={(event) => setCategoryNameCa(event.target.value)}
+                  placeholder="Ej. Entrants"
                   value={categoryNameCa}
                 />
               </Field>

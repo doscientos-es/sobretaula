@@ -134,6 +134,7 @@ export function LoginPage({ redirectTo }: { redirectTo?: string }) {
                     minLength={1}
                     name="password"
                     onChange={(event) => setPassword(event.target.value)}
+                    placeholder="Tu contraseña"
                     required
                     type={isPasswordVisible ? 'text' : 'password'}
                     value={password}

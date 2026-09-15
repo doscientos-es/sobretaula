@@ -68,6 +68,7 @@ export function FloorPlanSetupCard({
             <Input
               id="area-name"
               onChange={(event) => setAreaName(event.target.value)}
+              placeholder="Ej. Sala principal"
               required
               value={areaName}
             />
@@ -78,6 +79,7 @@ export function FloorPlanSetupCard({
               id="width-cm"
               min={100}
               onChange={(event) => setWidthCm(Number(event.target.value))}
+              placeholder="800"
               required
               type="number"
               value={widthCm}
@@ -89,6 +91,7 @@ export function FloorPlanSetupCard({
               id="height-cm"
               min={100}
               onChange={(event) => setHeightCm(Number(event.target.value))}
+              placeholder="600"
               required
               type="number"
               value={heightCm}

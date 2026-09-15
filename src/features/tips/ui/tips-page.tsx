@@ -244,7 +244,15 @@ export function TipsPage({
               </Field>
               <Field>
                 <FieldLabel htmlFor="tip-amount">Total del bote (€)</FieldLabel>
-                <Input id="tip-amount" min="0" name="amount" required step="0.01" type="number" />
+                <Input
+                  id="tip-amount"
+                  min="0"
+                  name="amount"
+                  placeholder="0,00"
+                  required
+                  step="0.01"
+                  type="number"
+                />
               </Field>
               <Button
                 className="self-end"
@@ -285,6 +293,7 @@ export function TipsPage({
                 id="edit-tip-amount"
                 min="0"
                 onChange={(event) => setEditAmount(event.target.value)}
+                placeholder="0,00"
                 required
                 step="0.01"
                 type="number"
@@ -297,6 +306,7 @@ export function TipsPage({
                 id="edit-tip-note"
                 maxLength={500}
                 onChange={(event) => setEditNote(event.target.value)}
+                placeholder="Turno, incidencia o explicación…"
                 value={editNote}
               />
             </Field>

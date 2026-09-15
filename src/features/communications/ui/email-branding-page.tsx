@@ -141,6 +141,7 @@ export function EmailBrandingPage({
                 id="email-from-name"
                 maxLength={120}
                 onChange={(event) => setEmailFromName(event.target.value)}
+                placeholder="Ej. Casa Muntaner"
                 required
                 value={emailFromName}
               />
@@ -236,6 +237,7 @@ export function EmailBrandingPage({
                   disabled={!canManage || feedback.pending || uploadingLogo}
                   onChange={(event) => setPrimaryColor(event.target.value)}
                   pattern="#[0-9A-Fa-f]{6}"
+                  placeholder="#ff5f4d"
                   value={primaryColor}
                 />
               </div>

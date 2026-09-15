@@ -212,6 +212,7 @@ function VerifactuCertificateCard({
                 autoComplete="new-password"
                 id="verifactu-password"
                 onChange={(event) => setPassword(event.target.value)}
+                placeholder="Contraseña del archivo"
                 type="password"
                 value={password}
               />
@@ -331,6 +332,7 @@ function FiscalSettingsCard({
             <Input
               id="fiscal-nif"
               onChange={(event) => setIssuerNif(event.target.value)}
+              placeholder="Ej. B12345678"
               required
               value={issuerNif}
             />
@@ -340,6 +342,7 @@ function FiscalSettingsCard({
             <Input
               id="fiscal-name"
               onChange={(event) => setLegalName(event.target.value)}
+              placeholder="Ej. Casa Muntaner, S.L."
               required
               value={legalName}
             />
@@ -349,6 +352,7 @@ function FiscalSettingsCard({
             <Input
               id="fiscal-address"
               onChange={(event) => setAddressLine(event.target.value)}
+              placeholder="Ej. Carrer de Mallorca, 123"
               required
               value={addressLine}
             />
@@ -358,6 +362,7 @@ function FiscalSettingsCard({
             <Input
               id="fiscal-city"
               onChange={(event) => setCity(event.target.value)}
+              placeholder="Ej. Barcelona"
               required
               value={city}
             />
@@ -370,6 +375,7 @@ function FiscalSettingsCard({
               maxLength={5}
               onChange={(event) => setPostalCode(event.target.value)}
               pattern="[0-9]{5}"
+              placeholder="Ej. 08008"
               required
               value={postalCode}
             />
@@ -381,6 +387,7 @@ function FiscalSettingsCard({
               maxLength={2}
               onChange={(event) => setCountryCode(event.target.value)}
               pattern="[A-Za-z]{2}"
+              placeholder="ES"
               required
               value={countryCode}
             />
@@ -458,6 +465,7 @@ function SeriesCard({
             <Input
               id="series-code"
               onChange={(event) => setCode(event.target.value)}
+              placeholder="Ej. A-2026"
               required
               value={code}
             />
@@ -469,6 +477,7 @@ function SeriesCard({
               max={2100}
               min={2000}
               onChange={(event) => setFiscalYear(Number(event.target.value))}
+              placeholder="2026"
               required
               type="number"
               value={fiscalYear}

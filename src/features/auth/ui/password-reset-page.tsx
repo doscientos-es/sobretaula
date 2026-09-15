@@ -122,6 +122,7 @@ export function PasswordResetPage() {
                   maxLength={256}
                   minLength={12}
                   onChange={(event) => setPassword(event.target.value)}
+                  placeholder="Crea una contraseña segura"
                   required
                   type="password"
                   value={password}
@@ -135,6 +136,7 @@ export function PasswordResetPage() {
                   maxLength={256}
                   minLength={12}
                   onChange={(event) => setPasswordConfirmation(event.target.value)}
+                  placeholder="Repite la contraseña"
                   required
                   type="password"
                   value={passwordConfirmation}

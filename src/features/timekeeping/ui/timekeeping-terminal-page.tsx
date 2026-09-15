@@ -139,6 +139,7 @@ export function TimekeepingTerminalPage({
               disabled={feedback.pending}
               onChange={(event) => setPin(event.target.value.replace(/\D/g, ''))}
               pattern="[0-9]{4,8}"
+              placeholder="PIN de 4 a 8 dígitos"
               type="password"
               value={pin}
             />

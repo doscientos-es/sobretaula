@@ -356,6 +356,7 @@ export function AccountPayments({
                 id="discount-amount"
                 min="0.01"
                 onChange={(event) => setDiscountDraft(event.target.value)}
+                placeholder="0,00"
                 required
                 value={discountDraft}
               />
@@ -366,6 +367,7 @@ export function AccountPayments({
                 <Input
                   id="gift-card-code"
                   onChange={(event) => setGiftCardCode(event.target.value)}
+                  placeholder="Ej. ST-2026-ABCD"
                   required
                   value={giftCardCode}
                 />
@@ -376,6 +378,7 @@ export function AccountPayments({
               <Input
                 id="discount-reason"
                 onChange={(event) => setDiscountReason(event.target.value)}
+                placeholder="Ej. Invitación o compensación"
                 required
                 value={discountReason}
               />
@@ -502,6 +505,7 @@ export function AccountPayments({
                   id="payment-split-values"
                   inputMode="decimal"
                   onChange={(event) => setSplitValues(event.target.value)}
+                  placeholder={splitMode === 'percentage' ? '50,30,20' : '10,00,20,00'}
                   value={splitValues}
                 />
               </Field>
@@ -529,6 +533,7 @@ export function AccountPayments({
                   id="payment-amount"
                   inputMode="decimal"
                   onChange={(event) => setAmountDraft(event.target.value)}
+                  placeholder="0,00"
                   required
                   value={amountDraft}
                 />
@@ -587,6 +592,7 @@ export function AccountPayments({
                   id="mixed-amount-a"
                   inputMode="decimal"
                   onChange={(event) => setMixedAmountA(event.target.value)}
+                  placeholder="0,00"
                   required
                   value={mixedAmountA}
                 />
@@ -619,6 +625,7 @@ export function AccountPayments({
                   id="mixed-amount-b"
                   inputMode="decimal"
                   onChange={(event) => setMixedAmountB(event.target.value)}
+                  placeholder="0,00"
                   required
                   value={mixedAmountB}
                 />

@@ -104,6 +104,7 @@ export function AccountIssueInvoice({
             <Input
               id="issue-customer-name"
               onChange={(event) => setCustomerName(event.target.value)}
+              placeholder="Ej. Ana García"
               value={customerName}
             />
           </Field>
@@ -112,6 +113,7 @@ export function AccountIssueInvoice({
             <Input
               id="issue-customer-nif"
               onChange={(event) => setCustomerNif(event.target.value)}
+              placeholder="Ej. 12345678Z"
               value={customerNif}
             />
           </Field>

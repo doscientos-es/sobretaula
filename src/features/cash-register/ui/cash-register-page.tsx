@@ -135,6 +135,7 @@ export function CashRegisterPage({
                   inputMode="decimal"
                   min="0"
                   onChange={(e) => setFloat(e.target.value)}
+                  placeholder="0,00"
                   required
                   step="0.01"
                   type="number"
@@ -184,6 +185,7 @@ export function CashRegisterPage({
                     id="movement-amount"
                     min="0.01"
                     onChange={(e) => setAmount(e.target.value)}
+                    placeholder="0,00"
                     required
                     step="0.01"
                     type="number"
@@ -195,6 +197,7 @@ export function CashRegisterPage({
                   <Input
                     id="movement-reason"
                     onChange={(e) => setReason(e.target.value)}
+                    placeholder="Ej. Cambio para caja"
                     required
                     value={reason}
                   />
@@ -227,6 +230,7 @@ export function CashRegisterPage({
                     id="cash-out-amount"
                     min="0.01"
                     onChange={(e) => setOutAmount(e.target.value)}
+                    placeholder="0,00"
                     required
                     step="0.01"
                     type="number"
@@ -238,6 +242,7 @@ export function CashRegisterPage({
                   <Input
                     id="cash-out-reason"
                     onChange={(e) => setOutReason(e.target.value)}
+                    placeholder="Ej. Compra de cambio"
                     required
                     value={outReason}
                   />
@@ -268,6 +273,7 @@ export function CashRegisterPage({
                     id="counted-cash"
                     min="0"
                     onChange={(e) => setCounted(e.target.value)}
+                    placeholder="0,00"
                     required
                     step="0.01"
                     type="number"
@@ -279,6 +285,7 @@ export function CashRegisterPage({
                   <Input
                     id="reconciliation-note"
                     onChange={(e) => setReconciliationNote(e.target.value)}
+                    placeholder="Ej. Diferencia explicada por…"
                     value={reconciliationNote}
                   />
                 </Field>

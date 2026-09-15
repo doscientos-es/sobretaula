@@ -667,6 +667,7 @@ export function FloorPlanPage({
                                   [key]: Number(event.target.value),
                                 })
                               }
+                              placeholder="0"
                               type="number"
                               value={selected[key]}
                             />
@@ -679,6 +680,7 @@ export function FloorPlanPage({
                           <Input
                             id="selected-label"
                             onChange={(event) => updateSelected({ label: event.target.value })}
+                            placeholder="Ej. Barra o puerta"
                             value={selected.label ?? ''}
                           />
                         </Field>
@@ -727,6 +729,7 @@ export function FloorPlanPage({
                     <Input
                       id="table-code"
                       onChange={(event) => setTableCode(event.target.value)}
+                      placeholder="Ej. M1"
                       required
                       value={tableCode}
                     />
@@ -737,6 +740,7 @@ export function FloorPlanPage({
                       id="table-seats"
                       min={1}
                       onChange={(event) => setTableSeats(Number(event.target.value))}
+                      placeholder="4"
                       required
                       type="number"
                       value={tableSeats}
@@ -749,6 +753,7 @@ export function FloorPlanPage({
                         id="table-x"
                         min={0}
                         onChange={(event) => setTableXCm(Number(event.target.value))}
+                        placeholder="100"
                         required
                         type="number"
                         value={tableXCm}
@@ -760,6 +765,7 @@ export function FloorPlanPage({
                         id="table-y"
                         min={0}
                         onChange={(event) => setTableYCm(Number(event.target.value))}
+                        placeholder="100"
                         required
                         type="number"
                         value={tableYCm}
@@ -801,6 +807,7 @@ export function FloorPlanPage({
                   <Input
                     id="version-name"
                     onChange={(event) => setVersionName(event.target.value)}
+                    placeholder="Ej. Verano 2026"
                     required
                     value={versionName}
                   />
@@ -810,6 +817,7 @@ export function FloorPlanPage({
                   <Input
                     id="version-activation"
                     onChange={(event) => setVersionActivation(event.target.value)}
+                    placeholder="Selecciona fecha y hora"
                     required
                     type="datetime-local"
                     value={versionActivation}
@@ -820,6 +828,7 @@ export function FloorPlanPage({
                   <Input
                     id="version-deactivation"
                     onChange={(event) => setVersionDeactivation(event.target.value)}
+                    placeholder="Opcional"
                     type="datetime-local"
                     value={versionDeactivation}
                   />

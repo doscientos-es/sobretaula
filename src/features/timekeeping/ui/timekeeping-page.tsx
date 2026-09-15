@@ -557,6 +557,7 @@ function TimekeepingManagement({
                 max={960}
                 min={1}
                 name="dailyTargetMinutes"
+                placeholder="480"
                 type="number"
               />
             </Field>
@@ -568,6 +569,7 @@ function TimekeepingManagement({
                 max={180}
                 min={0}
                 name="minimumBreakMinutes"
+                placeholder="15"
                 type="number"
               />
             </Field>
@@ -579,6 +581,7 @@ function TimekeepingManagement({
                 max={1440}
                 min={0}
                 name="minimumDailyRestMinutes"
+                placeholder="720"
                 type="number"
               />
             </Field>
@@ -631,6 +634,7 @@ function TimekeepingManagement({
                 id="hourly-cost"
                 min={0}
                 name="hourlyCostEuros"
+                placeholder="12,50"
                 step="0.01"
                 type="number"
               />

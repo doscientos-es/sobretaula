@@ -337,6 +337,7 @@ export function ProductPage({
               <Input
                 id="ingredient-name"
                 onChange={(e) => setName(e.target.value)}
+                placeholder="Ej. Tomate triturado"
                 required
                 value={name}
               />
@@ -369,6 +370,7 @@ export function ProductPage({
                 id="ingredient-cost"
                 min="0"
                 onChange={(e) => setCost(e.target.value)}
+                placeholder="125"
                 required
                 type="number"
                 value={cost}
@@ -380,6 +382,7 @@ export function ProductPage({
                 id="ingredient-minimum"
                 min="0"
                 onChange={(e) => setMinimum(e.target.value)}
+                placeholder="0"
                 required
                 type="number"
                 value={minimum}
@@ -531,6 +534,7 @@ export function ProductPage({
                 id="recipe-quantity"
                 min="0.0001"
                 onChange={(e) => setRecipeQuantity(e.target.value)}
+                placeholder="1"
                 required
                 type="number"
                 value={recipeQuantity}
@@ -675,6 +679,7 @@ export function ProductPage({
               <Input
                 id="movement-quantity"
                 onChange={(e) => setMovementQuantity(e.target.value)}
+                placeholder="1"
                 required
                 type="number"
                 value={movementQuantity}
@@ -685,6 +690,7 @@ export function ProductPage({
               <Input
                 id="movement-reason"
                 onChange={(e) => setReason(e.target.value)}
+                placeholder="Ej. Ajuste de inventario"
                 required
                 value={reason}
               />
@@ -747,6 +753,7 @@ export function ProductPage({
                   <Input
                     id="delivery-supplier-name"
                     onChange={(event) => setSupplierName(event.target.value)}
+                    placeholder="Ej. Distribuciones García"
                     required
                     value={supplierName}
                   />
@@ -757,6 +764,7 @@ export function ProductPage({
                 <Input
                   id="delivery-reference"
                   onChange={(event) => setDeliveryReference(event.target.value)}
+                  placeholder="Ej. ALB-2026-001"
                   required
                   value={deliveryReference}
                 />
@@ -791,6 +799,7 @@ export function ProductPage({
                   id="delivery-quantity"
                   min="0.0001"
                   onChange={(event) => setDeliveryQuantity(event.target.value)}
+                  placeholder="1"
                   required
                   type="number"
                   value={deliveryQuantity}
@@ -802,6 +811,7 @@ export function ProductPage({
                   id="delivery-cost"
                   min="0"
                   onChange={(event) => setDeliveryCost(event.target.value)}
+                  placeholder="125"
                   required
                   type="number"
                   value={deliveryCost}

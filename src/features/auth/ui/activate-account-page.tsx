@@ -109,6 +109,7 @@ export function ActivateAccountPage({
                   id="activation-password"
                   minLength={12}
                   onChange={(event) => setPassword(event.target.value)}
+                  placeholder="Crea una contraseña segura"
                   required
                   type="password"
                   value={password}

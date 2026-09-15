@@ -505,6 +505,7 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                       setPartySize(nextSize)
                       if (date) void selectDate(date, nextSize)
                     }}
+                    placeholder="Ej. 2"
                     required
                     type="number"
                     value={partySize}
@@ -520,6 +521,7 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                       maxLength={200}
                       minLength={2}
                       onChange={(event) => setGuestName(event.target.value)}
+                      placeholder="Ej. Ana García"
                       required
                       value={guestName}
                     />
@@ -534,6 +536,7 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                       maxLength={40}
                       minLength={6}
                       onChange={(event) => setPhone(event.target.value)}
+                      placeholder="Ej. 600 123 456"
                       value={phone}
                     />
                   </Field>
@@ -546,6 +549,7 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                     name="email"
                     maxLength={200}
                     onChange={(event) => setEmail(event.target.value)}
+                    placeholder="ana@ejemplo.com"
                     required
                     type="email"
                     value={email}
@@ -559,6 +563,7 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                     name="notes"
                     maxLength={1000}
                     onChange={(event) => setNotes(event.target.value)}
+                    placeholder="Alergias, carrito de bebé, ocasión especial…"
                     value={notes}
                   />
                 </Field>

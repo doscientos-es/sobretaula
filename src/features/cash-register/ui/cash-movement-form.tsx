@@ -47,6 +47,7 @@ export function CashMovementForm({
           id="cash-out-amount"
           min="0.01"
           onChange={(event) => setAmount(event.target.value)}
+          placeholder="0,00"
           required
           step="0.01"
           type="number"
@@ -58,6 +59,7 @@ export function CashMovementForm({
         <Input
           id="cash-out-reason"
           onChange={(event) => setReason(event.target.value)}
+          placeholder="Ej. Compra de cambio"
           required
           value={reason}
         />

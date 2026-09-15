@@ -109,6 +109,7 @@ export function PlatformOperatorsPage({
               <Input
                 id="operator-name"
                 onChange={(event) => setName(event.target.value)}
+                placeholder="Ej. Marta García"
                 required
                 value={name}
               />
@@ -118,6 +119,7 @@ export function PlatformOperatorsPage({
               <Input
                 id="operator-email"
                 onChange={(event) => setEmail(event.target.value)}
+                placeholder="marta@doscientos.com"
                 required
                 type="email"
                 value={email}

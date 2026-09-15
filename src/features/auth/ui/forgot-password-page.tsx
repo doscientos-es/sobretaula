@@ -90,6 +90,7 @@ export function ForgotPasswordPage() {
                   id="forgot-password-email"
                   maxLength={254}
                   onChange={(event) => setEmail(event.target.value)}
+                  placeholder="nombre@restaurante.com"
                   required
                   type="email"
                   value={email}

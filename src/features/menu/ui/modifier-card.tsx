@@ -126,6 +126,7 @@ export function ModifierCard({
             <Input
               id="modifier-group"
               onChange={(event) => setGroupName(event.target.value)}
+              placeholder="Ej. Extras"
               required
               value={groupName}
             />
@@ -135,6 +136,7 @@ export function ModifierCard({
             <Input
               id="modifier-option"
               onChange={(event) => setOptionName(event.target.value)}
+              placeholder="Ej. Sin gluten"
               required
               value={optionName}
             />
@@ -145,6 +147,7 @@ export function ModifierCard({
               id="modifier-price"
               inputMode="decimal"
               onChange={(event) => setOptionPrice(event.target.value)}
+              placeholder="0,00"
               required
               value={optionPrice}
             />
@@ -155,6 +158,7 @@ export function ModifierCard({
               id="modifier-min"
               min={0}
               onChange={(event) => setSelectionMin(Number(event.target.value))}
+              placeholder="0"
               type="number"
               value={selectionMin}
             />
@@ -165,6 +169,7 @@ export function ModifierCard({
               id="modifier-max"
               min={1}
               onChange={(event) => setSelectionMax(Number(event.target.value))}
+              placeholder="1"
               type="number"
               value={selectionMax}
             />

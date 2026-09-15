@@ -95,6 +95,7 @@ export function RegisterPage() {
                   autoComplete="name"
                   id="register-name"
                   onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder="Ej. Marta García"
                   required
                   value={displayName}
                 />
@@ -106,6 +107,7 @@ export function RegisterPage() {
                   autoComplete="email"
                   id="register-email"
                   onChange={(e) => setEmail(e.target.value)}
+                  placeholder="marta@casamuntaner.com"
                   required
                   type="email"
                   value={email}
@@ -119,6 +121,7 @@ export function RegisterPage() {
                   id="register-password"
                   minLength={12}
                   onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Crea una contraseña segura"
                   required
                   type="password"
                   value={password}

@@ -279,6 +279,7 @@ export function ServiceActions({
               id="walk-in-covers"
               min={1}
               onChange={(event) => setCovers(Number(event.target.value))}
+              placeholder="2"
               required
               type="number"
               value={covers}

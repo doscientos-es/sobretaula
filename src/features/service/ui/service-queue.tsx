@@ -444,6 +444,7 @@ export function ServiceQueue({
             <Input
               id="waitlist-name"
               onChange={(event) => setGuestName(event.target.value)}
+              placeholder="Ej. Ana García"
               value={guestName}
             />
           </Field>
@@ -454,6 +455,7 @@ export function ServiceQueue({
               id="waitlist-phone"
               inputMode="tel"
               onChange={(event) => setGuestPhone(event.target.value)}
+              placeholder="Ej. 600 123 456"
               value={guestPhone}
             />
           </Field>
@@ -463,6 +465,7 @@ export function ServiceQueue({
               id="waitlist-party"
               min={1}
               onChange={(event) => setPartySize(Number(event.target.value))}
+              placeholder="2"
               required
               type="number"
               value={partySize}
@@ -476,6 +479,7 @@ export function ServiceQueue({
               max={480}
               min={0}
               onChange={(event) => setEstimatedWait(event.target.value)}
+              placeholder="15"
               type="number"
               value={estimatedWait}
             />

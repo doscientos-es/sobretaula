@@ -6,6 +6,7 @@ import {
   CardHeader,
   CardTitle,
   Field,
+  FieldDescription,
   FieldLabel,
   FormFeedback,
   Input,
@@ -84,12 +85,13 @@ export function VenueCreatePage({
               <Input
                 id="venue-name"
                 onChange={(event) => changeName(event.target.value)}
+                placeholder="Ej. Terraza"
                 required
                 value={name}
               />
             </Field>
             <Field>
-              <FieldLabel htmlFor="venue-slug">Dirección del local</FieldLabel>
+              <FieldLabel htmlFor="venue-slug">Identificador del local</FieldLabel>
               <Input
                 id="venue-slug"
                 onChange={(event) => {
@@ -97,9 +99,13 @@ export function VenueCreatePage({
                   setSlug(event.target.value)
                 }}
                 pattern="[a-z0-9][a-z0-9-]{1,48}[a-z0-9]"
+                placeholder="ej. terraza"
                 required
                 value={slug}
               />
+              <FieldDescription>
+                Se usará en la URL del local. Utiliza minúsculas, números y guiones.
+              </FieldDescription>
             </Field>
             <FormFeedback pendingLabel="Creando local…" state={feedback.state} />
             <Button disabled={feedback.pending} type="submit">

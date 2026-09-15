@@ -111,12 +111,13 @@ export function PlatformTenantProvisioningForm() {
               <Input
                 id="platform-tenant-name"
                 onChange={(event) => changeName(event.target.value)}
+                placeholder="Ej. Casa Muntaner"
                 required
                 value={name}
               />
             </Field>
             <Field>
-              <FieldLabel htmlFor="platform-tenant-slug">Dirección de SobreTaula</FieldLabel>
+              <FieldLabel htmlFor="platform-tenant-slug">Identificador del restaurante</FieldLabel>
               <Input
                 id="platform-tenant-slug"
                 onChange={(event) => {
@@ -124,6 +125,7 @@ export function PlatformTenantProvisioningForm() {
                   setSlug(event.target.value)
                 }}
                 pattern="[a-z0-9][a-z0-9-]{1,48}[a-z0-9]"
+                placeholder="ej. casa-muntaner"
                 required
                 value={slug}
               />
@@ -133,6 +135,7 @@ export function PlatformTenantProvisioningForm() {
               <Input
                 id="platform-owner-name"
                 onChange={(event) => setOwnerName(event.target.value)}
+                placeholder="Ej. Marta García"
                 required
                 value={ownerName}
               />
@@ -143,6 +146,7 @@ export function PlatformTenantProvisioningForm() {
                 autoComplete="email"
                 id="platform-owner-email"
                 onChange={(event) => setOwnerEmail(event.target.value)}
+                placeholder="marta@casamuntaner.com"
                 required
                 type="email"
                 value={ownerEmail}
@@ -153,6 +157,7 @@ export function PlatformTenantProvisioningForm() {
               <Input
                 id="platform-tenant-legal-name"
                 onChange={(event) => setLegalName(event.target.value)}
+                placeholder="Ej. Casa Muntaner, S.L."
                 required
                 value={legalName}
               />
@@ -162,6 +167,7 @@ export function PlatformTenantProvisioningForm() {
               <Input
                 id="platform-tenant-tax-id"
                 onChange={(event) => setTaxId(event.target.value)}
+                placeholder="Ej. B12345678"
                 required
                 value={taxId}
               />
@@ -172,6 +178,7 @@ export function PlatformTenantProvisioningForm() {
                 autoComplete="email"
                 id="platform-tenant-billing-email"
                 onChange={(event) => setEmail(event.target.value)}
+                placeholder="facturacion@casamuntaner.com"
                 required
                 type="email"
                 value={email}
@@ -182,6 +189,7 @@ export function PlatformTenantProvisioningForm() {
               <Input
                 id="platform-tenant-address"
                 onChange={(event) => setAddressLine(event.target.value)}
+                placeholder="Ej. Carrer de Mallorca, 123"
                 required
                 value={addressLine}
               />
@@ -191,6 +199,7 @@ export function PlatformTenantProvisioningForm() {
               <Input
                 id="platform-tenant-city"
                 onChange={(event) => setCity(event.target.value)}
+                placeholder="Ej. Barcelona"
                 required
                 value={city}
               />
@@ -200,6 +209,7 @@ export function PlatformTenantProvisioningForm() {
               <Input
                 id="platform-tenant-postal-code"
                 onChange={(event) => setPostalCode(event.target.value)}
+                placeholder="Ej. 08008"
                 required
                 value={postalCode}
               />

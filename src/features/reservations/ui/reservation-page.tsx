@@ -352,6 +352,7 @@ export function ReservationPage({
                         <Input
                           id="reservation-terms-title"
                           onChange={(event) => setTermsTitle(event.target.value)}
+                          placeholder="Ej. Condiciones de reserva"
                           required
                           value={termsTitle}
                         />
@@ -365,6 +366,7 @@ export function ReservationPage({
                           className="min-h-28"
                           id="reservation-terms-body"
                           onChange={(event) => setTermsBody(event.target.value)}
+                          placeholder="Ej. Las reservas se mantienen durante 15 minutos…"
                           required
                           value={termsBody}
                         />
@@ -508,6 +510,7 @@ export function ReservationPage({
                       <Input
                         id="service-name"
                         onChange={(event) => setServiceName(event.target.value)}
+                        placeholder="Ej. Comida o Cena"
                         required
                         value={serviceName}
                       />
@@ -570,6 +573,7 @@ export function ReservationPage({
                           max={120}
                           min={5}
                           onChange={(event) => setServiceSlotMinutes(Number(event.target.value))}
+                          placeholder="30"
                           required
                           type="number"
                           value={serviceSlotMinutes}
@@ -587,6 +591,7 @@ export function ReservationPage({
                           id="service-max-covers"
                           min={1}
                           onChange={(event) => setServiceMaxCovers(Number(event.target.value))}
+                          placeholder="20"
                           required
                           type="number"
                           value={serviceMaxCovers}
@@ -606,6 +611,7 @@ export function ReservationPage({
                           onChange={(event) =>
                             setServiceMaxReservations(Number(event.target.value))
                           }
+                          placeholder="4"
                           required
                           type="number"
                           value={serviceMaxReservations}

@@ -95,6 +95,7 @@ export function PlatformSettingsPage({ settings }: { settings: PlatformFiscalSet
                 defaultValue={settings?.legalName}
                 id="platform-legal-name"
                 name="legalName"
+                placeholder="Ej. Doscientos Digital, S.L."
                 required
               />
             </Field>
@@ -105,6 +106,7 @@ export function PlatformSettingsPage({ settings }: { settings: PlatformFiscalSet
                 id="platform-nif"
                 maxLength={9}
                 name="issuerNif"
+                placeholder="Ej. B12345678"
                 required
               />
             </Field>
@@ -114,12 +116,19 @@ export function PlatformSettingsPage({ settings }: { settings: PlatformFiscalSet
                 defaultValue={settings?.addressLine}
                 id="platform-address"
                 name="addressLine"
+                placeholder="Ej. Carrer de Mallorca, 123"
                 required
               />
             </Field>
             <Field>
               <FieldLabel htmlFor="platform-city">Ciudad</FieldLabel>
-              <Input defaultValue={settings?.city} id="platform-city" name="city" required />
+              <Input
+                defaultValue={settings?.city}
+                id="platform-city"
+                name="city"
+                placeholder="Ej. Barcelona"
+                required
+              />
             </Field>
             <div className="grid grid-cols-2 gap-4">
               <Field>
@@ -128,6 +137,7 @@ export function PlatformSettingsPage({ settings }: { settings: PlatformFiscalSet
                   defaultValue={settings?.postalCode}
                   id="platform-postal-code"
                   name="postalCode"
+                  placeholder="Ej. 08008"
                   required
                 />
               </Field>
@@ -138,6 +148,7 @@ export function PlatformSettingsPage({ settings }: { settings: PlatformFiscalSet
                   id="platform-country"
                   maxLength={2}
                   name="countryCode"
+                  placeholder="ES"
                   required
                 />
               </Field>
@@ -149,6 +160,7 @@ export function PlatformSettingsPage({ settings }: { settings: PlatformFiscalSet
                 id="platform-series"
                 maxLength={12}
                 name="seriesCode"
+                placeholder="Ej. ST"
                 required
               />
             </Field>
