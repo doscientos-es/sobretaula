@@ -40,7 +40,11 @@ export function LoginPage({ redirectTo }: { redirectTo?: string }) {
 
     try {
       const result = await login({
-        data: { email: email.trim(), password: submittedPassword, rememberSession },
+        data: {
+          email: email.trim(),
+          password: submittedPassword,
+          rememberSession,
+        },
       })
       if (!result.ok) {
         feedback.setError('El correo o la contraseña no son correctos.')
@@ -194,7 +198,15 @@ export function LoginPage({ redirectTo }: { redirectTo?: string }) {
         </div>
       </section>
       <aside aria-label="Experiencias de clientes" className="st-login-visual">
-        <img alt="" aria-hidden="true" className="st-login-visual-image" src={abstractRestaurant} />
+        <img
+          alt=""
+          aria-hidden="true"
+          className="st-login-visual-image"
+          decoding="async"
+          fetchPriority="low"
+          loading="lazy"
+          src={abstractRestaurant}
+        />
         <div className="st-login-visual-shade" />
         <div aria-live="polite" className="st-login-reviews">
           <article className="st-login-review st-login-review--one">

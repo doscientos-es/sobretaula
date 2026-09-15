@@ -31,9 +31,17 @@ export function RegisterPage() {
     try {
       const result = await register({ data: { displayName, email, password } })
       if (!result.ok) {
-        feedback.setError(
-          'No se ha podido crear la cuenta. Prueba con otro correo o inicia sesión.',
-        )
+        const messages = {
+          email_invalid:
+            'Ese correo no es válido o el proveedor no lo acepta. Revisa que esté bien escrito.',
+          email_exists:
+            'Ya existe una cuenta con ese correo. Inicia sesión o recupera la contraseña.',
+          password_weak: 'La contraseña no cumple los requisitos. Usa al menos 12 caracteres.',
+          rate_limited: 'Has hecho demasiados intentos. Espera unos minutos y vuelve a probar.',
+          unavailable:
+            'El servicio de registro no está disponible ahora. Inténtalo de nuevo en unos minutos.',
+        } as const
+        feedback.setError(messages[result.errorCode])
         return
       }
       if (result.requiresEmailConfirmation) {

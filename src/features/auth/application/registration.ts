@@ -13,6 +13,43 @@ export const registrationInput = z.object({
   password: z.string().min(12).max(256),
 })
 
+export type RegistrationErrorCode =
+  | 'email_invalid'
+  | 'email_exists'
+  | 'password_weak'
+  | 'rate_limited'
+  | 'unavailable'
+
+function registrationErrorCode(error: {
+  code?: string | undefined
+  status?: number | undefined
+  message?: string | undefined
+}): RegistrationErrorCode {
+  const code = error.code?.toLowerCase() ?? ''
+  const message = error.message?.toLowerCase() ?? ''
+
+  if (
+    code === 'email_address_invalid' ||
+    code === 'invalid_email' ||
+    message.includes('email address')
+  ) {
+    return 'email_invalid'
+  }
+  if (
+    code === 'user_already_exists' ||
+    code === 'email_exists' ||
+    message.includes('already registered') ||
+    message.includes('already exists')
+  ) {
+    return 'email_exists'
+  }
+  if (code === 'weak_password' || error.status === 422 || message.includes('password')) {
+    return 'password_weak'
+  }
+  if (error.status === 429 || code.includes('rate_limit')) return 'rate_limited'
+  return 'unavailable'
+}
+
 /** Creates the restaurant owner's account without exposing administrative credentials. */
 export const register = createServerFn({ method: 'POST' })
   .validator(registrationInput)
@@ -22,7 +59,12 @@ export const register = createServerFn({ method: 'POST' })
       password: data.password,
       options: { data: { display_name: data.displayName } },
     })
-    if (error || !result.user) return { ok: false as const }
+    if (error || !result.user) {
+      return {
+        ok: false as const,
+        errorCode: registrationErrorCode(error ?? { message: 'missing_user' }),
+      }
+    }
     if (!result.session) return { ok: true as const, requiresEmailConfirmation: true as const }
 
     const session = await useSession<AuthSessionData>(authSessionConfig())

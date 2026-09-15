@@ -136,6 +136,7 @@ export function CashRegisterPage({
                   min="0"
                   onChange={(e) => setFloat(e.target.value)}
                   required
+                  step="0.01"
                   type="number"
                   value={float}
                 />
@@ -184,6 +185,7 @@ export function CashRegisterPage({
                     min="0.01"
                     onChange={(e) => setAmount(e.target.value)}
                     required
+                    step="0.01"
                     type="number"
                     value={amount}
                   />
@@ -226,6 +228,7 @@ export function CashRegisterPage({
                     min="0.01"
                     onChange={(e) => setOutAmount(e.target.value)}
                     required
+                    step="0.01"
                     type="number"
                     value={outAmount}
                   />
@@ -266,6 +269,7 @@ export function CashRegisterPage({
                     min="0"
                     onChange={(e) => setCounted(e.target.value)}
                     required
+                    step="0.01"
                     type="number"
                     value={counted}
                   />

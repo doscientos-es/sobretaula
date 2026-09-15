@@ -20,6 +20,10 @@ export async function openOperationalPage(page: Page, path: string, label: strin
   await page.waitForTimeout(500)
   await page.locator('body').waitFor({ state: 'visible' })
   await expectHealthyPage(page, label)
+  await expect(
+    page.locator('main[aria-busy="true"]'),
+    `${label}: la pantalla no debe quedarse en estado de carga`,
+  ).toHaveCount(0, { timeout: 15000 })
 }
 
 export async function expectFeedback(page: Page, label: string) {

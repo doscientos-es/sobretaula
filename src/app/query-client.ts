@@ -13,6 +13,9 @@ export function createQueryClient(): QueryClient {
         gcTime: 10 * 60_000,
         retry: 1,
         staleTime: 30_000,
+        // Route navigation and mutations already invalidate operational data.
+        // Avoid surprise Vercel/Supabase calls every time the window regains focus.
+        refetchOnWindowFocus: false,
       },
     },
   })

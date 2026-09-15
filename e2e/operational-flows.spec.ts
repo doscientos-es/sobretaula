@@ -53,6 +53,74 @@ test('@owner @cash @P0 abre la caja y conserva el estado', async ({ page }) => {
   await expect(page.getByRole('button', { name: /abrir|iniciar/i }).first()).toBeVisible()
 })
 
+test('@owner @reservations @P0 crea y cancela una reserva pública', async ({ page }) => {
+  await page.goto(`/reservar/${tenant}`, { waitUntil: 'domcontentloaded' })
+  await expectHealthyPage(page, 'public reservation lifecycle')
+  await page.locator('#public-service').waitFor({ state: 'visible' })
+  await page.waitForLoadState('networkidle')
+
+  const publicService = page.locator('#public-service')
+  await publicService.selectOption({ index: 1 })
+  await expect(
+    page.locator('#public-date option:not([value=""])').first(),
+    'public reservation: el turno debe ofrecer fechas futuras',
+  ).toBeAttached()
+  await page.locator('#public-date').selectOption({ index: 1 })
+  const time = page.locator('#public-time option:not([value=""])').first()
+  await expect(time, 'public reservation: debe haber una hora disponible').toBeAttached()
+  await page.locator('#public-time').selectOption({ index: 1 })
+
+  const unique = Date.now().toString()
+  await page.getByLabel(/tu nombre/i).fill(`E2E Reserva ${unique}`)
+  await page.getByLabel(/email/i).fill(`e2e-reservation-${unique}@example.test`)
+  await page.getByLabel(/teléfono/i).fill(`600${unique.slice(-6)}`)
+  for (const checkbox of await page.getByRole('checkbox').all()) await checkbox.check()
+  await page.getByRole('button', { name: /reservar mesa/i }).click()
+
+  await expect(page.locator('#booking-confirmed')).toBeVisible({ timeout: 15000 })
+  const managementLink = page.getByRole('link', { name: /consultar o cancelar/i })
+  await expect(managementLink).toBeVisible()
+  const managementUrl = await managementLink.getAttribute('href')
+  expect(managementUrl).toMatch(/^\/reserva\//)
+  if (!managementUrl) throw new Error('public reservation: falta el enlace de gestión')
+
+  await page.goto(managementUrl, { waitUntil: 'domcontentloaded' })
+  await expect(page.getByRole('button', { name: /cancelar esta reserva/i })).toBeVisible()
+  page.once('dialog', (dialog) => void dialog.accept())
+  await page.getByRole('button', { name: /cancelar esta reserva/i }).click()
+  await expect(page.getByText(/reserva cancelada/i)).toBeVisible()
+})
+
+test('@owner @cash @P0 abre, mueve y arquea la caja', async ({ page }) => {
+  await openOperationalPage(page, '/caja', 'owner cash lifecycle')
+  await expect(page.getByRole('heading', { name: 'Caja', exact: true })).toBeVisible()
+
+  const openButton = page.getByRole('button', { name: /^abrir caja$/i })
+  if (await openButton.isVisible()) {
+    await page.getByLabel(/fondo/i).fill('10.00')
+    await openButton.click()
+    await expect(page.getByText('Caja abierta', { exact: true })).toBeVisible()
+  }
+  await page.reload({ waitUntil: 'networkidle' })
+
+  await expect(page.locator('#movement-amount')).toBeVisible()
+  await page.locator('#movement-amount').fill('1.23')
+  await page.locator('#movement-reason').fill(`E2E entrada ${Date.now()}`)
+  await page.getByRole('button', { name: /registrar entrada/i }).click()
+  await expect(page.locator('[aria-live], [role="status"], [role="alert"]')).toContainText(
+    /entrada registrada/i,
+  )
+
+  const expectedText = await page.getByText(/efectivo esperado:/i).textContent()
+  const expectedMatch = expectedText?.match(/([\d.]+),([\d]{2})/)
+  expect(expectedMatch, 'owner cash lifecycle: debe mostrar el efectivo esperado').not.toBeNull()
+  if (!expectedMatch) throw new Error('owner cash lifecycle: falta el efectivo esperado')
+  const counted = `${expectedMatch[1].replaceAll('.', '')}.${expectedMatch[2]}`
+  await page.locator('#counted-cash').fill(counted)
+  await page.getByRole('button', { name: /cerrar y arquear/i }).click()
+  await expect(page.getByText(/caja cerrada|histórico de cierres/i).first()).toBeVisible()
+})
+
 test('@manager @tpv @P0 opera una mesa y llega al TPV', async ({ page }) => {
   await openOperationalPage(page, '/servicio', 'manager service')
   await page.getByRole('button', { name: /vista lista/i }).click()
@@ -82,7 +150,10 @@ test('@manager @tpv @P0 opera una mesa y llega al TPV', async ({ page }) => {
 
 test('@manager @authorization @P0 ve los controles financieros protegidos', async ({ page }) => {
   await openOperationalPage(page, '/tpv', 'manager permissions')
-  await expect(page.getByText(/cobrar|descuento|arqueo/i).first()).toBeVisible()
+  await expect(
+    page.getByRole('link', { name: 'Caja', exact: true }),
+    'manager permissions: el acceso a caja debe estar protegido para managers',
+  ).toBeVisible()
 })
 
 test('@host @reservations @P0 conecta reserva pública con agenda', async ({ page }) => {

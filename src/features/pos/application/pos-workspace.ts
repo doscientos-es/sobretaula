@@ -43,7 +43,11 @@ export const getPosWorkspace = createServerFn({ method: 'GET' })
     const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
     const now = new Date()
     const [board, menu] = await Promise.all([
-      loadServiceBoard(supabase, { now, tenantId: data.tenantId, venueId: data.venueId }),
+      loadServiceBoard(supabase, {
+        now,
+        tenantId: data.tenantId,
+        venueId: data.venueId,
+      }),
       loadMenuCatalog(supabase, data),
     ])
     const canAccessAccount = context.tenantMembership.role !== 'host'
@@ -76,6 +80,46 @@ export const getPosWorkspace = createServerFn({ method: 'GET' })
     }
   })
 
+/** Fast first-paint read for the terminal when no account is selected. */
+export const getPosBoard = createServerFn({ method: 'GET' })
+  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .validator(posWorkspaceInput)
+  .handler(async ({ context, data }): Promise<ServiceBoard> => {
+    const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    return loadServiceBoard(supabase, {
+      now: new Date(),
+      tenantId: data.tenantId,
+      venueId: data.venueId,
+    })
+  })
+
+export const getPosAccount = createServerFn({ method: 'GET' })
+  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .validator(posWorkspaceInput.extend({ sessionId: z.string().uuid() }))
+  .handler(async ({ context, data }): Promise<AccountView | undefined> => {
+    if (context.tenantMembership.role === 'host') return undefined
+    const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    const accountData = await loadAccount(supabase, data satisfies AccountQuery)
+    return accountData
+      ? {
+          ...accountData,
+          totals: computeAccountTotals(
+            accountData.lines,
+            accountData.payments,
+            accountData.session.discountCents,
+          ),
+        }
+      : undefined
+  })
+
+export const getPosMenu = createServerFn({ method: 'GET' })
+  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .validator(posWorkspaceInput)
+  .handler(async ({ context, data }): Promise<MenuCatalog> => {
+    const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    return loadMenuCatalog(supabase, data)
+  })
+
 export function posWorkspaceQuery(data: { tenantId: string; venueId: string; sessionId?: string }) {
   return queryOptions({
     queryFn: () => getPosWorkspace({ data }),
@@ -94,6 +138,33 @@ export function posWorkspaceQuery(data: { tenantId: string; venueId: string; ses
   })
 }
 
+export function posBoardQuery(data: { tenantId: string; venueId: string }) {
+  return queryOptions({
+    queryFn: () => getPosBoard({ data }),
+    queryKey: ['tenant', data.tenantId, 'venue', data.venueId, 'pos-board'],
+    staleTime: 5_000,
+    refetchOnWindowFocus: false,
+  })
+}
+
+export function posAccountQuery(data: { tenantId: string; venueId: string; sessionId: string }) {
+  return queryOptions({
+    queryFn: () => getPosAccount({ data }),
+    queryKey: ['tenant', data.tenantId, 'venue', data.venueId, 'pos-account', data.sessionId],
+    staleTime: 5_000,
+    refetchOnWindowFocus: false,
+  })
+}
+
+export function posMenuQuery(data: { tenantId: string; venueId: string }) {
+  return queryOptions({
+    queryFn: () => getPosMenu({ data }),
+    queryKey: ['tenant', data.tenantId, 'venue', data.venueId, 'pos-menu'],
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+  })
+}
+
 export function posManagementQuery(data: {
   tenantId: string
   venueId: string
@@ -106,7 +177,9 @@ export function posManagementQuery(data: {
       const [register, history, report] = await Promise.all([
         getCashRegister({ data: venueData }),
         listClosedCashRegisters({ data: venueData }),
-        getSalesReport({ data: { ...venueData, from: data.from, to: data.to } }),
+        getSalesReport({
+          data: { ...venueData, from: data.from, to: data.to },
+        }),
       ])
       return { history, register, report }
     },

@@ -3,8 +3,6 @@ import { createLazyFileRoute } from '@tanstack/react-router'
 
 import { TenantRoutePending } from '@/app/tenant-route-loader'
 import { getCashRegister, listClosedCashRegisters } from '@/features/cash-register'
-import { CashMethodSummary } from '@/features/cash-register/ui/cash-method-summary'
-import { CashMovementForm } from '@/features/cash-register/ui/cash-movement-form'
 import { CashRegisterPage } from '@/features/cash-register/ui/cash-register-page'
 import { ClosedRegisterSummary } from '@/features/cash-register/ui/closed-register-summary'
 import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
@@ -28,17 +26,6 @@ function CashRoute() {
   }
   return (
     <>
-      {register && (
-        <>
-          <CashMethodSummary salesByMethod={register.salesByMethod} />
-          <CashMovementForm
-            registerId={register.id as string}
-            tenantId={tenant.id}
-            venueId={venue.id}
-            onDone={refresh}
-          />
-        </>
-      )}
       <CashRegisterPage
         register={register}
         history={history.items}

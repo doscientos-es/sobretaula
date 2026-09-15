@@ -48,6 +48,7 @@ export function CashMovementForm({
           min="0.01"
           onChange={(event) => setAmount(event.target.value)}
           required
+          step="0.01"
           type="number"
           value={amount}
         />

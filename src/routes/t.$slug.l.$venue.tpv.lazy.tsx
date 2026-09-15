@@ -6,7 +6,13 @@ import { TenantRoutePending } from '@/app/tenant-route-loader'
 import { AccountOrderWorkspace, AccountPayments, type AccountView } from '@/features/account'
 import { CashRegisterPage } from '@/features/cash-register'
 import type { MenuCatalog } from '@/features/menu/application/menu'
-import { posManagementQuery, posWorkspaceQuery, PosTerminalPage } from '@/features/pos'
+import {
+  posAccountQuery,
+  posBoardQuery,
+  posManagementQuery,
+  posMenuQuery,
+  PosTerminalPage,
+} from '@/features/pos'
 import { getSalesReport, ProductSalesSummary, SalesReportPage } from '@/features/reports'
 import { KitchenQueue, type ServiceBoard } from '@/features/service'
 import { getZonedWeekBounds } from '@/shared/lib/date/zoned-time'
@@ -24,27 +30,42 @@ function PosTerminalRoute() {
   const { venue, sessionId } = Route.useLoaderData()
   const { tenant } = tenantRoute.useLoaderData()
   const { slug } = Route.useParams()
-  const workspace = useQuery(
-    posWorkspaceQuery({
+  const board = useQuery(posBoardQuery({ tenantId: tenant.id, venueId: venue.id }))
+  const account = useQuery({
+    ...posAccountQuery({
       tenantId: tenant.id,
       venueId: venue.id,
-      ...(sessionId ? { sessionId } : {}),
+      sessionId: sessionId ?? '',
     }),
-  )
+    enabled: Boolean(sessionId),
+  })
+  const menu = useQuery({
+    ...posMenuQuery({ tenantId: tenant.id, venueId: venue.id }),
+    enabled: Boolean(sessionId),
+  })
   const canManage = ['owner', 'manager'].includes(tenantMembership.role)
-  if (workspace.isPending) return <TenantRoutePending />
-  if (workspace.error) throw workspace.error
-  const { account, board, menu } = workspace.data
+  if (board.isPending) return <TenantRoutePending />
+  if (board.error) throw board.error
+  if (account.error) throw account.error
+  const serviceBoard = board.data
   return (
     <PosTerminalPage
-      {...(account && tenantMembership.role !== 'host'
-        ? { accountWorkspace: <PosTerminalAccountWorkspace account={account} menu={menu} /> }
+      {...(account.data && tenantMembership.role !== 'host'
+        ? menu.data
+          ? {
+              accountWorkspace: (
+                <PosTerminalAccountWorkspace account={account.data} menu={menu.data} />
+              ),
+            }
+          : {}
         : {})}
-      board={board}
+      board={serviceBoard}
       canAccessAccounts={tenantMembership.role !== 'host'}
       canManageCash={canManage}
       {...(tenantMembership.role !== 'host'
-        ? { kitchenWorkspace: <PosTerminalKitchenWorkspace board={board} /> }
+        ? {
+            kitchenWorkspace: <PosTerminalKitchenWorkspace board={serviceBoard} />,
+          }
         : {})}
       {...(canManage ? { managementWorkspace: <PosTerminalManagementWorkspace /> } : {})}
       slug={slug}
@@ -69,7 +90,7 @@ function PosTerminalAccountWorkspace({
   const refresh = () => {
     void queryClient
       .invalidateQueries({
-        queryKey: posWorkspaceQuery({
+        queryKey: posAccountQuery({
           sessionId: account.session.id,
           tenantId: tenant.id,
           venueId: venue.id,
@@ -106,7 +127,9 @@ function PosTerminalKitchenWorkspace({ board }: { board: ServiceBoard }) {
   const reload = useLoaderReload()
   const refresh = () => {
     void queryClient
-      .invalidateQueries({ queryKey: ['tenant', tenant.id, 'venue', venue.id, 'pos-workspace'] })
+      .invalidateQueries({
+        queryKey: ['tenant', tenant.id, 'venue', venue.id, 'pos-workspace'],
+      })
       .then(reload)
   }
   return (
@@ -153,8 +176,11 @@ function PosTerminalManagementWorkspace() {
   const refresh = () => {
     void queryClient
       .invalidateQueries({
-        queryKey: posManagementQuery({ ...period, tenantId: tenant.id, venueId: venue.id })
-          .queryKey,
+        queryKey: posManagementQuery({
+          ...period,
+          tenantId: tenant.id,
+          venueId: venue.id,
+        }).queryKey,
       })
       .then(reload)
   }
@@ -170,7 +196,9 @@ function PosTerminalManagementWorkspace() {
       <SalesReportPage
         initialPeriod={period}
         onRange={(from, to) =>
-          getSalesReport({ data: { from, tenantId: tenant.id, to, venueId: venue.id } })
+          getSalesReport({
+            data: { from, tenantId: tenant.id, to, venueId: venue.id },
+          })
         }
         report={report}
         timeZone={tenant.timezone}

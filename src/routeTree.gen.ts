@@ -258,7 +258,7 @@ const TSlugIndexRoute = TSlugIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => TSlugRoute,
-} as any)
+} as any).lazy(() => import('./routes/t.$slug.index.lazy').then((d) => d.Route))
 const TSlugAjustesRoute = TSlugAjustesRouteImport.update({
   id: '/ajustes',
   path: '/ajustes',

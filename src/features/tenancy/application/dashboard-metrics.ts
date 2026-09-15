@@ -14,6 +14,7 @@ import {
 
 export const dashboardMetricsInput = z.object({
   tenantId: z.string().uuid(),
+  timezone: z.string().min(1).optional(),
   // Older deployed route bundles did not send venueIds. Treat that request as
   // an empty dashboard while the deployment converges instead of rejecting it.
   venueIds: z.array(z.string().uuid()).default([]),
@@ -51,14 +52,13 @@ export const getDashboardMetrics = createServerFn({ method: 'GET' })
       }
     }
     const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
-    const tenantResult = await supabase
-      .from('tenants')
-      .select('timezone')
-      .eq('id', data.tenantId)
-      .single()
-    if (tenantResult.error || !tenantResult.data) throw new Error('dashboard_metrics_load_failed')
+    const timezone =
+      data.timezone ??
+      (await supabase.from('tenants').select('timezone').eq('id', data.tenantId).single()).data
+        ?.timezone
+    if (!timezone) throw new Error('dashboard_metrics_load_failed')
     const now = new Date()
-    const bounds = getZonedWeekBounds(now, tenantResult.data.timezone as string)
+    const bounds = getZonedWeekBounds(now, timezone)
     const [
       reservations,
       noShowsWeek,
@@ -183,9 +183,18 @@ export const getDashboardMetrics = createServerFn({ method: 'GET' })
     }
   })
 
-export const dashboardMetricsQuery = (tenantId: string, venueIds: readonly string[]) =>
+export const dashboardMetricsQuery = (
+  tenantId: string,
+  venueIds: readonly string[],
+  timezone?: string,
+) =>
   queryOptions({
-    queryKey: ['tenant-dashboard-metrics', tenantId, [...venueIds]],
-    queryFn: () => getDashboardMetrics({ data: { tenantId, venueIds: [...venueIds] } }),
-    staleTime: 15_000,
+    queryKey: ['tenant-dashboard-metrics', tenantId, [...venueIds], timezone],
+    queryFn: () =>
+      getDashboardMetrics({
+        data: { tenantId, timezone, venueIds: [...venueIds] },
+      }),
+    // Dashboard counters are intentionally near-live, but do not refetch on
+    // every short navigation when the tenant shell is still warm.
+    staleTime: 30_000,
   })

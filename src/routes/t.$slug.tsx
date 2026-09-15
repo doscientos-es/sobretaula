@@ -89,10 +89,14 @@ export const Route = createFileRoute('/t/$slug')({
     const tenant = await context.queryClient.ensureQueryData(tenantBySlugQuery(slug))
     if (!tenant) throw notFound()
 
-    return {
-      tenant,
-      tenantMembership: await getMembershipOrRedirect(tenant.id, tenant.slug, location.href),
-    }
+    const [tenantMembership] = await Promise.all([
+      getMembershipOrRedirect(tenant.id, tenant.slug, location.href),
+      // The tenant loader consumes the same cached result. Starting it here
+      // removes a navigation waterfall between membership and venue routing.
+      context.queryClient.ensureQueryData(tenantVenuesQuery(tenant.id)),
+    ])
+
+    return { tenant, tenantMembership }
   },
   loader: async ({ context, params }) => {
     const slug = parseTenantSlug(params.slug)
@@ -113,7 +117,10 @@ export const Route = createFileRoute('/t/$slug')({
         tenantId: tenant.id,
       })
     if (venuesResult.status === 'rejected')
-      reportTenantRouteFailure('venues', venuesResult.reason, { slug, tenantId: tenant.id })
+      reportTenantRouteFailure('venues', venuesResult.reason, {
+        slug,
+        tenantId: tenant.id,
+      })
     return {
       billingStatus: billingResult.value,
       membership: context.tenantMembership,
