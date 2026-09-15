@@ -25,7 +25,6 @@ import {
 } from '@doscientos/ui'
 import { useEffect, useMemo, useState } from 'react'
 
-import type { DemandForecast } from '@/features/forecasting'
 import { useAsyncEffect } from '@/shared/lib/react/use-async-effect'
 
 import {
@@ -69,7 +68,6 @@ export function ProductPage({
   venueId,
   onDone,
   suppliers,
-  forecast,
   purchaseOrders,
 }: {
   ingredients: Awaited<ReturnType<typeof listIngredients>>
@@ -79,7 +77,6 @@ export function ProductPage({
   venueId: string
   onDone: () => void
   suppliers: Awaited<ReturnType<typeof listSuppliers>>
-  forecast: DemandForecast
   purchaseOrders: Awaited<ReturnType<typeof listPurchaseOrders>>
 }) {
   const feedback = useFormFeedback()
@@ -100,12 +97,11 @@ export function ProductPage({
             ingredientName: ingredient.name,
             stock: stock.stock[ingredient.id] ?? 0,
             minimumStock: ingredient.minimumStock,
-            forecastDemand: forecast.ingredientDemand[ingredient.id] ?? 0,
             unitCostCents: ingredient.costCentsPerUnit,
           }),
         )
         .filter((recommendation) => recommendation.quantity > 0),
-    [forecast.ingredientDemand, ingredientItems, stock.stock],
+    [ingredientItems, stock.stock],
   )
   const [supplierId, setSupplierId] = useState('')
   const [supplierName, setSupplierName] = useState('')
@@ -326,30 +322,6 @@ export function ProductPage({
           </CardContent>
         </Card>
       )}
-      <details className="group">
-        <summary className="text-muted-foreground hover:text-foreground cursor-pointer list-none text-sm font-medium">
-          <span className="group-open:hidden">Ver previsión de demanda</span>
-          <span className="hidden group-open:inline">Ocultar previsión de demanda</span>
-        </summary>
-        <Card className="mt-3">
-          <CardHeader>
-            <CardTitle>Previsión de demanda</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-wrap gap-4 text-sm">
-            <span>
-              <strong>{forecast.expectedCovers}</strong> cubiertos previstos
-            </span>
-            <span>
-              <strong>{(forecast.expectedSalesCents / 100).toFixed(2)} €</strong> de ventas
-              estimadas
-            </span>
-            <span className="text-muted-foreground">
-              Confianza {forecast.confidence} ·{' '}
-              {forecast.sources.join(' · ') || 'sin datos históricos'}
-            </span>
-          </CardContent>
-        </Card>
-      </details>
       <Card>
         <CardHeader>
           <CardTitle>Ingredientes e inventario</CardTitle>
@@ -727,117 +699,125 @@ export function ProductPage({
           </form>
         </CardContent>
       </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle>Recepción de mercancía</CardTitle>
-          <p className="text-muted-foreground text-sm">
-            Registra un albarán y actualiza el stock con trazabilidad.
-          </p>
-        </CardHeader>
-        <CardContent>
-          <form
-            aria-busy={feedback.pending}
-            className="grid gap-3 md:grid-cols-5"
-            onSubmit={(event) => void receiveDelivery(event)}
-          >
-            <Field>
-              <FieldLabel htmlFor="delivery-supplier">Proveedor</FieldLabel>
-              <Select
-                id="delivery-supplier"
-                onSelectionChange={(key) => setSupplierId(String(key) === 'new' ? '' : String(key))}
-                selectedKey={supplierId || 'new'}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectList>
-                    <SelectItem id="new">Nuevo proveedor…</SelectItem>
-                    {suppliers.items.map((supplier) => (
-                      <SelectItem id={supplier.id} key={supplier.id}>
-                        {supplier.name}
-                      </SelectItem>
-                    ))}
-                  </SelectList>
-                </SelectContent>
-              </Select>
-            </Field>
-            {!supplierId ? (
+      <details className="group">
+        <summary className="text-muted-foreground hover:text-foreground cursor-pointer list-none text-sm font-medium">
+          <span className="group-open:hidden">Registrar recepción de mercancía</span>
+          <span className="hidden group-open:inline">Ocultar recepción de mercancía</span>
+        </summary>
+        <Card className="mt-3">
+          <CardHeader>
+            <CardTitle>Recepción de mercancía</CardTitle>
+            <p className="text-muted-foreground text-sm">
+              Registra un albarán y actualiza el stock con trazabilidad.
+            </p>
+          </CardHeader>
+          <CardContent>
+            <form
+              aria-busy={feedback.pending}
+              className="grid gap-3 md:grid-cols-5"
+              onSubmit={(event) => void receiveDelivery(event)}
+            >
               <Field>
-                <FieldLabel htmlFor="delivery-supplier-name">Nombre proveedor</FieldLabel>
+                <FieldLabel htmlFor="delivery-supplier">Proveedor</FieldLabel>
+                <Select
+                  id="delivery-supplier"
+                  onSelectionChange={(key) =>
+                    setSupplierId(String(key) === 'new' ? '' : String(key))
+                  }
+                  selectedKey={supplierId || 'new'}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectList>
+                      <SelectItem id="new">Nuevo proveedor…</SelectItem>
+                      {suppliers.items.map((supplier) => (
+                        <SelectItem id={supplier.id} key={supplier.id}>
+                          {supplier.name}
+                        </SelectItem>
+                      ))}
+                    </SelectList>
+                  </SelectContent>
+                </Select>
+              </Field>
+              {!supplierId ? (
+                <Field>
+                  <FieldLabel htmlFor="delivery-supplier-name">Nombre proveedor</FieldLabel>
+                  <Input
+                    id="delivery-supplier-name"
+                    onChange={(event) => setSupplierName(event.target.value)}
+                    required
+                    value={supplierName}
+                  />
+                </Field>
+              ) : null}
+              <Field>
+                <FieldLabel htmlFor="delivery-reference">Referencia albarán</FieldLabel>
                 <Input
-                  id="delivery-supplier-name"
-                  onChange={(event) => setSupplierName(event.target.value)}
+                  id="delivery-reference"
+                  onChange={(event) => setDeliveryReference(event.target.value)}
                   required
-                  value={supplierName}
+                  value={deliveryReference}
                 />
               </Field>
-            ) : null}
-            <Field>
-              <FieldLabel htmlFor="delivery-reference">Referencia albarán</FieldLabel>
-              <Input
-                id="delivery-reference"
-                onChange={(event) => setDeliveryReference(event.target.value)}
-                required
-                value={deliveryReference}
-              />
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="delivery-ingredient">Ingrediente</FieldLabel>
-              <Select
-                id="delivery-ingredient"
-                onSelectionChange={(key) =>
-                  setDeliveryIngredientId(String(key) === 'empty' ? '' : String(key))
-                }
-                selectedKey={deliveryIngredientId || 'empty'}
+              <Field>
+                <FieldLabel htmlFor="delivery-ingredient">Ingrediente</FieldLabel>
+                <Select
+                  id="delivery-ingredient"
+                  onSelectionChange={(key) =>
+                    setDeliveryIngredientId(String(key) === 'empty' ? '' : String(key))
+                  }
+                  selectedKey={deliveryIngredientId || 'empty'}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectList>
+                      <SelectItem id="empty">Seleccionar…</SelectItem>
+                      {ingredientItems.map((ingredient) => (
+                        <SelectItem id={ingredient.id} key={ingredient.id}>
+                          {ingredient.name}
+                        </SelectItem>
+                      ))}
+                    </SelectList>
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="delivery-quantity">Cantidad</FieldLabel>
+                <Input
+                  id="delivery-quantity"
+                  min="0.0001"
+                  onChange={(event) => setDeliveryQuantity(event.target.value)}
+                  required
+                  type="number"
+                  value={deliveryQuantity}
+                />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="delivery-cost">Coste céntimos/unidad</FieldLabel>
+                <Input
+                  id="delivery-cost"
+                  min="0"
+                  onChange={(event) => setDeliveryCost(event.target.value)}
+                  required
+                  type="number"
+                  value={deliveryCost}
+                />
+              </Field>
+              <Button
+                className="md:col-span-5 md:justify-self-end"
+                disabled={feedback.pending}
+                type="submit"
               >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectList>
-                    <SelectItem id="empty">Seleccionar…</SelectItem>
-                    {ingredientItems.map((ingredient) => (
-                      <SelectItem id={ingredient.id} key={ingredient.id}>
-                        {ingredient.name}
-                      </SelectItem>
-                    ))}
-                  </SelectList>
-                </SelectContent>
-              </Select>
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="delivery-quantity">Cantidad</FieldLabel>
-              <Input
-                id="delivery-quantity"
-                min="0.0001"
-                onChange={(event) => setDeliveryQuantity(event.target.value)}
-                required
-                type="number"
-                value={deliveryQuantity}
-              />
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="delivery-cost">Coste céntimos/unidad</FieldLabel>
-              <Input
-                id="delivery-cost"
-                min="0"
-                onChange={(event) => setDeliveryCost(event.target.value)}
-                required
-                type="number"
-                value={deliveryCost}
-              />
-            </Field>
-            <Button
-              className="md:col-span-5 md:justify-self-end"
-              disabled={feedback.pending}
-              type="submit"
-            >
-              {feedback.pending ? 'Recibiendo…' : 'Recibir albarán'}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+                {feedback.pending ? 'Recibiendo…' : 'Recibir albarán'}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </details>
       <Card aria-busy={ingredientLoading}>
         <CardHeader>
           <CardTitle>Stock actual</CardTitle>

@@ -8,7 +8,7 @@ import {
   Scripts,
 } from '@tanstack/react-router'
 import { CircleAlert, House, RefreshCw, Utensils } from 'lucide-react'
-import { lazy, Suspense, useSyncExternalStore, type ReactNode } from 'react'
+import { lazy, Suspense, useState, useSyncExternalStore, type ReactNode } from 'react'
 
 import { PwaRuntime } from '@/app/pwa-runtime'
 import { missingEnvironmentVariable, safeErrorDetails } from '@/app/root-error'
@@ -85,6 +85,9 @@ function RootError({ error, reset }: { error: unknown; reset: () => void }) {
     isPasswordRecoveryLocation,
     () => false,
   )
+  const [incidentId] = useState(
+    () => globalThis.crypto?.randomUUID?.() ?? `inc-${Math.random().toString(36).slice(2)}`,
+  )
 
   if (isPasswordRecovery) {
     return (
@@ -95,8 +98,6 @@ function RootError({ error, reset }: { error: unknown; reset: () => void }) {
   }
 
   const missingVariable = missingEnvironmentVariable(error)
-  const incidentId = globalThis.crypto?.randomUUID?.() ?? `inc-${Date.now().toString(36)}`
-
   return (
     <main aria-labelledby="error-title" className="st-error-page">
       <span aria-hidden="true" className="st-error-orb st-error-orb--top" />

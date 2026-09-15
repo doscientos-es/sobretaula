@@ -91,24 +91,26 @@ export async function loadServiceBoard(
   ].find(Boolean)
   if (error) throw new Error(`service_board_load_failed:${error.code}`)
 
-  const snapshotsResult = await supabase
-    .from('service_handover_snapshots')
-    .select('created_at, created_by, id, summary')
-    .eq('tenant_id', tenantId)
-    .eq('venue_id', venueId)
-    .order('created_at', { ascending: false })
-    .limit(50)
+  const [snapshotsResult, pacingResult] = await Promise.all([
+    supabase
+      .from('service_handover_snapshots')
+      .select('created_at, created_by, id, summary')
+      .eq('tenant_id', tenantId)
+      .eq('venue_id', venueId)
+      .order('created_at', { ascending: false })
+      .limit(50),
+    supabase
+      .from('venues')
+      .select(
+        'service_kitchen_alert_minutes, service_kitchen_alert_order_count, service_pacing_target_minutes',
+      )
+      .eq('id', venueId)
+      .eq('tenant_id', tenantId)
+      .maybeSingle(),
+  ])
   if (snapshotsResult.error && snapshotsResult.error.code !== '42P01')
     throw new Error(`service_handover_snapshots_load_failed:${snapshotsResult.error.code}`)
   const snapshotCreatorIds = (snapshotsResult.data ?? []).map((snapshot) => snapshot.created_by)
-  const pacingResult = await supabase
-    .from('venues')
-    .select(
-      'service_kitchen_alert_minutes, service_kitchen_alert_order_count, service_pacing_target_minutes',
-    )
-    .eq('id', venueId)
-    .eq('tenant_id', tenantId)
-    .maybeSingle()
   if (pacingResult.error && pacingResult.error.code !== '42703')
     throw new Error(`service_pacing_config_load_failed:${pacingResult.error.code}`)
   const recentOrderSince = new Date(now.getTime() - 30 * 60_000).toISOString()
@@ -125,16 +127,25 @@ export async function loadServiceBoard(
     throw new Error(`service_kitchen_load_failed:${recentOrdersResult.error.code}`)
   const recentOrderCount = recentOrdersResult.data?.length ?? 0
   const recentOrderIds = (recentOrdersResult.data ?? []).map((order) => order.id as string)
-  const kitchenTicketsResult = recentOrderIds.length
-    ? await supabase
-        .from('order_items')
-        .select(
-          'id, name_snapshot, notes, quantity, preparation_minutes, kitchen_station, status, created_at, orders!inner(session_id)',
-        )
-        .eq('tenant_id', tenantId)
-        .in('order_id', recentOrderIds)
-        .order('created_at')
-    : { data: [], error: null }
+  const [kitchenTicketsResult, initialKitchenItemsResult] = await Promise.all([
+    recentOrderIds.length
+      ? supabase
+          .from('order_items')
+          .select(
+            'id, name_snapshot, notes, quantity, preparation_minutes, kitchen_station, status, created_at, orders!inner(session_id)',
+          )
+          .eq('tenant_id', tenantId)
+          .in('order_id', recentOrderIds)
+          .order('created_at')
+      : Promise.resolve({ data: [], error: null }),
+    recentOrderIds.length
+      ? supabase
+          .from('order_items')
+          .select('kitchen_station, preparation_minutes, quantity, status')
+          .eq('tenant_id', tenantId)
+          .in('order_id', recentOrderIds)
+      : Promise.resolve({ data: [], error: null }),
+  ])
   if (kitchenTicketsResult.error && kitchenTicketsResult.error.code !== '42703')
     throw new Error(`service_kitchen_tickets_load_failed:${kitchenTicketsResult.error.code}`)
   const kitchenTickets: KitchenTicket[] = (kitchenTicketsResult.data ?? []).map((item) => ({
@@ -148,13 +159,7 @@ export async function loadServiceBoard(
     sessionId: (item.orders as { session_id: string }[])[0]?.session_id ?? '',
     createdAt: item.created_at as string,
   }))
-  let kitchenItemsResult = recentOrderIds.length
-    ? await supabase
-        .from('order_items')
-        .select('kitchen_station, preparation_minutes, quantity, status')
-        .eq('tenant_id', tenantId)
-        .in('order_id', recentOrderIds)
-    : { data: [], error: null }
+  let kitchenItemsResult = initialKitchenItemsResult
   if (kitchenItemsResult.error?.code === '42703' && recentOrderIds.length > 0) {
     const legacy = await supabase
       .from('order_items')

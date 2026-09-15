@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test'
 
 import { expectHealthyPage, openOperationalPage, operationalUrl, tenant } from './helpers'
 
-test.beforeEach(async ({ page }, testInfo) => {
+test.beforeEach(async ({ page: _page }, testInfo) => {
   const required = testInfo.title.match(/^@(owner|manager|host|waiter|accountant)/)?.[1]
   test.skip(
     !required || testInfo.project.name !== required,

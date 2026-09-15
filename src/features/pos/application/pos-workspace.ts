@@ -88,6 +88,9 @@ export function posWorkspaceQuery(data: { tenantId: string; venueId: string; ses
       data.sessionId ?? null,
     ],
     staleTime: 5_000,
+    // The service board is refreshed by explicit mutations/reloads. Avoid a
+    // duplicate full workspace request every time the tablet regains focus.
+    refetchOnWindowFocus: false,
   })
 }
 

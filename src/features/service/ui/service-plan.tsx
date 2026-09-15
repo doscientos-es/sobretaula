@@ -31,7 +31,6 @@ export function ServicePlan({
     <div>
       <svg
         aria-label="Plano de mesas interactivo"
-        role="group"
         className="border-border bg-background h-auto w-full rounded-lg border"
         focusable="false"
         viewBox={`0 0 ${version.widthCm} ${version.heightCm}`}
@@ -41,20 +40,7 @@ export function ServicePlan({
           const selected = selectedTableIds.includes(placement.id)
 
           return (
-            <g
-              aria-label={`Mesa ${placement.code}`}
-              key={placement.id}
-              onClick={() => onToggleTable(placement.id)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                  event.preventDefault()
-                  onToggleTable(placement.id)
-                }
-              }}
-              role="button"
-              style={{ cursor: 'pointer' }}
-              tabIndex={0}
-            >
+            <g aria-label={`Mesa ${placement.code}`} key={placement.id}>
               <rect
                 fill={STATUS_FILL[state?.status ?? 'free']}
                 height={placement.heightCm}
@@ -69,7 +55,6 @@ export function ServicePlan({
               <text
                 fill="var(--background)"
                 fontSize="32"
-                onClick={() => onToggleTable(placement.id)}
                 textAnchor="middle"
                 x={placement.xCm + placement.widthCm / 2}
                 y={placement.yCm + placement.heightCm / 2}
