@@ -37,11 +37,6 @@ import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
 import {
   createFloorPlanTable,
   createInitialFloorPlan,
-  createEventLayoutTemplate,
-  deleteEventLayoutTemplate,
-  updateEventLayoutTemplate,
-  createTableGroupPreset,
-  deleteTableGroupPreset,
   saveFloorPlanVersion,
 } from '../application/floor-plan'
 import { detectLayoutSourceKind } from '../application/layout-source-parser'
@@ -72,9 +67,7 @@ import {
   parseLayoutTemplate,
   serializeLayoutTemplate,
 } from '../domain/layout-template'
-import { inspectTableGroupPresetAvailability } from '../domain/table-group-presets'
 import { FloorPlanCanvas } from './floor-plan-canvas'
-import { FloorPlanEventTemplates, type EventTemplateValues } from './floor-plan-event-templates'
 import type { FloorPlanPreviewDevice } from './floor-plan-setup-card'
 
 function readLockedIds(lockStorageKey: string | undefined): string[] {
@@ -104,8 +97,6 @@ export function FloorPlanPage({
   const [tableAccessible, setTableAccessible] = useState(false)
   const [tableXCm, setTableXCm] = useState(50)
   const [tableYCm, setTableYCm] = useState(50)
-  const [presetName, setPresetName] = useState('Combinación')
-  const [presetMaxSeats, setPresetMaxSeats] = useState(8)
   const [versionName, setVersionName] = useState('Nueva versión')
   const [versionActivation, setVersionActivation] = useState('')
   const [versionDeactivation, setVersionDeactivation] = useState('')
@@ -122,7 +113,6 @@ export function FloorPlanPage({
   const [creatingArea, setCreatingArea] = useState(false)
   const [addElementAt, setAddElementAt] = useState<{ x: number; y: number }>()
   const activeArea = data.areas.find((area) => area.id === selectedAreaId) ?? data.areas[0]
-  const activePresets = data.tableGroupPresets.filter((preset) => preset.areaId === activeArea?.id)
   const activeVersion = activeArea
     ? (selectFloorPlanVersion(data.versions, activeArea.id) ??
       data.versions.find((version) => version.areaId === activeArea.id))
@@ -237,42 +227,6 @@ export function FloorPlanPage({
         )
       }
     })
-  }
-  async function createEventTemplate(values: EventTemplateValues) {
-    if (!activeVersion || !activeArea || !values.name.trim() || !values.activeFrom) {
-      feedback.setError('Indica nombre y fecha de inicio del evento.')
-      return
-    }
-    feedback.setPending()
-    try {
-      const payload = {
-        activeFrom: new Date(values.activeFrom).toISOString(),
-        activeTo: values.activeTo ? new Date(values.activeTo).toISOString() : null,
-        areaIds: [activeArea.id],
-        layout: createLayoutTemplate({
-          widthCm: activeVersion.widthCm,
-          heightCm: activeVersion.heightCm,
-          tables: placements,
-          elements,
-        }) as unknown as Record<string, unknown>,
-        name: values.name,
-        tenantId,
-        venueId,
-      }
-      if (values.editingEventId)
-        await updateEventLayoutTemplate({
-          data: { ...payload, templateId: values.editingEventId },
-        })
-      else await createEventLayoutTemplate({ data: payload })
-      feedback.setSuccess(
-        values.editingEventId
-          ? 'Plantilla de evento actualizada.'
-          : 'Plantilla de evento guardada.',
-      )
-      reload()
-    } catch {
-      feedback.setError('No se ha podido guardar la plantilla de evento.')
-    }
   }
   const layoutIssues = activeVersion
     ? [
@@ -688,42 +642,6 @@ export function FloorPlanPage({
     )
   }
 
-  async function saveTableGroupPreset() {
-    if (!activeArea || selectedIds.length < 2) {
-      feedback.setError('Selecciona al menos dos mesas para guardar una combinación.')
-      return
-    }
-    feedback.setPending()
-    try {
-      await createTableGroupPreset({
-        data: {
-          areaId: activeArea.id,
-          maxSeats: presetMaxSeats,
-          name: presetName,
-          tableIds: selectedIds,
-          tenantId,
-          venueId,
-        },
-      })
-      feedback.setSuccess('Combinación guardada.')
-      reload()
-    } catch {
-      feedback.setError('No se ha podido guardar la combinación.')
-    }
-  }
-
-  async function removeTableGroupPreset(presetId: string) {
-    if (!window.confirm('¿Eliminar esta combinación guardada?')) return
-    feedback.setPending()
-    try {
-      await deleteTableGroupPreset({ data: { presetId, tenantId, venueId } })
-      feedback.setSuccess('Combinación eliminada.')
-      reload()
-    } catch {
-      feedback.setError('No se ha podido eliminar la combinación.')
-    }
-  }
-
   async function saveVersion() {
     if (!activeVersion) return
     if (layoutIssues.length > 0) {
@@ -790,26 +708,6 @@ export function FloorPlanPage({
           </PageHeaderDescription>
         </div>
       </PageHeader>
-      {false && (
-        <FloorPlanEventTemplates
-          activeArea={activeArea}
-          activeVersion={activeVersion}
-          onDelete={async (template) => {
-            feedback.setPending()
-            try {
-              await deleteEventLayoutTemplate({
-                data: { templateId: template.id, tenantId, venueId },
-              })
-              feedback.setSuccess('Plantilla eliminada.')
-              reload()
-            } catch {
-              feedback.setError('No se ha podido borrar la plantilla.')
-            }
-          }}
-          onSave={createEventTemplate}
-          templates={data.eventLayoutTemplates ?? []}
-        />
-      )}
       {!activeVersion ? (
         <Card className="border-dashed">
           <CardContent className="flex min-h-48 items-center justify-center text-center">
@@ -956,70 +854,6 @@ export function FloorPlanPage({
                   <Button onClick={() => distributeSelected('y')} type="button" variant="outline">
                     Distribuir vertical
                   </Button>
-                </div>
-              )}
-              {selectedIds.length > 1 && (
-                <div className="border-border mt-4 grid gap-2 rounded-lg border p-3">
-                  <p className="text-sm font-medium">Guardar combinación</p>
-                  <Input
-                    aria-label="Nombre de la combinación"
-                    onChange={(event) => setPresetName(event.target.value)}
-                    placeholder="Nombre de la combinación"
-                    value={presetName}
-                  />
-                  <Input
-                    aria-label="Capacidad máxima de la combinación"
-                    min={1}
-                    onChange={(event) => setPresetMaxSeats(Number(event.target.value))}
-                    type="number"
-                    value={presetMaxSeats}
-                  />
-                  <Button
-                    disabled={feedback.pending}
-                    onClick={() => void saveTableGroupPreset()}
-                    type="button"
-                  >
-                    Guardar preset
-                  </Button>
-                </div>
-              )}
-              {false && activePresets.length > 0 && (
-                <div className="border-border mt-4 grid gap-2 rounded-lg border p-3">
-                  <p className="text-sm font-medium">Combinaciones guardadas</p>
-                  {activePresets.map((preset) => (
-                    <div className="flex gap-2" key={preset.id}>
-                      <Button
-                        className="min-w-0 flex-1"
-                        onClick={() => {
-                          const availability = inspectTableGroupPresetAvailability(
-                            preset,
-                            new Map(placements.map((table) => [table.id, 1])),
-                          )
-                          if (availability.missingTableIds.length > 0) {
-                            feedback.setError(
-                              `La combinación contiene ${availability.missingTableIds.length} mesa(s) que ya no existen en esta zona.`,
-                            )
-                            return
-                          }
-                          setSelectedIds(availability.availableTableIds)
-                          setSelectedId(availability.availableTableIds[0])
-                        }}
-                        type="button"
-                        variant="outline"
-                      >
-                        {preset.name} · {preset.maxSeats} pax
-                      </Button>
-                      <Button
-                        aria-label={`Eliminar combinación ${preset.name}`}
-                        disabled={feedback.pending}
-                        onClick={() => void removeTableGroupPreset(preset.id)}
-                        type="button"
-                        variant="ghost"
-                      >
-                        ×
-                      </Button>
-                    </div>
-                  ))}
                 </div>
               )}
               {selectedId &&

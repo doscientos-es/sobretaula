@@ -9,106 +9,9 @@ import { createRequestSupabaseClient } from '@/shared/lib/supabase/server/create
 
 import type { FloorPlanData } from '../domain/floor-plan'
 import { findPlacementCollisions, isPlacementWithinBounds } from '../domain/geometry'
-import { normalizeTableGroupPreset } from '../domain/table-group-presets'
 
 const tenantInput = z.object({ tenantId: z.string().uuid() })
 const venueInput = tenantInput.extend({ venueId: z.string().uuid() })
-export const eventLayoutTemplateInput = venueInput.extend({
-  activeFrom: z.string().datetime({ offset: true }),
-  activeTo: z.string().datetime({ offset: true }).nullable().optional(),
-  areaIds: z.array(z.string().uuid()).min(1).max(50),
-  layout: z.record(z.unknown()),
-  name: z.string().trim().min(1).max(120),
-})
-
-export const listEventLayoutTemplates = createServerFn({ method: 'GET' })
-  .middleware([authMiddleware, tenantMembershipMiddleware])
-  .validator(venueInput)
-  .handler(async ({ context, data }) => {
-    requireManager(context.tenantMembership.role)
-    const { data: templates, error } = await createRequestSupabaseClient(
-      context.tenantMembership.accessToken,
-    )
-      .from('event_layout_templates')
-      .select('id, name, area_ids, layout, active_from, active_to')
-      .eq('tenant_id', data.tenantId)
-      .eq('venue_id', data.venueId)
-      .order('active_from', { ascending: false })
-    if (error) throw new Error(`event_layout_template_list_failed:${error.code}`)
-    return { templates: templates ?? [] }
-  })
-
-export const createEventLayoutTemplate = createServerFn({ method: 'POST' })
-  .middleware([authMiddleware, tenantMembershipMiddleware])
-  .validator(eventLayoutTemplateInput)
-  .handler(async ({ context, data }) => {
-    requireManager(context.tenantMembership.role)
-    const activeTo = data.activeTo ?? null
-    if (activeTo && new Date(activeTo).getTime() <= new Date(data.activeFrom).getTime())
-      throw new Response('Invalid event interval', { status: 422 })
-    const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
-    const { data: template, error } = await supabase
-      .from('event_layout_templates')
-      .insert({
-        active_from: data.activeFrom,
-        active_to: activeTo,
-        area_ids: data.areaIds,
-        created_by: context.tenantMembership.userId,
-        layout: data.layout,
-        name: data.name,
-        tenant_id: data.tenantId,
-        venue_id: data.venueId,
-      })
-      .select('id')
-      .single()
-    if (error || !template)
-      throw new Error(`event_layout_template_create_failed:${error?.code ?? 'unknown'}`)
-    return { templateId: template.id as string }
-  })
-
-const updateEventLayoutTemplateInput = eventLayoutTemplateInput.extend({
-  templateId: z.string().uuid(),
-})
-const deleteEventLayoutTemplateInput = venueInput.extend({ templateId: z.string().uuid() })
-
-export const updateEventLayoutTemplate = createServerFn({ method: 'POST' })
-  .middleware([authMiddleware, tenantMembershipMiddleware])
-  .validator(updateEventLayoutTemplateInput)
-  .handler(async ({ context, data }) => {
-    requireManager(context.tenantMembership.role)
-    const activeTo = data.activeTo ?? null
-    if (activeTo && new Date(activeTo).getTime() <= new Date(data.activeFrom).getTime())
-      throw new Response('Invalid event interval', { status: 422 })
-    const { error } = await createRequestSupabaseClient(context.tenantMembership.accessToken)
-      .from('event_layout_templates')
-      .update({
-        active_from: data.activeFrom,
-        active_to: activeTo,
-        area_ids: data.areaIds,
-        layout: data.layout,
-        name: data.name,
-      })
-      .eq('id', data.templateId)
-      .eq('tenant_id', data.tenantId)
-      .eq('venue_id', data.venueId)
-    if (error) throw new Error(`event_layout_template_update_failed:${error.code}`)
-    return { templateId: data.templateId }
-  })
-
-export const deleteEventLayoutTemplate = createServerFn({ method: 'POST' })
-  .middleware([authMiddleware, tenantMembershipMiddleware])
-  .validator(deleteEventLayoutTemplateInput)
-  .handler(async ({ context, data }) => {
-    requireManager(context.tenantMembership.role)
-    const { error } = await createRequestSupabaseClient(context.tenantMembership.accessToken)
-      .from('event_layout_templates')
-      .delete()
-      .eq('id', data.templateId)
-      .eq('tenant_id', data.tenantId)
-      .eq('venue_id', data.venueId)
-    if (error) throw new Error(`event_layout_template_delete_failed:${error.code}`)
-    return { templateId: data.templateId }
-  })
 const initialFloorPlanInput = venueInput.extend({
   areaName: z.string().trim().min(1).max(100),
   heightCm: z.number().int().min(100).max(10_000),
@@ -173,12 +76,6 @@ const saveFloorPlanVersionInput = venueInput.extend({
   placements: z.array(placementInput).max(150),
   sourceVersionId: z.string().uuid(),
 })
-const tableGroupPresetInput = venueInput.extend({
-  areaId: z.string().uuid(),
-  maxSeats: z.number().int().positive(),
-  name: z.string().trim().min(1).max(100),
-  tableIds: z.array(z.string().uuid()).min(2).max(12),
-})
 
 function requireManager(role: string): void {
   if (role !== 'owner' && role !== 'manager') throw new Response('Forbidden', { status: 403 })
@@ -203,9 +100,7 @@ export async function loadFloorPlan(
     return {
       areas: [],
       elements: [],
-      eventLayoutTemplates: [],
       placements: [],
-      tableGroupPresets: [],
       versions: [],
     }
   }
@@ -239,9 +134,7 @@ export async function loadFloorPlan(
         venueId: area.venue_id,
       })),
       elements: [],
-      eventLayoutTemplates: [],
       placements: [],
-      tableGroupPresets: [],
       versions: [],
     }
   }
@@ -294,7 +187,6 @@ export async function loadFloorPlan(
       spaceType: (area.space_type ?? 'indoor') as FloorPlanData['areas'][number]['spaceType'],
       venueId: area.venue_id,
     })),
-    eventLayoutTemplates: [],
     elements: (elementsResult.data ?? []).map((element) => ({
       floorPlanVersionId: element.floor_plan_version_id,
       heightCm: element.height_cm,
@@ -315,7 +207,6 @@ export async function loadFloorPlan(
       xCm: placement.x_cm,
       yCm: placement.y_cm,
     })),
-    tableGroupPresets: [],
     versions: (versionsResult.data ?? []).map((version) => ({
       activeFrom: version.active_from,
       activeTo: version.active_to,
@@ -343,53 +234,6 @@ export function floorPlanQuery(tenantId: string, venueId: string) {
   })
 }
 
-export const createTableGroupPreset = createServerFn({ method: 'POST' })
-  .middleware([authMiddleware, tenantMembershipMiddleware])
-  .validator(tableGroupPresetInput)
-  .handler(async ({ context, data }) => {
-    requireManager(context.tenantMembership.role)
-    const normalized = normalizeTableGroupPreset(data)
-    if (!normalized) throw new Response('Invalid table group preset', { status: 422 })
-    const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
-    const { data: area, error: areaError } = await supabase
-      .from('areas')
-      .select('id')
-      .eq('id', data.areaId)
-      .eq('tenant_id', data.tenantId)
-      .eq('venue_id', data.venueId)
-      .single()
-    if (areaError || !area) throw new Response('Not found', { status: 404 })
-    const { data: preset, error } = await supabase
-      .from('table_group_presets')
-      .insert({
-        area_id: data.areaId,
-        max_seats: normalized.maxSeats,
-        name: normalized.name,
-        table_ids: normalized.tableIds,
-        tenant_id: data.tenantId,
-      })
-      .select('id')
-      .single()
-    if (error || !preset)
-      throw new Error(`table_group_preset_create_failed:${error?.code ?? 'unknown'}`)
-    return { presetId: preset.id as string }
-  })
-
-const deleteTableGroupPresetInput = venueInput.extend({ presetId: z.string().uuid() })
-
-export const deleteTableGroupPreset = createServerFn({ method: 'POST' })
-  .middleware([authMiddleware, tenantMembershipMiddleware])
-  .validator(deleteTableGroupPresetInput)
-  .handler(async ({ context, data }) => {
-    requireManager(context.tenantMembership.role)
-    const { error } = await createRequestSupabaseClient(context.tenantMembership.accessToken)
-      .from('table_group_presets')
-      .delete()
-      .eq('id', data.presetId)
-      .eq('tenant_id', data.tenantId)
-    if (error) throw new Error(`table_group_preset_delete_failed:${error.code}`)
-    return { presetId: data.presetId }
-  })
 
 export const createInitialFloorPlan = createServerFn({ method: 'POST' })
   .middleware([authMiddleware, tenantMembershipMiddleware])

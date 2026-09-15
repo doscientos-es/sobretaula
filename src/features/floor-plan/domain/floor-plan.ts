@@ -1,4 +1,3 @@
-import type { EventLayoutTemplate } from './event-layout-template'
 import type { PlanPlacement } from './geometry'
 
 export interface FloorPlanArea {
@@ -163,17 +162,7 @@ export interface FloorPlanElement extends PlanPlacement {
 
 export interface FloorPlanData {
   areas: readonly FloorPlanArea[]
-  eventLayoutTemplates?: readonly EventLayoutTemplate[]
   elements: readonly FloorPlanElement[]
   placements: readonly FloorPlanTablePlacement[]
-  tableGroupPresets: readonly TableGroupPreset[]
   versions: readonly FloorPlanVersion[]
-}
-
-export interface TableGroupPreset {
-  areaId: string
-  id: string
-  maxSeats: number
-  name: string
-  tableIds: string[]
 }
