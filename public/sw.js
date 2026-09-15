@@ -2,23 +2,27 @@ const CACHE_PREFIX = 'sobretaula-static-'
 const CACHE_VERSION = new URL(self.location.href).searchParams.get('v') ?? 'dev'
 const CACHE_NAME = `${CACHE_PREFIX}${CACHE_VERSION}`
 const STATIC_ASSETS = ['/icon.svg', '/manifest.webmanifest']
+const cachePromise = caches.open(CACHE_NAME)
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS)))
+  event.waitUntil(cachePromise.then((cache) => cache.addAll(STATIC_ASSETS)))
   self.skipWaiting()
 })
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches
-      .keys()
-      .then((keys) =>
-        Promise.all(
-          keys
-            .filter((key) => key.startsWith(CACHE_PREFIX) && key !== CACHE_NAME)
-            .map((key) => caches.delete(key)),
+    Promise.all([
+      self.registration.navigationPreload?.enable?.(),
+      caches
+        .keys()
+        .then((keys) =>
+          Promise.all(
+            keys
+              .filter((key) => key.startsWith(CACHE_PREFIX) && key !== CACHE_NAME)
+              .map((key) => caches.delete(key)),
+          ),
         ),
-      ),
+    ]),
   )
   self.clients.claim()
 })
@@ -26,6 +30,15 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const request = event.request
   if (request.method !== 'GET') return
+
+  // Start document navigation while the worker is waking up. Documents stay
+  // network-only because they can contain authenticated tenant data.
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      (async () => (await event.preloadResponse) || fetch(request))(),
+    )
+    return
+  }
 
   const url = new URL(request.url)
   if (url.origin !== self.location.origin) return
@@ -39,7 +52,7 @@ self.addEventListener('fetch', (event) => {
       return fetch(request).then((response) => {
         if (response.ok) {
           const copy = response.clone()
-          void caches.open(CACHE_NAME).then((cache) => cache.put(request, copy))
+          void cachePromise.then((cache) => cache.put(request, copy))
         }
         return response
       })

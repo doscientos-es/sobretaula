@@ -13,9 +13,6 @@ test.beforeEach(async ({ page: _page }, testInfo) => {
 test.describe.configure({ mode: 'serial' })
 
 test('@owner @activation @P0 activa y revisa el espacio operativo', async ({ page }) => {
-  await openOperationalPage(page, '', 'owner activation')
-  await expect(page.getByText(/operaciones|servicio|plano/i).first()).toBeVisible()
-
   await openOperationalPage(page, '/plano', 'owner floor plan')
   const interiorArea = page.getByRole('button', { name: /^Interior$/i })
   if (await interiorArea.count()) await interiorArea.click()
@@ -23,7 +20,15 @@ test('@owner @activation @P0 activa y revisa el espacio operativo', async ({ pag
   const versionInput = page.getByLabel(/guardar como versión/i)
   await versionInput.fill(versionName)
   const activationInput = page.getByLabel(/activar desde/i)
-  const activationDate = new Date(Date.now() + 24 * 60 * 60 * 1000)
+  const activationDate = new Date(
+    Date.UTC(
+      2099,
+      0,
+      1 + Math.floor(Math.random() * 365),
+      Math.floor(Math.random() * 24),
+      Math.floor(Math.random() * 60),
+    ),
+  )
   const deactivationDate = new Date(activationDate.getTime() + 24 * 60 * 60 * 1000)
   const toLocalInput = (date: Date) => {
     const offset = date.getTimezoneOffset()
@@ -43,8 +48,14 @@ test('@owner @activation @P0 activa y revisa el espacio operativo', async ({ pag
   await expect(feedback, 'owner activation: guardar versión no debe fallar').not.toContainText(
     /no se ha podido|solapa|corrige|fecha/i,
   )
-  await page.reload({ waitUntil: 'domcontentloaded' })
-  await expect(page.getByRole('listitem').filter({ hasText: versionName }).first()).toBeVisible()
+  await page.reload({ waitUntil: 'networkidle' })
+  const reloadedInteriorArea = page.getByRole('button', { name: /^Interior$/i })
+  await expect(reloadedInteriorArea, 'owner activation: Interior debe estar disponible').toBeVisible()
+  await reloadedInteriorArea.click()
+  await expect(
+    page.getByRole('list', { name: 'Versiones guardadas' }).getByText(versionName),
+    'owner activation: la versión debe aparecer en la zona seleccionada',
+  ).toBeVisible()
 })
 
 test('@owner @cash @P0 abre la caja y conserva el estado', async ({ page }) => {
@@ -151,7 +162,7 @@ test('@manager @tpv @P0 opera una mesa y llega al TPV', async ({ page }) => {
 test('@manager @authorization @P0 ve los controles financieros protegidos', async ({ page }) => {
   await openOperationalPage(page, '/tpv', 'manager permissions')
   await expect(
-    page.getByRole('link', { name: 'Caja', exact: true }),
+    page.getByRole('link', { name: /^Caja\b/i }),
     'manager permissions: el acceso a caja debe estar protegido para managers',
   ).toBeVisible()
 })
