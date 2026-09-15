@@ -126,7 +126,7 @@ function RootError({ error, reset }: { error: unknown; reset: () => void }) {
           <p className="st-error-reassurance">{t('error.reassurance')}</p>
           <details className="mt-4 text-left text-sm">
             <summary className="cursor-pointer font-medium">Ver detalles técnicos</summary>
-            <div className="mt-2 rounded-lg border bg-muted/40 p-3 font-mono text-xs break-words">
+            <div className="bg-muted/40 mt-2 rounded-lg border p-3 font-mono text-xs break-words">
               <p>incidente: {incidentId}</p>
               <p>ruta: {typeof window !== 'undefined' ? window.location.pathname : 'servidor'}</p>
               <p>error: {safeErrorDetails(error)}</p>
