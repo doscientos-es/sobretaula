@@ -10,7 +10,6 @@ describe('buildPurchaseRecommendation', () => {
         ingredientName: 'Tomate',
         stock: 4,
         minimumStock: 10,
-        forecastDemand: 20,
         unitCostCents: 150,
       }),
     ).toMatchObject({ quantity: 16, estimatedCostCents: 2400, reason: 'below_minimum' })
@@ -23,7 +22,6 @@ describe('buildPurchaseRecommendation', () => {
         ingredientName: 'Sal',
         stock: 20,
         minimumStock: 5,
-        forecastDemand: 10,
         unitCostCents: 100,
       }).quantity,
     ).toBe(0)

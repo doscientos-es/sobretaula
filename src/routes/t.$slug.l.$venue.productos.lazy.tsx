@@ -20,8 +20,7 @@ function ProductRoute() {
   const workspace = useQuery(productWorkspaceQuery(tenant.id, venue.id))
   if (workspace.isPending) return <TenantRoutePending />
   if (workspace.error) throw workspace.error
-  const { ingredients, menu, menuItems, stock, suppliers, purchaseOrders } =
-    workspace.data
+  const { ingredients, menu, menuItems, stock, suppliers, purchaseOrders } = workspace.data
   const onDone = () => {
     void queryClient
       .invalidateQueries({ queryKey: productWorkspaceQuery(tenant.id, venue.id).queryKey })

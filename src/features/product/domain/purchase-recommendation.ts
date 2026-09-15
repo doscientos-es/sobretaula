@@ -13,9 +13,6 @@ export function buildPurchaseRecommendation(input: PurchaseRecommendationInput) 
     ...input,
     quantity,
     estimatedCostCents: Math.round(quantity * input.unitCostCents),
-    reason:
-      input.stock < input.minimumStock
-        ? 'below_minimum'
-        : 'none',
+    reason: input.stock < input.minimumStock ? 'below_minimum' : 'none',
   } as const
 }
