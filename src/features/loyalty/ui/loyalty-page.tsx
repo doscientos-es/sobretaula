@@ -26,7 +26,7 @@ export function LoyaltyPage({ tenantId }: { tenantId: string }) {
       setGuests(result.items)
       setHasMore(result.hasMore)
     } catch {
-      setFeedback('No se ha podido cargar fidelización.')
+      setFeedback('No se han podido cargar los puntos de clientes.')
     }
   }, [page, tenantId])
   useAsyncEffect(load, [load])
@@ -71,15 +71,27 @@ export function LoyaltyPage({ tenantId }: { tenantId: string }) {
       setFeedback('No hay puntos suficientes o no se ha podido canjear.')
     }
   }
+  const numericPoints = Number(points)
+  const canSaveAdjustment =
+    selected !== null &&
+    reason.trim().length > 0 &&
+    Number.isInteger(numericPoints) &&
+    numericPoints !== 0
+  const canRedeem =
+    selected !== null &&
+    reason.trim().length > 0 &&
+    Number.isInteger(numericPoints) &&
+    numericPoints > 0
   return (
     <section className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle>Fidelización</CardTitle>
+          <CardTitle>Puntos de clientes</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground text-sm">
-            Convierte cada visita en recurrencia: 1 punto por euro y ajustes siempre auditados.
+            Consulta y ajusta los puntos de clientes habituales. Los pagos de reservas con cliente
+            identificado suman un punto por euro; los ajustes y canjes quedan registrados.
           </p>
           {feedback ? <output className="mt-2 block text-sm">{feedback}</output> : null}
         </CardContent>
@@ -111,25 +123,27 @@ export function LoyaltyPage({ tenantId }: { tenantId: string }) {
           ) : (
             <p className="text-muted-foreground text-sm">Todavía no hay clientes con saldo.</p>
           )}
-          <div className="mt-4 flex items-center justify-between">
-            <Button
-              disabled={page === 1}
-              onClick={() => setPage((current) => current - 1)}
-              type="button"
-              variant="outline"
-            >
-              Anterior
-            </Button>
-            <span className="text-muted-foreground text-sm">Página {page}</span>
-            <Button
-              disabled={!hasMore}
-              onClick={() => setPage((current) => current + 1)}
-              type="button"
-              variant="outline"
-            >
-              Siguiente
-            </Button>
-          </div>
+          {guests.length > 0 && (hasMore || page > 1) ? (
+            <div className="mt-4 flex items-center justify-between">
+              <Button
+                disabled={page === 1}
+                onClick={() => setPage((current) => current - 1)}
+                type="button"
+                variant="outline"
+              >
+                Anterior
+              </Button>
+              <span className="text-muted-foreground text-sm">Página {page}</span>
+              <Button
+                disabled={!hasMore}
+                onClick={() => setPage((current) => current + 1)}
+                type="button"
+                variant="outline"
+              >
+                Siguiente
+              </Button>
+            </div>
+          ) : null}
         </CardContent>
       </Card>
       {selected ? (
@@ -151,10 +165,15 @@ export function LoyaltyPage({ tenantId }: { tenantId: string }) {
               placeholder="Motivo obligatorio"
               value={reason}
             />
-            <Button onClick={() => void save()} type="button">
+            <Button disabled={!canSaveAdjustment} onClick={() => void save()} type="button">
               Guardar ajuste
             </Button>
-            <Button onClick={() => void redeem()} type="button" variant="outline">
+            <Button
+              disabled={!canRedeem}
+              onClick={() => void redeem()}
+              type="button"
+              variant="outline"
+            >
               Canjear recompensa
             </Button>
             <Button onClick={() => setSelected(null)} type="button" variant="outline">

@@ -344,7 +344,9 @@ const TSlugLVenueCajaRoute = TSlugLVenueCajaRouteImport.update({
   id: '/caja',
   path: '/caja',
   getParentRoute: () => TSlugLVenueRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/t.$slug.l.$venue.caja.lazy').then((d) => d.Route),
+)
 const TSlugLVenueClientesRoute = TSlugLVenueClientesRouteImport.update({
   id: '/clientes',
   path: '/clientes',
@@ -357,7 +359,11 @@ const TSlugLVenueComunicacionesRoute =
     id: '/comunicaciones',
     path: '/comunicaciones',
     getParentRoute: () => TSlugLVenueRoute,
-  } as any)
+  } as any).lazy(() =>
+    import('./routes/t.$slug.l.$venue.comunicaciones.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 const TSlugLVenueDocumentosComprasRoute =
   TSlugLVenueDocumentosComprasRouteImport.update({
     id: '/documentos-compras',
@@ -389,7 +395,9 @@ const TSlugLVenueFidelizacionRoute = TSlugLVenueFidelizacionRouteImport.update({
   id: '/fidelizacion',
   path: '/fidelizacion',
   getParentRoute: () => TSlugLVenueRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/t.$slug.l.$venue.fidelizacion.lazy').then((d) => d.Route),
+)
 const TSlugLVenueInformesRoute = TSlugLVenueInformesRouteImport.update({
   id: '/informes',
   path: '/informes',
@@ -445,18 +453,28 @@ const TSlugLVenueTarjetasRegaloRoute =
     id: '/tarjetas-regalo',
     path: '/tarjetas-regalo',
     getParentRoute: () => TSlugLVenueRoute,
-  } as any)
+  } as any).lazy(() =>
+    import('./routes/t.$slug.l.$venue.tarjetas-regalo.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 const TSlugLVenueTpvRoute = TSlugLVenueTpvRouteImport.update({
   id: '/tpv',
   path: '/tpv',
   getParentRoute: () => TSlugLVenueRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/t.$slug.l.$venue.tpv.lazy').then((d) => d.Route),
+)
 const TSlugLVenueCuentaSessionIdRoute =
   TSlugLVenueCuentaSessionIdRouteImport.update({
     id: '/cuenta/$sessionId',
     path: '/cuenta/$sessionId',
     getParentRoute: () => TSlugLVenueRoute,
-  } as any)
+  } as any).lazy(() =>
+    import('./routes/t.$slug.l.$venue.cuenta.$sessionId.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute

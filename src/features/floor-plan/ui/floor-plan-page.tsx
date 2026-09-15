@@ -1157,22 +1157,20 @@ export function FloorPlanPage({
                 </form>
               )}
               <div className="mt-6 border-t pt-6">
-                <div
-                  aria-label="Versiones guardadas"
-                  className="mb-4 space-y-1 text-xs"
-                  role="list"
-                >
+                <div className="mb-4 text-xs">
                   <p className="font-medium">Versiones guardadas</p>
-                  {data.versions
-                    .filter((version) => version.areaId === activeArea?.id)
-                    .map((version) => (
-                      <p key={version.id} role="listitem">
-                        {version.name} ·{' '}
-                        {version.activeFrom
-                          ? new Date(version.activeFrom).toLocaleString()
-                          : 'sin fecha'}
-                      </p>
-                    ))}
+                  <ul aria-label="Versiones guardadas" className="space-y-1">
+                    {data.versions
+                      .filter((version) => version.areaId === activeArea?.id)
+                      .map((version) => (
+                        <li key={version.id}>
+                          {version.name} ·{' '}
+                          {version.activeFrom
+                            ? new Date(version.activeFrom).toLocaleString()
+                            : 'sin fecha'}
+                        </li>
+                      ))}
+                  </ul>
                 </div>
                 <Field>
                   <FieldLabel htmlFor="version-name">Guardar como versión</FieldLabel>

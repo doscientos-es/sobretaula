@@ -39,7 +39,6 @@ import {
 } from '@/features/platform-billing'
 import { RedsysSubscriptionButton } from '@/features/platform-billing/ui/redsys-subscription-button'
 import {
-  getTenantBySlug,
   getTenantMembership,
   isTenantAdministrator,
   isTenantOperational,
@@ -87,9 +86,8 @@ export const Route = createFileRoute('/t/$slug')({
     const slug = parseTenantSlug(params.slug)
     if (!slug) throw notFound()
 
-    const tenant = await getTenantBySlug({ data: { slug } })
+    const tenant = await context.queryClient.ensureQueryData(tenantBySlugQuery(slug))
     if (!tenant) throw notFound()
-    context.queryClient.setQueryData(tenantBySlugQuery(slug).queryKey, tenant)
 
     return {
       tenant,

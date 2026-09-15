@@ -100,7 +100,8 @@ test('@host @service @P0 muestra la operación de sala', async ({ page }) => {
 test('@waiter @mobile @tpv @P0 expone la comanda en móvil', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await openOperationalPage(page, '/tpv', 'waiter mobile tpv')
-  await expect(page.getByText(/producto|comanda|cuenta/i).first()).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'TPV' })).toBeVisible()
+  await expect(page.getByText(/cuentas activas|comanda seleccionada/i)).toBeVisible()
 })
 
 test('@waiter @timekeeping @P1 permite acceder al fichaje', async ({ page }) => {

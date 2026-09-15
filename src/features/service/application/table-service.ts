@@ -32,6 +32,7 @@ import {
   updateAreaStaffInput,
   createHandoverSnapshotInput,
 } from './service-schema'
+import { insertTableSession } from './table-session'
 
 const seatReservationInput = serviceVenueInput.extend({
   operationId,
@@ -236,13 +237,7 @@ export const seatReservation = createServerFn({ method: 'POST' })
       tenant_id: data.tenantId,
       venue_id: reservation.venue_id,
     }
-    const { data: session, error: sessionError } = await supabase
-      .from('table_sessions')
-      .upsert(sessionInsert, { onConflict: 'operation_id' })
-      .select('id')
-      .single()
-    if (sessionError || !session)
-      throw new Error(`table_session_create_failed:${sessionError?.code ?? 'unknown'}`)
+    const session = await insertTableSession(supabase, sessionInsert, 'table_session_create_failed')
     const { error: statusError } = await supabase
       .from('reservations')
       .update({ status: 'seated' })
@@ -359,24 +354,19 @@ export const seatWalkIn = createServerFn({ method: 'POST' })
     if (seatingCapacity(board.tables, data.tableIds) < data.covers)
       throw new Response('Not enough seats', { status: 422 })
 
-    const { data: session, error } = await supabase
-      .from('table_sessions')
-      .upsert(
-        {
-          covers: data.covers,
-          opened_by: context.tenantMembership.userId,
-          operation_id: data.operationId ?? null,
-          status: 'open',
-          table_ids: data.tableIds,
-          tenant_id: data.tenantId,
-          venue_id: data.venueId,
-        },
-        { onConflict: 'operation_id' },
-      )
-      .select('id')
-      .single()
-    if (error || !session)
-      throw new Error(`table_session_create_failed:${error?.code ?? 'unknown'}`)
+    const session = await insertTableSession(
+      supabase,
+      {
+        covers: data.covers,
+        opened_by: context.tenantMembership.userId,
+        operation_id: data.operationId ?? null,
+        status: 'open',
+        table_ids: data.tableIds,
+        tenant_id: data.tenantId,
+        venue_id: data.venueId,
+      },
+      'table_session_create_failed',
+    )
 
     return { sessionId: session.id as string }
   })

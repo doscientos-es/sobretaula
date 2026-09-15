@@ -113,6 +113,7 @@ export function ReservationAgendaCard({
   const [transitionReason, setTransitionReason] = useState('')
   const [editingStartsAt, setEditingStartsAt] = useState('')
   const [editingPartySize, setEditingPartySize] = useState(1)
+  const hasDeposits = agenda.some((item) => item.deposit !== null)
 
   const visibleAgenda = agenda.filter((item) => {
     const normalizedQuery = query.trim().toLocaleLowerCase(locale)
@@ -124,7 +125,7 @@ export function ReservationAgendaCard({
     )
       return false
     if (statusFilter && statusFilter !== 'all' && item.status !== statusFilter) return false
-    if (depositFilter === 'all') return true
+    if (!hasDeposits || depositFilter === 'all') return true
     if (!item.deposit) return false
     if (depositFilter === 'pending') return item.deposit.status === 'pending'
     if (depositFilter === 'paid') return item.deposit.status === 'paid'
@@ -360,20 +361,22 @@ export function ReservationAgendaCard({
             </select>
           </Field>
         </div>
-        <label className="text-muted-foreground flex items-center gap-2 text-sm">
-          Depósito{' '}
-          <select
-            aria-label="Filtrar por depósito"
-            className="border-border rounded-md border bg-transparent px-2 py-1"
-            onChange={(event) => setDepositFilter(event.target.value as typeof depositFilter)}
-            value={depositFilter}
-          >
-            <option value="all">Todos</option>
-            <option value="pending">Pendientes</option>
-            <option value="paid">Pagados</option>
-            <option value="attention">Requieren atención</option>
-          </select>
-        </label>
+        {hasDeposits ? (
+          <label className="text-muted-foreground flex items-center gap-2 text-sm">
+            Depósito{' '}
+            <select
+              aria-label="Filtrar por depósito"
+              className="border-border rounded-md border bg-transparent px-2 py-1"
+              onChange={(event) => setDepositFilter(event.target.value as typeof depositFilter)}
+              value={depositFilter}
+            >
+              <option value="all">Todos</option>
+              <option value="pending">Pendientes</option>
+              <option value="paid">Pagados</option>
+              <option value="attention">Requieren atención</option>
+            </select>
+          </label>
+        ) : null}
         {visibleAgenda.length > 0 ? (
           <ul className="grid gap-2">
             {visibleAgenda.map((item) => (

@@ -84,7 +84,7 @@ test.describe('authenticated restaurant smoke', () => {
 
   test('product screen exposes inventory and recipe context', async ({ page }) => {
     await page.goto('/t/la-fonda-demo/l/principal/productos')
-    await expect(page.getByRole('heading', { name: 'Ingredientes e inventario' })).toBeVisible()
+    await expect(page.getByText('Ingredientes e inventario', { exact: true })).toBeVisible()
     await expect(page.getByText(/stock actual/i)).toBeVisible()
   })
 })

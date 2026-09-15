@@ -191,9 +191,9 @@ function MarketingLanding() {
             Añade solo lo que tu restaurante necesita.
           </h1>
           <p className="text-muted-foreground mt-5 max-w-2xl text-lg leading-8">
-            Empieza con una operativa sencilla y añade inventario, reservas, estadísticas o
-            fidelización cuando te aporten valor. SobreTaula crece contigo, sin obligarte a
-            sustituir lo que ya funciona.
+            Empieza con una operativa sencilla y añade inventario, reservas, estadísticas o puntos
+            de clientes cuando te aporten valor. SobreTaula crece contigo, sin obligarte a sustituir
+            lo que ya funciona.
           </p>
           <div className="mt-7 flex flex-wrap gap-3">
             <Link

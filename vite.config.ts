@@ -78,7 +78,6 @@ export default defineConfig(({ mode }) => {
                 name: 'vendor-ui',
                 test: /node_modules[\\/]@doscientos[\\/]ui[\\/]/,
                 entriesAware: true,
-                maxSize: 180_000,
                 priority: 15,
               },
               {

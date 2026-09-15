@@ -50,8 +50,8 @@ export const MODULE_DEFINITIONS: Record<ModuleKey, ModuleDefinition> = {
   },
   loyalty: {
     key: 'loyalty',
-    label: 'Clientes y fidelización',
-    description: 'Clientes, puntos, campañas y tarjetas regalo.',
+    label: 'Puntos de clientes',
+    description: 'Saldo de puntos y canjes manuales para clientes habituales.',
     dependencies: ['core'],
     roles: managementRoles,
   },

@@ -198,16 +198,6 @@ export async function loadServiceBoard(
   )
 
   const areaIds = [...new Set((tablesResult.data ?? []).map((table) => table.area_id))]
-  const presetsResult = areaIds.length
-    ? await supabase
-        .from('table_group_presets')
-        .select('id, max_seats, name, table_ids')
-        .eq('tenant_id', tenantId)
-        .in('area_id', areaIds)
-        .order('name')
-    : { data: [], error: null }
-  if (presetsResult.error)
-    throw new Error(`service_board_presets_load_failed:${presetsResult.error.code}`)
 
   const [areaAssignmentsResult, membersResult] = await Promise.all([
     areaIds.length
@@ -381,12 +371,7 @@ export async function loadServiceBoard(
       tables,
       windowMinutes: SERVICE_SHIFT_WINDOW_MINUTES,
     }),
-    tableGroupPresets: (presetsResult.data ?? []).map((preset) => ({
-      id: preset.id,
-      maxSeats: preset.max_seats,
-      name: preset.name,
-      tableIds: preset.table_ids as string[],
-    })),
+    tableGroupPresets: [],
     staff,
     waitlist,
   }

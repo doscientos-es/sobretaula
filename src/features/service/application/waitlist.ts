@@ -15,6 +15,7 @@ import {
   waitlistEntryInput,
   waitlistEntryReference,
 } from './service-schema'
+import { insertTableSession } from './table-session'
 
 /** Registers a party waiting at the door, with the guest record when it is given. */
 export const addToWaitlist = createServerFn({ method: 'POST' })
@@ -136,24 +137,19 @@ export const seatWaitlistEntry = createServerFn({ method: 'POST' })
     if (seatingCapacity(board.tables, data.tableIds) < (entry.party_size as number))
       throw new Response('Not enough seats', { status: 422 })
 
-    const { data: session, error } = await supabase
-      .from('table_sessions')
-      .upsert(
-        {
-          covers: entry.party_size,
-          opened_by: context.tenantMembership.userId,
-          operation_id: data.operationId ?? null,
-          status: 'open',
-          table_ids: data.tableIds,
-          tenant_id: data.tenantId,
-          venue_id: data.venueId,
-        },
-        { onConflict: 'operation_id' },
-      )
-      .select('id')
-      .single()
-    if (error || !session)
-      throw new Error(`table_session_create_failed:${error?.code ?? 'unknown'}`)
+    const session = await insertTableSession(
+      supabase,
+      {
+        covers: entry.party_size as number,
+        opened_by: context.tenantMembership.userId,
+        operation_id: data.operationId ?? null,
+        status: 'open',
+        table_ids: data.tableIds,
+        tenant_id: data.tenantId,
+        venue_id: data.venueId,
+      },
+      'table_session_create_failed',
+    )
 
     const { error: updateError } = await supabase
       .from('waitlist')
