@@ -1,9 +1,11 @@
+@import '@fontsource-variable/geist/wght.css';
 @import 'tailwindcss';
 @import '@doscientos/ui/styles.css';
 
 :root {
   color-scheme: light;
-  --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-sans: 'Geist Variable', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', sans-serif;
   --font-serif: var(--font-sans);
   font-family: var(--font-sans);
   font-synthesis: none;

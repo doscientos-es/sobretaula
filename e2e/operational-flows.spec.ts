@@ -50,7 +50,10 @@ test('@owner @activation @P0 activa y revisa el espacio operativo', async ({ pag
   )
   await page.reload({ waitUntil: 'networkidle' })
   const reloadedInteriorArea = page.getByRole('button', { name: /^Interior$/i })
-  await expect(reloadedInteriorArea, 'owner activation: Interior debe estar disponible').toBeVisible()
+  await expect(
+    reloadedInteriorArea,
+    'owner activation: Interior debe estar disponible',
+  ).toBeVisible()
   await reloadedInteriorArea.click()
   await expect(
     page.getByRole('list', { name: 'Versiones guardadas' }).getByText(versionName),

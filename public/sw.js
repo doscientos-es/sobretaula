@@ -34,9 +34,7 @@ self.addEventListener('fetch', (event) => {
   // Start document navigation while the worker is waking up. Documents stay
   // network-only because they can contain authenticated tenant data.
   if (request.mode === 'navigate') {
-    event.respondWith(
-      (async () => (await event.preloadResponse) || fetch(request))(),
-    )
+    event.respondWith((async () => (await event.preloadResponse) || fetch(request))())
     return
   }
 
