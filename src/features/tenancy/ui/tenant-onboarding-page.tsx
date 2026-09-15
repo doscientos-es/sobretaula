@@ -20,6 +20,7 @@ import { useLocale, useLocalePreference } from '@/shared/lib/i18n/locale-prefere
 import { createTranslator } from '@/shared/lib/i18n/messages'
 import { useAsyncEffect } from '@/shared/lib/react/use-async-effect'
 
+import { getTenantBySlug } from '../application/get-tenant-by-slug'
 import { tenantOnboardingErrorMessage } from '../application/onboarding-error'
 import { tenantSlugCandidate } from '../application/onboarding-schema'
 import { provisionTenantOnboarding } from '../application/provision-tenant-onboarding'
@@ -100,6 +101,7 @@ export function TenantOnboardingPage() {
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (step < 3) {
+      if (feedback.pending) return
       const valid =
         step === 1
           ? Boolean(name.trim() && slug.trim())
@@ -114,10 +116,27 @@ export function TenantOnboardingPage() {
       if (!valid) {
         feedback.setError(
           step === 1
-            ? 'Completa el nombre y la dirección de SobreTaula.'
+            ? 'Completa el nombre y el identificador del restaurante.'
             : 'Completa todos los datos de facturación.',
         )
         return
+      }
+      if (step === 1) {
+        feedback.setPending()
+        try {
+          const existingTenant = await getTenantBySlug({ data: { slug: slug.trim() } })
+          if (existingTenant) {
+            feedback.setError(
+              'Ese identificador ya está en uso. Elige otro para la URL de tu restaurante.',
+            )
+            return
+          }
+        } catch {
+          feedback.setError(
+            'No se ha podido comprobar el identificador. Revisa tu conexión e inténtalo de nuevo.',
+          )
+          return
+        }
       }
       setStep((current) => (current + 1) as 1 | 2 | 3)
       return
@@ -143,6 +162,7 @@ export function TenantOnboardingPage() {
       window.localStorage.removeItem('sobretaula:onboarding-draft')
       setCreatedTenant(tenant)
     } catch (error) {
+      if (error instanceof Response && error.status === 409) setStep(1)
       feedback.setError(tenantOnboardingErrorMessage(error))
     }
   }
@@ -213,7 +233,7 @@ export function TenantOnboardingPage() {
                     <div className="space-y-1">
                       <h2 className="text-sm font-semibold">1. Tu restaurante</h2>
                       <p className="text-muted-foreground text-sm">
-                        La dirección de SobreTaula identifica tu espacio y debe ser única.
+                        El identificador será único y formará parte de la URL de tu restaurante.
                       </p>
                     </div>
                     <div className="grid gap-5 sm:grid-cols-2">
@@ -227,7 +247,7 @@ export function TenantOnboardingPage() {
                         />
                       </Field>
                       <Field>
-                        <FieldLabel htmlFor="tenant-slug">Dirección de SobreTaula</FieldLabel>
+                        <FieldLabel htmlFor="tenant-slug">Identificador del restaurante</FieldLabel>
                         <Input
                           id="tenant-slug"
                           onChange={(event) => {

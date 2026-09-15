@@ -4,9 +4,9 @@ export function tenantOnboardingErrorMessage(error: unknown): string {
     if (error.status === 401)
       return 'Tu sesión ha caducado. Inicia sesión de nuevo para guardar el restaurante.'
     if (error.status === 409)
-      return 'Esta dirección de SobreTaula ya está en uso. Elige otra diferente.'
+      return 'Ese identificador ya está en uso. Elige otro para la URL de tu restaurante.'
     if (error.status === 422)
-      return 'Revisa la dirección de SobreTaula y los datos de facturación antes de continuar.'
+      return 'Revisa el identificador y los datos de facturación antes de continuar.'
     if (error.status === 503)
       return 'El alta está temporalmente en preparación. Espera unos minutos e inténtalo de nuevo.'
   }

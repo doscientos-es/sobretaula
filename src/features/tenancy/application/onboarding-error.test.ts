@@ -5,8 +5,8 @@ import { tenantOnboardingErrorMessage } from './onboarding-error'
 describe('tenant onboarding errors', () => {
   it.each([
     [401, 'Tu sesión ha caducado. Inicia sesión de nuevo para guardar el restaurante.'],
-    [409, 'Esta dirección de SobreTaula ya está en uso. Elige otra diferente.'],
-    [422, 'Revisa la dirección de SobreTaula y los datos de facturación antes de continuar.'],
+    [409, 'Ese identificador ya está en uso. Elige otro para la URL de tu restaurante.'],
+    [422, 'Revisa el identificador y los datos de facturación antes de continuar.'],
     [503, 'El alta está temporalmente en preparación. Espera unos minutos e inténtalo de nuevo.'],
   ])('explains the expected HTTP %i provisioning failure', (status, message) => {
     expect(tenantOnboardingErrorMessage(new Response(null, { status }))).toBe(message)
