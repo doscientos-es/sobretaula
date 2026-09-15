@@ -17,6 +17,8 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { createBrowserSupabaseClient } from '@/shared/lib/supabase/client'
 
 import { completeExternalAuthSession } from '../application/registration'
+import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '../domain/password-policy'
+import { PasswordRequirementsIndicator } from './password-requirements-indicator'
 
 /** Lets a user set a new password after Supabase validates a recovery email link. */
 export function PasswordResetPage() {
@@ -116,31 +118,42 @@ export function PasswordResetPage() {
             <form className="space-y-5" onSubmit={(event) => void submit(event)}>
               <Field>
                 <FieldLabel htmlFor="reset-password">Nueva contraseña</FieldLabel>
-                <Input
-                  autoComplete="new-password"
-                  id="reset-password"
-                  maxLength={256}
-                  minLength={12}
-                  onChange={(event) => setPassword(event.target.value)}
-                  placeholder="Crea una contraseña segura"
-                  required
-                  type="password"
-                  value={password}
-                />
+                <div className="relative">
+                  <Input
+                    autoComplete="new-password"
+                    className="pr-10"
+                    id="reset-password"
+                    maxLength={PASSWORD_MAX_LENGTH}
+                    minLength={PASSWORD_MIN_LENGTH}
+                    onChange={(event) => setPassword(event.target.value)}
+                    placeholder="Crea una contraseña segura"
+                    required
+                    type="password"
+                    value={password}
+                  />
+                  <PasswordRequirementsIndicator password={password} />
+                </div>
               </Field>
               <Field>
                 <FieldLabel htmlFor="reset-password-confirmation">Repite la contraseña</FieldLabel>
-                <Input
-                  autoComplete="new-password"
-                  id="reset-password-confirmation"
-                  maxLength={256}
-                  minLength={12}
-                  onChange={(event) => setPasswordConfirmation(event.target.value)}
-                  placeholder="Repite la contraseña"
-                  required
-                  type="password"
-                  value={passwordConfirmation}
-                />
+                <div className="relative">
+                  <Input
+                    autoComplete="new-password"
+                    className="pr-10"
+                    id="reset-password-confirmation"
+                    maxLength={PASSWORD_MAX_LENGTH}
+                    minLength={PASSWORD_MIN_LENGTH}
+                    onChange={(event) => setPasswordConfirmation(event.target.value)}
+                    placeholder="Repite la contraseña"
+                    required
+                    type="password"
+                    value={passwordConfirmation}
+                  />
+                  <PasswordRequirementsIndicator
+                    confirmation={password}
+                    password={passwordConfirmation}
+                  />
+                </div>
               </Field>
               <FormFeedback pendingLabel="Guardando contraseña…" state={feedback.state} />
               <Button className="w-full" disabled={feedback.pending} size="lg" type="submit">

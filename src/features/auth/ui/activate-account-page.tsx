@@ -17,6 +17,8 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { createBrowserSupabaseClient } from '@/shared/lib/supabase/client'
 
 import { completeExternalAuthSession } from '../application/registration'
+import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '../domain/password-policy'
+import { PasswordRequirementsIndicator } from './password-requirements-indicator'
 
 /** Exchanges Supabase's email-link session for the server session after an invited user sets a password. */
 export function ActivateAccountPage({
@@ -104,16 +106,21 @@ export function ActivateAccountPage({
             <form className="space-y-5" onSubmit={(event) => void submit(event)}>
               <Field>
                 <FieldLabel htmlFor="activation-password">Nueva contraseña</FieldLabel>
-                <Input
-                  autoComplete="new-password"
-                  id="activation-password"
-                  minLength={12}
-                  onChange={(event) => setPassword(event.target.value)}
-                  placeholder="Crea una contraseña segura"
-                  required
-                  type="password"
-                  value={password}
-                />
+                <div className="relative">
+                  <Input
+                    autoComplete="new-password"
+                    className="pr-10"
+                    id="activation-password"
+                    maxLength={PASSWORD_MAX_LENGTH}
+                    minLength={PASSWORD_MIN_LENGTH}
+                    onChange={(event) => setPassword(event.target.value)}
+                    placeholder="Crea una contraseña segura"
+                    required
+                    type="password"
+                    value={password}
+                  />
+                  <PasswordRequirementsIndicator password={password} />
+                </div>
               </Field>
               <FormFeedback pendingLabel="Activando cuenta…" state={feedback.state} />
               <Button className="w-full" disabled={feedback.pending} size="lg" type="submit">

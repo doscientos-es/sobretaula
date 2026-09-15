@@ -182,8 +182,20 @@ select:not([data-slot]):focus-visible {
   grid-template-rows: 1fr auto;
 }
 
-.st-register-shell > section {
+.st-auth-shell.st-register-shell > .st-register-layout {
+  z-index: 1;
+  display: grid;
+  width: min(100%, 30rem);
   box-shadow: none;
+}
+
+.st-register-intro {
+  display: none;
+  min-height: 39rem;
+  color: #fff9f7;
+  background:
+    radial-gradient(circle at 86% 12%, rgb(255 205 170 / 34%), transparent 28%),
+    linear-gradient(145deg, #d94732 0%, #f45d43 52%, #ff8b62 100%);
 }
 
 .st-auth-shell--orange::after {
@@ -985,6 +997,18 @@ select:not([data-slot]):focus-visible {
     width: min(100%, 64rem);
   }
 
+  .st-auth-shell.st-register-shell > .st-register-layout {
+    width: min(100%, 64rem);
+    grid-template-columns: minmax(0, 1.08fr) minmax(26rem, 0.92fr);
+    overflow: hidden;
+    border-radius: 1.25rem;
+    box-shadow: 0 1.5rem 3rem rgb(188 63 37 / 24%);
+  }
+
+  .st-register-intro {
+    display: flex;
+  }
+
   .st-auth-intro {
     min-height: 39rem;
   }
@@ -1019,6 +1043,17 @@ select:not([data-slot]):focus-visible {
 
   .st-error-help {
     padding: 1.5rem 2.5rem 1.75rem;
+  }
+}
+
+@media (min-width: 80rem) {
+  .st-auth-shell.st-register-shell > .st-register-layout {
+    grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr);
+  }
+
+  .st-register-layout .st-auth-card {
+    border-radius: 0;
+    box-shadow: none;
   }
 }
 

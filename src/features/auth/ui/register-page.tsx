@@ -13,10 +13,12 @@ import {
   useFormFeedback,
 } from '@doscientos/ui'
 import { Link } from '@tanstack/react-router'
-import { ArrowRight, Sparkles, Utensils } from 'lucide-react'
+import { ArrowRight, Check, Sparkles, Utensils } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 
 import { register } from '../application/registration'
+import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '../domain/password-policy'
+import { PasswordRequirementsIndicator } from './password-requirements-indicator'
 
 /** Starts self-service onboarding by creating the restaurant owner's identity. */
 export function RegisterPage() {
@@ -60,28 +62,57 @@ export function RegisterPage() {
     <main className="st-auth-shell st-auth-shell--orange st-register-shell">
       <span aria-hidden="true" className="st-auth-orb st-auth-orb--lime" />
       <span aria-hidden="true" className="st-auth-orb st-auth-orb--mint" />
-      <section className="relative grid w-full max-w-xl overflow-hidden rounded-[1.25rem] xl:max-w-5xl xl:grid-cols-[1.12fr_0.88fr]">
-        <div className="st-auth-intro hidden flex-col justify-between p-10 xl:flex">
+      <section className="st-register-layout">
+        <aside className="st-register-intro flex-col justify-between p-8 lg:p-10">
           <div>
             <span className="st-brand-mark bg-white/10 text-white shadow-none">
               <Utensils className="size-5" />
             </span>
             <p className="mt-8 text-sm font-medium text-orange-100">Tu restaurante, en orden</p>
-            <h1 className="mt-3 max-w-md text-5xl leading-[0.96] tracking-[-0.055em]">
+            <h1 className="mt-3 max-w-md text-4xl leading-[0.96] tracking-[-0.055em] xl:text-5xl">
               Empieza una operativa más tranquila.
             </h1>
+            <p className="mt-5 max-w-sm text-sm leading-6 text-white/80">
+              Reservas, sala y equipo en un solo sitio para que cada servicio fluya mejor.
+            </p>
           </div>
-          <p className="flex max-w-sm items-center gap-3 text-sm leading-6 text-white/75">
+          <div className="space-y-3">
+            <p className="text-xs font-semibold text-orange-100/80">
+              Lo tendrás listo paso a paso
+            </p>
+            <div className="grid gap-2 text-sm text-white/90">
+              {[
+                ['01', 'Tu espacio', 'Nombre, datos y preferencias'],
+                ['02', 'Tu sala', 'Mesas, reservas y turnos'],
+                ['03', 'Tu equipo', 'Roles y permisos para trabajar'],
+              ].map(([number, title, description]) => (
+                <div className="flex items-center gap-3 rounded-xl bg-white/10 px-3 py-2.5" key={number}>
+                  <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-white/15 text-xs font-bold">
+                    {number}
+                  </span>
+                  <span>
+                    <strong className="block font-semibold">{title}</strong>
+                    <span className="text-xs text-white/70">{description}</span>
+                  </span>
+                  <Check className="ml-auto size-4 text-orange-100/70" />
+                </div>
+              ))}
+            </div>
+          </div>
+          <p className="flex items-center gap-3 text-sm leading-6 text-white/75">
             <Sparkles className="size-4 shrink-0 text-orange-100" />
-            Crea tu espacio y prepara la sala para el siguiente servicio.
+            Configúralo en pocos minutos y prepara tu siguiente servicio.
           </p>
-        </div>
-        <Card className="st-auth-card w-full max-w-[30rem] justify-self-center border-0">
+        </aside>
+        <Card className="st-auth-card w-full max-w-120 border-0 justify-self-center">
           <CardHeader>
             <div className="mb-3 flex items-center gap-2">
               <img alt="" aria-hidden="true" className="size-9 rounded-xl" src="/icon.svg" />
               <span className="text-sm font-semibold tracking-[-0.02em]">SobreTaula</span>
             </div>
+            <p className="text-primary mb-2 text-sm font-semibold xl:hidden">
+              Empieza una operativa más tranquila.
+            </p>
             <CardTitle>Crea tu restaurante</CardTitle>
             <CardDescription>
               Empieza con tu cuenta de propietario; completarás los datos después.
@@ -116,16 +147,21 @@ export function RegisterPage() {
               </Field>
               <Field>
                 <FieldLabel htmlFor="register-password">Contraseña</FieldLabel>
-                <Input
-                  autoComplete="new-password"
-                  id="register-password"
-                  minLength={12}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Crea una contraseña segura"
-                  required
-                  type="password"
-                  value={password}
-                />
+                <div className="relative">
+                  <Input
+                    autoComplete="new-password"
+                    className="pr-10"
+                    id="register-password"
+                    maxLength={PASSWORD_MAX_LENGTH}
+                    minLength={PASSWORD_MIN_LENGTH}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Crea una contraseña segura"
+                    required
+                    type="password"
+                    value={password}
+                  />
+                  <PasswordRequirementsIndicator password={password} />
+                </div>
                 <FieldDescription>
                   Mínimo 12 caracteres. No la compartas con el equipo.
                 </FieldDescription>

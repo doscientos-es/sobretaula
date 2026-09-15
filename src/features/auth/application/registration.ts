@@ -5,12 +5,13 @@ import { z } from 'zod'
 import { createAnonSupabaseClient } from '@/shared/lib/supabase/server/create-server-client'
 
 import type { AuthSessionData } from '../domain/auth'
+import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '../domain/password-policy'
 import { authSessionConfig, toAuthSessionData } from '../infrastructure/server/session'
 
 export const registrationInput = z.object({
   displayName: z.string().trim().min(2).max(120),
   email: z.string().trim().toLowerCase().email().max(254),
-  password: z.string().min(12).max(256),
+  password: z.string().min(PASSWORD_MIN_LENGTH).max(PASSWORD_MAX_LENGTH),
 })
 
 export type RegistrationErrorCode =
