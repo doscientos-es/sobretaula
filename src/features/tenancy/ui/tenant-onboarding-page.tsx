@@ -18,7 +18,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { isValidSpanishTaxId, normalizeSpanishTaxId } from '@/shared/lib/fiscal/spanish-tax-id'
 import { SUPPORTED_LOCALES, type Locale } from '@/shared/lib/i18n/locale'
 import { useLocale, useLocalePreference } from '@/shared/lib/i18n/locale-preference'
-import { createTranslator } from '@/shared/lib/i18n/messages'
+import { createTranslator, formatMessage } from '@/shared/lib/i18n/messages'
 import { useAsyncEffect } from '@/shared/lib/react/use-async-effect'
 
 import { getTenantBySlug } from '../application/get-tenant-by-slug'
@@ -59,7 +59,7 @@ function OnboardingFieldError({
 }) {
   if (!error) return null
   return (
-    <p className="text-destructive text-sm" id={`${ONBOARDING_FIELD_IDS[field]}-error`}>
+    <p className="text-destructive text-pretty text-sm" id={`${ONBOARDING_FIELD_IDS[field]}-error`}>
       {error}
     </p>
   )
@@ -69,6 +69,8 @@ export function TenantOnboardingPage() {
   const interfaceLocale = useLocale('es')
   const { setLocale } = useLocalePreference()
   const t = createTranslator(interfaceLocale)
+  const message = (key: Parameters<typeof formatMessage>[1], values: Record<string, string | number>) =>
+    formatMessage(interfaceLocale, key, values)
   const feedback = useFormFeedback()
   const [step, setStep] = useState<1 | 2 | 3>(1)
   const [selectedLocale, setSelectedLocale] = useState<Locale | null>(null)
@@ -87,25 +89,23 @@ export function TenantOnboardingPage() {
   const stageStatuses = tenantOnboardingStageStatus(step, Boolean(createdTenant))
   const header = createdTenant
     ? {
-        description:
-          'Tu restaurante está listo. Autoriza el pago seguro para activar el acceso a la sala, las reservas y el equipo.',
-        title: 'Activa tu restaurante',
-      }
+      description: t('onboarding.header.ready.description'),
+      title: t('onboarding.header.ready.title'),
+    }
     : step === 1
       ? {
-          description: 'Empieza por los datos básicos. No se realiza ningún cargo en este paso.',
-          title: 'Configura tu restaurante',
-        }
+        description: t('onboarding.header.restaurant.description'),
+        title: t('onboarding.header.restaurant.title'),
+      }
       : step === 2
         ? {
-            description:
-              'Necesitamos estos datos para preparar tu suscripción; el pago se autoriza después.',
-            title: 'Datos de facturación',
-          }
+          description: t('onboarding.header.billing.description'),
+          title: t('onboarding.header.billing.title'),
+        }
         : {
-            description: 'Comprueba los datos antes de crear tu restaurante.',
-            title: 'Revisa los datos del alta',
-          }
+          description: t('onboarding.header.review.description'),
+          title: t('onboarding.header.review.title'),
+        }
   const draft = {
     name,
     slug,
@@ -182,25 +182,25 @@ export function TenantOnboardingPage() {
   function validateStep(): Partial<Record<OnboardingField, string>> {
     const errors: Partial<Record<OnboardingField, string>> = {}
     if (step === 1) {
-      if (!name.trim()) errors.name = 'Indica el nombre comercial del restaurante.'
-      if (!slug.trim()) errors.slug = 'Indica el identificador para la URL del restaurante.'
+      if (!name.trim()) errors.name = t('onboarding.validation.nameRequired')
+      if (!slug.trim()) errors.slug = t('onboarding.validation.slugRequired')
       else if (!/^[a-z0-9](?:[a-z0-9-]{1,48}[a-z0-9])$/.test(slug))
-        errors.slug = 'Usa minúsculas, números y guiones; entre 3 y 50 caracteres.'
+        errors.slug = t('onboarding.validation.slugInvalid')
       return errors
     }
 
-    if (!legalName.trim()) errors.legalName = 'Indica la razón social.'
-    if (!taxId.trim()) errors.taxId = 'Indica el NIF, NIE o CIF.'
+    if (!legalName.trim()) errors.legalName = t('onboarding.validation.legalNameRequired')
+    if (!taxId.trim()) errors.taxId = t('onboarding.validation.taxIdRequired')
     else if (!isValidSpanishTaxId(taxId))
-      errors.taxId = 'Revisa el formato y el carácter de control del NIF, NIE o CIF.'
-    if (!email.trim()) errors.email = 'Indica el correo de facturación.'
+      errors.taxId = t('onboarding.validation.taxIdInvalid')
+    if (!email.trim()) errors.email = t('onboarding.validation.billingEmailRequired')
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()))
-      errors.email = 'Escribe un correo de facturación válido.'
-    if (!addressLine.trim()) errors.addressLine = 'Indica la dirección fiscal.'
-    if (!city.trim()) errors.city = 'Indica la ciudad.'
-    if (!postalCode.trim()) errors.postalCode = 'Indica el código postal.'
+      errors.email = t('onboarding.validation.billingEmailInvalid')
+    if (!addressLine.trim()) errors.addressLine = t('onboarding.validation.addressRequired')
+    if (!city.trim()) errors.city = t('onboarding.validation.cityRequired')
+    if (!postalCode.trim()) errors.postalCode = t('onboarding.validation.postalCodeRequired')
     else if (!/^\d{5}$/.test(postalCode.trim()))
-      errors.postalCode = 'El código postal debe tener cinco cifras.'
+      errors.postalCode = t('onboarding.validation.postalCodeInvalid')
     return errors
   }
 
@@ -212,7 +212,7 @@ export function TenantOnboardingPage() {
       const firstInvalidField = ONBOARDING_FIELDS.find((field) => errors[field])
       if (firstInvalidField) {
         setFieldErrors(errors)
-        feedback.setError('Revisa los campos marcados antes de continuar.')
+        feedback.setError(t('onboarding.validation.reviewFields'))
         focusField(firstInvalidField)
         return
       }
@@ -222,15 +222,11 @@ export function TenantOnboardingPage() {
         try {
           const existingTenant = await getTenantBySlug({ data: { slug: slug.trim() } })
           if (existingTenant) {
-            feedback.setError(
-              'Ese identificador ya está en uso. Elige otro para la URL de tu restaurante.',
-            )
+            feedback.setError(t('onboarding.validation.slugTaken'))
             return
           }
         } catch {
-          feedback.setError(
-            'No se ha podido comprobar el identificador. Revisa tu conexión e inténtalo de nuevo.',
-          )
+          feedback.setError(t('onboarding.validation.slugCheckFailed'))
           return
         }
       }
@@ -271,19 +267,19 @@ export function TenantOnboardingPage() {
       <section className="st-onboarding-content relative w-full max-w-3xl">
         <div className="mb-6 max-w-xl">
           <h1 className="text-foreground mt-2 text-4xl tracking-[-0.05em]">
-            Vamos a preparar tu casa.
+            {t('onboarding.intro.title')}
           </h1>
           <p className="text-muted-foreground mt-2 text-sm leading-6">
-            Completa los datos esenciales. Configurarás la sala y el equipo justo después.
+            {t('onboarding.intro.description')}
           </p>
         </div>
         <p aria-live="polite" className="sr-only">
           {createdTenant
-            ? 'Restaurante creado. Paso 3 de 3: activación.'
-            : `Paso ${step} de 3: ${header.title}.`}
+            ? t('onboarding.progress.created')
+            : message('onboarding.progress.current', { step, title: header.title })}
         </p>
-        <ol className="mb-4 grid grid-cols-3 gap-2" aria-label="Progreso del alta">
-          {TENANT_ONBOARDING_STAGES.map((label, index) => {
+        <ol className="mb-4 grid grid-cols-3 gap-2" aria-label={t('onboarding.progress.label')}>
+          {TENANT_ONBOARDING_STAGES.map((stage, index) => {
             const status = stageStatuses[index]
             return (
               <li
@@ -294,7 +290,7 @@ export function TenantOnboardingPage() {
                   status === 'done' && 'border-success/40 bg-background/70',
                   status === 'upcoming' && 'bg-background/70',
                 )}
-                key={label}
+                key={stage}
               >
                 <div
                   className={cn(
@@ -306,13 +302,13 @@ export function TenantOnboardingPage() {
                 >
                   0{index + 1}
                 </div>
-                <div className="text-sm font-medium">{label}</div>
+                <div className="text-sm font-medium">{t(stage)}</div>
                 <span className="sr-only">
                   {status === 'done'
-                    ? 'Completado'
+                    ? t('onboarding.progress.done')
                     : status === 'active'
-                      ? 'Paso actual'
-                      : 'Pendiente'}
+                      ? t('onboarding.progress.currentStep')
+                      : t('onboarding.progress.pending')}
                 </span>
                 <div aria-hidden="true" className="bg-muted mt-2 h-1 overflow-hidden rounded-full">
                   <div
@@ -335,7 +331,7 @@ export function TenantOnboardingPage() {
                 <Building2 className="size-5" />
               </span>
               <span className="text-success inline-flex items-center gap-1.5 text-sm font-medium">
-                <CircleCheck className="size-4" /> Datos protegidos
+                <CircleCheck className="size-4" /> {t('onboarding.protectedData')}
               </span>
             </div>
             <CardTitle>{header.title}</CardTitle>
@@ -344,10 +340,7 @@ export function TenantOnboardingPage() {
           <CardContent>
             {createdTenant ? (
               <div className="space-y-5">
-                <p className="text-sm leading-6">
-                  Tu restaurante y su primer local ya están creados. Falta autorizar el pago seguro
-                  para activar el acceso a la sala, las reservas y el equipo.
-                </p>
+                <p className="text-sm leading-6">{t('onboarding.ready.description')}</p>
                 <div className="flex flex-wrap gap-3">
                   <Button
                     // The tenant is still setup_pending here. The billing route is protected by
@@ -356,7 +349,7 @@ export function TenantOnboardingPage() {
                     onPress={() => window.location.assign(`/t/${createdTenant.slug}`)}
                     size="lg"
                   >
-                    Continuar con el pago seguro
+                    {t('onboarding.ready.action')}
                   </Button>
                 </div>
               </div>
@@ -365,27 +358,27 @@ export function TenantOnboardingPage() {
                 {step === 1 ? (
                   <>
                     <div className="space-y-1">
-                      <h2 className="text-sm font-semibold">1. Tu restaurante</h2>
+                      <h2 className="text-sm font-semibold">{t('onboarding.restaurant.stepTitle')}</h2>
                       <p className="text-muted-foreground text-sm">
-                        El identificador será único y formará parte de la URL de tu restaurante.
+                        {t('onboarding.restaurant.slugHelp')}
                       </p>
                     </div>
                     <div className="grid gap-5 sm:grid-cols-2">
                       <Field>
-                        <FieldLabel htmlFor="tenant-name">Nombre comercial</FieldLabel>
+                        <FieldLabel htmlFor="tenant-name">{t('onboarding.field.name')}</FieldLabel>
                         <Input
                           aria-errormessage={fieldErrors.name ? 'tenant-name-error' : undefined}
                           aria-invalid={Boolean(fieldErrors.name)}
                           id="tenant-name"
                           onChange={(event) => changeName(event.target.value)}
-                          placeholder="Ej. Casa Muntaner"
+                          placeholder={t('onboarding.placeholder.businessName')}
                           required
                           value={name}
                         />
                         <OnboardingFieldError error={fieldErrors.name} field="name" />
                       </Field>
                       <Field>
-                        <FieldLabel htmlFor="tenant-slug">Identificador del restaurante</FieldLabel>
+                        <FieldLabel htmlFor="tenant-slug">{t('onboarding.field.slug')}</FieldLabel>
                         <Input
                           aria-errormessage={fieldErrors.slug ? 'tenant-slug-error' : undefined}
                           aria-invalid={Boolean(fieldErrors.slug)}
@@ -396,7 +389,7 @@ export function TenantOnboardingPage() {
                             clearFieldError('slug')
                           }}
                           pattern="[a-z0-9][a-z0-9-]{1,48}[a-z0-9]"
-                          placeholder="ej. casa-muntaner"
+                          placeholder={t('onboarding.placeholder.slug')}
                           required
                           value={slug}
                         />
@@ -429,14 +422,14 @@ export function TenantOnboardingPage() {
                 {step === 2 ? (
                   <>
                     <div className="space-y-1 pt-1">
-                      <h2 className="text-sm font-semibold">2. Datos de facturación</h2>
+                      <h2 className="text-sm font-semibold">{t('onboarding.header.billing.title')}</h2>
                       <p className="text-muted-foreground text-sm">
-                        Los necesitamos para preparar tu suscripción; el pago se autoriza después.
+                        {t('onboarding.header.billing.description')}
                       </p>
                     </div>
                     <div className="grid gap-5 sm:grid-cols-2">
                       <Field>
-                        <FieldLabel htmlFor="legal-name">Razón social</FieldLabel>
+                        <FieldLabel htmlFor="legal-name">{t('onboarding.field.legalName')}</FieldLabel>
                         <Input
                           aria-errormessage={fieldErrors.legalName ? 'legal-name-error' : undefined}
                           aria-invalid={Boolean(fieldErrors.legalName)}
@@ -446,14 +439,14 @@ export function TenantOnboardingPage() {
                             setLegalName(event.target.value)
                             clearFieldError('legalName')
                           }}
-                          placeholder="Ej. Casa Muntaner, S.L."
+                          placeholder={t('onboarding.placeholder.legalName')}
                           required
                           value={legalName}
                         />
                         <OnboardingFieldError error={fieldErrors.legalName} field="legalName" />
                       </Field>
                       <Field>
-                        <FieldLabel htmlFor="tax-id">NIF/CIF</FieldLabel>
+                        <FieldLabel htmlFor="tax-id">{t('onboarding.field.taxId')}</FieldLabel>
                         <Input
                           aria-describedby="tax-id-help"
                           aria-errormessage={fieldErrors.taxId ? 'tax-id-error' : undefined}
@@ -466,18 +459,20 @@ export function TenantOnboardingPage() {
                             setTaxId(event.target.value)
                             clearFieldError('taxId')
                           }}
-                          placeholder="Ej. B12345674"
+                          placeholder={t('onboarding.placeholder.taxId')}
                           required
                           spellCheck={false}
                           value={taxId}
                         />
                         <p className="text-muted-foreground text-xs text-pretty" id="tax-id-help">
-                          Ejemplos: 12345678Z, X1234567L o B12345674. Comprobamos su formato.
+                          {t('onboarding.taxIdHelp')}
                         </p>
                         <OnboardingFieldError error={fieldErrors.taxId} field="taxId" />
                       </Field>
                       <Field>
-                        <FieldLabel htmlFor="billing-email">Correo de facturación</FieldLabel>
+                        <FieldLabel htmlFor="billing-email">
+                          {t('onboarding.field.billingEmail')}
+                        </FieldLabel>
                         <Input
                           aria-errormessage={fieldErrors.email ? 'billing-email-error' : undefined}
                           aria-invalid={Boolean(fieldErrors.email)}
@@ -487,7 +482,7 @@ export function TenantOnboardingPage() {
                             setEmail(event.target.value)
                             clearFieldError('email')
                           }}
-                          placeholder="facturacion@casamuntaner.com"
+                          placeholder={t('onboarding.placeholder.billingEmail')}
                           required
                           type="email"
                           value={email}
@@ -495,7 +490,7 @@ export function TenantOnboardingPage() {
                         <OnboardingFieldError error={fieldErrors.email} field="email" />
                       </Field>
                       <Field>
-                        <FieldLabel htmlFor="address">Dirección fiscal</FieldLabel>
+                        <FieldLabel htmlFor="address">{t('onboarding.field.address')}</FieldLabel>
                         <Input
                           aria-errormessage={fieldErrors.addressLine ? 'address-error' : undefined}
                           aria-invalid={Boolean(fieldErrors.addressLine)}
@@ -505,14 +500,14 @@ export function TenantOnboardingPage() {
                             setAddressLine(event.target.value)
                             clearFieldError('addressLine')
                           }}
-                          placeholder="Ej. Carrer de Mallorca, 123"
+                          placeholder={t('onboarding.placeholder.address')}
                           required
                           value={addressLine}
                         />
                         <OnboardingFieldError error={fieldErrors.addressLine} field="addressLine" />
                       </Field>
                       <Field>
-                        <FieldLabel htmlFor="city">Ciudad</FieldLabel>
+                        <FieldLabel htmlFor="city">{t('onboarding.field.city')}</FieldLabel>
                         <Input
                           aria-errormessage={fieldErrors.city ? 'city-error' : undefined}
                           aria-invalid={Boolean(fieldErrors.city)}
@@ -522,14 +517,16 @@ export function TenantOnboardingPage() {
                             setCity(event.target.value)
                             clearFieldError('city')
                           }}
-                          placeholder="Ej. Barcelona"
+                          placeholder={t('onboarding.placeholder.city')}
                           required
                           value={city}
                         />
                         <OnboardingFieldError error={fieldErrors.city} field="city" />
                       </Field>
                       <Field>
-                        <FieldLabel htmlFor="postal-code">Código postal</FieldLabel>
+                        <FieldLabel htmlFor="postal-code">
+                          {t('onboarding.field.postalCode')}
+                        </FieldLabel>
                         <Input
                           aria-errormessage={
                             fieldErrors.postalCode ? 'postal-code-error' : undefined
@@ -543,7 +540,7 @@ export function TenantOnboardingPage() {
                             setPostalCode(event.target.value)
                             clearFieldError('postalCode')
                           }}
-                          placeholder="Ej. 08008"
+                          placeholder={t('onboarding.placeholder.postalCode')}
                           required
                           value={postalCode}
                         />
@@ -555,14 +552,19 @@ export function TenantOnboardingPage() {
                 {step === 3 ? (
                   <div className="space-y-3">
                     <p className="text-muted-foreground mb-4 text-sm">
-                      Revisa los datos. Podrás corregir cualquier bloque antes de crear el
-                      restaurante.
+                      {t('onboarding.review.description')}
                     </p>
                     {[
-                      ['Restaurante', name, slug],
-                      ['Idioma', defaultLocale === 'ca' ? 'Català' : 'Español', 'Europe/Madrid'],
-                      ['Facturación', legalName, `${taxId} · ${email}`],
-                      ['Dirección', addressLine, `${postalCode} · ${city}`],
+                      [t('onboarding.review.restaurant'), name, slug],
+                      [
+                        t('onboarding.review.language'),
+                        defaultLocale === 'ca'
+                          ? t('onboarding.language.catalan')
+                          : t('onboarding.language.spanish'),
+                        'Europe/Madrid',
+                      ],
+                      [t('onboarding.review.billing'), legalName, `${taxId} · ${email}`],
+                      [t('onboarding.review.address'), addressLine, `${postalCode} · ${city}`],
                     ].map(([label, primary, secondary]) => (
                       <div className="flex items-start gap-3 rounded-xl border p-4" key={label}>
                         <CircleCheck className="text-success mt-0.5 size-5 shrink-0" />
@@ -577,7 +579,7 @@ export function TenantOnboardingPage() {
                     ))}
                   </div>
                 ) : null}
-                <FormFeedback pendingLabel="Guardando configuración…" state={feedback.state} />
+                <FormFeedback pendingLabel={t('onboarding.pending')} state={feedback.state} />
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <Button
                     disabled={feedback.pending || step === 1}
@@ -585,10 +587,10 @@ export function TenantOnboardingPage() {
                     type="button"
                     variant="ghost"
                   >
-                    Atrás
+                    {t('onboarding.back')}
                   </Button>
                   <Button disabled={feedback.pending} size="lg" type="submit">
-                    {step === 3 ? 'Crear restaurante' : 'Continuar'}
+                    {step === 3 ? t('onboarding.create') : t('onboarding.continue')}
                   </Button>
                 </div>
               </form>

@@ -1,7 +1,11 @@
 export type TenantOnboardingStep = 1 | 2 | 3
 export type TenantOnboardingStageStatus = 'done' | 'active' | 'upcoming'
 
-export const TENANT_ONBOARDING_STAGES = ['Restaurante', 'Facturación', 'Activación'] as const
+export const TENANT_ONBOARDING_STAGES = [
+  'onboarding.step.restaurant',
+  'onboarding.step.billing',
+  'onboarding.step.activation',
+] as const
 
 export function tenantOnboardingStageStatus(
   step: TenantOnboardingStep,

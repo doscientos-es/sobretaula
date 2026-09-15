@@ -57,7 +57,7 @@ export function RegisterPage() {
   }
 
   return (
-    <main className="st-auth-shell st-auth-shell--orange">
+    <main className="st-auth-shell st-auth-shell--orange st-register-shell">
       <span aria-hidden="true" className="st-auth-orb st-auth-orb--lime" />
       <span aria-hidden="true" className="st-auth-orb st-auth-orb--mint" />
       <section className="relative grid w-full max-w-xl overflow-hidden rounded-[1.25rem] xl:max-w-5xl xl:grid-cols-[1.12fr_0.88fr]">
@@ -145,16 +145,16 @@ export function RegisterPage() {
           </CardContent>
         </Card>
       </section>
-      <footer className="z-[1] flex flex-wrap justify-center gap-x-4 gap-y-3 text-xs text-[#e8f6ee]/70">
+      <footer className="z-[1] flex flex-wrap justify-center gap-x-4 gap-y-3 text-xs text-[#5f4036]">
         <span>© {new Date().getFullYear()} SobreTaula</span>
         <Link
-          className="text-[#e8f6ee] underline-offset-[0.2em] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d7f36b]"
+          className="font-medium text-[#7e3025] underline underline-offset-[0.2em] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#7e3025]"
           to="/legal/privacidad"
         >
           Privacidad
         </Link>
         <Link
-          className="text-[#e8f6ee] underline-offset-[0.2em] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d7f36b]"
+          className="font-medium text-[#7e3025] underline underline-offset-[0.2em] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#7e3025]"
           to="/legal/condiciones-saas"
         >
           Condiciones

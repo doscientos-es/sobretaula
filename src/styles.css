@@ -178,6 +178,14 @@ select:not([data-slot]):focus-visible {
     linear-gradient(125deg, #fffaf7 0%, #fff 48%, #ffe4d8 100%);
 }
 
+.st-register-shell {
+  grid-template-rows: 1fr auto;
+}
+
+.st-register-shell > section {
+  box-shadow: none;
+}
+
 .st-auth-shell--orange::after {
   position: absolute;
   inset: -28%;
