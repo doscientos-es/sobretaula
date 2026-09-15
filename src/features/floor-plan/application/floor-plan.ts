@@ -279,11 +279,7 @@ export async function loadFloorPlan(
     } as typeof placementsResult
   }
 
-  const error = [
-    tablesResult.error,
-    placementsResult.error,
-    elementsResult.error,
-  ].find(Boolean)
+  const error = [tablesResult.error, placementsResult.error, elementsResult.error].find(Boolean)
   if (error) throw new Error(`floor_plan_load_failed:${error.code}`)
 
   const tableCodes = new Map((tablesResult.data ?? []).map((table) => [table.id, table.code]))

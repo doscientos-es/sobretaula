@@ -337,7 +337,9 @@ const TSlugLVenueBloquesRoute = TSlugLVenueBloquesRouteImport.update({
   id: '/bloques',
   path: '/bloques',
   getParentRoute: () => TSlugLVenueRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/t.$slug.l.$venue.bloques.lazy').then((d) => d.Route),
+)
 const TSlugLVenueCajaRoute = TSlugLVenueCajaRouteImport.update({
   id: '/caja',
   path: '/caja',
@@ -361,7 +363,11 @@ const TSlugLVenueDocumentosComprasRoute =
     id: '/documentos-compras',
     path: '/documentos-compras',
     getParentRoute: () => TSlugLVenueRoute,
-  } as any)
+  } as any).lazy(() =>
+    import('./routes/t.$slug.l.$venue.documentos-compras.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 const TSlugLVenueFichajeRoute = TSlugLVenueFichajeRouteImport.update({
   id: '/fichaje',
   path: '/fichaje',
@@ -394,7 +400,11 @@ const TSlugLVenuePedidosOnlineRoute =
     id: '/pedidos-online',
     path: '/pedidos-online',
     getParentRoute: () => TSlugLVenueRoute,
-  } as any)
+  } as any).lazy(() =>
+    import('./routes/t.$slug.l.$venue.pedidos-online.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 const TSlugLVenuePlanoRoute = TSlugLVenuePlanoRouteImport.update({
   id: '/plano',
   path: '/plano',
