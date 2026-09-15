@@ -462,7 +462,9 @@ export function ProductPage({
                 emptyState="No hay pedidos disponibles que coincidan."
                 getItemKey={(order) => order.id}
                 getItemLabel={(order) => `Pedido ${order.id.slice(0, 8)}`}
-                items={purchaseOrders.items.filter((order) => ['approved', 'sent'].includes(order.status))}
+                items={purchaseOrders.items.filter((order) =>
+                  ['approved', 'sent'].includes(order.status),
+                )}
                 label="Pedido relacionado (opcional)"
                 onSelectionChange={(key) => {
                   const id = key ? String(key) : ''
