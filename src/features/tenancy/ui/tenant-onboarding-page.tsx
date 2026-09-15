@@ -59,7 +59,7 @@ function OnboardingFieldError({
 }) {
   if (!error) return null
   return (
-    <p className="text-destructive text-pretty text-sm" id={`${ONBOARDING_FIELD_IDS[field]}-error`}>
+    <p className="text-destructive text-sm text-pretty" id={`${ONBOARDING_FIELD_IDS[field]}-error`}>
       {error}
     </p>
   )
@@ -69,8 +69,10 @@ export function TenantOnboardingPage() {
   const interfaceLocale = useLocale('es')
   const { setLocale } = useLocalePreference()
   const t = createTranslator(interfaceLocale)
-  const message = (key: Parameters<typeof formatMessage>[1], values: Record<string, string | number>) =>
-    formatMessage(interfaceLocale, key, values)
+  const message = (
+    key: Parameters<typeof formatMessage>[1],
+    values: Record<string, string | number>,
+  ) => formatMessage(interfaceLocale, key, values)
   const feedback = useFormFeedback()
   const [step, setStep] = useState<1 | 2 | 3>(1)
   const [selectedLocale, setSelectedLocale] = useState<Locale | null>(null)
@@ -89,23 +91,23 @@ export function TenantOnboardingPage() {
   const stageStatuses = tenantOnboardingStageStatus(step, Boolean(createdTenant))
   const header = createdTenant
     ? {
-      description: t('onboarding.header.ready.description'),
-      title: t('onboarding.header.ready.title'),
-    }
+        description: t('onboarding.header.ready.description'),
+        title: t('onboarding.header.ready.title'),
+      }
     : step === 1
       ? {
-        description: t('onboarding.header.restaurant.description'),
-        title: t('onboarding.header.restaurant.title'),
-      }
+          description: t('onboarding.header.restaurant.description'),
+          title: t('onboarding.header.restaurant.title'),
+        }
       : step === 2
         ? {
-          description: t('onboarding.header.billing.description'),
-          title: t('onboarding.header.billing.title'),
-        }
+            description: t('onboarding.header.billing.description'),
+            title: t('onboarding.header.billing.title'),
+          }
         : {
-          description: t('onboarding.header.review.description'),
-          title: t('onboarding.header.review.title'),
-        }
+            description: t('onboarding.header.review.description'),
+            title: t('onboarding.header.review.title'),
+          }
   const draft = {
     name,
     slug,
@@ -191,8 +193,7 @@ export function TenantOnboardingPage() {
 
     if (!legalName.trim()) errors.legalName = t('onboarding.validation.legalNameRequired')
     if (!taxId.trim()) errors.taxId = t('onboarding.validation.taxIdRequired')
-    else if (!isValidSpanishTaxId(taxId))
-      errors.taxId = t('onboarding.validation.taxIdInvalid')
+    else if (!isValidSpanishTaxId(taxId)) errors.taxId = t('onboarding.validation.taxIdInvalid')
     if (!email.trim()) errors.email = t('onboarding.validation.billingEmailRequired')
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()))
       errors.email = t('onboarding.validation.billingEmailInvalid')
@@ -358,7 +359,9 @@ export function TenantOnboardingPage() {
                 {step === 1 ? (
                   <>
                     <div className="space-y-1">
-                      <h2 className="text-sm font-semibold">{t('onboarding.restaurant.stepTitle')}</h2>
+                      <h2 className="text-sm font-semibold">
+                        {t('onboarding.restaurant.stepTitle')}
+                      </h2>
                       <p className="text-muted-foreground text-sm">
                         {t('onboarding.restaurant.slugHelp')}
                       </p>
@@ -422,14 +425,18 @@ export function TenantOnboardingPage() {
                 {step === 2 ? (
                   <>
                     <div className="space-y-1 pt-1">
-                      <h2 className="text-sm font-semibold">{t('onboarding.header.billing.title')}</h2>
+                      <h2 className="text-sm font-semibold">
+                        {t('onboarding.header.billing.title')}
+                      </h2>
                       <p className="text-muted-foreground text-sm">
                         {t('onboarding.header.billing.description')}
                       </p>
                     </div>
                     <div className="grid gap-5 sm:grid-cols-2">
                       <Field>
-                        <FieldLabel htmlFor="legal-name">{t('onboarding.field.legalName')}</FieldLabel>
+                        <FieldLabel htmlFor="legal-name">
+                          {t('onboarding.field.legalName')}
+                        </FieldLabel>
                         <Input
                           aria-errormessage={fieldErrors.legalName ? 'legal-name-error' : undefined}
                           aria-invalid={Boolean(fieldErrors.legalName)}

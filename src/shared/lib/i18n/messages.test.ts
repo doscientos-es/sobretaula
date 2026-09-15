@@ -29,9 +29,11 @@ describe('translate', () => {
 
   it('ships the onboarding flow in every supported locale', () => {
     expect(translate('es', 'onboarding.header.restaurant.title')).toBe('Configura tu restaurante')
-    expect(translate('ca', 'onboarding.header.restaurant.title')).toBe('Configura el teu restaurant')
-    expect(formatMessage('ca', 'onboarding.progress.current', { step: 2, title: 'Facturació' })).toBe(
-      'Pas 2 de 3: Facturació.',
+    expect(translate('ca', 'onboarding.header.restaurant.title')).toBe(
+      'Configura el teu restaurant',
     )
+    expect(
+      formatMessage('ca', 'onboarding.progress.current', { step: 2, title: 'Facturació' }),
+    ).toBe('Pas 2 de 3: Facturació.')
   })
 })
