@@ -1,7 +1,4 @@
-import {
-  PASSWORD_MIN_LENGTH,
-  passwordRequirements,
-} from '../domain/password-policy'
+import { PASSWORD_MIN_LENGTH, passwordRequirements } from '../domain/password-policy'
 
 /** Shows the status of the password policy without exposing the password itself. */
 export function PasswordRequirementsIndicator({
@@ -23,9 +20,7 @@ export function PasswordRequirementsIndicator({
   const unmetRequirements = requirements
     .filter((requirement) => !requirement.met)
     .map((requirement) => requirement.label)
-  const message = isValid
-    ? 'Contraseña válida'
-    : `Falta: ${unmetRequirements.join('. ')}.`
+  const message = isValid ? 'Contraseña válida' : `Falta: ${unmetRequirements.join('. ')}.`
   const color = isValid ? '#21835b' : '#c7503d'
 
   return (

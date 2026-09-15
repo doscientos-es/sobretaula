@@ -77,16 +77,17 @@ export function RegisterPage() {
             </p>
           </div>
           <div className="space-y-3">
-            <p className="text-xs font-semibold text-orange-100/80">
-              Lo tendrás listo paso a paso
-            </p>
+            <p className="text-xs font-semibold text-orange-100/80">Lo tendrás listo paso a paso</p>
             <div className="grid gap-2 text-sm text-white/90">
               {[
                 ['01', 'Tu espacio', 'Nombre, datos y preferencias'],
                 ['02', 'Tu sala', 'Mesas, reservas y turnos'],
                 ['03', 'Tu equipo', 'Roles y permisos para trabajar'],
               ].map(([number, title, description]) => (
-                <div className="flex items-center gap-3 rounded-xl bg-white/10 px-3 py-2.5" key={number}>
+                <div
+                  className="flex items-center gap-3 rounded-xl bg-white/10 px-3 py-2.5"
+                  key={number}
+                >
                   <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-white/15 text-xs font-bold">
                     {number}
                   </span>
@@ -104,7 +105,7 @@ export function RegisterPage() {
             Configúralo en pocos minutos y prepara tu siguiente servicio.
           </p>
         </aside>
-        <Card className="st-auth-card w-full max-w-120 border-0 justify-self-center">
+        <Card className="st-auth-card w-full max-w-120 justify-self-center border-0">
           <CardHeader>
             <div className="mb-3 flex items-center gap-2">
               <img alt="" aria-hidden="true" className="size-9 rounded-xl" src="/icon.svg" />

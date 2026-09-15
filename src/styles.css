@@ -381,73 +381,85 @@ select:not([data-slot]):focus-visible {
 .st-login-visual {
   position: relative;
   display: none;
-  overflow: hidden;
-  background: #3b281d;
-}
-
-.st-login-visual-image {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.st-login-visual-shade {
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(180deg, rgb(21 18 13 / 14%), rgb(21 18 13 / 68%)),
-    linear-gradient(90deg, rgb(20 12 7 / 38%), transparent 60%);
-}
-
-.st-login-reviews {
-  position: absolute;
-  right: clamp(2rem, 5vw, 5rem);
-  bottom: clamp(2rem, 5vw, 5rem);
-  left: clamp(2rem, 5vw, 5rem);
-  height: 11.5rem;
-}
-
-.st-login-review {
-  position: absolute;
-  inset: 0;
-  display: flex;
+  min-height: 100svh;
   flex-direction: column;
   justify-content: space-between;
-  padding: 1.75rem;
-  border: 1px solid rgb(255 255 255 / 30%);
-  border-radius: 1rem;
-  color: white;
-  background: rgb(50 35 25 / 42%);
-  backdrop-filter: blur(14px);
-  opacity: 0;
-  animation: st-review-cycle 18s infinite;
+  padding: clamp(2rem, 5vw, 5.5rem);
+  overflow: hidden;
+  color: #fff9f7;
+  background:
+    radial-gradient(circle at 86% 12%, rgb(255 205 170 / 34%), transparent 28%),
+    linear-gradient(145deg, #d94732 0%, #f45d43 52%, #ff8b62 100%);
 }
 
-.st-login-review p {
-  max-width: 34rem;
-  font-size: clamp(1.1rem, 1.6vw, 1.45rem);
-  font-weight: 550;
-  line-height: 1.35;
-  letter-spacing: -0.025em;
+.st-login-visual::after {
+  position: absolute;
+  inset: 0;
+  content: '';
+  opacity: 0.35;
+  background: radial-gradient(circle at 30% 75%, rgb(255 190 148 / 60%), transparent 32%);
+  pointer-events: none;
 }
 
-.st-login-review footer {
+.st-login-visual-mark,
+.st-login-visual-copy,
+.st-login-visual-list {
+  position: relative;
+  z-index: 1;
+}
+
+.st-login-visual-mark {
   display: flex;
-  gap: 0.25rem;
+  width: 3rem;
+  height: 3rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 1rem;
+  background: rgb(255 255 255 / 14%);
+}
+
+.st-login-visual-copy {
+  max-width: 34rem;
+  margin-top: auto;
+  padding-top: 5rem;
+}
+
+.st-login-visual-copy h2 {
+  max-width: 31rem;
+  margin-top: 0.75rem;
+  font-size: clamp(2.5rem, 4vw, 4.5rem);
+  font-weight: 600;
+  line-height: 0.98;
+  letter-spacing: -0.055em;
+}
+
+.st-login-visual-description {
+  max-width: 28rem;
+  margin-top: 1.25rem;
+  color: rgb(255 255 255 / 80%);
+  line-height: 1.6;
+}
+
+.st-login-visual-list {
+  display: grid;
+  gap: 0.625rem;
+  margin-top: 3rem;
+  color: rgb(255 255 255 / 88%);
+}
+
+.st-login-visual-list p {
+  display: flex;
+  max-width: 27rem;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgb(255 255 255 / 22%);
   font-size: 0.875rem;
 }
 
-.st-login-review footer span {
-  color: rgb(255 255 255 / 72%);
-}
-
-.st-login-review--two {
-  animation-delay: 6s;
-}
-
-.st-login-review--three {
-  animation-delay: 12s;
+.st-login-visual-list span {
+  color: rgb(255 255 255 / 70%);
 }
 
 @keyframes st-review-cycle {
@@ -1018,15 +1030,25 @@ select:not([data-slot]):focus-visible {
   }
 
   .st-login-page {
+    height: 100svh;
+    overflow: hidden;
     grid-template-columns: minmax(25rem, 43%) minmax(0, 57%);
   }
 
   .st-login-form-panel {
-    padding: clamp(2rem, 5vw, 5.5rem);
+    min-height: 0;
+    overflow-y: auto;
+    padding: 2rem clamp(2rem, 5vw, 5.5rem);
+  }
+
+  .st-login-form-content > .my-auto {
+    padding-block: 2rem;
   }
 
   .st-login-visual {
     display: flex;
+    min-height: 0;
+    height: 100svh;
   }
 
   .st-error-page {

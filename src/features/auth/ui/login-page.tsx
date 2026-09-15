@@ -16,8 +16,6 @@ import { Link } from '@tanstack/react-router'
 import { ArrowRight, Eye, EyeOff, Mail, Utensils } from 'lucide-react'
 import { useRef, useState } from 'react'
 
-const abstractRestaurant = '/abstract-restaurant-image.avif'
-
 import { login } from '../application/authentication'
 import { isSafeInternalRedirect } from '../domain/auth'
 
@@ -198,42 +196,30 @@ export function LoginPage({ redirectTo }: { redirectTo?: string }) {
           <p className="text-muted-foreground text-xs">© {new Date().getFullYear()} SobreTaula</p>
         </div>
       </section>
-      <aside aria-label="Experiencias de clientes" className="st-login-visual">
-        <img
-          alt=""
-          aria-hidden="true"
-          className="st-login-visual-image"
-          decoding="async"
-          fetchPriority="low"
-          loading="lazy"
-          src={abstractRestaurant}
-        />
-        <div className="st-login-visual-shade" />
-        <div aria-live="polite" className="st-login-reviews">
-          <article className="st-login-review st-login-review--one">
-            <p>“Hemos ganado tiempo en cada turno y el equipo sabe qué hacer en todo momento.”</p>
-            <footer>
-              <strong>Clara Vidal</strong>
-              <span>· Restaurante La Pineda</span>
-            </footer>
-          </article>
-          <article className="st-login-review st-login-review--two">
-            <p>“Las reservas, las mesas y las cuentas están por fin en el mismo sitio.”</p>
-            <footer>
-              <strong>Marc Ferrer</strong>
-              <span>· Casa Aurora</span>
-            </footer>
-          </article>
-          <article className="st-login-review st-login-review--three">
-            <p>
-              “Es más fácil preparar el servicio y cuidar de cada cliente desde que usamos
-              SobreTaula.”
-            </p>
-            <footer>
-              <strong>Elena Soler</strong>
-              <span>· La Mesa del Mar</span>
-            </footer>
-          </article>
+      <aside aria-label="SobreTaula para restaurantes" className="st-login-visual">
+        <span aria-hidden="true" className="st-login-visual-mark">
+          <Utensils className="size-6" />
+        </span>
+        <div className="st-login-visual-copy">
+          <p className="text-sm font-medium text-orange-100">Tu restaurante, en orden</p>
+          <h2>Todo el servicio vuelve a estar en tus manos.</h2>
+          <p className="st-login-visual-description">
+            Consulta reservas, organiza la sala y coordina al equipo desde un mismo espacio.
+          </p>
+        </div>
+        <div className="st-login-visual-list">
+          <p>
+            <strong>Antes del servicio</strong>
+            <span>Prepara sala y reservas</span>
+          </p>
+          <p>
+            <strong>Durante el servicio</strong>
+            <span>Coordina cada mesa</span>
+          </p>
+          <p>
+            <strong>Al terminar</strong>
+            <span>Revisa cómo ha ido el turno</span>
+          </p>
         </div>
       </aside>
     </main>
