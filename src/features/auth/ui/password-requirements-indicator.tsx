@@ -1,35 +1,32 @@
-import { PASSWORD_MIN_LENGTH, passwordRequirements } from '../domain/password-policy'
-
-/** Shows the status of the password policy without exposing the password itself. */
+/**
+ * Displays generic password-feedback progress without owning any password policy.
+ * This component is intentionally self-contained so it can move to `@doscientos/ui`.
+ */
 export function PasswordRequirementsIndicator({
-  confirmation,
-  password,
+  isValid,
+  label,
+  progress,
 }: {
-  confirmation?: string
-  password: string
+  /** Whether every requirement supplied by the consumer is met. */
+  isValid: boolean
+  /** Accessible status and native hover tooltip supplied by the consumer. */
+  label: string
+  /** Completion percentage, clamped to the visible 0–100 range. */
+  progress: number
 }) {
-  const requirements = passwordRequirements(password, confirmation)
-  const isValid = requirements.every((requirement) => requirement.met)
-  const lengthProgress = Math.min(1, password.length / PASSWORD_MIN_LENGTH)
-  const confirmationProgress =
-    confirmation === undefined ? 1 : Number(password.length > 0 && password === confirmation)
-  const progress =
-    confirmation === undefined
-      ? lengthProgress * 100
-      : ((lengthProgress + confirmationProgress) / requirements.length) * 100
-  const unmetRequirements = requirements
-    .filter((requirement) => !requirement.met)
-    .map((requirement) => requirement.label)
-  const message = isValid ? 'Contraseña válida' : `Falta: ${unmetRequirements.join('. ')}.`
-  const color = isValid ? '#21835b' : '#c7503d'
+  const normalizedProgress = Math.max(0, Math.min(100, progress))
+  const color = isValid ? 'var(--success)' : 'var(--primary)'
 
   return (
     <span
-      aria-label={message}
-      className="absolute inset-y-0 right-3 m-auto grid size-4 place-items-center rounded-full"
-      role="img"
-      style={{ background: `conic-gradient(${color} ${progress}%, #e8e8e9 ${progress}% 100%)` }}
-      title={message}
+      aria-label={label}
+      className="grid size-4 place-items-center rounded-full"
+      data-slot="password-requirements-indicator"
+      role="status"
+      style={{
+        background: `conic-gradient(${color} ${normalizedProgress}%, var(--border) ${normalizedProgress}% 100%)`,
+      }}
+      title={label}
     >
       <span aria-hidden="true" className="size-2 rounded-full bg-white" />
     </span>

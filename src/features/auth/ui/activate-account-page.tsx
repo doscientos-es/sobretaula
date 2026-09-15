@@ -18,7 +18,7 @@ import { createBrowserSupabaseClient } from '@/shared/lib/supabase/client'
 
 import { completeExternalAuthSession } from '../application/registration'
 import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '../domain/password-policy'
-import { PasswordRequirementsIndicator } from './password-requirements-indicator'
+import { PasswordPolicyIndicator } from './password-policy-indicator'
 
 /** Exchanges Supabase's email-link session for the server session after an invited user sets a password. */
 export function ActivateAccountPage({
@@ -119,7 +119,7 @@ export function ActivateAccountPage({
                     type="password"
                     value={password}
                   />
-                  <PasswordRequirementsIndicator password={password} />
+                  <PasswordPolicyIndicator password={password} />
                 </div>
               </Field>
               <FormFeedback pendingLabel="Activando cuenta…" state={feedback.state} />

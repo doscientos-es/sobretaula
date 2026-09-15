@@ -64,6 +64,15 @@ body {
   outline-offset: 2px;
 }
 
+/* InputGroup owns the visible focus treatment so joined addons and the control
+ * read as a single interactive field, without a second outline on the input. */
+[data-slot='input-group'] [data-slot='input-group-control']:focus-visible {
+  border-color: transparent;
+  outline: none;
+  outline-offset: 0;
+  box-shadow: none;
+}
+
 /* Keep interactive controls usable on touch devices and keyboard-visible in
  * dense operational screens. Icon-only controls can opt out with .size-*.
  */

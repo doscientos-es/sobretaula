@@ -18,7 +18,7 @@ import { createBrowserSupabaseClient } from '@/shared/lib/supabase/client'
 
 import { completeExternalAuthSession } from '../application/registration'
 import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '../domain/password-policy'
-import { PasswordRequirementsIndicator } from './password-requirements-indicator'
+import { PasswordPolicyIndicator } from './password-policy-indicator'
 
 /** Lets a user set a new password after Supabase validates a recovery email link. */
 export function PasswordResetPage() {
@@ -131,7 +131,7 @@ export function PasswordResetPage() {
                     type="password"
                     value={password}
                   />
-                  <PasswordRequirementsIndicator password={password} />
+                  <PasswordPolicyIndicator password={password} />
                 </div>
               </Field>
               <Field>
@@ -149,7 +149,7 @@ export function PasswordResetPage() {
                     type="password"
                     value={passwordConfirmation}
                   />
-                  <PasswordRequirementsIndicator
+                  <PasswordPolicyIndicator
                     confirmation={password}
                     password={passwordConfirmation}
                   />

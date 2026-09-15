@@ -18,7 +18,7 @@ import { useState, type FormEvent } from 'react'
 
 import { register } from '../application/registration'
 import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '../domain/password-policy'
-import { PasswordRequirementsIndicator } from './password-requirements-indicator'
+import { PasswordPolicyIndicator } from './password-policy-indicator'
 
 /** Starts self-service onboarding by creating the restaurant owner's identity. */
 export function RegisterPage() {
@@ -161,7 +161,7 @@ export function RegisterPage() {
                     type="password"
                     value={password}
                   />
-                  <PasswordRequirementsIndicator password={password} />
+                  <PasswordPolicyIndicator password={password} />
                 </div>
                 <FieldDescription>
                   Mínimo 12 caracteres. No la compartas con el equipo.
