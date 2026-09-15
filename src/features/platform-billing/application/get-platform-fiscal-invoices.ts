@@ -10,12 +10,15 @@ import { canViewPlatformFiscalInvoices } from '../domain/platform-fiscal-invoice
 const tenantInput = z.object({ tenantId: z.string().uuid() })
 
 export type PlatformFiscalInvoiceStatus = 'issued' | 'pending_review' | 'registered'
+export type PlatformBillingInvoiceStatus = 'open' | 'paid' | 'failed' | 'void'
 
 export interface PlatformFiscalInvoice {
   customerName: string
   fullNumber: string | null
   id: string
   issuedAt: string | null
+  paidAt: string | null
+  paymentStatus: PlatformBillingInvoiceStatus
   periodEnd: string
   periodStart: string
   reviewReason: string | null
@@ -30,8 +33,10 @@ function toPlatformFiscalInvoice(row: {
   full_number: string | null
   id: string
   issued_at: string | null
+  paid_at: string | null
   period_end: string
   period_start: string
+  payment_status: PlatformBillingInvoiceStatus
   review_reason: string | null
   status: PlatformFiscalInvoiceStatus
   total_cents: number
@@ -41,12 +46,51 @@ function toPlatformFiscalInvoice(row: {
     fullNumber: row.full_number,
     id: row.id,
     issuedAt: row.issued_at,
+    paidAt: row.paid_at,
+    paymentStatus: row.payment_status,
     periodEnd: row.period_end,
     periodStart: row.period_start,
     reviewReason: row.review_reason,
     status: row.status,
     totalCents: row.total_cents,
   }
+}
+
+async function addPaymentStatus(
+  supabase: ReturnType<typeof createRequestSupabaseClient>,
+  rows: Array<{
+    customer_name: string
+    full_number: string | null
+    id: string
+    issued_at: string | null
+    period_end: string
+    period_start: string
+    platform_billing_invoice_id: string
+    review_reason: string | null
+    status: PlatformFiscalInvoiceStatus
+    total_cents: number
+  }>,
+): Promise<PlatformFiscalInvoice[]> {
+  const billingInvoiceIds = rows.map((row) => row.platform_billing_invoice_id)
+  const { data: billingInvoices, error } = billingInvoiceIds.length
+    ? await supabase
+        .from('platform_billing_invoices')
+        .select('id, paid_at, status')
+        .in('id', billingInvoiceIds)
+    : { data: [], error: null }
+  if (error) throw new Error(`platform_billing_invoices_load_failed:${error.code}`)
+
+  const paymentByInvoiceId = new Map(
+    (billingInvoices ?? []).map((invoice) => [invoice.id, invoice]),
+  )
+  return rows.map((row) => {
+    const payment = paymentByInvoiceId.get(row.platform_billing_invoice_id)
+    return toPlatformFiscalInvoice({
+      ...row,
+      paid_at: payment?.paid_at ?? null,
+      payment_status: payment?.status ?? 'open',
+    })
+  })
 }
 
 /** Lists only the platform invoices owned by the selected tenant under RLS. */
@@ -58,17 +102,16 @@ export const getTenantPlatformFiscalInvoices = createServerFn({ method: 'GET' })
       throw new Response('Forbidden', { status: 403 })
     }
 
-    const { data: invoices, error } = await createRequestSupabaseClient(
-      context.tenantMembership.accessToken,
-    )
+    const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    const { data: invoices, error } = await supabase
       .from('platform_fiscal_invoices')
       .select(
-        'customer_name, full_number, id, issued_at, period_end, period_start, review_reason, status, total_cents',
+        'customer_name, full_number, id, issued_at, period_end, period_start, platform_billing_invoice_id, review_reason, status, total_cents',
       )
       .eq('tenant_id', data.tenantId)
       .order('period_end', { ascending: false })
     if (error) throw new Error(`tenant_platform_fiscal_invoices_load_failed:${error.code}`)
-    return (invoices ?? []).map(toPlatformFiscalInvoice)
+    return addPaymentStatus(supabase, invoices ?? [])
   })
 
 /** Lists all SaaS fiscal invoices, reserved exclusively for platform owners. */
@@ -87,16 +130,20 @@ export const getPlatformFiscalInvoices = createServerFn({ method: 'GET' })
     const { data: invoices, error } = await supabase
       .from('platform_fiscal_invoices')
       .select(
-        'customer_name, full_number, id, issued_at, period_end, period_start, review_reason, status, total_cents, tenants!inner(name, slug)',
+        'customer_name, full_number, id, issued_at, period_end, period_start, platform_billing_invoice_id, review_reason, status, total_cents, tenants!inner(name, slug)',
       )
       .order('period_end', { ascending: false })
     if (error) throw new Error(`platform_fiscal_invoices_load_failed:${error.code}`)
 
-    return (invoices ?? []).flatMap((invoice) => {
+    const fiscalInvoices = (invoices ?? []).flatMap((invoice) => {
       const [tenant] = invoice.tenants
       if (!tenant) return []
-      return [
-        { ...toPlatformFiscalInvoice(invoice), tenantName: tenant.name, tenantSlug: tenant.slug },
-      ]
+      return [{ ...invoice, tenantName: tenant.name, tenantSlug: tenant.slug }]
     })
+    const enriched = await addPaymentStatus(supabase, fiscalInvoices)
+    return enriched.map((invoice, index) => ({
+      ...invoice,
+      tenantName: fiscalInvoices[index]?.tenantName,
+      tenantSlug: fiscalInvoices[index]?.tenantSlug,
+    }))
   })

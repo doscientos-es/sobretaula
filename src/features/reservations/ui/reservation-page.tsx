@@ -26,6 +26,7 @@ import {
 } from '@doscientos/ui'
 import { useState, type DragEvent, type FormEvent } from 'react'
 
+import { zonedDateKey, zonedLocalToIso } from '@/shared/lib/date/zoned-time'
 import type { Locale } from '@/shared/lib/i18n/locale'
 import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
 
@@ -99,8 +100,8 @@ export function ReservationPage({
   const [reservationOperationId, setReservationOperationId] = useState(() => crypto.randomUUID())
   const [agendaRefreshToken, setAgendaRefreshToken] = useState(0)
   const [newReservationOpen, setNewReservationOpen] = useState(false)
-  const [exportFrom, setExportFrom] = useState(() => new Date().toISOString().slice(0, 10))
-  const [exportTo, setExportTo] = useState(() => new Date().toISOString().slice(0, 10))
+  const [exportFrom, setExportFrom] = useState(() => zonedDateKey(new Date(), timezone))
+  const [exportTo, setExportTo] = useState(() => zonedDateKey(new Date(), timezone))
   const [exporting, setExporting] = useState(false)
 
   async function exportReservations() {
@@ -217,8 +218,13 @@ export function ReservationPage({
 
   async function reserve(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    const date = new Date(startsAt)
-    if (!serviceId || Number.isNaN(date.getTime())) {
+    let startsAtIso: string
+    try {
+      startsAtIso = zonedLocalToIso(startsAt, timezone)
+    } catch {
+      startsAtIso = ''
+    }
+    if (!serviceId || !startsAtIso || Number.isNaN(new Date(startsAtIso).getTime())) {
       feedback.setError('Selecciona un turno y una fecha válida.')
       return
     }
@@ -230,7 +236,7 @@ export function ReservationPage({
           ...(guestPhone ? { guestPhone } : {}),
           partySize,
           serviceId,
-          startsAt: date.toISOString(),
+          startsAt: startsAtIso,
           operationId: reservationOperationId,
           tenantId,
           venueId,

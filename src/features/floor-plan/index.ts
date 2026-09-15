@@ -18,6 +18,7 @@ export {
   createTableGroupPreset,
   deleteTableGroupPreset,
   getFloorPlan,
+  floorPlanQuery,
   saveFloorPlanVersion,
 } from './application/floor-plan'
 export { FloorPlanPage } from './ui/floor-plan-page'

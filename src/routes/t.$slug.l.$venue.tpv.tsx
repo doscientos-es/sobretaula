@@ -1,27 +1,19 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { createFileRoute, getRouteApi } from '@tanstack/react-router'
+import { useState } from 'react'
 import { z } from 'zod'
 
-import { tenantRouteState } from '@/app/tenant-route-loader'
-import {
-  AccountOrderWorkspace,
-  AccountPayments,
-  getAccount,
-  type AccountView,
-} from '@/features/account'
-import {
-  CashRegisterPage,
-  getCashRegister,
-  listClosedCashRegisters,
-} from '@/features/cash-register'
-import { getMenu } from '@/features/menu'
-import { PosTerminalPage } from '@/features/pos'
+import { TenantRoutePending, tenantRouteState } from '@/app/tenant-route-loader'
+import { AccountOrderWorkspace, AccountPayments, type AccountView } from '@/features/account'
+import { CashRegisterPage } from '@/features/cash-register'
+import type { MenuCatalog } from '@/features/menu/application/menu'
+import { posManagementQuery, posWorkspaceQuery, PosTerminalPage } from '@/features/pos'
 import { getSalesReport, ProductSalesSummary, SalesReportPage } from '@/features/reports'
 import { KitchenQueue, type ServiceBoard } from '@/features/service'
-import { loadServiceBoard } from '@/features/service/infrastructure/server/service-board-repository'
 import { requireTenantRouteAccess } from '@/features/tenancy/application/tenant-route-access'
+import { getZonedWeekBounds } from '@/shared/lib/date/zoned-time'
 import { useLocale } from '@/shared/lib/i18n/locale-preference'
 import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
-import { createRequestSupabaseClient } from '@/shared/lib/supabase/server/create-server-client'
 
 export const Route = createFileRoute('/t/$slug/l/$venue/tpv')({
   validateSearch: z.object({ sessionId: z.string().uuid().optional() }),
@@ -30,62 +22,39 @@ export const Route = createFileRoute('/t/$slug/l/$venue/tpv')({
     requireTenantRouteAccess(context.tenantMembership.role, 'operations'),
   loader: async ({ context, deps }) => {
     const { tenant, venue } = context
-    const data = { tenantId: tenant.id, venueId: venue.id }
-    const canManage = ['owner', 'manager'].includes(context.tenantMembership.role)
-    const now = new Date()
-    const startOfDay = new Date(now)
-    startOfDay.setHours(0, 0, 0, 0)
-    const [board, menu, management] = await Promise.all([
-      loadServiceBoard(createRequestSupabaseClient(context.tenantMembership.accessToken), {
-        ...data,
-        now,
-      }),
-      getMenu({ data }),
-      canManage
-        ? Promise.all([
-            getCashRegister({ data }),
-            listClosedCashRegisters({ data }),
-            getSalesReport({
-              data: {
-                ...data,
-                from: startOfDay.toISOString(),
-                to: now.toISOString(),
-              },
-            }),
-          ]).catch(() => undefined)
-        : Promise.resolve(undefined),
-    ])
-    const sessionId =
-      context.tenantMembership.role !== 'host' &&
-      board.sessions.some((session) => session.id === deps.sessionId)
-        ? deps.sessionId
-        : undefined
-    const account = sessionId
-      ? await getAccount({ data: { sessionId, tenantId: tenant.id, venueId: venue.id } })
-      : undefined
     return {
-      account,
-      board,
-      cashHistory: management?.[1],
-      cashRegister: management?.[0],
-      menu,
-      report: management?.[2],
       tenant,
       venue,
+      sessionId: deps.sessionId,
     }
   },
   component: PosTerminalRoute,
   ...tenantRouteState,
 })
+const tenantRoute = getRouteApi('/t/$slug')
 
 function PosTerminalRoute() {
   const { tenantMembership } = Route.useRouteContext()
-  const { account, board, cashHistory, cashRegister, report, venue } = Route.useLoaderData()
+  const { venue, sessionId } = Route.useLoaderData()
+  const { tenant } = tenantRoute.useLoaderData()
+  const { slug } = Route.useParams()
+  const workspace = useQuery(
+    posWorkspaceQuery({
+      tenantId: tenant.id,
+      venueId: venue.id,
+      ...(sessionId ? { sessionId } : {}),
+    }),
+  )
   const canManage = ['owner', 'manager'].includes(tenantMembership.role)
+  if (workspace.isPending) return <TenantRoutePending />
+  if (workspace.error) throw workspace.error
+  const { account, board, menu } = workspace.data
   return (
     <PosTerminalPage
       {...(account && tenantMembership.role !== 'host'
-        ? { accountWorkspace: <PosTerminalAccountWorkspace account={account} /> }
+        ? {
+            accountWorkspace: <PosTerminalAccountWorkspace account={account} menu={menu} />,
+          }
         : {})}
       board={board}
       canAccessAccounts={tenantMembership.role !== 'host'}
@@ -93,28 +62,37 @@ function PosTerminalRoute() {
       {...(tenantMembership.role !== 'host'
         ? { kitchenWorkspace: <PosTerminalKitchenWorkspace board={board} /> }
         : {})}
-      {...(canManage && cashHistory && report
-        ? {
-            managementWorkspace: (
-              <PosTerminalManagementWorkspace
-                history={cashHistory.items}
-                register={cashRegister ?? null}
-                report={report}
-              />
-            ),
-          }
-        : {})}
-      slug={Route.useParams().slug}
+      {...(canManage ? { managementWorkspace: <PosTerminalManagementWorkspace /> } : {})}
+      slug={slug}
       venue={venue.slug}
     />
   )
 }
 
-function PosTerminalAccountWorkspace({ account }: { account: AccountView }) {
+function PosTerminalAccountWorkspace({
+  account,
+  menu,
+}: {
+  account: AccountView
+  menu: MenuCatalog
+}) {
   const { tenantMembership } = Route.useRouteContext()
-  const { menu, tenant, venue } = Route.useLoaderData()
+  const { venue } = Route.useLoaderData()
+  const { tenant } = tenantRoute.useLoaderData()
+  const queryClient = useQueryClient()
   const reload = useLoaderReload()
   const locale = useLocale(tenant.defaultLocale)
+  const refresh = () => {
+    void queryClient
+      .invalidateQueries({
+        queryKey: posWorkspaceQuery({
+          sessionId: account.session.id,
+          tenantId: tenant.id,
+          venueId: venue.id,
+        }).queryKey,
+      })
+      .then(reload)
+  }
   return (
     <div className="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_22rem]">
       <span className="sr-only">{`Mesa ${account.session.tableCodes.join(' + ')}`}</span>
@@ -129,7 +107,7 @@ function PosTerminalAccountWorkspace({ account }: { account: AccountView }) {
         account={account}
         canManageAdjustments={['owner', 'manager'].includes(tenantMembership.role)}
         locale={locale}
-        onDone={reload}
+        onDone={refresh}
         tenantId={tenant.id}
         venueId={venue.id}
       />
@@ -138,11 +116,20 @@ function PosTerminalAccountWorkspace({ account }: { account: AccountView }) {
 }
 
 function PosTerminalKitchenWorkspace({ board }: { board: ServiceBoard }) {
-  const { tenant, venue } = Route.useLoaderData()
+  const { venue } = Route.useLoaderData()
+  const { tenant } = tenantRoute.useLoaderData()
+  const queryClient = useQueryClient()
   const reload = useLoaderReload()
+  const refresh = () => {
+    void queryClient
+      .invalidateQueries({
+        queryKey: ['tenant', tenant.id, 'venue', venue.id, 'pos-workspace'],
+      })
+      .then(reload)
+  }
   return (
     <KitchenQueue
-      onDone={reload}
+      onDone={refresh}
       tenantId={tenant.id}
       tickets={board.kitchenTickets ?? []}
       venueId={venue.id}
@@ -150,31 +137,66 @@ function PosTerminalKitchenWorkspace({ board }: { board: ServiceBoard }) {
   )
 }
 
-function PosTerminalManagementWorkspace({
-  history,
-  register,
-  report,
-}: {
-  history: Awaited<ReturnType<typeof listClosedCashRegisters>>['items']
-  register: Awaited<ReturnType<typeof getCashRegister>>
-  report: Awaited<ReturnType<typeof getSalesReport>>
-}) {
-  const { tenant, venue } = Route.useLoaderData()
+function PosTerminalManagementWorkspace() {
+  const { tenant } = tenantRoute.useLoaderData()
+  const { venue } = Route.useLoaderData()
+  const queryClient = useQueryClient()
   const reload = useLoaderReload()
+  const [period] = useState(() => {
+    const bounds = getZonedWeekBounds(new Date(), tenant.timezone)
+    return { from: bounds.dayStartIso, to: bounds.dayEndIso }
+  })
+  const management = useQuery(
+    posManagementQuery({ ...period, tenantId: tenant.id, venueId: venue.id }),
+  )
+  if (management.isPending)
+    return (
+      <div
+        aria-live="polite"
+        className="border-border/70 text-muted-foreground rounded-xl border p-6 text-sm"
+      >
+        Cargando caja e informes…
+      </div>
+    )
+  if (management.error)
+    return (
+      <div
+        aria-live="polite"
+        className="border-destructive/40 text-destructive rounded-xl border p-6 text-sm"
+      >
+        No se ha podido cargar la gestión del turno.
+      </div>
+    )
+  const { history, register, report } = management.data
+  const refresh = () => {
+    void queryClient
+      .invalidateQueries({
+        queryKey: posManagementQuery({
+          ...period,
+          tenantId: tenant.id,
+          venueId: venue.id,
+        }).queryKey,
+      })
+      .then(reload)
+  }
   return (
     <div className="space-y-6">
       <CashRegisterPage
-        history={history}
-        onDone={reload}
-        register={register}
+        history={history.items}
+        onDone={refresh}
+        register={register ?? null}
         tenantId={tenant.id}
         venueId={venue.id}
       />
       <SalesReportPage
+        initialPeriod={period}
         onRange={(from, to) =>
-          getSalesReport({ data: { from, tenantId: tenant.id, to, venueId: venue.id } })
+          getSalesReport({
+            data: { from, tenantId: tenant.id, to, venueId: venue.id },
+          })
         }
         report={report}
+        timeZone={tenant.timezone}
       />
       <ProductSalesSummary products={report.productSummary} />
     </div>

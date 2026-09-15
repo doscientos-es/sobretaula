@@ -30,8 +30,9 @@ import {
 import { useState, type MouseEvent, type ReactNode } from 'react'
 
 import { AppShellFrame } from '@/app/app-shell-frame'
-import { CurrentUserSidebar } from '@/features/auth'
-import { resolveVenue, VenueSwitcher, type Venue } from '@/features/venues'
+import { CurrentUserSidebar } from '@/features/auth/ui/current-user'
+import { resolveVenue, type Venue } from '@/features/venues/domain/venue'
+import { VenueSwitcher } from '@/features/venues/ui/venue-switcher'
 import type { Locale } from '@/shared/lib/i18n/locale'
 import { useLocale } from '@/shared/lib/i18n/locale-preference'
 import { createTranslator } from '@/shared/lib/i18n/messages'

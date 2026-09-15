@@ -1,3 +1,4 @@
+import { queryOptions } from '@tanstack/react-query'
 import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 
@@ -6,6 +7,7 @@ import {
   operationalTenantMiddleware,
   tenantMembershipMiddleware,
 } from '@/features/tenancy/application/require-tenant-membership'
+import { zonedDateTimeParts, zonedDayBounds, zonedLocalToIso } from '@/shared/lib/date/zoned-time'
 import { createRequestSupabaseClient } from '@/shared/lib/supabase/server/create-server-client'
 
 import {
@@ -101,6 +103,14 @@ export interface ReservationTermsVersion {
   version: number
 }
 
+export interface ReservationsWorkspace {
+  services: ReservationService[]
+  terms: ReservationTermsVersion[]
+}
+
+type ReservationVenueData = { tenantId: string; venueId: string }
+type RequestSupabaseClient = ReturnType<typeof createRequestSupabaseClient>
+
 function requireReservationEditor(role: string): void {
   if (!['owner', 'manager', 'host'].includes(role)) throw new Response('Forbidden', { status: 403 })
 }
@@ -113,11 +123,73 @@ function requireTermsEditor(role: string): void {
   if (!['owner', 'manager'].includes(role)) throw new Response('Forbidden', { status: 403 })
 }
 
-function serviceBoundary(date: Date, time: string): Date {
+async function loadReservationServices(
+  supabase: RequestSupabaseClient,
+  data: ReservationVenueData,
+): Promise<ReservationService[]> {
+  const { data: services, error } = await supabase
+    .from('services')
+    .select('ends_at_time, id, name, starts_at_time, venue_id, weekday')
+    .eq('tenant_id', data.tenantId)
+    .eq('venue_id', data.venueId)
+    .eq('is_active', true)
+    .order('name')
+  if (error) throw new Error(`reservation_services_load_failed:${error.code}`)
+  const rows = services ?? []
+  const { data: rules, error: rulesError } = rows.length
+    ? await supabase
+        .from('availability_rules')
+        .select('max_covers_per_slot, max_reservations_per_slot, service_id, slot_minutes')
+        .in(
+          'service_id',
+          rows.map((service) => service.id),
+        )
+    : { data: [], error: null }
+  if (rulesError) throw new Error(`reservation_rules_load_failed:${rulesError.code}`)
+  const rulesByService = new Map((rules ?? []).map((rule) => [rule.service_id, rule]))
+  return rows.map((service) => ({
+    endsAtTime: service.ends_at_time,
+    id: service.id,
+    name: service.name,
+    startsAtTime: service.starts_at_time,
+    venueId: service.venue_id,
+    weekday: service.weekday,
+    slotMinutes: rulesByService.get(service.id)?.slot_minutes ?? 15,
+    maxCoversPerSlot: rulesByService.get(service.id)?.max_covers_per_slot ?? null,
+    maxReservationsPerSlot: rulesByService.get(service.id)?.max_reservations_per_slot ?? null,
+  }))
+}
+
+async function loadReservationTerms(
+  supabase: RequestSupabaseClient,
+  data: ReservationVenueData,
+): Promise<ReservationTermsVersion[]> {
+  const { data: terms, error } = await supabase
+    .from('reservation_terms_versions')
+    .select('body, id, locale, published_at, title, version')
+    .eq('tenant_id', data.tenantId)
+    .eq('venue_id', data.venueId)
+    .order('version', { ascending: false })
+  if (error) throw new Error(`reservation_terms_load_failed:${error.code}`)
+  return (terms ?? []).map((term) => ({
+    body: term.body,
+    id: term.id,
+    locale: term.locale,
+    publishedAt: term.published_at,
+    title: term.title,
+    version: term.version,
+  }))
+}
+
+function serviceBoundary(date: Date, time: string, timeZone: string): Date {
   const [hours = 0, minutes = 0] = time.split(':').map(Number)
-  const boundary = new Date(date)
-  boundary.setUTCHours(hours, minutes, 0, 0)
-  return boundary
+  const localDate = zonedDateTimeParts(date, timeZone).date
+  return new Date(
+    zonedLocalToIso(
+      `${localDate}T${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`,
+      timeZone,
+    ),
+  )
 }
 
 function parsePeriod(period: string): { endsAt: Date; startsAt: Date } {
@@ -129,63 +201,39 @@ function parsePeriod(period: string): { endsAt: Date; startsAt: Date } {
 export const getReservationServices = createServerFn({ method: 'GET' })
   .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
   .validator(venueInput)
-  .handler(async ({ context, data }): Promise<ReservationService[]> => {
-    const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
-    const { data: services, error } = await supabase
-      .from('services')
-      .select('ends_at_time, id, name, starts_at_time, venue_id, weekday')
-      .eq('tenant_id', data.tenantId)
-      .eq('venue_id', data.venueId)
-      .eq('is_active', true)
-      .order('name')
-    if (error) throw new Error(`reservation_services_load_failed:${error.code}`)
-    const rows = services ?? []
-    const { data: rules, error: rulesError } = rows.length
-      ? await supabase
-          .from('availability_rules')
-          .select('max_covers_per_slot, max_reservations_per_slot, service_id, slot_minutes')
-          .in(
-            'service_id',
-            rows.map((service) => service.id),
-          )
-      : { data: [], error: null }
-    if (rulesError) throw new Error(`reservation_rules_load_failed:${rulesError.code}`)
-    const rulesByService = new Map((rules ?? []).map((rule) => [rule.service_id, rule]))
-    return rows.map((service) => ({
-      endsAtTime: service.ends_at_time,
-      id: service.id,
-      name: service.name,
-      startsAtTime: service.starts_at_time,
-      venueId: service.venue_id,
-      weekday: service.weekday,
-      slotMinutes: rulesByService.get(service.id)?.slot_minutes ?? 15,
-      maxCoversPerSlot: rulesByService.get(service.id)?.max_covers_per_slot ?? null,
-      maxReservationsPerSlot: rulesByService.get(service.id)?.max_reservations_per_slot ?? null,
-    }))
-  })
+  .handler(({ context, data }) =>
+    loadReservationServices(
+      createRequestSupabaseClient(context.tenantMembership.accessToken),
+      data,
+    ),
+  )
 
 export const getReservationTerms = createServerFn({ method: 'GET' })
   .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
   .validator(reservationTermsInput)
-  .handler(async ({ context, data }): Promise<ReservationTermsVersion[]> => {
-    const { data: terms, error } = await createRequestSupabaseClient(
-      context.tenantMembership.accessToken,
-    )
-      .from('reservation_terms_versions')
-      .select('body, id, locale, published_at, title, version')
-      .eq('tenant_id', data.tenantId)
-      .eq('venue_id', data.venueId)
-      .order('version', { ascending: false })
-    if (error) throw new Error(`reservation_terms_load_failed:${error.code}`)
-    return (terms ?? []).map((term) => ({
-      body: term.body,
-      id: term.id,
-      locale: term.locale,
-      publishedAt: term.published_at,
-      title: term.title,
-      version: term.version,
-    }))
+  .handler(({ context, data }) =>
+    loadReservationTerms(createRequestSupabaseClient(context.tenantMembership.accessToken), data),
+  )
+
+export const getReservationsWorkspace = createServerFn({ method: 'GET' })
+  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .validator(venueInput)
+  .handler(async ({ context, data }): Promise<ReservationsWorkspace> => {
+    const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    const [services, terms] = await Promise.all([
+      loadReservationServices(supabase, data),
+      loadReservationTerms(supabase, data),
+    ])
+    return { services, terms }
   })
+
+export function reservationsWorkspaceQuery(tenantId: string, venueId: string) {
+  return queryOptions({
+    queryFn: () => getReservationsWorkspace({ data: { tenantId, venueId } }),
+    queryKey: ['tenant', tenantId, 'venue', venueId, 'reservations-workspace'],
+    staleTime: 60_000,
+  })
+}
 
 export const publishReservationTerms = createServerFn({ method: 'POST' })
   .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
@@ -225,16 +273,21 @@ export const getReservationsForDate = createServerFn({ method: 'GET' })
   .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
   .validator(reservationsDateInput)
   .handler(async ({ context, data }): Promise<ReservationAgendaItem[]> => {
-    const start = new Date(`${data.date}T00:00:00.000Z`)
-    const end = new Date(`${data.date}T23:59:59.999Z`)
     const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    const { data: tenant, error: tenantError } = await supabase
+      .from('tenants')
+      .select('timezone')
+      .eq('id', data.tenantId)
+      .single()
+    if (tenantError || !tenant) throw new Error('reservation_agenda_timezone_failed')
+    const { dayEndIso, dayStartIso } = zonedDayBounds(data.date, tenant.timezone)
     const { data: reservations, error } = await supabase
       .from('reservations')
       .select('guest_id, id, party_size, starts_at, status')
       .eq('tenant_id', data.tenantId)
       .eq('venue_id', data.venueId)
-      .gte('starts_at', start.toISOString())
-      .lte('starts_at', end.toISOString())
+      .gte('starts_at', dayStartIso)
+      .lt('starts_at', dayEndIso)
       .order('starts_at')
     if (error) throw new Error(`reservation_agenda_load_failed:${error.code}`)
     const rows = reservations ?? []
@@ -300,26 +353,27 @@ export const exportReservationsCsv = createServerFn({ method: 'GET' })
     if (!['owner', 'manager'].includes(context.tenantMembership.role))
       throw new Response('Forbidden', { status: 403 })
     if (data.to < data.from) throw new Response('Invalid date range', { status: 422 })
-    const toExclusive = new Date(`${data.to}T00:00:00.000Z`)
-    toExclusive.setUTCDate(toExclusive.getUTCDate() + 1)
     const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
-    const [reservationsResult, tenantResult] = await Promise.all([
-      supabase
-        .from('reservations')
-        .select('created_at, ends_at, guest_id, id, party_size, source, starts_at, status')
-        .eq('tenant_id', data.tenantId)
-        .eq('venue_id', data.venueId)
-        .gte('starts_at', `${data.from}T00:00:00.000Z`)
-        .lt('starts_at', toExclusive.toISOString())
-        .order('starts_at')
-        .order('id')
-        .limit(10_000),
-      supabase.from('tenants').select('timezone').eq('id', data.tenantId).single(),
-    ])
+    const { data: tenant, error: tenantError } = await supabase
+      .from('tenants')
+      .select('timezone')
+      .eq('id', data.tenantId)
+      .single()
+    if (tenantError || !tenant) throw new Error('reservation_export_timezone_failed')
+    const fromBounds = zonedDayBounds(data.from, tenant.timezone)
+    const toBounds = zonedDayBounds(data.to, tenant.timezone)
+    const reservationsResult = await supabase
+      .from('reservations')
+      .select('created_at, ends_at, guest_id, id, party_size, source, starts_at, status')
+      .eq('tenant_id', data.tenantId)
+      .eq('venue_id', data.venueId)
+      .gte('starts_at', fromBounds.dayStartIso)
+      .lt('starts_at', toBounds.dayEndIso)
+      .order('starts_at')
+      .order('id')
+      .limit(10_000)
     if (reservationsResult.error)
       throw new Error(`reservation_export_failed:${reservationsResult.error.code}`)
-    if (tenantResult.error)
-      throw new Error(`reservation_export_timezone_failed:${tenantResult.error.code}`)
     const guestIds = Array.from(
       new Set(
         (reservationsResult.data ?? [])
@@ -349,7 +403,7 @@ export const exportReservationsCsv = createServerFn({ method: 'GET' })
           status: reservation.status,
         }
       }),
-      { timezone: tenantResult.data.timezone ?? 'Europe/Madrid' },
+      { timezone: tenant.timezone },
     )
   })
 
@@ -476,16 +530,24 @@ export const createReservation = createServerFn({ method: 'POST' })
       }
     }
     const requestedStartsAt = new Date(data.startsAt)
-    const { data: service, error: serviceError } = await supabase
-      .from('services')
-      .select('ends_at_time, id, starts_at_time, venue_id, weekday')
-      .eq('id', data.serviceId)
-      .eq('tenant_id', data.tenantId)
-      .eq('venue_id', data.venueId)
-      .eq('is_active', true)
-      .single()
-    if (serviceError || !service) throw new Response('Not found', { status: 404 })
-    if (requestedStartsAt.getUTCDay() !== service.weekday) {
+    if (Number.isNaN(requestedStartsAt.getTime()))
+      throw new Response('Invalid time', { status: 422 })
+    const [tenantResult, serviceResult] = await Promise.all([
+      supabase.from('tenants').select('timezone').eq('id', data.tenantId).single(),
+      supabase
+        .from('services')
+        .select('ends_at_time, id, starts_at_time, venue_id, weekday')
+        .eq('id', data.serviceId)
+        .eq('tenant_id', data.tenantId)
+        .eq('venue_id', data.venueId)
+        .eq('is_active', true)
+        .single(),
+    ])
+    const service = serviceResult.data
+    if (serviceResult.error || tenantResult.error || !service || !tenantResult.data?.timezone)
+      throw new Response('Not found', { status: 404 })
+    const timezone = tenantResult.data.timezone
+    if (zonedDateTimeParts(requestedStartsAt, timezone).weekday !== service.weekday) {
       throw new Response('Outside service', { status: 422 })
     }
 
@@ -571,8 +633,8 @@ export const createReservation = createServerFn({ method: 'POST' })
       requestedStartsAt,
       reservations: [...occupied.values()],
       rule,
-      serviceEndsAt: serviceBoundary(requestedStartsAt, service.ends_at_time),
-      serviceStartsAt: serviceBoundary(requestedStartsAt, service.starts_at_time),
+      serviceEndsAt: serviceBoundary(requestedStartsAt, service.ends_at_time, timezone),
+      serviceStartsAt: serviceBoundary(requestedStartsAt, service.starts_at_time, timezone),
       tables: (tablesResult.data ?? []).map((table) => ({
         id: table.id,
         isBookable: table.is_bookable,

@@ -11,7 +11,7 @@ import {
 } from '@doscientos/ui'
 import { Link } from '@tanstack/react-router'
 import { RefreshCw } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import {
   describeSpaceType,
@@ -60,6 +60,7 @@ export function ServicePage({
   const [isOnline, setIsOnline] = useState(() =>
     typeof navigator === 'undefined' ? true : navigator.onLine,
   )
+  const realtimeReadyRef = useRef(false)
   const [handoverSaved, setHandoverSaved] = useState(false)
   const [handoverSaving, setHandoverSaving] = useState(false)
   const [handoverError, setHandoverError] = useState(false)
@@ -71,7 +72,7 @@ export function ServicePage({
       const refreshedAt = new Date()
       setLastRefreshAt(refreshedAt)
       setClock(refreshedAt)
-      reload()
+      if (!realtimeReadyRef.current) reload()
     }
     const interval = window.setInterval(refresh, 30_000)
     return () => {
@@ -113,14 +114,17 @@ export function ServicePage({
       .subscribe((status) => {
         const realtimeStatus = String(status)
         if (realtimeStatus === 'SUBSCRIBED') {
+          realtimeReadyRef.current = true
           setIsOnline(true)
         } else if (realtimeStatus === 'CHANNEL_ERROR' || realtimeStatus === 'TIMED_OUT') {
           // A Realtime channel can fail while HTTP/server actions remain
           // usable. Do not block room mutations on a degraded live update.
+          realtimeReadyRef.current = false
           setIsOnline(typeof navigator === 'undefined' ? true : navigator.onLine)
         }
       })
     return () => {
+      realtimeReadyRef.current = false
       void client.removeChannel(channel)
     }
   }, [reload, venueId])

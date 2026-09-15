@@ -13,12 +13,15 @@ export {
   getReservationServices,
   getReservationEvents,
   importReservationCsv,
+  getReservationsWorkspace,
   getReservationTerms,
   publishReservationTerms,
+  reservationsWorkspaceQuery,
   rescheduleReservation,
   type ReservationAgendaItem,
   type ReservationEvent,
   type ReservationTermsVersion,
+  type ReservationsWorkspace,
 } from './application/reservations'
 export { ReservationPage } from './ui/reservation-page'
 export type { ReservationAgendaSearch } from './ui/reservation-page'

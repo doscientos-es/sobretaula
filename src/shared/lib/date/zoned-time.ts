@@ -25,13 +25,71 @@ export function zonedLocalToIso(localDateTime: string, timeZone: string): string
   return new Date(naive.getTime() - (zonedAsUtc - naive.getTime())).toISOString()
 }
 
-function localDateKey(date: Date, timeZone: string): string {
-  return new Intl.DateTimeFormat('en-CA', {
+const weekdayIndexes = new Map([
+  ['Sun', 0],
+  ['Mon', 1],
+  ['Tue', 2],
+  ['Wed', 3],
+  ['Thu', 4],
+  ['Fri', 5],
+  ['Sat', 6],
+])
+
+export interface ZonedDateTimeParts {
+  date: string
+  hour: number
+  minute: number
+  weekday: number
+}
+
+/** Returns calendar parts as seen in a specific IANA timezone. */
+export function zonedDateTimeParts(value: Date, timeZone: string): ZonedDateTimeParts {
+  const parts = new Intl.DateTimeFormat('en-US', {
     day: '2-digit',
+    hour: '2-digit',
+    hourCycle: 'h23',
+    minute: '2-digit',
     month: '2-digit',
     timeZone,
+    weekday: 'short',
     year: 'numeric',
-  }).format(date)
+  }).formatToParts(value)
+  const values = Object.fromEntries(
+    parts.filter((part) => part.type !== 'literal').map((part) => [part.type, part.value]),
+  )
+  const weekday = weekdayIndexes.get(values.weekday ?? '')
+  if (weekday === undefined) throw new Error('invalid_timezone_weekday')
+  return {
+    date: `${values.year}-${values.month}-${values.day}`,
+    hour: Number(values.hour),
+    minute: Number(values.minute),
+    weekday,
+  }
+}
+
+export function zonedDateKey(value: Date, timeZone: string): string {
+  return zonedDateTimeParts(value, timeZone).date
+}
+
+export function zonedDayBounds(
+  date: string,
+  timeZone: string,
+): {
+  dayEndIso: string
+  dayStartIso: string
+} {
+  const nextDate = new Date(`${date}T12:00:00.000Z`)
+  if (Number.isNaN(nextDate.getTime())) throw new Error('invalid_date')
+  nextDate.setUTCDate(nextDate.getUTCDate() + 1)
+  const nextDateKey = nextDate.toISOString().slice(0, 10)
+  return {
+    dayEndIso: zonedLocalToIso(`${nextDateKey}T00:00`, timeZone),
+    dayStartIso: zonedLocalToIso(`${date}T00:00`, timeZone),
+  }
+}
+
+function localDateKey(date: Date, timeZone: string): string {
+  return zonedDateKey(date, timeZone)
 }
 
 function formatDateOnly(date: Date): string {

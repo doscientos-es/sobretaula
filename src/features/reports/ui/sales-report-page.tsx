@@ -13,25 +13,31 @@ import {
 } from '@doscientos/ui'
 import { useState } from 'react'
 
+import { zonedDateKey, zonedDayBounds } from '@/shared/lib/date/zoned-time'
+
 import type { getSalesReport } from '../application/reports'
 
-const initialDateRange = {
-  from: new Date(Date.now() - 86_400_000).toISOString().slice(0, 10),
-  to: new Date().toISOString().slice(0, 10),
-}
-
 export function SalesReportPage({
+  initialPeriod,
   report: initialReport,
+  timeZone,
   onRange: loadRange,
 }: {
+  initialPeriod: { from: string; to: string }
   report: Awaited<ReturnType<typeof getSalesReport>>
+  timeZone: string
   onRange: (from: string, to: string) => Promise<Awaited<ReturnType<typeof getSalesReport>>>
 }) {
   const [report, setReport] = useState(initialReport)
-  const [from, setFrom] = useState(initialDateRange.from)
-  const [to, setTo] = useState(initialDateRange.to)
+  const [from, setFrom] = useState(zonedDateKey(new Date(initialPeriod.from), timeZone))
+  const [to, setTo] = useState(
+    zonedDateKey(new Date(new Date(initialPeriod.to).getTime() - 1), timeZone),
+  )
   const onRange = (fromValue: string, toValue: string) =>
-    void loadRange(fromValue, toValue).then(setReport)
+    void loadRange(
+      zonedDayBounds(fromValue, timeZone).dayStartIso,
+      zonedDayBounds(toValue, timeZone).dayEndIso,
+    ).then(setReport)
   const euro = (cents: number) => `${(cents / 100).toFixed(2)} €`
   return (
     <section className="space-y-4">
@@ -69,12 +75,7 @@ export function SalesReportPage({
               value={to}
             />
           </Field>
-          <Button
-            onClick={() => onRange(`${from}T00:00:00.000Z`, `${to}T23:59:59.999Z`)}
-            size="sm"
-            type="button"
-            variant="outline"
-          >
+          <Button onClick={() => onRange(from, to)} size="sm" type="button" variant="outline">
             Actualizar
           </Button>
         </CardContent>
@@ -142,7 +143,11 @@ export function SalesReportPage({
             <ul className="space-y-1">
               {report.financial.reconciliations.slice(0, 10).map((entry) => (
                 <li className="flex justify-between" key={entry.id as string}>
-                  <span>{new Date(entry.reconciled_at as string).toLocaleString('es-ES')}</span>
+                  <span>
+                    {new Date(entry.reconciled_at as string).toLocaleString('es-ES', {
+                      timeZone,
+                    })}
+                  </span>
                   <span className="tabular-nums">{euro(entry.variance_cents as number)}</span>
                 </li>
               ))}

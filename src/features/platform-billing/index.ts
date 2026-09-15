@@ -1,12 +1,16 @@
 export { getPlatformBillingOverview } from './application/get-platform-billing-overview'
 export type { PlatformSubscriptionOverview } from './application/get-platform-billing-overview'
-export { getTenantBillingStatus } from './application/get-tenant-billing-status'
+export {
+  getTenantBillingStatus,
+  tenantBillingStatusQuery,
+} from './application/get-tenant-billing-status'
 export type { TenantBillingStatus } from './application/get-tenant-billing-status'
 export {
   getPlatformFiscalInvoices,
   getTenantPlatformFiscalInvoices,
 } from './application/get-platform-fiscal-invoices'
 export type {
+  PlatformBillingInvoiceStatus,
   PlatformFiscalInvoice,
   PlatformFiscalInvoiceStatus,
 } from './application/get-platform-fiscal-invoices'

@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { queryOptions } from '@tanstack/react-query'
 import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 
@@ -342,6 +343,14 @@ export const getFloorPlan = createServerFn({ method: 'GET' })
   .handler(({ context, data }) =>
     loadFloorPlan(createRequestSupabaseClient(context.tenantMembership.accessToken), data),
   )
+
+export function floorPlanQuery(tenantId: string, venueId: string) {
+  return queryOptions({
+    queryFn: () => getFloorPlan({ data: { tenantId, venueId } }),
+    queryKey: ['tenant', tenantId, 'venue', venueId, 'floor-plan'],
+    staleTime: 60_000,
+  })
+}
 
 export const createTableGroupPreset = createServerFn({ method: 'POST' })
   .middleware([authMiddleware, tenantMembershipMiddleware])

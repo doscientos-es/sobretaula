@@ -27,6 +27,8 @@ export const listInvoicesInput = z.object({
   search: z.string().trim().max(120).default(''),
 })
 
+export const invoiceSeriesInput = z.object({ tenantId: z.string().uuid() })
+
 export const getInvoiceDocumentInput = z.object({
   invoiceId: z.string().uuid(),
   tenantId: z.string().uuid(),

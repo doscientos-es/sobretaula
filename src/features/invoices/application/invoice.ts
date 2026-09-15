@@ -40,6 +40,7 @@ import {
   getInvoiceDocumentInput,
   issueInvoiceInput,
   listInvoicesInput,
+  invoiceSeriesInput,
   requireFiscalSettingsOwner,
   requireInvoiceReader,
   requireSeriesEditor,
@@ -53,6 +54,32 @@ export interface FiscalSettingsView {
   series: InvoiceSeries[]
   invoices: Invoice[]
 }
+
+/** Lightweight series lookup for account invoicing; avoids loading the full billing overview. */
+export const getInvoiceSeries = createServerFn({ method: 'GET' })
+  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .validator(invoiceSeriesInput)
+  .handler(async ({ context, data }): Promise<InvoiceSeries[]> => {
+    requireInvoiceReader(context.tenantMembership.role)
+    return listSeries(
+      createRequestSupabaseClient(context.tenantMembership.accessToken),
+      data.tenantId,
+    )
+  })
+
+/** Lightweight invoice book lookup for the tenant invoice list. */
+export const getTenantInvoices = createServerFn({ method: 'GET' })
+  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .validator(listInvoicesInput)
+  .handler(async ({ context, data }): Promise<Invoice[]> => {
+    requireInvoiceReader(context.tenantMembership.role)
+    const result = await listInvoices(
+      createRequestSupabaseClient(context.tenantMembership.accessToken),
+      data.tenantId,
+      data,
+    )
+    return result.items
+  })
 
 /** Signed download URL for the fiscal PDF of an invoice. */
 export const getInvoiceDocument = createServerFn({ method: 'GET' })

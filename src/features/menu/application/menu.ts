@@ -1,3 +1,4 @@
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 
@@ -41,130 +42,134 @@ function localizedDescription(descriptionEs?: string, descriptionCa?: string): L
 }
 
 /** Whole catalog of the tenant: the carta is shared by every venue. */
+export async function loadMenuCatalog(
+  supabase: SupabaseClient,
+  data: { tenantId: string; venueId?: string | undefined },
+): Promise<MenuCatalog> {
+  const [
+    categoriesResult,
+    itemsResult,
+    modifierGroupsResult,
+    modifierOptionsResult,
+    venuePricesResult,
+  ] = await Promise.all([
+    supabase
+      .from('menu_categories')
+      .select('id, is_active, name_i18n, position')
+      .eq('tenant_id', data.tenantId)
+      .order('position'),
+    supabase
+      .from('menu_items')
+      .select(
+        'category_id, description_i18n, id, is_active, kitchen_station, name_i18n, preparation_minutes, price_cents, sku, vat_rate_bps',
+      )
+      .eq('tenant_id', data.tenantId),
+    supabase
+      .from('menu_modifier_groups')
+      .select('id, is_active, menu_item_id, name_i18n, position, selection_max, selection_min')
+      .eq('tenant_id', data.tenantId)
+      .eq('is_active', true)
+      .order('position'),
+    supabase
+      .from('menu_modifier_options')
+      .select('group_id, id, is_active, name_i18n, position, price_delta_cents')
+      .eq('tenant_id', data.tenantId)
+      .eq('is_active', true)
+      .order('position'),
+    data.venueId
+      ? supabase
+          .from('menu_item_venue_prices')
+          .select('is_available, menu_item_id, price_cents')
+          .eq('tenant_id', data.tenantId)
+          .eq('venue_id', data.venueId)
+          .eq('channel', 'room')
+      : Promise.resolve({ data: [], error: null }),
+  ])
+  let finalItemsResult = itemsResult
+  if (itemsResult.error?.code === '42703') {
+    const legacy = await supabase
+      .from('menu_items')
+      .select(
+        'category_id, description_i18n, id, is_active, name_i18n, price_cents, sku, vat_rate_bps',
+      )
+      .eq('tenant_id', data.tenantId)
+    finalItemsResult = {
+      ...legacy,
+      data: (legacy.data ?? []).map((item) => ({
+        ...item,
+        kitchen_station: 'general',
+        preparation_minutes: 15,
+      })),
+    } as typeof finalItemsResult
+  }
+  const error =
+    categoriesResult.error ??
+    finalItemsResult.error ??
+    modifierGroupsResult.error ??
+    modifierOptionsResult.error ??
+    venuePricesResult.error
+  if (error) throw new Error(`menu_load_failed:${error.code}`)
+
+  const optionsByGroup = new Map<string, MenuModifierOption[]>()
+  for (const option of modifierOptionsResult.data ?? []) {
+    const current = optionsByGroup.get(option.group_id as string) ?? []
+    current.push({
+      id: option.id as string,
+      isActive: Boolean(option.is_active),
+      nameI18n: (option.name_i18n ?? {}) as LocalizedText,
+      position: Number(option.position),
+      priceDeltaCents: Number(option.price_delta_cents),
+    })
+    optionsByGroup.set(option.group_id as string, current)
+  }
+  const groupsByItem = new Map<string, NonNullable<MenuItem['modifierGroups']>>()
+  for (const group of modifierGroupsResult.data ?? []) {
+    const current = groupsByItem.get(group.menu_item_id as string) ?? []
+    current.push({
+      id: group.id as string,
+      isActive: Boolean(group.is_active),
+      nameI18n: (group.name_i18n ?? {}) as LocalizedText,
+      options: optionsByGroup.get(group.id as string) ?? [],
+      position: Number(group.position),
+      selectionMax: Number(group.selection_max),
+      selectionMin: Number(group.selection_min),
+    })
+    groupsByItem.set(group.menu_item_id as string, current)
+  }
+  const venuePriceByItem = new Map(
+    (venuePricesResult.data ?? []).map((row) => [row.menu_item_id as string, row]),
+  )
+
+  return {
+    categories: (categoriesResult.data ?? []).map((category) => ({
+      id: category.id as string,
+      isActive: category.is_active as boolean,
+      nameI18n: (category.name_i18n ?? {}) as LocalizedText,
+      position: category.position as number,
+    })),
+    items: (finalItemsResult.data ?? []).map((item) => ({
+      categoryId: item.category_id as string,
+      descriptionI18n: (item.description_i18n ?? {}) as LocalizedText,
+      id: item.id as string,
+      isActive: Boolean(item.is_active),
+      isAvailable: venuePriceByItem.get(item.id as string)?.is_available ?? true,
+      nameI18n: (item.name_i18n ?? {}) as LocalizedText,
+      priceCents: Number(venuePriceByItem.get(item.id as string)?.price_cents ?? item.price_cents),
+      preparationMinutes: item.preparation_minutes as number,
+      kitchenStation: (item.kitchen_station as MenuItem['kitchenStation']) ?? 'general',
+      sku: (item.sku as string | null) ?? null,
+      vatRateBps: item.vat_rate_bps as number,
+      modifierGroups: groupsByItem.get(item.id as string) ?? [],
+    })),
+  }
+}
+
 export const getMenu = createServerFn({ method: 'GET' })
   .middleware([authMiddleware, tenantMembershipMiddleware])
   .validator(menuTenantInput)
-  .handler(async ({ context, data }): Promise<MenuCatalog> => {
-    const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
-    const [
-      categoriesResult,
-      itemsResult,
-      modifierGroupsResult,
-      modifierOptionsResult,
-      venuePricesResult,
-    ] = await Promise.all([
-      supabase
-        .from('menu_categories')
-        .select('id, is_active, name_i18n, position')
-        .eq('tenant_id', data.tenantId)
-        .order('position'),
-      supabase
-        .from('menu_items')
-        .select(
-          'category_id, description_i18n, id, is_active, kitchen_station, name_i18n, preparation_minutes, price_cents, sku, vat_rate_bps',
-        )
-        .eq('tenant_id', data.tenantId),
-      supabase
-        .from('menu_modifier_groups')
-        .select('id, is_active, menu_item_id, name_i18n, position, selection_max, selection_min')
-        .eq('tenant_id', data.tenantId)
-        .eq('is_active', true)
-        .order('position'),
-      supabase
-        .from('menu_modifier_options')
-        .select('group_id, id, is_active, name_i18n, position, price_delta_cents')
-        .eq('tenant_id', data.tenantId)
-        .eq('is_active', true)
-        .order('position'),
-      data.venueId
-        ? supabase
-            .from('menu_item_venue_prices')
-            .select('is_available, menu_item_id, price_cents')
-            .eq('tenant_id', data.tenantId)
-            .eq('venue_id', data.venueId)
-            .eq('channel', 'room')
-        : Promise.resolve({ data: [], error: null }),
-    ])
-    let finalItemsResult = itemsResult
-    if (itemsResult.error?.code === '42703') {
-      const legacy = await supabase
-        .from('menu_items')
-        .select(
-          'category_id, description_i18n, id, is_active, name_i18n, price_cents, sku, vat_rate_bps',
-        )
-        .eq('tenant_id', data.tenantId)
-      finalItemsResult = {
-        ...legacy,
-        data: (legacy.data ?? []).map((item) => ({
-          ...item,
-          kitchen_station: 'general',
-          preparation_minutes: 15,
-        })),
-      } as typeof finalItemsResult
-    }
-    const error =
-      categoriesResult.error ??
-      finalItemsResult.error ??
-      modifierGroupsResult.error ??
-      modifierOptionsResult.error ??
-      venuePricesResult.error
-    if (error) throw new Error(`menu_load_failed:${error.code}`)
-
-    const optionsByGroup = new Map<string, MenuModifierOption[]>()
-    for (const option of modifierOptionsResult.data ?? []) {
-      const current = optionsByGroup.get(option.group_id as string) ?? []
-      current.push({
-        id: option.id as string,
-        isActive: Boolean(option.is_active),
-        nameI18n: (option.name_i18n ?? {}) as LocalizedText,
-        position: Number(option.position),
-        priceDeltaCents: Number(option.price_delta_cents),
-      })
-      optionsByGroup.set(option.group_id as string, current)
-    }
-    const groupsByItem = new Map<string, NonNullable<MenuItem['modifierGroups']>>()
-    for (const group of modifierGroupsResult.data ?? []) {
-      const current = groupsByItem.get(group.menu_item_id as string) ?? []
-      current.push({
-        id: group.id as string,
-        isActive: Boolean(group.is_active),
-        nameI18n: (group.name_i18n ?? {}) as LocalizedText,
-        options: optionsByGroup.get(group.id as string) ?? [],
-        position: Number(group.position),
-        selectionMax: Number(group.selection_max),
-        selectionMin: Number(group.selection_min),
-      })
-      groupsByItem.set(group.menu_item_id as string, current)
-    }
-    const venuePriceByItem = new Map(
-      (venuePricesResult.data ?? []).map((row) => [row.menu_item_id as string, row]),
-    )
-
-    return {
-      categories: (categoriesResult.data ?? []).map((category) => ({
-        id: category.id as string,
-        isActive: category.is_active as boolean,
-        nameI18n: (category.name_i18n ?? {}) as LocalizedText,
-        position: category.position as number,
-      })),
-      items: (finalItemsResult.data ?? []).map((item) => ({
-        categoryId: item.category_id as string,
-        descriptionI18n: (item.description_i18n ?? {}) as LocalizedText,
-        id: item.id as string,
-        isActive: Boolean(item.is_active),
-        isAvailable: venuePriceByItem.get(item.id as string)?.is_available ?? true,
-        nameI18n: (item.name_i18n ?? {}) as LocalizedText,
-        priceCents: Number(
-          venuePriceByItem.get(item.id as string)?.price_cents ?? item.price_cents,
-        ),
-        preparationMinutes: item.preparation_minutes as number,
-        kitchenStation: (item.kitchen_station as MenuItem['kitchenStation']) ?? 'general',
-        sku: (item.sku as string | null) ?? null,
-        vatRateBps: item.vat_rate_bps as number,
-        modifierGroups: groupsByItem.get(item.id as string) ?? [],
-      })),
-    }
-  })
+  .handler(async ({ context, data }): Promise<MenuCatalog> =>
+    loadMenuCatalog(createRequestSupabaseClient(context.tenantMembership.accessToken), data),
+  )
 
 export const createModifierGroup = createServerFn({ method: 'POST' })
   .middleware([authMiddleware, tenantMembershipMiddleware])

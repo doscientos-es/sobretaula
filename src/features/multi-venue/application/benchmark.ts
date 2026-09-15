@@ -1,3 +1,4 @@
+import { queryOptions } from '@tanstack/react-query'
 import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 
@@ -14,6 +15,15 @@ const input = z.object({
   from: z.string().datetime(),
   to: z.string().datetime(),
 })
+
+export function venueBenchmarkQuery(data: { tenantId: string; from: string; to: string }) {
+  return queryOptions({
+    queryFn: () => getVenueBenchmark({ data }),
+    queryKey: ['tenant', data.tenantId, 'venue-benchmark', data.from, data.to],
+    staleTime: 60_000,
+  })
+}
+
 export const getVenueBenchmark = createServerFn({ method: 'GET' })
   .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
   .validator(input)

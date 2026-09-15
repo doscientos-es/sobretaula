@@ -16,7 +16,7 @@ import { RefreshCw } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 
 import { cancelReservation, markReservationNoShow } from '@/features/service'
-import { zonedLocalToIso } from '@/shared/lib/date/zoned-time'
+import { zonedDateKey, zonedDateTimeParts, zonedLocalToIso } from '@/shared/lib/date/zoned-time'
 import type { Locale } from '@/shared/lib/i18n/locale'
 import { useAsyncEffect } from '@/shared/lib/react/use-async-effect'
 
@@ -34,16 +34,15 @@ function canMarkNoShow(startsAt: string): boolean {
   return Date.now() - new Date(startsAt).getTime() >= 15 * 60_000
 }
 
-function dateOffset(days: number): string {
-  const date = new Date()
-  date.setHours(12, 0, 0, 0)
-  date.setDate(date.getDate() + days)
-  return new Intl.DateTimeFormat('en-CA').format(date)
+function dateOffset(days: number, timeZone: string): string {
+  const date = new Date(`${zonedDateKey(new Date(), timeZone)}T12:00:00.000Z`)
+  date.setUTCDate(date.getUTCDate() + days)
+  return date.toISOString().slice(0, 10)
 }
 
-function localDateTimeValue(value: string): string {
-  const date = new Date(value)
-  return new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 16)
+function localDateTimeValue(value: string, timeZone: string): string {
+  const parts = zonedDateTimeParts(new Date(value), timeZone)
+  return `${parts.date}T${String(parts.hour).padStart(2, '0')}:${String(parts.minute).padStart(2, '0')}`
 }
 
 function statusBadgeClass(status: string): string {
@@ -91,7 +90,7 @@ export function ReservationAgendaCard({
   const feedback = useFormFeedback()
   const { setError } = feedback
   const [agendaDate, setAgendaDate] = useState(
-    () => agendaSearch?.date ?? new Date().toISOString().slice(0, 10),
+    () => agendaSearch?.date ?? zonedDateKey(new Date(), timezone),
   )
   const [query, setQuery] = useState(() => agendaSearch?.query ?? '')
   const [statusFilter, setStatusFilter] = useState<NonNullable<ReservationAgendaSearch['status']>>(
@@ -301,8 +300,8 @@ export function ReservationAgendaCard({
           />
           <div className="mt-2 flex gap-2">
             {[
-              { label: 'Hoy', value: dateOffset(0) },
-              { label: 'Mañana', value: dateOffset(1) },
+              { label: 'Hoy', value: dateOffset(0, timezone) },
+              { label: 'Mañana', value: dateOffset(1, timezone) },
             ].map((option) => (
               <Button
                 key={option.value}
@@ -601,7 +600,7 @@ export function ReservationAgendaCard({
                       className="mt-2"
                       onClick={() => {
                         setEditingReservationId(item.id)
-                        setEditingStartsAt(localDateTimeValue(item.startsAt))
+                        setEditingStartsAt(localDateTimeValue(item.startsAt, timezone))
                         setEditingPartySize(item.partySize)
                       }}
                       size="sm"

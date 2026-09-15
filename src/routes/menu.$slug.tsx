@@ -4,8 +4,10 @@ import { getPublicMenu, getPublicMenuContext, PublicMenuPage } from '@/features/
 
 export const Route = createFileRoute('/menu/$slug')({
   loader: async ({ params }) => {
-    const context = await getPublicMenuContext({ data: { slug: params.slug } })
-    const catalog = await getPublicMenu({ data: { slug: params.slug, channel: 'web' } })
+    const [context, catalog] = await Promise.all([
+      getPublicMenuContext({ data: { slug: params.slug } }),
+      getPublicMenu({ data: { slug: params.slug, channel: 'web' } }),
+    ])
     return { catalog, context }
   },
   component: PublicMenuRoute,

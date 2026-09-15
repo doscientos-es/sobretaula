@@ -1,3 +1,4 @@
+import { queryOptions } from '@tanstack/react-query'
 import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 
@@ -36,3 +37,11 @@ export const getTenantBillingStatus = createServerFn({ method: 'GET' })
         }
       : { graceEndsOn: null, hasPaymentMethod: false, nextPaymentOn: null, status: null }
   })
+
+export function tenantBillingStatusQuery(tenantId: string) {
+  return queryOptions({
+    queryFn: () => getTenantBillingStatus({ data: { tenantId } }),
+    queryKey: ['tenant', tenantId, 'billing-status'],
+    staleTime: 60_000,
+  })
+}

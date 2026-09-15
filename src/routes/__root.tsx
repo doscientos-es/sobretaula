@@ -8,11 +8,11 @@ import {
   Scripts,
 } from '@tanstack/react-router'
 import { CircleAlert, House, RefreshCw, Utensils } from 'lucide-react'
-import { useSyncExternalStore, type ReactNode } from 'react'
+import { lazy, Suspense, useSyncExternalStore, type ReactNode } from 'react'
 
 import { PwaRuntime } from '@/app/pwa-runtime'
 import { missingEnvironmentVariable } from '@/app/root-error'
-import { isPasswordRecoveryHash, PasswordResetPage } from '@/features/auth'
+import { isPasswordRecoveryHash } from '@/features/auth/domain/password-recovery'
 import { DEFAULT_LOCALE } from '@/shared/lib/i18n/locale'
 import { LocaleProvider } from '@/shared/lib/i18n/locale-preference'
 import { createTranslator } from '@/shared/lib/i18n/messages'
@@ -20,6 +20,11 @@ import { createTranslator } from '@/shared/lib/i18n/messages'
 import appCss from '../styles.css?url'
 
 const t = createTranslator(DEFAULT_LOCALE)
+const PasswordResetPage = lazy(() =>
+  import('@/features/auth/ui/password-reset-page').then((module) => ({
+    default: module.PasswordResetPage,
+  })),
+)
 
 function subscribeToLocationHash(onStoreChange: () => void): () => void {
   window.addEventListener('hashchange', onStoreChange)
@@ -82,7 +87,11 @@ function RootError({ error, reset }: { error: unknown; reset: () => void }) {
   )
 
   if (isPasswordRecovery) {
-    return <PasswordResetPage />
+    return (
+      <Suspense fallback={<main aria-busy="true" className="min-h-svh" />}>
+        <PasswordResetPage />
+      </Suspense>
+    )
   }
 
   const missingVariable = missingEnvironmentVariable(error)

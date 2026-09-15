@@ -1,18 +1,25 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
-function readEnv(name: string, fallback?: string): string {
-  const value = process.env[name] ?? (fallback === undefined ? undefined : process.env[fallback])
+export function readEnv(name: string, fallback?: string, buildTimeFallback?: string): string {
+  const value =
+    process.env[name] ||
+    (fallback === undefined ? undefined : process.env[fallback]) ||
+    buildTimeFallback
   if (!value) throw new Error(`Falta la variable de entorno ${name}.`)
   return value
 }
 
 /** El proyecto es el mismo en cliente y servidor: las VITE_* valen de respaldo. */
 function supabaseUrl(): string {
-  return readEnv('SUPABASE_URL', 'VITE_SUPABASE_URL')
+  return readEnv('SUPABASE_URL', 'VITE_SUPABASE_URL', import.meta.env.VITE_SUPABASE_URL)
 }
 
 function supabasePublishableKey(): string {
-  return readEnv('SUPABASE_PUBLISHABLE_KEY', 'VITE_SUPABASE_PUBLISHABLE_KEY')
+  return readEnv(
+    'SUPABASE_PUBLISHABLE_KEY',
+    'VITE_SUPABASE_PUBLISHABLE_KEY',
+    import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+  )
 }
 
 /**

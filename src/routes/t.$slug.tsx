@@ -26,12 +26,17 @@ import {
   useParams,
   useRouterState,
 } from '@tanstack/react-router'
+import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, Check, FileText, Store, TriangleAlert, Users } from 'lucide-react'
 import type { ReactNode } from 'react'
 
 import { TenantAdminFrame } from '@/app/app-frame'
 import { WorkerFrame } from '@/app/worker-frame'
-import { getTenantBillingStatus, TenantBillingNotice } from '@/features/platform-billing'
+import {
+  getTenantBillingStatus,
+  TenantBillingNotice,
+  tenantBillingStatusQuery,
+} from '@/features/platform-billing'
 import { RedsysSubscriptionButton } from '@/features/platform-billing/ui/redsys-subscription-button'
 import {
   getTenantBySlug,
@@ -98,23 +103,24 @@ export const Route = createFileRoute('/t/$slug')({
     const tenant = await context.queryClient.ensureQueryData(tenantBySlugQuery(slug))
     if (!tenant) throw notFound()
 
-    let billingStatus
-    try {
-      billingStatus = await getTenantBillingStatus({ data: { tenantId: tenant.id } })
-    } catch (error) {
-      reportTenantRouteFailure('billing_status', error, { slug, tenantId: tenant.id })
-    }
-    let venues
-    try {
-      venues = await context.queryClient.ensureQueryData(tenantVenuesQuery(tenant.id))
-    } catch (error) {
-      reportTenantRouteFailure('venues', error, { slug, tenantId: tenant.id })
-    }
+    const [billingResult, venuesResult] = await Promise.allSettled([
+      isTenantOperational(tenant.status)
+        ? Promise.resolve(null)
+        : getTenantBillingStatus({ data: { tenantId: tenant.id } }),
+      context.queryClient.ensureQueryData(tenantVenuesQuery(tenant.id)),
+    ])
+    if (billingResult.status === 'rejected')
+      reportTenantRouteFailure('billing_status', billingResult.reason, {
+        slug,
+        tenantId: tenant.id,
+      })
+    if (venuesResult.status === 'rejected')
+      reportTenantRouteFailure('venues', venuesResult.reason, { slug, tenantId: tenant.id })
     return {
-      billingStatus,
+      billingStatus: billingResult.value,
       membership: context.tenantMembership,
       tenant,
-      venues,
+      venues: venuesResult.value,
     }
   },
   component: TenantLayout,
@@ -370,7 +376,12 @@ function TenantLayout() {
 }
 
 function TenantLayoutContent() {
-  const { billingStatus, membership, tenant, venues } = Route.useLoaderData()
+  const { billingStatus: loaderBillingStatus, membership, tenant, venues } = Route.useLoaderData()
+  const billingQuery = useQuery({
+    ...tenantBillingStatusQuery(tenant.id),
+    enabled: isTenantOperational(tenant.status),
+  })
+  const billingStatus = loaderBillingStatus ?? billingQuery.data
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   })
@@ -395,8 +406,12 @@ function TenantLayoutContent() {
       )
     }
 
-    return tenant.status === 'setup_pending' ? (
+    return tenant.status === 'setup_pending' && billingStatus ? (
       <TenantSetupPendingOnboarding billingStatus={billingStatus} tenant={tenant} />
+    ) : tenant.status === 'setup_pending' ? (
+      <TenantPendingRouteFrame isSetupStep tenant={tenant}>
+        <div className="h-40 animate-pulse rounded-xl bg-muted" />
+      </TenantPendingRouteFrame>
     ) : (
       <TenantSuspendedNotice canAuthorizePayment={membership.role === 'owner'} tenant={tenant} />
     )
@@ -406,19 +421,23 @@ function TenantLayoutContent() {
   return (
     <Frame
       locale={tenant.defaultLocale}
-      navigationLocked={billingStatus.status === 'trialing' && !billingStatus.hasPaymentMethod}
+      navigationLocked={
+        billingStatus?.status === 'trialing' && !billingStatus.hasPaymentMethod
+      }
       role={membership.role}
       slug={tenant.slug}
       title={tenant.name}
       venues={venues}
     >
-      <TenantBillingNotice
-        canAuthorizePayment={membership.role === 'owner'}
-        canManageBilling={isTenantAdministrator(membership.role)}
-        status={billingStatus}
-        tenantId={tenant.id}
-        tenantSlug={tenant.slug}
-      />
+      {billingStatus && (
+        <TenantBillingNotice
+          canAuthorizePayment={membership.role === 'owner'}
+          canManageBilling={isTenantAdministrator(membership.role)}
+          status={billingStatus}
+          tenantId={tenant.id}
+          tenantSlug={tenant.slug}
+        />
+      )}
       <Outlet />
     </Frame>
   )

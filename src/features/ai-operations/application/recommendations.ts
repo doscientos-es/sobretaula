@@ -1,3 +1,4 @@
+import { queryOptions } from '@tanstack/react-query'
 import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 
@@ -19,6 +20,35 @@ const input = z.object({
   source: z.array(z.string()),
   status: z.enum(['accepted', 'ignored', 'snoozed']),
 })
+
+const recommendationHistoryInput = z.object({
+  tenantId: z.string().uuid(),
+  venueId: z.string().uuid(),
+  page: z.number().int().min(1).default(1),
+  pageSize: z.number().int().min(1).max(100).default(25),
+})
+
+export function recommendationHistoryQuery(data: {
+  tenantId: string
+  venueId: string
+  page?: number
+  pageSize?: number
+}) {
+  const normalized = recommendationHistoryInput.parse(data)
+  return queryOptions({
+    queryFn: () => listRecommendationDecisions({ data: normalized }),
+    queryKey: [
+      'tenant',
+      normalized.tenantId,
+      'venue',
+      normalized.venueId,
+      'recommendation-history',
+      normalized.page,
+      normalized.pageSize,
+    ],
+    staleTime: 30_000,
+  })
+}
 export const decideRecommendation = createServerFn({ method: 'POST' })
   .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
   .validator(input)
@@ -46,14 +76,7 @@ export const decideRecommendation = createServerFn({ method: 'POST' })
 
 export const listRecommendationDecisions = createServerFn({ method: 'GET' })
   .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
-  .validator(
-    z.object({
-      tenantId: z.string().uuid(),
-      venueId: z.string().uuid(),
-      page: z.number().int().min(1).default(1),
-      pageSize: z.number().int().min(1).max(100).default(25),
-    }),
-  )
+  .validator(recommendationHistoryInput)
   .handler(
     async ({
       context,

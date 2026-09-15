@@ -1,3 +1,4 @@
+import { queryOptions } from '@tanstack/react-query'
 import { createServerFn } from '@tanstack/react-start'
 
 import { authMiddleware } from '@/features/auth/infrastructure/server/auth-middleware'
@@ -23,6 +24,8 @@ export const getSalesReport = createServerFn({ method: 'GET' })
       .select('id, discount_cents')
       .eq('tenant_id', data.tenantId)
       .eq('venue_id', data.venueId)
+      .gte('opened_at', data.from)
+      .lt('opened_at', data.to)
     if (sessionError) throw new Error(`sales_sessions_failed:${sessionError.code}`)
     const sessionIds = (sessions ?? []).map((session) => session.id as string)
     const discountsCents = (sessions ?? []).reduce(
@@ -264,6 +267,19 @@ export const getSalesReport = createServerFn({ method: 'GET' })
       },
     }
   })
+
+export function salesReportQuery(data: {
+  tenantId: string
+  venueId: string
+  from: string
+  to: string
+}) {
+  return queryOptions({
+    queryFn: () => getSalesReport({ data }),
+    queryKey: ['tenant', data.tenantId, 'venue', data.venueId, 'sales-report', data.from, data.to],
+    staleTime: 30_000,
+  })
+}
 
 export const exportSalesReportCsv = createServerFn({ method: 'GET' })
   .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])

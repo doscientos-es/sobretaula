@@ -1,3 +1,4 @@
+import { queryOptions } from '@tanstack/react-query'
 import { createServerFn } from '@tanstack/react-start'
 
 import { authMiddleware } from '@/features/auth/infrastructure/server/auth-middleware'
@@ -22,3 +23,11 @@ export const getServiceBoard = createServerFn({ method: 'GET' })
       venueId: data.venueId,
     }),
   )
+
+export function serviceBoardQuery(tenantId: string, venueId: string) {
+  return queryOptions({
+    queryFn: () => getServiceBoard({ data: { tenantId, venueId } }),
+    queryKey: ['tenant', tenantId, 'venue', venueId, 'service-board'],
+    staleTime: 5_000,
+  })
+}

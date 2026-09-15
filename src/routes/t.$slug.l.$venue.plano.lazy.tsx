@@ -1,13 +1,18 @@
+import { useQuery } from '@tanstack/react-query'
 import { createLazyFileRoute } from '@tanstack/react-router'
 
-import { FloorPlanPage } from '@/features/floor-plan'
+import { TenantRoutePending } from '@/app/tenant-route-loader'
+import { FloorPlanPage, floorPlanQuery } from '@/features/floor-plan'
 
 export const Route = createLazyFileRoute('/t/$slug/l/$venue/plano')({
   component: FloorPlanRoute,
 })
 
 function FloorPlanRoute() {
-  const { data, tenant, venue } = Route.useLoaderData()
+  const { tenant, venue } = Route.useLoaderData()
+  const plan = useQuery(floorPlanQuery(tenant.id, venue.id))
+  if (plan.isPending) return <TenantRoutePending />
+  if (plan.error) throw plan.error
 
-  return <FloorPlanPage data={data} tenantId={tenant.id} venueId={venue.id} />
+  return <FloorPlanPage data={plan.data} tenantId={tenant.id} venueId={venue.id} />
 }

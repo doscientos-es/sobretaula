@@ -1,4 +1,4 @@
-export { getServiceBoard } from './application/service-board'
+export { getServiceBoard, serviceBoardQuery } from './application/service-board'
 export {
   closeSession,
   cancelReservation,

@@ -8,6 +8,9 @@ export function createQueryClient(): QueryClient {
   return new QueryClient({
     defaultOptions: {
       queries: {
+        // Keep recent route data available during fast back/forward navigation.
+        // Stale queries still revalidate in the background when they are used.
+        gcTime: 10 * 60_000,
         retry: 1,
         staleTime: 30_000,
       },

@@ -61,14 +61,37 @@ export default defineConfig(({ mode }) => {
       },
     },
     build: {
-      rollupOptions: {
+      // Avoid downloading the whole route graph on first paint. TanStack Router
+      // still preloads routes on intent, while the active route loads on demand.
+      modulePreload: false,
+      rolldownOptions: {
         output: {
           codeSplitting: {
             groups: [
-              { name: 'vendor-react', test: /node_modules.*react(?:-dom)?/ },
-              { name: 'vendor-ui', test: /node_modules.*@doscientos(?:\+|[/\\])ui/ },
-              { name: 'vendor-icons', test: /node_modules.*lucide-react/ },
-              { name: 'vendor-supabase', test: /node_modules.*@supabase(?:\+|[/\\])/ },
+              {
+                name: 'vendor-react',
+                test: /node_modules[\\/]react(?:-dom)?[\\/]/,
+                entriesAware: true,
+                priority: 20,
+              },
+              {
+                name: 'vendor-ui',
+                test: /node_modules[\\/]@doscientos[\\/]ui[\\/]/,
+                entriesAware: true,
+                maxSize: 180_000,
+                priority: 15,
+              },
+              {
+                name: 'vendor-icons',
+                test: /node_modules[\\/]lucide-react[\\/]/,
+                entriesAware: true,
+                priority: 10,
+              },
+              {
+                name: 'vendor-supabase',
+                test: /node_modules[\\/]@supabase[\\/]supabase-js[\\/]/,
+                priority: 10,
+              },
             ],
           },
         },
