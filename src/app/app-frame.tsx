@@ -225,6 +225,18 @@ export function TenantAdminFrame({
                 <FileText className="size-3" />
                 {t('nav.invoices')}
               </Link>
+              {activeVenue && (
+                <Link
+                  onClick={handleLockedNavigation}
+                  to="/t/$slug/l/$venue/fidelizacion"
+                  params={{ slug, venue: activeVenue.slug }}
+                  activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
+                  className={navLinkClass}
+                >
+                  <Gift className="size-3" />
+                  Puntos de clientes
+                </Link>
+              )}
               <details className="group mt-1">
                 <summary className="st-saas-nav-link cursor-pointer list-none px-2.5 py-1.5 text-xs font-medium">
                   Más opciones
@@ -308,18 +320,6 @@ export function TenantAdminFrame({
                     >
                       <Gift className="size-3" />
                       Tarjetas regalo
-                    </Link>
-                  )}
-                  {activeVenue && (
-                    <Link
-                      onClick={handleLockedNavigation}
-                      to="/t/$slug/l/$venue/fidelizacion"
-                      params={{ slug, venue: activeVenue.slug }}
-                      activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
-                      className={navLinkClass}
-                    >
-                      <Gift className="size-3" />
-                      Puntos de clientes
                     </Link>
                   )}
                   <Link

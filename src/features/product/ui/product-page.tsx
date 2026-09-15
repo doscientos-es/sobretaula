@@ -293,17 +293,15 @@ export function ProductPage({
   }
   return (
     <section className="space-y-6">
-      <Card className="border-warning/30 bg-warning/5">
-        <CardHeader>
-          <CardTitle>Compras recomendadas</CardTitle>
-          <p className="text-muted-foreground text-sm">
-            Productos por debajo del stock mínimo configurado.
-          </p>
-        </CardHeader>
-        <CardContent>
-          {purchaseRecommendations.length === 0 ? (
-            <p className="text-muted-foreground text-sm">No hay compras urgentes.</p>
-          ) : (
+      {purchaseRecommendations.length > 0 && (
+        <Card className="border-warning/30 bg-warning/5">
+          <CardHeader>
+            <CardTitle>Compras recomendadas</CardTitle>
+            <p className="text-muted-foreground text-sm">
+              Productos por debajo del stock mínimo configurado.
+            </p>
+          </CardHeader>
+          <CardContent>
             <ul className="grid gap-2 text-sm sm:grid-cols-2">
               {purchaseRecommendations.map((recommendation) => (
                 <li
@@ -325,9 +323,9 @@ export function ProductPage({
                 </li>
               ))}
             </ul>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
       <details className="group">
         <summary className="text-muted-foreground hover:text-foreground cursor-pointer list-none text-sm font-medium">
           <span className="group-open:hidden">Ver previsión de demanda</span>
