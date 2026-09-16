@@ -101,6 +101,7 @@ export function TimekeepingTerminalPage({
         <CardContent className="space-y-4">
           <Field>
             <AutocompleteCombobox
+              aria-label={t('timekeeping.terminal.employee')}
               emptyState="No hay empleados que coincidan."
               getItemKey={(member) => member.userId}
               getItemLabel={(member) => `${member.displayName} · ${member.role}`}

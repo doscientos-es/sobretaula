@@ -204,7 +204,7 @@ export function TenantTeamPage({
                   onSelectionChange={(key) => setRole(selectedRole(String(key)))}
                   selectedKey={role}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger aria-label="Rol de la invitación">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -328,7 +328,7 @@ export function TenantTeamPage({
                           )
                         }
                       >
-                        <SelectTrigger>
+                        <SelectTrigger aria-label={`Rol de ${member.name}`}>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>

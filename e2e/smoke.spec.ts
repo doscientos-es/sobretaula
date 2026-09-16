@@ -77,6 +77,19 @@ test.describe('authenticated restaurant smoke', () => {
     await expect(page.locator('body')).not.toBeEmpty()
   })
 
+  test('public menu allows adding and removing a unit from the order', async ({ page }) => {
+    await page.goto('/menu/la-fonda-demo')
+    await expect(page.getByText('Tu pedido · 0.00 €')).toBeVisible()
+    await page.waitForLoadState('networkidle')
+    const addButton = page.getByRole('button', { name: 'Añadir al pedido' }).first()
+    await expect(addButton).toBeVisible()
+    await addButton.click()
+    await expect(page.getByText(/1 ×/).first()).toBeVisible()
+    const removeButton = page.getByRole('button', { name: /Quitar una unidad de/ }).first()
+    await removeButton.click()
+    await expect(page.getByText('Añade platos para empezar.')).toBeVisible()
+  })
+
   for (const path of [
     '/t/la-fonda-demo',
     '/t/la-fonda-demo/l/principal/tpv',

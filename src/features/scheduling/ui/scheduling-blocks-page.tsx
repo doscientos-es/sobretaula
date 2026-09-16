@@ -18,6 +18,8 @@ import {
 } from '@doscientos/ui'
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 
+import { useAsyncEffect } from '@/shared/lib/react/use-async-effect'
+
 import {
   createSchedulingBlock,
   deleteSchedulingBlock,
@@ -28,6 +30,8 @@ import {
 } from '../application/blocks'
 export function SchedulingBlocksPage({ tenantId, venueId }: { tenantId: string; venueId: string }) {
   const [blocks, setBlocks] = useState<SchedulingBlock[]>([])
+  const [loadingBlocks, setLoadingBlocks] = useState(true)
+  const [loadError, setLoadError] = useState(false)
   const [title, setTitle] = useState('')
   const [blockType, setBlockType] = useState('closure')
   const [startsAt, setStartsAt] = useState('')
@@ -38,16 +42,19 @@ export function SchedulingBlocksPage({ tenantId, venueId }: { tenantId: string; 
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [feedback, setFeedback] = useState<string | null>(null)
-  const load = useCallback(
-    () =>
-      getSchedulingBlocks({ data: { tenantId, venueId } })
-        .then(setBlocks)
-        .catch(() => setFeedback('No se han podido cargar los bloqueos.')),
-    [tenantId, venueId],
-  )
-  useEffect(() => {
-    void load()
-  }, [load])
+  const load = useCallback(async () => {
+    setLoadingBlocks(true)
+    setLoadError(false)
+    try {
+      setBlocks(await getSchedulingBlocks({ data: { tenantId, venueId } }))
+    } catch {
+      setLoadError(true)
+      setFeedback('No se han podido cargar los bloqueos.')
+    } finally {
+      setLoadingBlocks(false)
+    }
+  }, [tenantId, venueId])
+  useAsyncEffect(load, [load])
   useEffect(() => {
     void getSchedulingAreas({ data: { tenantId, venueId } })
       .then(setAreas)
@@ -204,7 +211,18 @@ export function SchedulingBlocksPage({ tenantId, venueId }: { tenantId: string; 
           <CardDescription>{blocks.length} registrados</CardDescription>
         </CardHeader>
         <CardContent>
-          {blocks.length === 0 ? (
+          {loadingBlocks ? (
+            <p aria-busy="true" className="text-muted-foreground py-4 text-sm">
+              Cargando bloqueos…
+            </p>
+          ) : loadError ? (
+            <div className="space-y-2 py-4">
+              <p className="text-destructive text-sm">No se han podido cargar los bloqueos.</p>
+              <Button onClick={() => void load()} size="sm" type="button" variant="outline">
+                Reintentar
+              </Button>
+            </div>
+          ) : blocks.length === 0 ? (
             <p className="text-muted-foreground py-4 text-sm">
               No hay bloqueos programados. Crea uno arriba para cerrar el local o una zona.
             </p>

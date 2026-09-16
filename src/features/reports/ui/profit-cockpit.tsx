@@ -1,5 +1,6 @@
 import { Button, Card, CardContent, CardHeader, CardTitle, MetricCard } from '@doscientos/ui'
 import { AlertTriangle, CheckCircle2, Euro, Scale } from 'lucide-react'
+import { useState } from 'react'
 
 import { exportSalesReportCsv, type getSalesReport } from '../application/reports'
 
@@ -13,18 +14,29 @@ export function ProfitCockpit({
   venueId?: string
 }) {
   const profit = report.profitability
+  const [exporting, setExporting] = useState(false)
+  const [exportMessage, setExportMessage] = useState<string | null>(null)
   const euro = (cents: number) => `${(cents / 100).toFixed(2)} €`
   const confidence = { high: 'Alta', medium: 'Media', low: 'Baja' }[profit.confidence]
   async function downloadCsv() {
-    if (!tenantId || !venueId) return
-    const csv = await exportSalesReportCsv({
-      data: { tenantId, venueId, from: profit.period.from, to: profit.period.to },
-    })
-    const link = document.createElement('a')
-    link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }))
-    link.download = `sobretaula-informe-${profit.period.from.slice(0, 10)}.csv`
-    link.click()
-    URL.revokeObjectURL(link.href)
+    if (exporting || !tenantId || !venueId) return
+    setExporting(true)
+    setExportMessage(null)
+    try {
+      const csv = await exportSalesReportCsv({
+        data: { tenantId, venueId, from: profit.period.from, to: profit.period.to },
+      })
+      const link = document.createElement('a')
+      link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }))
+      link.download = `sobretaula-informe-${profit.period.from.slice(0, 10)}.csv`
+      link.click()
+      URL.revokeObjectURL(link.href)
+      setExportMessage('CSV descargado.')
+    } catch {
+      setExportMessage('No se ha podido descargar el CSV. Inténtalo de nuevo.')
+    } finally {
+      setExporting(false)
+    }
   }
   return (
     <section aria-labelledby="profit-cockpit-title" className="space-y-3">
@@ -38,11 +50,22 @@ export function ProfitCockpit({
           </p>
         </div>
         {tenantId && venueId ? (
-          <Button onClick={() => void downloadCsv()} size="sm" type="button" variant="outline">
-            Descargar CSV para gestoría
+          <Button
+            disabled={exporting}
+            onClick={() => void downloadCsv()}
+            size="sm"
+            type="button"
+            variant="outline"
+          >
+            {exporting ? 'Preparando CSV…' : 'Descargar CSV para gestoría'}
           </Button>
         ) : null}
       </div>
+      {exportMessage ? (
+        <p aria-live="polite" className="text-muted-foreground text-sm">
+          {exportMessage}
+        </p>
+      ) : null}
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           description="Ventas netas del periodo"
