@@ -1,3 +1,4 @@
+import { Button } from '@doscientos/ui'
 import { useEffect, useState } from 'react'
 
 import {
@@ -51,6 +52,7 @@ export function PushNotificationPreferences() {
   const [pending, setPending] = useState(false)
   const [error, setError] = useState(false)
   const [success, setSuccess] = useState('')
+  const [permissionMessage, setPermissionMessage] = useState('')
 
   useEffect(() => {
     let cancelled = false
@@ -82,6 +84,7 @@ export function PushNotificationPreferences() {
     setPending(true)
     setError(false)
     setSuccess('')
+    setPermissionMessage('')
     try {
       const config = await getPushNotificationConfig()
       if (!config.publicKey || !('serviceWorker' in navigator) || !('PushManager' in window)) {
@@ -89,7 +92,14 @@ export function PushNotificationPreferences() {
         return
       }
       const permission = await Notification.requestPermission()
-      if (permission !== 'granted') return
+      if (permission !== 'granted') {
+        setPermissionMessage(
+          permission === 'denied'
+            ? 'Las notificaciones están bloqueadas en el navegador. Permítelas en los ajustes del sitio.'
+            : 'No se han activado las notificaciones.',
+        )
+        return
+      }
       const registration = await serviceWorkerReady()
       if (!registration) {
         setAvailable(false)
@@ -147,8 +157,7 @@ export function PushNotificationPreferences() {
               {t('settings.notifications.checking')}
             </output>
           ) : null}
-          <button
-            className="bg-primary text-primary-foreground focus-visible:outline-ring rounded-lg px-3 py-2 font-medium transition-[transform,opacity] duration-150 hover:-translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-60 motion-reduce:transform-none"
+          <Button
             disabled={pending || available === null}
             onClick={() => void (enabled ? disable() : enable())}
             type="button"
@@ -158,10 +167,19 @@ export function PushNotificationPreferences() {
               : enabled
                 ? t('settings.notifications.disable')
                 : t('settings.notifications.enable')}
-          </button>
+          </Button>
         </>
       )}
-      {error ? <p className="text-destructive">{t('settings.notifications.error')}</p> : null}
+      {error ? (
+        <p className="text-destructive" role="alert">
+          {t('settings.notifications.error')}
+        </p>
+      ) : null}
+      {permissionMessage ? (
+        <p className="text-destructive" role="alert">
+          {permissionMessage}
+        </p>
+      ) : null}
       {success ? (
         <output aria-live="polite" className="text-success block font-medium">
           {success}

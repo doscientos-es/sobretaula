@@ -1,4 +1,5 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@doscientos/ui'
+import { Button, Card, CardContent, CardHeader, CardTitle } from '@doscientos/ui'
+import { useState } from 'react'
 
 import { updatePurchaseOrderStatus, type listPurchaseOrders } from '../application/product'
 import type { PurchaseOrderStatus } from '../domain/purchase-order'
@@ -17,15 +18,26 @@ export function PurchaseOrdersPage({
   onDone: () => void
 }) {
   const items = orders.items
+  const [pendingAction, setPendingAction] = useState<string | null>(null)
+  const [feedback, setFeedback] = useState<string | null>(null)
   async function advance(id: string, status: ApiPurchaseOrderStatus) {
-    await updatePurchaseOrderStatus({
-      data: {
-        tenantId,
-        purchaseOrderId: id,
-        status: status as 'approved' | 'sent' | 'received' | 'cancelled',
-      },
-    })
-    onDone()
+    if (pendingAction) return
+    setPendingAction(`${id}:${status}`)
+    setFeedback(null)
+    try {
+      await updatePurchaseOrderStatus({
+        data: {
+          tenantId,
+          purchaseOrderId: id,
+          status: status as 'approved' | 'sent' | 'received' | 'cancelled',
+        },
+      })
+      onDone()
+    } catch {
+      setFeedback('No se ha podido actualizar el pedido de compra. Inténtalo de nuevo.')
+    } finally {
+      setPendingAction(null)
+    }
   }
   return (
     <Card>
@@ -33,6 +45,14 @@ export function PurchaseOrdersPage({
         <CardTitle>Pedidos de compra</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
+        {feedback ? (
+          <div
+            className="text-destructive border-destructive/30 bg-destructive/5 rounded-md border px-3 py-2 text-sm"
+            role="alert"
+          >
+            {feedback}
+          </div>
+        ) : null}
         {!items.length ? (
           <p className="text-muted-foreground text-sm">Todavía no hay pedidos de compra.</p>
         ) : (
@@ -52,31 +72,35 @@ export function PurchaseOrdersPage({
               </div>
               <div className="flex gap-2">
                 {order.status === 'draft' ? (
-                  <button
-                    className="bg-primary text-primary-foreground rounded px-3 py-1 text-sm"
+                  <Button
+                    disabled={pendingAction !== null}
                     onClick={() => void advance(order.id, 'approved')}
+                    size="sm"
                     type="button"
                   >
-                    Aprobar
-                  </button>
+                    {pendingAction === `${order.id}:approved` ? 'Aprobando…' : 'Aprobar'}
+                  </Button>
                 ) : null}
                 {order.status === 'approved' ? (
-                  <button
-                    className="bg-primary text-primary-foreground rounded px-3 py-1 text-sm"
+                  <Button
+                    disabled={pendingAction !== null}
                     onClick={() => void advance(order.id, 'sent')}
+                    size="sm"
                     type="button"
                   >
-                    Marcar enviado
-                  </button>
+                    {pendingAction === `${order.id}:sent` ? 'Actualizando…' : 'Marcar enviado'}
+                  </Button>
                 ) : null}
                 {['draft', 'approved'].includes(order.status) ? (
-                  <button
-                    className="rounded border px-3 py-1 text-sm"
+                  <Button
+                    disabled={pendingAction !== null}
                     onClick={() => void advance(order.id, 'cancelled')}
+                    size="sm"
                     type="button"
+                    variant="outline"
                   >
-                    Cancelar
-                  </button>
+                    {pendingAction === `${order.id}:cancelled` ? 'Cancelando…' : 'Cancelar'}
+                  </Button>
                 ) : null}
               </div>
             </div>

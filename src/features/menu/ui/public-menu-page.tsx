@@ -1,4 +1,5 @@
 import {
+  Button,
   Card,
   CardContent,
   CardHeader,
@@ -36,6 +37,7 @@ export function PublicMenuPage({
   const [customerPhone, setCustomerPhone] = useState('')
   const [channel, setChannel] = useState<'pickup' | 'delivery'>('pickup')
   const [message, setMessage] = useState<string | null>(null)
+  const [pending, setPending] = useState(false)
   const totalCents = useMemo(() => calculateOnlineOrderTotal(cart), [cart])
   const addToCart = (menuItemId: string, name: string, unitPriceCents: number) =>
     setCart((current) => {
@@ -46,8 +48,19 @@ export function PublicMenuPage({
         )
       return [...current, { menuItemId, name, quantity: 1, unitPriceCents }]
     })
+  const removeFromCart = (menuItemId: string) =>
+    setCart((current) =>
+      current.flatMap((line) =>
+        line.menuItemId !== menuItemId
+          ? [line]
+          : line.quantity > 1
+            ? [{ ...line, quantity: line.quantity - 1 }]
+            : [],
+      ),
+    )
   const submitOrder = async () => {
-    if (!tenantId || !venueId || !customerName.trim() || !cart.length) return
+    if (pending || !tenantId || !venueId || !customerName.trim() || !cart.length) return
+    setPending(true)
     setMessage('Enviando pedido…')
     try {
       const result = await createPublicOnlineOrder({
@@ -65,6 +78,8 @@ export function PublicMenuPage({
       setMessage(`Pedido recibido · total ${(result.totalCents / 100).toFixed(2)} €`)
     } catch {
       setMessage('No hemos podido enviar el pedido. Revisa los datos e inténtalo de nuevo.')
+    } finally {
+      setPending(false)
     }
   }
   const sections = buildMenuSections({
@@ -80,6 +95,16 @@ export function PublicMenuPage({
           Consulta nuestros platos, alérgenos e información alimentaria.
         </PageHeaderDescription>
       </PageHeader>
+      {sections.length === 0 ? (
+        <Card>
+          <CardContent className="py-10 text-center">
+            <p className="font-medium">La carta no está disponible ahora mismo.</p>
+            <p className="text-muted-foreground mt-1 text-sm">
+              Vuelve a intentarlo más tarde o consulta al personal del local.
+            </p>
+          </CardContent>
+        </Card>
+      ) : null}
       {sections.map((section) => (
         <Card key={section.category.id}>
           <CardHeader>
@@ -155,21 +180,29 @@ export function PublicMenuPage({
         </Card>
       ))}
       {tenantId && venueId ? (
-        <Card className="sticky bottom-4 shadow-lg">
+        <Card aria-busy={pending} className="sticky bottom-4 shadow-lg">
           <CardHeader>
             <CardTitle>Tu pedido · {(totalCents / 100).toFixed(2)} €</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             {cart.length ? (
               cart.map((line) => (
-                <div
-                  className="flex justify-between text-sm"
-                  key={`${line.name}-${line.unitPriceCents}`}
-                >
+                <div className="flex justify-between text-sm" key={line.menuItemId}>
                   <span>
                     {line.quantity} × {line.name}
                   </span>
-                  <span>{((line.quantity * line.unitPriceCents) / 100).toFixed(2)} €</span>
+                  <span className="flex items-center gap-2">
+                    <span>{((line.quantity * line.unitPriceCents) / 100).toFixed(2)} €</span>
+                    <Button
+                      aria-label={`Quitar una unidad de ${line.name}`}
+                      onClick={() => removeFromCart(line.menuItemId)}
+                      size="sm"
+                      type="button"
+                      variant="outline"
+                    >
+                      −
+                    </Button>
+                  </span>
                 </div>
               ))
             ) : (
@@ -195,14 +228,14 @@ export function PublicMenuPage({
               <option value="pickup">Recoger en local</option>
               <option value="delivery">Entrega</option>
             </select>
-            <button
-              className="bg-primary text-primary-foreground w-full rounded-md px-4 py-2 disabled:opacity-50"
+            <Button
+              className="w-full"
               disabled={!cart.length || !customerName.trim()}
               onClick={() => void submitOrder()}
               type="button"
             >
-              Confirmar pedido
-            </button>
+              {pending ? 'Enviando…' : 'Confirmar pedido'}
+            </Button>
             {message ? (
               <p aria-live="polite" className="text-sm">
                 {message}

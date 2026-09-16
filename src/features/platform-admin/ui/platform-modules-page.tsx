@@ -30,6 +30,7 @@ export function PlatformModulesPage({
   const [saving, setSaving] = useState<string | null>(null)
 
   async function saveModule(module: PlatformModule) {
+    if (saving) return
     setSaving(module.code)
     setMessage('')
     try {
@@ -51,7 +52,7 @@ export function PlatformModulesPage({
   }
 
   async function toggleTenantModule(module: PlatformModule, enabled: boolean) {
-    if (!selectedTenant) return
+    if (!selectedTenant || saving) return
     setSaving(`${selectedTenant}:${module.code}`)
     setMessage('')
     try {
@@ -75,7 +76,9 @@ export function PlatformModulesPage({
         </p>
       </header>
       {message && (
-        <output className="bg-muted block rounded-lg px-3 py-2 text-sm">{message}</output>
+        <output aria-live="polite" className="bg-muted block rounded-lg px-3 py-2 text-sm">
+          {message}
+        </output>
       )}
       <Card>
         <CardHeader>
@@ -110,13 +113,14 @@ export function PlatformModulesPage({
               />
               <div className="flex gap-2">
                 <Button
-                  disabled={saving === module.code}
+                  disabled={saving !== null}
                   onClick={() => void saveModule(module)}
                   size="sm"
                 >
-                  Guardar
+                  {saving === module.code ? 'Guardando…' : 'Guardar'}
                 </Button>
                 <Button
+                  disabled={saving !== null}
                   onClick={() =>
                     setModules((current) =>
                       current.map((item) =>
@@ -160,19 +164,21 @@ export function PlatformModulesPage({
                   <span className="text-sm font-medium">{module.name}</span>
                   <div className="flex gap-2">
                     <Button
-                      disabled={!selectedTenant || saving === `${selectedTenant}:${module.code}`}
+                      disabled={!selectedTenant || saving !== null}
                       onClick={() => void toggleTenantModule(module, true)}
                       size="sm"
                     >
-                      Activar
+                      {saving === `${selectedTenant}:${module.code}` ? 'Actualizando…' : 'Activar'}
                     </Button>
                     <Button
-                      disabled={!selectedTenant || saving === `${selectedTenant}:${module.code}`}
+                      disabled={!selectedTenant || saving !== null}
                       onClick={() => void toggleTenantModule(module, false)}
                       size="sm"
                       variant="outline"
                     >
-                      Desactivar
+                      {saving === `${selectedTenant}:${module.code}`
+                        ? 'Actualizando…'
+                        : 'Desactivar'}
                     </Button>
                   </div>
                 </div>

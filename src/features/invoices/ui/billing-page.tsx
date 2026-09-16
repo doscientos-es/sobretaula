@@ -572,8 +572,14 @@ function InvoiceDownloadButton({ invoiceId, tenantId }: { invoiceId: string; ten
   return (
     <span className="inline-flex items-center gap-2">
       <FormFeedback pendingLabel="Preparando PDF…" state={feedback.state} />
-      <Button onClick={download} size="sm" type="button" variant="ghost">
-        Descargar PDF
+      <Button
+        disabled={feedback.pending}
+        onClick={download}
+        size="sm"
+        type="button"
+        variant="ghost"
+      >
+        {feedback.pending ? 'Preparando…' : 'Descargar PDF'}
       </Button>
     </span>
   )

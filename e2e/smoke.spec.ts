@@ -70,6 +70,13 @@ test.describe('authenticated restaurant smoke', () => {
     expect(runtimeErrors, 'tenant home no debe emitir errores de runtime').toEqual([])
   })
 
+  test('public menu renders the published catalog', async ({ page }) => {
+    await page.goto('/menu/la-fonda-demo')
+    await expect(page.getByText('Carta', { exact: true })).toBeVisible()
+    await expect(page.getByText('No se ha podido cargar esta pantalla')).toHaveCount(0)
+    await expect(page.locator('body')).not.toBeEmpty()
+  })
+
   for (const path of [
     '/t/la-fonda-demo',
     '/t/la-fonda-demo/l/principal/tpv',
@@ -152,5 +159,57 @@ test.describe('authenticated restaurant smoke', () => {
     await page.getByRole('button', { name: 'Limpiar búsqueda', exact: true }).click()
     await expect(search).toHaveValue('')
     await expect(page.getByText('No hay clientes que coincidan.', { exact: true })).toBeHidden()
+  })
+
+  test('sales report explains an invalid date range', async ({ page }) => {
+    await page.goto('/t/la-fonda-demo/l/principal/informes')
+    await expect(
+      page.getByRole('heading', { name: 'Informes de ventas', exact: true }),
+    ).toBeVisible()
+    await page.waitForLoadState('networkidle')
+    await page.locator('#report-from').fill('2026-09-20')
+    await page.locator('#report-to').fill('2026-09-19')
+    await page.getByRole('button', { name: 'Actualizar', exact: true }).click()
+    await expect(page.getByRole('alert')).toContainText('Selecciona un rango válido')
+  })
+
+  test('scheduling blocks explains an invalid time range without creating a block', async ({
+    page,
+  }) => {
+    await page.goto('/t/la-fonda-demo/l/principal/bloques')
+    await expect(
+      page.getByRole('heading', { name: 'Bloques y cierres', exact: true }),
+    ).toBeVisible()
+    await page.waitForLoadState('networkidle')
+    await page.getByLabel('Título').fill('Cierre inválido E2E')
+    await page.getByLabel('Inicio').fill('2026-09-20T10:00')
+    await page.getByLabel('Fin').fill('2026-09-20T09:00')
+    await page.getByRole('button', { name: 'Crear bloqueo', exact: true }).click()
+    await expect(
+      page.getByText('La fecha de fin debe ser posterior al inicio.', { exact: true }),
+    ).toBeVisible()
+    await expect(page.getByText('Cierre inválido E2E', { exact: true })).toHaveCount(0)
+  })
+
+  test('campaigns empty state guides the first campaign creation', async ({ page }) => {
+    await page.goto('/t/la-fonda-demo/l/principal/comunicaciones')
+    await expect(page.getByText('Nueva campaña', { exact: true })).toBeVisible()
+    await page.waitForLoadState('networkidle')
+    await expect(page.getByText('Todavía no hay campañas.', { exact: true })).toBeVisible()
+    await page.getByRole('button', { name: 'Crear primera campaña', exact: true }).click()
+    await expect(page.locator('#campaign-name')).toBeFocused()
+  })
+
+  test('team search recovers from no matches', async ({ page }) => {
+    await page.goto('/t/la-fonda-demo/equipo')
+    await expect(page.getByText('Personas con acceso', { exact: true })).toBeVisible()
+    await page.waitForLoadState('networkidle')
+    const search = page.getByLabel('Buscar en el equipo')
+    await search.fill(`no-existe-equipo-e2e-${Date.now()}`)
+    await expect(
+      page.getByText('No hay personas que coincidan con la búsqueda.', { exact: true }),
+    ).toBeVisible()
+    await page.getByRole('button', { name: 'Limpiar búsqueda', exact: true }).click()
+    await expect(search).toHaveValue('')
   })
 })

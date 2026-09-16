@@ -22,18 +22,20 @@ import {
 export function CampaignsPage({ tenantId }: { tenantId: string }) {
   const [campaigns, setCampaigns] = useState<CampaignSummary[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [feedback, setFeedback] = useState<string | null>(null)
   const [pendingAction, setPendingAction] = useState<string | null>(null)
   const [page, setPage] = useState(1)
   const [total, setTotal] = useState(0)
   const load = useCallback(async () => {
     setLoading(true)
+    setLoadError(null)
     try {
       const result = await listGuestCampaigns({ data: { page, pageSize: 25, tenantId } })
       setCampaigns(result.items)
       setTotal(result.total)
     } catch {
-      setFeedback('No se han podido cargar las campañas.')
+      setLoadError('No se han podido cargar las campañas.')
     } finally {
       setLoading(false)
     }
@@ -47,6 +49,10 @@ export function CampaignsPage({ tenantId }: { tenantId: string }) {
       return typeof field === 'string' ? field : fallback
     }
     setFeedback(null)
+    if (!value('name', '').trim()) {
+      setFeedback('Indica un nombre para la campaña.')
+      return
+    }
     if (pendingAction) return
     setPendingAction('save')
     try {
@@ -141,6 +147,16 @@ export function CampaignsPage({ tenantId }: { tenantId: string }) {
         <CardContent>
           {loading ? (
             <p className="text-muted-foreground text-sm">Cargando…</p>
+          ) : loadError ? (
+            <div
+              className="border-destructive/30 bg-destructive/5 flex flex-wrap items-center justify-between gap-3 rounded-md border px-3 py-2 text-sm"
+              role="alert"
+            >
+              <span className="text-destructive">{loadError}</span>
+              <Button onClick={() => void load()} size="sm" type="button" variant="outline">
+                Reintentar
+              </Button>
+            </div>
           ) : campaigns.length ? (
             <ul className="space-y-2">
               {campaigns.map((campaign) => (
@@ -169,7 +185,17 @@ export function CampaignsPage({ tenantId }: { tenantId: string }) {
               ))}
             </ul>
           ) : (
-            <p className="text-muted-foreground text-sm">Todavía no hay campañas.</p>
+            <div className="space-y-2">
+              <p className="text-muted-foreground text-sm">Todavía no hay campañas.</p>
+              <Button
+                onClick={() => document.getElementById('campaign-name')?.focus()}
+                size="sm"
+                type="button"
+                variant="outline"
+              >
+                Crear primera campaña
+              </Button>
+            </div>
           )}
           {total > 25 && (
             <div className="mt-4 flex items-center justify-between text-sm">

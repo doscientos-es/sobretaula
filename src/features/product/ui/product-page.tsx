@@ -111,6 +111,7 @@ export function ProductPage({
   const [deliveryCost, setDeliveryCost] = useState('')
   const [deliveryIngredientId, setDeliveryIngredientId] = useState('')
   const [purchaseOrderId, setPurchaseOrderId] = useState('')
+  const [pendingRecommendationId, setPendingRecommendationId] = useState<string | null>(null)
   async function createRecommendedPurchase(
     recommendation: (typeof purchaseRecommendations)[number],
   ) {
@@ -120,6 +121,7 @@ export function ProductPage({
       feedback.setError('Crea o selecciona un proveedor antes de generar el pedido.')
       return
     }
+    setPendingRecommendationId(recommendation.ingredientId)
     feedback.setPending()
     try {
       await createPurchaseOrder({
@@ -141,6 +143,8 @@ export function ProductPage({
       onDone()
     } catch {
       feedback.setError('No se ha podido crear el pedido recomendado.')
+    } finally {
+      setPendingRecommendationId(null)
     }
   }
   async function receiveDelivery(event: React.FormEvent) {
@@ -314,7 +318,9 @@ export function ProductPage({
                       size="sm"
                       type="button"
                     >
-                      Crear pedido
+                      {pendingRecommendationId === recommendation.ingredientId
+                        ? 'Creando…'
+                        : 'Crear pedido'}
                     </Button>
                   </div>
                 </li>

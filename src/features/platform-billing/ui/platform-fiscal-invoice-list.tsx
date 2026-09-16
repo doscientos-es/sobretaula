@@ -84,8 +84,20 @@ function InvoicePdfButton({ invoice, locale }: { invoice: PlatformFiscalInvoice;
   return (
     <span className="inline-flex items-center gap-2">
       <FormFeedback pendingLabel="Preparando PDF…" state={feedback.state} />
-      <Button onClick={download} size="sm" type="button" variant="ghost">
-        {locale === 'ca' ? 'Descarregar PDF' : 'Descargar PDF'}
+      <Button
+        disabled={feedback.pending}
+        onClick={download}
+        size="sm"
+        type="button"
+        variant="ghost"
+      >
+        {feedback.pending
+          ? locale === 'ca'
+            ? 'Preparant…'
+            : 'Preparando…'
+          : locale === 'ca'
+            ? 'Descarregar PDF'
+            : 'Descargar PDF'}
       </Button>
     </span>
   )

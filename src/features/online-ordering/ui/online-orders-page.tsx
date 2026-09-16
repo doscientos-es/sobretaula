@@ -40,7 +40,7 @@ export function OnlineOrdersPage({ tenantId, venueId }: { tenantId: string; venu
   useAsyncEffect(load, [load])
   async function advance(order: Order) {
     const status = next[order.status as OnlineOrderStatus]
-    if (!status) return
+    if (!status || busyOrderId) return
     setBusyOrderId(order.id)
     try {
       await updateOnlineOrderStatus({
@@ -109,7 +109,7 @@ export function OnlineOrdersPage({ tenantId, venueId }: { tenantId: string; venu
                       </p>
                       <Button
                         className="mt-2"
-                        disabled={status === 'completed' || busyOrderId === order.id}
+                        disabled={status === 'completed' || busyOrderId !== null}
                         onClick={() => void advance(order)}
                         size="sm"
                         type="button"

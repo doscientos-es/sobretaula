@@ -257,7 +257,7 @@ export function AccountLines({
             </TableBody>
           </Table>
         )}
-        <FormFeedback pendingLabel="Quitando línea…" state={feedback.state} />
+        <FormFeedback pendingLabel="Guardando cambios…" state={feedback.state} />
       </CardContent>
     </Card>
   )

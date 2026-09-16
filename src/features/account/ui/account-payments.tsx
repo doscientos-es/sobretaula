@@ -298,6 +298,11 @@ export function AccountPayments({
       feedback.setError('Descuento no válido.')
       return
     }
+    if (!discountReason.trim()) {
+      feedback.setError('Indica el motivo del descuento.')
+      return
+    }
+    if (feedback.pending) return
     feedback.setPending()
     void applyDiscount({
       data: {
@@ -361,18 +366,6 @@ export function AccountPayments({
                 value={discountDraft}
               />
             </Field>
-            {method === 'gift_card' ? (
-              <Field>
-                <FieldLabel htmlFor="gift-card-code">Código de tarjeta regalo</FieldLabel>
-                <Input
-                  id="gift-card-code"
-                  onChange={(event) => setGiftCardCode(event.target.value)}
-                  placeholder="Ej. ST-2026-ABCD"
-                  required
-                  value={giftCardCode}
-                />
-              </Field>
-            ) : null}
             <Field>
               <FieldLabel htmlFor="discount-reason">Motivo</FieldLabel>
               <Input
@@ -417,6 +410,18 @@ export function AccountPayments({
                   </SelectContent>
                 </Select>
               </Field>
+              {method === 'gift_card' ? (
+                <Field>
+                  <FieldLabel htmlFor="gift-card-code">Código de tarjeta regalo</FieldLabel>
+                  <Input
+                    id="gift-card-code"
+                    onChange={(event) => setGiftCardCode(event.target.value)}
+                    placeholder="Ej. ST-2026-ABCD"
+                    required
+                    value={giftCardCode}
+                  />
+                </Field>
+              ) : null}
               <Field>
                 <FieldLabel htmlFor="payment-parts">Dividir la cuenta</FieldLabel>
                 <Select

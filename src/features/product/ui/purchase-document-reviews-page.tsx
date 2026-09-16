@@ -31,6 +31,8 @@ export function PurchaseDocumentReviewsPage({
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [pendingAction, setPendingAction] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const [ingredients, setIngredients] = useState<
     Awaited<ReturnType<typeof listIngredients>>['items']
@@ -41,6 +43,7 @@ export function PurchaseDocumentReviewsPage({
   const [receivedOn, setReceivedOn] = useState(new Date().toISOString().slice(0, 10))
   const [mappings, setMappings] = useState<Record<string, string>>({})
   const load = useCallback(async () => {
+    setLoading(true)
     try {
       const result = await listPurchaseDocumentReviews({
         data: { tenantId, venueId, page, pageSize: 25 },
@@ -50,6 +53,8 @@ export function PurchaseDocumentReviewsPage({
       setError(null)
     } catch {
       setError('No se han podido cargar las revisiones.')
+    } finally {
+      setLoading(false)
     }
   }, [page, tenantId, venueId])
   useAsyncEffect(load, [load])
@@ -59,12 +64,16 @@ export function PurchaseDocumentReviewsPage({
         data: { tenantId, venueId, page: 1, pageSize: 100, search: '' },
       }),
       listSuppliers({ data: { tenantId, venueId, page: 1, pageSize: 100, search: '' } }),
-    ]).then(([ingredientResult, supplierResult]) => {
-      setIngredients(ingredientResult.items)
-      setSuppliers(supplierResult.items)
-    })
+    ])
+      .then(([ingredientResult, supplierResult]) => {
+        setIngredients(ingredientResult.items)
+        setSuppliers(supplierResult.items)
+      })
+      .catch(() => setError('No se han podido cargar proveedores e ingredientes.'))
   }, [tenantId, venueId])
   async function review(id: string, status: 'approved' | 'rejected') {
+    if (pendingAction) return
+    setPendingAction(`${id}:${status}`)
     try {
       await reviewPurchaseDocument({
         data: { tenantId, venueId, documentId: id, status },
@@ -72,13 +81,18 @@ export function PurchaseDocumentReviewsPage({
       await load()
     } catch {
       setError('No se ha podido guardar la revisión.')
+    } finally {
+      setPendingAction(null)
     }
   }
   async function upload(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const form = new FormData(event.currentTarget)
     const file = form.get('file')
-    if (!(file instanceof File) || file.size === 0) return
+    if (!(file instanceof File) || file.size === 0) {
+      setError('Selecciona un documento PDF o imagen antes de subirlo.')
+      return
+    }
     setUploading(true)
     setError(null)
     form.set('venueId', venueId)
@@ -99,6 +113,8 @@ export function PurchaseDocumentReviewsPage({
   }
   async function apply(row: (typeof rows)[number]) {
     if (!supplierId || !reference || !receivedOn) return
+    if (pendingAction) return
+    setPendingAction(`${row.id}:apply`)
     try {
       await applyPurchaseDocumentReview({
         data: {
@@ -117,6 +133,8 @@ export function PurchaseDocumentReviewsPage({
       await load()
     } catch {
       setError('No se ha podido aplicar el documento. Revisa proveedor y mapeos.')
+    } finally {
+      setPendingAction(null)
     }
   }
   return (
@@ -143,8 +161,16 @@ export function PurchaseDocumentReviewsPage({
             {uploading ? 'Subiendo…' : 'Subir para revisar'}
           </Button>
         </form>
-        {error ? <p className="text-destructive text-sm">{error}</p> : null}
-        {rows.length ? (
+        {error ? (
+          <p className="text-destructive text-sm" role="alert">
+            {error}
+          </p>
+        ) : null}
+        {loading ? (
+          <output aria-busy="true" className="text-muted-foreground text-sm">
+            Cargando revisiones…
+          </output>
+        ) : rows.length ? (
           <ul className="divide-border divide-y">
             {rows.map((row) => (
               <li
@@ -157,10 +183,14 @@ export function PurchaseDocumentReviewsPage({
                       className="text-primary mr-2 underline underline-offset-2"
                       onClick={() =>
                         void (async () => {
-                          const result = await getPurchaseDocumentUrl({
-                            data: { tenantId, venueId, documentId: row.id },
-                          })
-                          window.open(result.url, '_blank', 'noopener,noreferrer')
+                          try {
+                            const result = await getPurchaseDocumentUrl({
+                              data: { tenantId, venueId, documentId: row.id },
+                            })
+                            window.open(result.url, '_blank', 'noopener,noreferrer')
+                          } catch {
+                            setError('No se ha podido abrir el documento.')
+                          }
                         })()
                       }
                       type="button"
@@ -227,23 +257,36 @@ export function PurchaseDocumentReviewsPage({
                         />
                       </label>
                     ))}
-                    <Button onClick={() => void apply(row)} size="sm" type="button">
-                      Crear albarán y aplicar
+                    <Button
+                      disabled={pendingAction !== null}
+                      onClick={() => void apply(row)}
+                      size="sm"
+                      type="button"
+                    >
+                      {pendingAction === `${row.id}:apply`
+                        ? 'Aplicando…'
+                        : 'Crear albarán y aplicar'}
                     </Button>
                   </div>
                 ) : null}
                 {row.status === 'needs_review' ? (
                   <span className="flex gap-2">
-                    <Button onClick={() => void review(row.id, 'approved')} size="sm" type="button">
-                      Aprobar extracción
+                    <Button
+                      disabled={pendingAction !== null}
+                      onClick={() => void review(row.id, 'approved')}
+                      size="sm"
+                      type="button"
+                    >
+                      {pendingAction === `${row.id}:approved` ? 'Aprobando…' : 'Aprobar extracción'}
                     </Button>
                     <Button
+                      disabled={pendingAction !== null}
                       onClick={() => void review(row.id, 'rejected')}
                       size="sm"
                       type="button"
                       variant="outline"
                     >
-                      Rechazar
+                      {pendingAction === `${row.id}:rejected` ? 'Rechazando…' : 'Rechazar'}
                     </Button>
                   </span>
                 ) : null}

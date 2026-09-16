@@ -4,6 +4,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  Button,
   PageHeader,
   PageHeaderDescription,
   PageHeaderTitle,
@@ -28,6 +29,7 @@ export function NotificationJobsPage({ tenantId }: { tenantId: string }) {
   const [loadError, setLoadError] = useState(false)
   const [retryingJobId, setRetryingJobId] = useState<string | null>(null)
   const [success, setSuccess] = useState('')
+  const [actionError, setActionError] = useState('')
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(false)
   const [total, setTotal] = useState(0)
@@ -55,6 +57,7 @@ export function NotificationJobsPage({ tenantId }: { tenantId: string }) {
     if (retryingJobId) return
     setRetryingJobId(jobId)
     setSuccess('')
+    setActionError('')
     try {
       const requeued = await requeueNotificationJob({
         data: { tenantId, jobId },
@@ -63,7 +66,7 @@ export function NotificationJobsPage({ tenantId }: { tenantId: string }) {
       setSuccess(t('communications.jobs.retrySuccess'))
       await loadJobs()
     } catch {
-      setLoadError(true)
+      setActionError('No se ha podido reintentar el trabajo de notificación. Inténtalo de nuevo.')
     } finally {
       setRetryingJobId(null)
     }
@@ -106,17 +109,18 @@ export function NotificationJobsPage({ tenantId }: { tenantId: string }) {
         <CardContent>
           {loadError ? (
             <div className="space-y-3">
-              <p aria-live="assertive" className="text-destructive text-sm">
+              <p aria-live="assertive" className="text-destructive text-sm" role="alert">
                 {t('communications.jobs.loadError')}
               </p>
-              <button
-                className="text-primary focus-visible:outline-ring text-sm font-medium underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2"
+              <Button
                 disabled={loading}
                 onClick={() => void loadJobs()}
+                size="sm"
                 type="button"
+                variant="outline"
               >
                 {t('communications.jobs.retry')}
-              </button>
+              </Button>
             </div>
           ) : loading ? (
             <output aria-live="polite" className="text-muted-foreground block text-sm">
@@ -150,16 +154,17 @@ export function NotificationJobsPage({ tenantId }: { tenantId: string }) {
                       {labelForStatus(job.status)}
                     </span>
                     {job.status === 'failed' ? (
-                      <button
-                        className="text-primary focus-visible:outline-ring text-xs font-medium underline underline-offset-4 transition-opacity hover:opacity-75 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-60"
+                      <Button
                         disabled={Boolean(retryingJobId)}
                         onClick={() => void retry(job.id)}
+                        size="sm"
                         type="button"
+                        variant="outline"
                       >
                         {retryingJobId === job.id
                           ? t('communications.jobs.retrying')
                           : t('communications.jobs.retry')}
-                      </button>
+                      </Button>
                     ) : null}
                   </div>
                 </li>
@@ -193,6 +198,11 @@ export function NotificationJobsPage({ tenantId }: { tenantId: string }) {
             <output aria-live="polite" className="text-success mt-4 block text-sm font-medium">
               {success}
             </output>
+          ) : null}
+          {actionError ? (
+            <p aria-live="assertive" className="text-destructive mt-2 text-sm" role="alert">
+              {actionError}
+            </p>
           ) : null}
         </CardContent>
       </Card>

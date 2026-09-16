@@ -46,6 +46,7 @@ export function CashRegisterPage({
   onDone: () => void
 }) {
   const feedback = useFormFeedback()
+  const [exportMessage, setExportMessage] = useState<string | null>(null)
   const [amount, setAmount] = useState('')
   const [reason, setReason] = useState('')
   const [outAmount, setOutAmount] = useState('')
@@ -78,21 +79,27 @@ export function CashRegisterPage({
     : 0
 
   function downloadCashHistory() {
-    const csv = buildCashHistoryCsv(
-      history.map((entry) => ({
-        closedAt: entry.closed_at as string | null,
-        countedCashCents: entry.counted_cash_cents as number | null,
-        openingFloatCents: entry.opening_float_cents as number | null,
-        openedAt: entry.opened_at as string | null,
-        salesByMethod: (entry.sales_by_method ?? {}) as Record<string, number>,
-        status: entry.status as string,
-      })),
-    )
-    const link = document.createElement('a')
-    link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }))
-    link.download = `sobretaula-caja-${new Date().toISOString().slice(0, 10)}.csv`
-    link.click()
-    URL.revokeObjectURL(link.href)
+    try {
+      const csv = buildCashHistoryCsv(
+        history.map((entry) => ({
+          closedAt: entry.closed_at as string | null,
+          countedCashCents: entry.counted_cash_cents as number | null,
+          openingFloatCents: entry.opening_float_cents as number | null,
+          openedAt: entry.opened_at as string | null,
+          salesByMethod: (entry.sales_by_method ?? {}) as Record<string, number>,
+          status: entry.status as string,
+        })),
+      )
+      const link = document.createElement('a')
+      const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }))
+      link.href = url
+      link.download = `sobretaula-caja-${new Date().toISOString().slice(0, 10)}.csv`
+      link.click()
+      URL.revokeObjectURL(url)
+      setExportMessage('CSV del histórico descargado.')
+    } catch {
+      setExportMessage('No se ha podido generar el CSV del histórico.')
+    }
   }
   return (
     <section className="space-y-6">
@@ -353,6 +360,11 @@ export function CashRegisterPage({
             </div>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
+            {exportMessage ? (
+              <output aria-live="polite" className="text-success block text-sm">
+                {exportMessage}
+              </output>
+            ) : null}
             {history.map((entry) => (
               <div className="flex justify-between border-b pb-2" key={entry.id as string}>
                 <span>{new Date(entry.closed_at as string).toLocaleString('es-ES')}</span>

@@ -35,6 +35,8 @@ export function SchedulingBlocksPage({ tenantId, venueId }: { tenantId: string; 
   const [areas, setAreas] = useState<SchedulingArea[]>([])
   const [areaId, setAreaId] = useState('')
   const [pending, setPending] = useState(false)
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
   const [feedback, setFeedback] = useState<string | null>(null)
   const load = useCallback(
     () =>
@@ -91,6 +93,21 @@ export function SchedulingBlocksPage({ tenantId, venueId }: { tenantId: string; 
       setFeedback('No se ha podido crear el bloqueo.')
     } finally {
       setPending(false)
+    }
+  }
+  async function remove(blockId: string) {
+    if (deletingId) return
+    setDeletingId(blockId)
+    setFeedback(null)
+    try {
+      await deleteSchedulingBlock({ data: { tenantId, venueId, blockId } })
+      setFeedback('Bloqueo eliminado.')
+      await load()
+    } catch {
+      setFeedback('No se ha podido eliminar el bloqueo. Inténtalo de nuevo.')
+    } finally {
+      setDeletingId(null)
+      setPendingDeleteId(null)
     }
   }
   return (
@@ -174,7 +191,11 @@ export function SchedulingBlocksPage({ tenantId, venueId }: { tenantId: string; 
               {pending ? 'Creando…' : 'Crear bloqueo'}
             </Button>
           </form>
-          {feedback && <output className="mt-3 block text-sm">{feedback}</output>}
+          {feedback && (
+            <output aria-live="polite" className="mt-3 block text-sm">
+              {feedback}
+            </output>
+          )}
         </CardContent>
       </Card>
       <Card>
@@ -183,30 +204,56 @@ export function SchedulingBlocksPage({ tenantId, venueId }: { tenantId: string; 
           <CardDescription>{blocks.length} registrados</CardDescription>
         </CardHeader>
         <CardContent>
-          <ul className="divide-border divide-y">
-            {blocks.map((block) => (
-              <li className="flex flex-wrap justify-between gap-2 py-3" key={block.id}>
-                <span className="font-medium">{block.title}</span>
-                <span className="text-muted-foreground text-sm">
-                  {block.blockType} · {new Date(block.startsAt).toLocaleString()} –{' '}
-                  {new Date(block.endsAt).toLocaleString()}
-                  <Button
-                    className="text-destructive ml-2 underline"
-                    onClick={() =>
-                      void deleteSchedulingBlock({
-                        data: { tenantId, venueId, blockId: block.id },
-                      }).then(load)
-                    }
-                    size="sm"
-                    type="button"
-                    variant="ghost"
-                  >
-                    Eliminar
-                  </Button>
-                </span>
-              </li>
-            ))}
-          </ul>
+          {blocks.length === 0 ? (
+            <p className="text-muted-foreground py-4 text-sm">
+              No hay bloqueos programados. Crea uno arriba para cerrar el local o una zona.
+            </p>
+          ) : (
+            <ul className="divide-border divide-y">
+              {blocks.map((block) => (
+                <li className="flex flex-wrap justify-between gap-2 py-3" key={block.id}>
+                  <span className="font-medium">{block.title}</span>
+                  <span className="text-muted-foreground text-sm">
+                    {block.blockType} · {new Date(block.startsAt).toLocaleString()} –{' '}
+                    {new Date(block.endsAt).toLocaleString()}
+                    {pendingDeleteId === block.id ? (
+                      <span className="ml-2 inline-flex items-center gap-2">
+                        <span className="text-muted-foreground">¿Eliminar?</span>
+                        <Button
+                          disabled={deletingId !== null}
+                          onClick={() => void remove(block.id)}
+                          size="sm"
+                          type="button"
+                          variant="destructive"
+                        >
+                          {deletingId === block.id ? 'Eliminando…' : 'Confirmar'}
+                        </Button>
+                        <Button
+                          disabled={deletingId !== null}
+                          onClick={() => setPendingDeleteId(null)}
+                          size="sm"
+                          type="button"
+                          variant="ghost"
+                        >
+                          No
+                        </Button>
+                      </span>
+                    ) : (
+                      <Button
+                        className="text-destructive ml-2 underline"
+                        onClick={() => setPendingDeleteId(block.id)}
+                        size="sm"
+                        type="button"
+                        variant="ghost"
+                      >
+                        Eliminar
+                      </Button>
+                    )}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
         </CardContent>
       </Card>
     </section>

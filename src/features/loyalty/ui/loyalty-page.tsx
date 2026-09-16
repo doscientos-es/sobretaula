@@ -16,6 +16,8 @@ export function LoyaltyPage({ tenantId }: { tenantId: string }) {
   const [points, setPoints] = useState('')
   const [reason, setReason] = useState('')
   const [feedback, setFeedback] = useState<string | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [pendingAction, setPendingAction] = useState(false)
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -23,6 +25,7 @@ export function LoyaltyPage({ tenantId }: { tenantId: string }) {
   const load = useCallback(async () => {
     const version = ++loadVersion.current
     setLoading(true)
+    setLoadError(null)
     try {
       const result = await listLoyaltyGuests({
         data: { tenantId, page, pageSize: 25 },
@@ -30,17 +33,18 @@ export function LoyaltyPage({ tenantId }: { tenantId: string }) {
       if (version !== loadVersion.current) return
       setGuests(result.items)
       setHasMore(result.hasMore)
-      setFeedback(null)
+      setLoadError(null)
     } catch {
       if (version === loadVersion.current)
-        setFeedback('No se han podido cargar los puntos de clientes.')
+        setLoadError('No se han podido cargar los puntos de clientes.')
     } finally {
       if (version === loadVersion.current) setLoading(false)
     }
   }, [page, tenantId])
   useAsyncEffect(load, [load])
   async function save() {
-    if (!selected || !reason.trim() || !Number.isInteger(Number(points))) return
+    if (pendingAction || !selected || !reason.trim() || !Number.isInteger(Number(points))) return
+    setPendingAction(true)
     try {
       await adjustLoyaltyPoints({
         data: {
@@ -57,11 +61,20 @@ export function LoyaltyPage({ tenantId }: { tenantId: string }) {
       await load()
     } catch {
       setFeedback('No se ha podido actualizar el saldo.')
+    } finally {
+      setPendingAction(false)
     }
   }
   async function redeem() {
-    if (!selected || !reason.trim() || !Number.isInteger(Number(points)) || Number(points) <= 0)
+    if (
+      pendingAction ||
+      !selected ||
+      !reason.trim() ||
+      !Number.isInteger(Number(points)) ||
+      Number(points) <= 0
+    )
       return
+    setPendingAction(true)
     try {
       await redeemLoyaltyPoints({
         data: {
@@ -78,6 +91,8 @@ export function LoyaltyPage({ tenantId }: { tenantId: string }) {
       await load()
     } catch {
       setFeedback('No hay puntos suficientes o no se ha podido canjear.')
+    } finally {
+      setPendingAction(false)
     }
   }
   const numericPoints = Number(points)
@@ -111,6 +126,13 @@ export function LoyaltyPage({ tenantId }: { tenantId: string }) {
             <output aria-busy="true" className="text-muted-foreground text-sm">
               Cargando clientes…
             </output>
+          ) : loadError ? (
+            <div className="flex flex-wrap items-center justify-between gap-3" role="alert">
+              <span className="text-destructive text-sm">{loadError}</span>
+              <Button onClick={() => void load()} size="sm" type="button" variant="outline">
+                Reintentar
+              </Button>
+            </div>
           ) : guests.length ? (
             <ul className="divide-border divide-y">
               {guests.map((guest) => (
@@ -156,9 +178,7 @@ export function LoyaltyPage({ tenantId }: { tenantId: string }) {
                 Siguiente
               </Button>
             </div>
-          ) : (
-            <p className="text-muted-foreground text-sm">Todavía no hay clientes con puntos.</p>
-          )}
+          ) : null}
         </CardContent>
       </Card>
       {selected ? (
@@ -180,11 +200,15 @@ export function LoyaltyPage({ tenantId }: { tenantId: string }) {
               placeholder="Motivo obligatorio"
               value={reason}
             />
-            <Button disabled={!canSaveAdjustment} onClick={() => void save()} type="button">
-              Guardar ajuste
+            <Button
+              disabled={pendingAction || !canSaveAdjustment}
+              onClick={() => void save()}
+              type="button"
+            >
+              {pendingAction ? 'Guardando…' : 'Guardar ajuste'}
             </Button>
             <Button
-              disabled={!canRedeem}
+              disabled={pendingAction || !canRedeem}
               onClick={() => void redeem()}
               type="button"
               variant="outline"

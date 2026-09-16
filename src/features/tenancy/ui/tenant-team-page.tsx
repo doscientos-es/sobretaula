@@ -24,8 +24,9 @@ import {
   SelectValue,
   useFormFeedback,
 } from '@doscientos/ui'
-import { useEffect, useState, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 
+import { useAsyncEffect } from '@/shared/lib/react/use-async-effect'
 import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
 
 import {
@@ -82,17 +83,27 @@ export function TenantTeamPage({
   const [visibleTeam, setVisibleTeam] = useState(team)
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(team.page)
-  useEffect(() => {
+  const [teamLoading, setTeamLoading] = useState(false)
+  const [teamError, setTeamError] = useState<string | null>(null)
+  const [teamRefresh, setTeamRefresh] = useState(0)
+  useAsyncEffect(() => {
     let active = true
-    void getTenantTeam({ data: { tenantId, page, pageSize: team.pageSize, search } }).then(
-      (result) => {
+    setTeamLoading(true)
+    setTeamError(null)
+    void getTenantTeam({ data: { tenantId, page, pageSize: team.pageSize, search } })
+      .then((result) => {
         if (active) setVisibleTeam(result)
-      },
-    )
+      })
+      .catch(() => {
+        if (active) setTeamError('No se ha podido cargar el equipo.')
+      })
+      .finally(() => {
+        if (active) setTeamLoading(false)
+      })
     return () => {
       active = false
     }
-  }, [page, search, team.pageSize, tenantId])
+  }, [page, search, team.pageSize, teamRefresh, tenantId])
 
   async function run<Result>(
     action: () => Promise<Result>,
@@ -215,7 +226,7 @@ export function TenantTeamPage({
         </Card>
       )}
       <FormFeedback pendingLabel="Actualizando equipo…" state={feedback.state} />
-      <Card>
+      <Card aria-busy={teamLoading}>
         <CardHeader>
           <CardTitle>Personas con acceso</CardTitle>
           <CardDescription>
@@ -233,86 +244,125 @@ export function TenantTeamPage({
             type="search"
             value={search}
           />
-          {visibleTeam.members.map((member) => {
-            const manageable = canManageTeamMember({
-              actorId: viewerId,
-              actorRole: viewerRole,
-              targetId: member.userId,
-              targetRole: member.role,
-            })
-            return (
-              <div
-                className="border-border/70 bg-surface-subtle flex flex-wrap items-center justify-between gap-3 rounded-xl border p-3"
-                key={member.userId}
+          {teamLoading ? (
+            <output aria-busy="true" className="text-muted-foreground block text-sm">
+              Cargando equipo…
+            </output>
+          ) : teamError ? (
+            <div className="flex flex-wrap items-center justify-between gap-3" role="alert">
+              <span className="text-destructive text-sm">{teamError}</span>
+              <Button
+                onClick={() => setTeamRefresh((current) => current + 1)}
+                size="sm"
+                type="button"
+                variant="outline"
               >
-                <div className="flex min-w-0 items-center gap-3">
-                  <Avatar className="bg-primary/10 text-primary" size="lg">
-                    <AvatarFallback>{member.name.slice(0, 2).toUpperCase()}</AvatarFallback>
-                  </Avatar>
-                  <div className="min-w-0">
-                    <p className="truncate font-medium">{member.name}</p>
-                    <p className="text-muted-foreground truncate text-sm">{member.email}</p>
-                    <div className="mt-1.5 flex flex-wrap gap-1.5">
-                      <Badge variant="default">{roleLabel[member.role]}</Badge>
-                      <Badge variant={member.status === 'active' ? 'success' : 'warning'}>
-                        {member.status === 'active' ? 'Activo' : 'Sin acceso'}
-                      </Badge>
+                Reintentar
+              </Button>
+            </div>
+          ) : visibleTeam.members.length === 0 ? (
+            <div className="space-y-2">
+              <p className="text-muted-foreground text-sm">
+                {search
+                  ? 'No hay personas que coincidan con la búsqueda.'
+                  : 'Todavía no hay personas con acceso.'}
+              </p>
+              {search ? (
+                <Button
+                  onClick={() => {
+                    setSearch('')
+                    setPage(1)
+                  }}
+                  size="sm"
+                  type="button"
+                  variant="outline"
+                >
+                  Limpiar búsqueda
+                </Button>
+              ) : null}
+            </div>
+          ) : (
+            visibleTeam.members.map((member) => {
+              const manageable = canManageTeamMember({
+                actorId: viewerId,
+                actorRole: viewerRole,
+                targetId: member.userId,
+                targetRole: member.role,
+              })
+              return (
+                <div
+                  className="border-border/70 bg-surface-subtle flex flex-wrap items-center justify-between gap-3 rounded-xl border p-3"
+                  key={member.userId}
+                >
+                  <div className="flex min-w-0 items-center gap-3">
+                    <Avatar className="bg-primary/10 text-primary" size="lg">
+                      <AvatarFallback>{member.name.slice(0, 2).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0">
+                      <p className="truncate font-medium">{member.name}</p>
+                      <p className="text-muted-foreground truncate text-sm">{member.email}</p>
+                      <div className="mt-1.5 flex flex-wrap gap-1.5">
+                        <Badge variant="default">{roleLabel[member.role]}</Badge>
+                        <Badge variant={member.status === 'active' ? 'success' : 'warning'}>
+                          {member.status === 'active' ? 'Activo' : 'Sin acceso'}
+                        </Badge>
+                      </div>
                     </div>
                   </div>
-                </div>
-                {manageable && (
-                  <div className="flex gap-2">
-                    <Select
-                      aria-label={`Rol de ${member.name}`}
-                      defaultSelectedKey={member.role}
-                      onSelectionChange={(key) =>
-                        void run(
-                          () =>
-                            updateTenantMemberRole({
-                              data: {
-                                role: selectedRole(String(key)),
-                                tenantId,
-                                userId: member.userId,
-                              },
-                            }),
-                          'Rol actualizado.',
-                        )
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectList>
-                          {rolesFor(viewerRole).map((candidate) => (
-                            <SelectItem id={candidate} key={candidate}>
-                              {roleLabel[candidate]}
-                            </SelectItem>
-                          ))}
-                        </SelectList>
-                      </SelectContent>
-                    </Select>
-                    {member.status === 'active' && (
-                      <Button
-                        disabled={feedback.pending}
-                        onClick={() =>
+                  {manageable && (
+                    <div className="flex gap-2">
+                      <Select
+                        aria-label={`Rol de ${member.name}`}
+                        defaultSelectedKey={member.role}
+                        onSelectionChange={(key) =>
                           void run(
                             () =>
-                              suspendTenantMember({ data: { tenantId, userId: member.userId } }),
-                            'Acceso desactivado.',
+                              updateTenantMemberRole({
+                                data: {
+                                  role: selectedRole(String(key)),
+                                  tenantId,
+                                  userId: member.userId,
+                                },
+                              }),
+                            'Rol actualizado.',
                           )
                         }
-                        type="button"
-                        variant="outline"
                       >
-                        Desactivar
-                      </Button>
-                    )}
-                  </div>
-                )}
-              </div>
-            )
-          })}
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectList>
+                            {rolesFor(viewerRole).map((candidate) => (
+                              <SelectItem id={candidate} key={candidate}>
+                                {roleLabel[candidate]}
+                              </SelectItem>
+                            ))}
+                          </SelectList>
+                        </SelectContent>
+                      </Select>
+                      {member.status === 'active' && (
+                        <Button
+                          disabled={feedback.pending}
+                          onClick={() =>
+                            void run(
+                              () =>
+                                suspendTenantMember({ data: { tenantId, userId: member.userId } }),
+                              'Acceso desactivado.',
+                            )
+                          }
+                          type="button"
+                          variant="outline"
+                        >
+                          Desactivar
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )
+            })
+          )}
           <div className="flex justify-end gap-2">
             <Button
               disabled={page <= 1}

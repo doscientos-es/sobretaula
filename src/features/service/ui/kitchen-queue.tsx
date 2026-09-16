@@ -97,7 +97,7 @@ export function KitchenQueue({
                         type="button"
                         onClick={() => void advance(ticket, next)}
                       >
-                        Marcar {next}
+                        {pendingId === ticket.id ? 'Actualizando…' : `Marcar ${next}`}
                       </Button>
                     )}
                   </div>

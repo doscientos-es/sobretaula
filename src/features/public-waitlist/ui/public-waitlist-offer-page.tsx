@@ -69,7 +69,7 @@ export function PublicWaitlistOfferPage({ offer, token }: { offer: WaitlistOffer
           ) : available ? (
             <div className="space-y-3">
               {error ? (
-                <p aria-live="assertive" className="text-destructive text-sm">
+                <p aria-live="assertive" className="text-destructive text-sm" role="alert">
                   {t('public.waitlist.failed')}
                 </p>
               ) : null}
