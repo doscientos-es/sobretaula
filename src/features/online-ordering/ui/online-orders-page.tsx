@@ -1,5 +1,5 @@
 import { Button, Card, CardContent, CardHeader, CardTitle } from '@doscientos/ui'
-import { useCallback, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 
 import { useAsyncEffect } from '@/shared/lib/react/use-async-effect'
 
@@ -19,19 +19,22 @@ export function OnlineOrdersPage({ tenantId, venueId }: { tenantId: string; venu
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
   const [busyOrderId, setBusyOrderId] = useState<string | null>(null)
+  const loadVersion = useRef(0)
   const load = useCallback(async () => {
+    const version = ++loadVersion.current
     setLoading(true)
     try {
       const result = await listOnlineOrders({
         data: { page, pageSize: 25, tenantId, venueId },
       })
+      if (version !== loadVersion.current) return
       setOrders(result.items)
       setTotal(result.total)
       setError(null)
     } catch {
-      setError('No se han podido cargar los pedidos online.')
+      if (version === loadVersion.current) setError('No se han podido cargar los pedidos online.')
     } finally {
-      setLoading(false)
+      if (version === loadVersion.current) setLoading(false)
     }
   }, [page, tenantId, venueId])
   useAsyncEffect(load, [load])

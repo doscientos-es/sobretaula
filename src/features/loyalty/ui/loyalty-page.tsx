@@ -18,15 +18,20 @@ export function LoyaltyPage({ tenantId }: { tenantId: string }) {
   const [feedback, setFeedback] = useState<string | null>(null)
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(false)
+  const [loading, setLoading] = useState(true)
   const load = useCallback(async () => {
+    setLoading(true)
     try {
       const result = await listLoyaltyGuests({
         data: { tenantId, page, pageSize: 25 },
       })
       setGuests(result.items)
       setHasMore(result.hasMore)
+      setFeedback(null)
     } catch {
       setFeedback('No se han podido cargar los puntos de clientes.')
+    } finally {
+      setLoading(false)
     }
   }, [page, tenantId])
   useAsyncEffect(load, [load])
@@ -98,7 +103,11 @@ export function LoyaltyPage({ tenantId }: { tenantId: string }) {
       </Card>
       <Card>
         <CardContent className="pt-6">
-          {guests.length ? (
+          {loading ? (
+            <output aria-busy="true" className="text-muted-foreground text-sm">
+              Cargando clientes…
+            </output>
+          ) : guests.length ? (
             <ul className="divide-border divide-y">
               {guests.map((guest) => (
                 <li
@@ -143,7 +152,9 @@ export function LoyaltyPage({ tenantId }: { tenantId: string }) {
                 Siguiente
               </Button>
             </div>
-          ) : null}
+          ) : (
+            <p className="text-muted-foreground text-sm">Todavía no hay clientes con puntos.</p>
+          )}
         </CardContent>
       </Card>
       {selected ? (
