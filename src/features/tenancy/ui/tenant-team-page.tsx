@@ -201,6 +201,7 @@ export function TenantTeamPage({
               <Field>
                 <FieldLabel htmlFor="member-role">Rol</FieldLabel>
                 <Select
+                  aria-label="Rol de la invitación"
                   id="member-role"
                   className="w-full"
                   onSelectionChange={(key) => setRole(selectedRole(String(key)))}
