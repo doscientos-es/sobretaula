@@ -22,11 +22,11 @@ export function calendarHours<T extends CalendarTimedItem>(
       const { hour, minute } = zonedDateTimeParts(new Date(item.startsAt), timeZone)
       return hour * 60 + minute
     })
-  const earliestHour = minutes.length ? Math.floor(Math.min(...minutes) / 60) : 11
+  const earliestHour = minutes.length ? Math.floor(Math.min(...minutes) / 60) : 8
   const latestHour = minutes.length ? Math.ceil(Math.max(...minutes) / 60) + 1 : 23
   return {
     end: Math.min(24, Math.max(23, latestHour)),
-    start: Math.max(8, Math.min(11, earliestHour)),
+    start: Math.max(8, Math.min(8, earliestHour)),
   }
 }
 

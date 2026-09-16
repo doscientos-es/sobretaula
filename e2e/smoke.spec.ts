@@ -129,7 +129,6 @@ test.describe('authenticated restaurant smoke', () => {
     '/t/la-fonda-demo/l/principal/informes',
     '/t/la-fonda-demo/l/principal/productos',
     '/t/la-fonda-demo/l/principal/documentos-compras',
-    '/t/la-fonda-demo/l/principal/pedidos-online',
     '/t/la-fonda-demo/l/principal/propinas',
     '/t/la-fonda-demo/l/principal/fidelizacion',
     '/t/la-fonda-demo/l/principal/tarjetas-regalo',
@@ -174,14 +173,6 @@ test.describe('authenticated restaurant smoke', () => {
     await expect(page.getByText(/stock actual/i)).toBeVisible()
     await page.getByLabel('Buscar ingrediente').fill('no-existe-e2e-xyz')
     await expect(page.getByText('Sin resultados', { exact: true })).toBeVisible()
-  })
-
-  test('online orders exposes a stable empty state when there are no orders', async ({ page }) => {
-    await page.goto('/t/la-fonda-demo/l/principal/pedidos-online')
-    await expect(page.getByRole('heading', { name: 'Pedidos online', exact: true })).toBeVisible()
-    await expect(
-      page.getByText('No hay pedidos en este estado.', { exact: true }).first(),
-    ).toBeVisible()
   })
 
   test('guest directory recovers from a search with no matches', async ({ page }) => {

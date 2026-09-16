@@ -91,6 +91,7 @@ export function ReservationPage({
   const [termsTitle, setTermsTitle] = useState(terms[0]?.title ?? 'Condiciones de reserva')
   const [termsBody, setTermsBody] = useState(terms[0]?.body ?? '')
   const [editingServiceId, setEditingServiceId] = useState<string | null>(null)
+  const [serviceFormOpen, setServiceFormOpen] = useState(false)
   const [reservationCsv, setReservationCsv] = useState('')
   const [reservationPreview, setReservationPreview] = useState<ReservationImportPreview | null>(
     null,
@@ -157,6 +158,7 @@ export function ReservationPage({
   }
 
   function loadService(service: ReservationService) {
+    setServiceFormOpen(true)
     setEditingServiceId(service.id)
     setServiceName(service.name)
     setWeekday(service.weekday)
@@ -198,6 +200,7 @@ export function ReservationPage({
         await createReservationService({ data: payload })
       }
       setEditingServiceId(null)
+      setServiceFormOpen(false)
       reload()
     } catch (error) {
       feedback.setError(reservationServiceErrorMessage(error))
@@ -468,7 +471,7 @@ export function ReservationPage({
                 </Card>
               </div>
             </details>
-            {services.length === 0 || editingServiceId ? (
+            {serviceFormOpen ? (
               <Card className="max-w-xl">
                 <CardHeader>
                   <CardTitle>
@@ -606,7 +609,10 @@ export function ReservationPage({
                     </Button>
                     {editingServiceId ? (
                       <Button
-                        onClick={() => setEditingServiceId(null)}
+                        onClick={() => {
+                          setEditingServiceId(null)
+                          setServiceFormOpen(false)
+                        }}
                         type="button"
                         variant="ghost"
                       >
@@ -629,7 +635,13 @@ export function ReservationPage({
                         excepcional.
                       </CardDescription>
                     </div>
-                    <Button onClick={() => setEditingServiceId(null)} type="button">
+                    <Button
+                      onClick={() => {
+                        setEditingServiceId(null)
+                        setServiceFormOpen(true)
+                      }}
+                      type="button"
+                    >
                       Añadir turno
                     </Button>
                   </CardHeader>
@@ -805,6 +817,58 @@ export function ReservationPage({
             )}
           </TabsContent>
         </TabsPanels>
+        <DialogRoot onOpenChange={setNewReservationOpen} open={newReservationOpen}>
+          <DialogContent className="max-w-xl">
+            <CardHeader>
+              <CardTitle>Nueva reserva</CardTitle>
+              <CardDescription>Completa los datos de la reserva.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form className="grid gap-4" onSubmit={(event) => void reserve(event)}>
+                <Field>
+                  <FieldLabel htmlFor="calendar-reservation-service">Turno</FieldLabel>
+                  <select
+                    id="calendar-reservation-service"
+                    onChange={(event) => setServiceId(event.target.value)}
+                    required
+                    value={serviceId}
+                  >
+                    {services.map((service) => (
+                      <option
+                        key={service.id}
+                        value={service.id}
+                      >{`${service.name} · ${weekdays[service.weekday]}`}</option>
+                    ))}
+                  </select>
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="calendar-reservation-time">Fecha y hora</FieldLabel>
+                  <Input
+                    id="calendar-reservation-time"
+                    onChange={(event) => setStartsAt(event.target.value)}
+                    required
+                    type="datetime-local"
+                    value={startsAt}
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="calendar-reservation-party">Comensales</FieldLabel>
+                  <Input
+                    id="calendar-reservation-party"
+                    min={1}
+                    onChange={(event) => setPartySize(Number(event.target.value))}
+                    required
+                    type="number"
+                    value={partySize}
+                  />
+                </Field>
+                <Button disabled={feedback.pending} type="submit">
+                  Crear reserva
+                </Button>
+              </form>
+            </CardContent>
+          </DialogContent>
+        </DialogRoot>
       </Tabs>
     </section>
   )

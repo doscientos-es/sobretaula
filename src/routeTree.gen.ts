@@ -68,7 +68,6 @@ import { Route as TSlugLVenueFichajeRouteImport } from './routes/t.$slug.l.$venu
 import { Route as TSlugLVenueFichajeTerminalRouteImport } from './routes/t.$slug.l.$venue.fichaje-terminal'
 import { Route as TSlugLVenueFidelizacionRouteImport } from './routes/t.$slug.l.$venue.fidelizacion'
 import { Route as TSlugLVenueInformesRouteImport } from './routes/t.$slug.l.$venue.informes'
-import { Route as TSlugLVenuePedidosOnlineRouteImport } from './routes/t.$slug.l.$venue.pedidos-online'
 import { Route as TSlugLVenuePlanoRouteImport } from './routes/t.$slug.l.$venue.plano'
 import { Route as TSlugLVenueProductosRouteImport } from './routes/t.$slug.l.$venue.productos'
 import { Route as TSlugLVenuePropinasRouteImport } from './routes/t.$slug.l.$venue.propinas'
@@ -403,16 +402,6 @@ const TSlugLVenueInformesRoute = TSlugLVenueInformesRouteImport.update({
   path: '/informes',
   getParentRoute: () => TSlugLVenueRoute,
 } as any)
-const TSlugLVenuePedidosOnlineRoute =
-  TSlugLVenuePedidosOnlineRouteImport.update({
-    id: '/pedidos-online',
-    path: '/pedidos-online',
-    getParentRoute: () => TSlugLVenueRoute,
-  } as any).lazy(() =>
-    import('./routes/t.$slug.l.$venue.pedidos-online.lazy').then(
-      (d) => d.Route,
-    ),
-  )
 const TSlugLVenuePlanoRoute = TSlugLVenuePlanoRouteImport.update({
   id: '/plano',
   path: '/plano',
@@ -535,7 +524,6 @@ export interface FileRoutesByFullPath {
   '/t/$slug/l/$venue/fichaje-terminal': typeof TSlugLVenueFichajeTerminalRoute
   '/t/$slug/l/$venue/fidelizacion': typeof TSlugLVenueFidelizacionRoute
   '/t/$slug/l/$venue/informes': typeof TSlugLVenueInformesRoute
-  '/t/$slug/l/$venue/pedidos-online': typeof TSlugLVenuePedidosOnlineRoute
   '/t/$slug/l/$venue/plano': typeof TSlugLVenuePlanoRoute
   '/t/$slug/l/$venue/productos': typeof TSlugLVenueProductosRoute
   '/t/$slug/l/$venue/propinas': typeof TSlugLVenuePropinasRoute
@@ -602,7 +590,6 @@ export interface FileRoutesByTo {
   '/t/$slug/l/$venue/fichaje-terminal': typeof TSlugLVenueFichajeTerminalRoute
   '/t/$slug/l/$venue/fidelizacion': typeof TSlugLVenueFidelizacionRoute
   '/t/$slug/l/$venue/informes': typeof TSlugLVenueInformesRoute
-  '/t/$slug/l/$venue/pedidos-online': typeof TSlugLVenuePedidosOnlineRoute
   '/t/$slug/l/$venue/plano': typeof TSlugLVenuePlanoRoute
   '/t/$slug/l/$venue/productos': typeof TSlugLVenueProductosRoute
   '/t/$slug/l/$venue/propinas': typeof TSlugLVenuePropinasRoute
@@ -673,7 +660,6 @@ export interface FileRoutesById {
   '/t/$slug/l/$venue/fichaje-terminal': typeof TSlugLVenueFichajeTerminalRoute
   '/t/$slug/l/$venue/fidelizacion': typeof TSlugLVenueFidelizacionRoute
   '/t/$slug/l/$venue/informes': typeof TSlugLVenueInformesRoute
-  '/t/$slug/l/$venue/pedidos-online': typeof TSlugLVenuePedidosOnlineRoute
   '/t/$slug/l/$venue/plano': typeof TSlugLVenuePlanoRoute
   '/t/$slug/l/$venue/productos': typeof TSlugLVenueProductosRoute
   '/t/$slug/l/$venue/propinas': typeof TSlugLVenuePropinasRoute
@@ -745,7 +731,6 @@ export interface FileRouteTypes {
     | '/t/$slug/l/$venue/fichaje-terminal'
     | '/t/$slug/l/$venue/fidelizacion'
     | '/t/$slug/l/$venue/informes'
-    | '/t/$slug/l/$venue/pedidos-online'
     | '/t/$slug/l/$venue/plano'
     | '/t/$slug/l/$venue/productos'
     | '/t/$slug/l/$venue/propinas'
@@ -812,7 +797,6 @@ export interface FileRouteTypes {
     | '/t/$slug/l/$venue/fichaje-terminal'
     | '/t/$slug/l/$venue/fidelizacion'
     | '/t/$slug/l/$venue/informes'
-    | '/t/$slug/l/$venue/pedidos-online'
     | '/t/$slug/l/$venue/plano'
     | '/t/$slug/l/$venue/productos'
     | '/t/$slug/l/$venue/propinas'
@@ -882,7 +866,6 @@ export interface FileRouteTypes {
     | '/t/$slug/l/$venue/fichaje-terminal'
     | '/t/$slug/l/$venue/fidelizacion'
     | '/t/$slug/l/$venue/informes'
-    | '/t/$slug/l/$venue/pedidos-online'
     | '/t/$slug/l/$venue/plano'
     | '/t/$slug/l/$venue/productos'
     | '/t/$slug/l/$venue/propinas'
@@ -1337,13 +1320,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TSlugLVenueInformesRouteImport
       parentRoute: typeof TSlugLVenueRoute
     }
-    '/t/$slug/l/$venue/pedidos-online': {
-      id: '/t/$slug/l/$venue/pedidos-online'
-      path: '/pedidos-online'
-      fullPath: '/t/$slug/l/$venue/pedidos-online'
-      preLoaderRoute: typeof TSlugLVenuePedidosOnlineRouteImport
-      parentRoute: typeof TSlugLVenueRoute
-    }
     '/t/$slug/l/$venue/plano': {
       id: '/t/$slug/l/$venue/plano'
       path: '/plano'
@@ -1455,7 +1431,6 @@ interface TSlugLVenueRouteChildren {
   TSlugLVenueFichajeTerminalRoute: typeof TSlugLVenueFichajeTerminalRoute
   TSlugLVenueFidelizacionRoute: typeof TSlugLVenueFidelizacionRoute
   TSlugLVenueInformesRoute: typeof TSlugLVenueInformesRoute
-  TSlugLVenuePedidosOnlineRoute: typeof TSlugLVenuePedidosOnlineRoute
   TSlugLVenuePlanoRoute: typeof TSlugLVenuePlanoRoute
   TSlugLVenueProductosRoute: typeof TSlugLVenueProductosRoute
   TSlugLVenuePropinasRoute: typeof TSlugLVenuePropinasRoute
@@ -1477,7 +1452,6 @@ const TSlugLVenueRouteChildren: TSlugLVenueRouteChildren = {
   TSlugLVenueFichajeTerminalRoute: TSlugLVenueFichajeTerminalRoute,
   TSlugLVenueFidelizacionRoute: TSlugLVenueFidelizacionRoute,
   TSlugLVenueInformesRoute: TSlugLVenueInformesRoute,
-  TSlugLVenuePedidosOnlineRoute: TSlugLVenuePedidosOnlineRoute,
   TSlugLVenuePlanoRoute: TSlugLVenuePlanoRoute,
   TSlugLVenueProductosRoute: TSlugLVenueProductosRoute,
   TSlugLVenuePropinasRoute: TSlugLVenuePropinasRoute,

@@ -38,16 +38,16 @@ export function InlineMenuItemRow({
   const [editing, setEditing] = useState(false)
   const [name, setName] = useState('')
   const [price, setPrice] = useState('')
-  const [vatRate, setVatRate] = useState<string | null>(null)
+  const [vatRate, setVatRate] = useState<string | null>('1000')
   const [preparationMinutes, setPreparationMinutes] = useState('')
-  const [kitchenStation, setKitchenStation] = useState<KitchenStation | null>(null)
+  const [kitchenStation, setKitchenStation] = useState<KitchenStation | null>('general')
 
   function resetDraft() {
     setName('')
     setPrice('')
-    setVatRate(null)
+    setVatRate('1000')
     setPreparationMinutes('')
-    setKitchenStation(null)
+    setKitchenStation('general')
     feedback.reset()
   }
 
@@ -189,7 +189,7 @@ export function InlineMenuItemRow({
         </Select>
       </TableCell>
       <TableCell>
-        <div className="flex min-w-48 flex-wrap items-center justify-end gap-2">
+        <div className="flex min-w-48 flex-nowrap items-center justify-end gap-2">
           <FormFeedback pendingLabel="Guardando…" state={feedback.state} />
           <Button disabled={feedback.pending} onClick={() => void save()} size="sm" type="button">
             Guardar plato

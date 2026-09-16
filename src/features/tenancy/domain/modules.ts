@@ -7,7 +7,6 @@ export const MODULE_KEYS = [
   'loyalty',
   'workforce',
   'finance',
-  'online_ordering',
   'analytics',
   'automation',
   'multi_venue',
@@ -68,13 +67,6 @@ export const MODULE_DEFINITIONS: Record<ModuleKey, ModuleDefinition> = {
     description: 'Facturación, conciliación, gastos y exportación contable.',
     dependencies: ['core'],
     roles: ['owner', 'manager', 'accountant'],
-  },
-  online_ordering: {
-    key: 'online_ordering',
-    label: 'Pedidos online',
-    description: 'Pedidos para recoger o entregar y carta pública.',
-    dependencies: ['core'],
-    roles: operationalRoles,
   },
   analytics: {
     key: 'analytics',

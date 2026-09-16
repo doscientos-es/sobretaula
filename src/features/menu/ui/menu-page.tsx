@@ -5,6 +5,14 @@ import {
   CardHeader,
   CardTitle,
   Button,
+  DialogContent,
+  DialogHeader,
+  DialogRoot,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  Field,
+  FieldLabel,
   PageHeader,
   PageHeaderDescription,
   PageHeaderTitle,
@@ -21,15 +29,15 @@ import {
   TableRow,
   Input,
 } from '@doscientos/ui'
-import { ArrowRight, BookOpen, Layers3, Plus } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { ArrowRight, BookOpen, Layers3, Pencil, Plus, Trash2 } from 'lucide-react'
+import { useState, type FormEvent } from 'react'
 
 import type { Locale } from '@/shared/lib/i18n/locale'
 import { createTranslator } from '@/shared/lib/i18n/messages'
 import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
 
-import type { MenuCatalog } from '../application/menu'
+import { deleteMenuCategory, updateMenuCategory, type MenuCatalog } from '../application/menu'
 import {
   buildMenuSections,
   filterMenuSections,
@@ -44,10 +52,12 @@ import { MenuItemRow } from './menu-item-row'
 export function MenuPage({
   catalog,
   locale,
+  primaryLocale,
   tenantId,
 }: {
   catalog: MenuCatalog
   locale: Locale
+  primaryLocale: Locale
   tenantId: string
 }) {
   const t = createTranslator(locale)
@@ -62,6 +72,12 @@ export function MenuPage({
   const [visibility, setVisibility] = useState<'all' | 'active' | 'inactive'>('all')
   const [station, setStation] = useState<KitchenStation | 'all'>('all')
   const [categoryOpen, setCategoryOpen] = useState(false)
+  const [editingCategory, setEditingCategory] = useState<MenuCatalog['categories'][number]>()
+  const [editNameEs, setEditNameEs] = useState('')
+  const [editNameCa, setEditNameCa] = useState('')
+  const [deleteTarget, setDeleteTarget] = useState<MenuCatalog['categories'][number]>()
+  const [deletingCategory, setDeletingCategory] = useState(false)
+  const [categorySaving, setCategorySaving] = useState(false)
   const visibleSections = filterMenuSections(sections, {
     isActive: visibility === 'all' ? undefined : visibility === 'active',
     kitchenStation: station === 'all' ? undefined : station,
@@ -80,6 +96,53 @@ export function MenuPage({
   function reloadMenu() {
     void queryClient.invalidateQueries({ queryKey: ['tenant', tenantId, 'menu-catalog'] })
     reload()
+  }
+
+  function openCategoryEditor(category: MenuCatalog['categories'][number]) {
+    setEditingCategory(category)
+    setEditNameEs(
+      primaryLocale === 'ca' ? (category.nameI18n.ca ?? '') : (category.nameI18n.es ?? ''),
+    )
+    setEditNameCa(
+      primaryLocale === 'ca' ? (category.nameI18n.es ?? '') : (category.nameI18n.ca ?? ''),
+    )
+  }
+
+  async function removeCategory(category: MenuCatalog['categories'][number]) {
+    setDeleteTarget(category)
+  }
+
+  async function saveCategory(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!editingCategory || !editNameEs.trim()) return
+    setCategorySaving(true)
+    try {
+      await updateMenuCategory({
+        data: {
+          categoryId: editingCategory.id,
+          nameCa: primaryLocale === 'ca' ? editNameEs.trim() : editNameCa.trim() || undefined,
+          nameEs:
+            primaryLocale === 'ca' ? editNameCa.trim() || editNameEs.trim() : editNameEs.trim(),
+          tenantId,
+        },
+      })
+      setEditingCategory(undefined)
+      reloadMenu()
+    } finally {
+      setCategorySaving(false)
+    }
+  }
+
+  async function confirmDeleteCategory() {
+    if (!deleteTarget) return
+    setDeletingCategory(true)
+    try {
+      await deleteMenuCategory({ data: { categoryId: deleteTarget.id, tenantId } })
+      setDeleteTarget(undefined)
+      reloadMenu()
+    } finally {
+      setDeletingCategory(false)
+    }
   }
 
   return (
@@ -170,10 +233,15 @@ export function MenuPage({
               <div className="bg-primary/10 text-primary mb-5 grid size-11 place-items-center rounded-xl">
                 <BookOpen aria-hidden="true" className="size-5" />
               </div>
-              <p className="text-muted-foreground mb-2 text-sm font-medium">Tu carta empieza aquí</p>
-              <CardTitle className="text-2xl tracking-tight">Construye una carta lista para vender</CardTitle>
+              <p className="text-muted-foreground mb-2 text-sm font-medium">
+                Tu carta empieza aquí
+              </p>
+              <CardTitle className="text-2xl tracking-tight">
+                Construye una carta lista para vender
+              </CardTitle>
               <CardDescription className="mt-2 max-w-lg text-sm leading-6">
-                Organiza tus platos por categorías y añade precios, IVA y estación de cocina desde un mismo lugar.
+                Organiza tus platos por categorías y añade precios, IVA y estación de cocina desde
+                un mismo lugar.
               </CardDescription>
               <Button className="mt-6" onClick={() => setCategoryOpen(true)} type="button">
                 <Plus aria-hidden="true" className="size-4" /> Crear primera categoría
@@ -181,14 +249,30 @@ export function MenuPage({
               </Button>
             </div>
             <div className="bg-muted/40 rounded-xl p-4">
-              <p className="mb-3 text-xs font-semibold uppercase tracking-wide">Cómo empezar</p>
+              <p className="mb-3 text-xs font-semibold tracking-wide uppercase">Cómo empezar</p>
               <ol className="space-y-3 text-sm">
-                <li className="flex gap-3"><span className="bg-background grid size-6 shrink-0 place-items-center rounded-full text-xs font-semibold">1</span><span>Crea una categoría</span></li>
-                <li className="flex gap-3"><span className="bg-background grid size-6 shrink-0 place-items-center rounded-full text-xs font-semibold">2</span><span>Añade tu primer plato</span></li>
-                <li className="flex gap-3"><span className="bg-background grid size-6 shrink-0 place-items-center rounded-full text-xs font-semibold">3</span><span>Déjalo listo para sala</span></li>
+                <li className="flex gap-3">
+                  <span className="bg-background grid size-6 shrink-0 place-items-center rounded-full text-xs font-semibold">
+                    1
+                  </span>
+                  <span>Crea una categoría</span>
+                </li>
+                <li className="flex gap-3">
+                  <span className="bg-background grid size-6 shrink-0 place-items-center rounded-full text-xs font-semibold">
+                    2
+                  </span>
+                  <span>Añade tu primer plato</span>
+                </li>
+                <li className="flex gap-3">
+                  <span className="bg-background grid size-6 shrink-0 place-items-center rounded-full text-xs font-semibold">
+                    3
+                  </span>
+                  <span>Déjalo listo para sala</span>
+                </li>
               </ol>
               <div className="text-muted-foreground mt-4 flex items-center gap-2 border-t pt-3 text-xs">
-                <Layers3 aria-hidden="true" className="size-3.5" /> También puedes importar la carta desde CSV.
+                <Layers3 aria-hidden="true" className="size-3.5" /> También puedes importar la carta
+                desde CSV.
               </div>
             </div>
           </CardContent>
@@ -214,10 +298,34 @@ export function MenuPage({
           {visibleSections.map((section) => (
             <Card key={section.category.id}>
               <CardHeader>
-                <CardTitle>{localizedText(section.category.nameI18n, locale)}</CardTitle>
-                <CardDescription>
-                  {section.items.length === 1 ? '1 plato' : `${section.items.length} platos`}
-                </CardDescription>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <CardTitle>{localizedText(section.category.nameI18n, locale)}</CardTitle>
+                    <CardDescription>
+                      {section.items.length === 1 ? '1 plato' : `${section.items.length} platos`}
+                    </CardDescription>
+                  </div>
+                  <div className="flex shrink-0 gap-1">
+                    <Button
+                      aria-label="Editar categoría"
+                      onClick={() => openCategoryEditor(section.category)}
+                      size="icon"
+                      type="button"
+                      variant="ghost"
+                    >
+                      <Pencil className="size-4" />
+                    </Button>
+                    <Button
+                      aria-label="Borrar categoría"
+                      onClick={() => void removeCategory(section.category)}
+                      size="icon"
+                      type="button"
+                      variant="ghost"
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="overflow-x-auto">
                 <Table className="min-w-[55rem]">
@@ -246,7 +354,7 @@ export function MenuPage({
                     <InlineMenuItemRow
                       categoryId={section.category.id}
                       locale={locale}
-                        onDone={reloadMenu}
+                      onDone={reloadMenu}
                       tenantId={tenantId}
                     />
                   </TableBody>
@@ -256,6 +364,78 @@ export function MenuPage({
           ))}
         </div>
       )}
+      <DialogRoot
+        onOpenChange={(open) => !open && setEditingCategory(undefined)}
+        open={Boolean(editingCategory)}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Editar categoría</DialogTitle>
+            <DialogDescription>Actualiza el nombre y sus traducciones.</DialogDescription>
+          </DialogHeader>
+          <form className="grid gap-4" onSubmit={(event) => void saveCategory(event)}>
+            <Field>
+              <FieldLabel htmlFor="edit-category-es">
+                Nombre principal ({primaryLocale === 'ca' ? 'catalán' : 'castellano'})
+              </FieldLabel>
+              <Input
+                id="edit-category-es"
+                onChange={(event) => setEditNameEs(event.target.value)}
+                required
+                value={editNameEs}
+              />
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="edit-category-ca">
+                Traducción ({primaryLocale === 'ca' ? 'castellano' : 'catalán'})
+              </FieldLabel>
+              <Input
+                id="edit-category-ca"
+                onChange={(event) => setEditNameCa(event.target.value)}
+                value={editNameCa}
+              />
+            </Field>
+            <Button disabled={categorySaving} type="submit">
+              {categorySaving ? 'Guardando…' : 'Guardar cambios'}
+            </Button>
+          </form>
+        </DialogContent>
+      </DialogRoot>
+      <DialogRoot
+        onOpenChange={(open) => !open && setDeleteTarget(undefined)}
+        open={Boolean(deleteTarget)}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Borrar categoría</DialogTitle>
+            <DialogDescription>
+              {deleteTarget &&
+                sections.find((section) => section.category.id === deleteTarget.id)?.items.length
+                ? 'No puedes borrar esta categoría porque todavía tiene platos.'
+                : `Se borrará “${deleteTarget ? localizedText(deleteTarget.nameI18n, locale) : ''}”. Esta acción no se puede deshacer.`}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={() => setDeleteTarget(undefined)} type="button" variant="outline">
+              Cancelar
+            </Button>
+            <Button
+              disabled={
+                deletingCategory ||
+                Boolean(
+                  deleteTarget &&
+                  sections.find((section) => section.category.id === deleteTarget.id)?.items.length,
+                )
+              }
+              onClick={() => void confirmDeleteCategory()}
+              type="button"
+              variant="destructive"
+            >
+              {deletingCategory ? 'Borrando…' : 'Borrar categoría'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </DialogRoot>
     </section>
   )
 }

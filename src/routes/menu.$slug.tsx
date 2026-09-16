@@ -15,12 +15,5 @@ export const Route = createFileRoute('/menu/$slug')({
 
 function PublicMenuRoute() {
   const { catalog, context } = Route.useLoaderData()
-  return (
-    <PublicMenuPage
-      catalog={catalog}
-      locale={context.locale}
-      tenantId={context.tenantId}
-      venueId={context.venueId}
-    />
-  )
+  return <PublicMenuPage catalog={catalog} locale={context.locale} />
 }

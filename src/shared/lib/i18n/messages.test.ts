@@ -10,7 +10,7 @@ describe('translate', () => {
 
   it('exposes a bound translator per locale', () => {
     const t = createTranslator('ca')
-    expect(t('nav.invoices')).toBe('Factures')
+    expect(t('nav.invoices')).toBe('Factures emeses')
   })
 
   it('ships guidance for the full-page error state in every locale', () => {

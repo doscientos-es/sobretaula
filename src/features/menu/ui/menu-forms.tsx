@@ -147,9 +147,9 @@ export function MenuForms({
         <DialogContent className="max-w-2xl">
           <CardHeader>
             <CardTitle>Nueva categoría</CardTitle>
-          <CardDescription>
-            Escribe el nombre principal que verá tu equipo y tus clientes.
-          </CardDescription>
+            <CardDescription>
+              Escribe el nombre principal que verá tu equipo y tus clientes.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <form className="grid gap-4" onSubmit={addCategory}>

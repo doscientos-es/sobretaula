@@ -6,6 +6,7 @@ import { ModifierCard } from '@/features/menu'
 import { productWorkspaceQuery } from '@/features/product/application/product-workspace'
 import { ChannelPriceCard } from '@/features/product/ui/channel-price-card'
 import { ProductPage } from '@/features/product/ui/product-page'
+import { PurchaseDocumentReviewsPage } from '@/features/product/ui/purchase-document-reviews-page'
 import { PurchaseOrdersPage } from '@/features/product/ui/purchase-orders-page'
 import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
 
@@ -34,6 +35,7 @@ function ProductRoute() {
         suppliers={suppliers.items}
         onDone={onDone}
       />
+      <PurchaseDocumentReviewsPage tenantId={tenant.id} venueId={venue.id} />
       <ModifierCard
         ingredients={ingredients.items}
         menu={menu}

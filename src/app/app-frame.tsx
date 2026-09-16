@@ -12,7 +12,6 @@ import { Link, useNavigate, useParams } from '@tanstack/react-router'
 import {
   BarChart3,
   CalendarDays,
-  ChevronDown,
   ConciergeBell,
   Coins,
   ExternalLink,
@@ -22,7 +21,6 @@ import {
   Mail,
   Map,
   Package,
-  ShoppingBag,
   Utensils,
   UtensilsCrossed,
   Users,
@@ -130,7 +128,9 @@ export function TenantAdminFrame({
               to="/t/$slug"
               params={{ slug }}
               activeOptions={{ exact: true }}
-              activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
+              activeProps={{
+                className: `${navLinkClass} st-saas-nav-link--active`,
+              }}
               className={navLinkClass}
             >
               <LayoutDashboard className="size-3" />
@@ -153,7 +153,9 @@ export function TenantAdminFrame({
                   onClick={handleLockedNavigation}
                   to="/t/$slug/l/$venue/tpv"
                   params={{ slug, venue: activeVenue.slug }}
-                  activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
+                  activeProps={{
+                    className: `${navLinkClass} st-saas-nav-link--active`,
+                  }}
                   className={navLinkClass}
                 >
                   <Utensils className="size-3" />
@@ -163,7 +165,9 @@ export function TenantAdminFrame({
                   to="/t/$slug/l/$venue/plano"
                   params={{ slug, venue: activeVenue.slug }}
                   activeOptions={{ exact: true }}
-                  activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
+                  activeProps={{
+                    className: `${navLinkClass} st-saas-nav-link--active`,
+                  }}
                   className={navLinkClass}
                   onClick={handleLockedNavigation}
                 >
@@ -173,7 +177,9 @@ export function TenantAdminFrame({
                 <Link
                   to="/t/$slug/l/$venue/servicio"
                   params={{ slug, venue: activeVenue.slug }}
-                  activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
+                  activeProps={{
+                    className: `${navLinkClass} st-saas-nav-link--active`,
+                  }}
                   className={navLinkClass}
                   onClick={handleLockedNavigation}
                 >
@@ -183,7 +189,9 @@ export function TenantAdminFrame({
                 <Link
                   to="/t/$slug/l/$venue/reservas"
                   params={{ slug, venue: activeVenue.slug }}
-                  activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
+                  activeProps={{
+                    className: `${navLinkClass} st-saas-nav-link--active`,
+                  }}
                   className={navLinkClass}
                   onClick={handleLockedNavigation}
                 >
@@ -199,7 +207,9 @@ export function TenantAdminFrame({
               <Link
                 to="/t/$slug/carta"
                 params={{ slug }}
-                activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
+                activeProps={{
+                  className: `${navLinkClass} st-saas-nav-link--active`,
+                }}
                 className={navLinkClass}
                 onClick={handleLockedNavigation}
               >
@@ -209,7 +219,9 @@ export function TenantAdminFrame({
               <Link
                 to="/t/$slug/facturacion"
                 params={{ slug }}
-                activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
+                activeProps={{
+                  className: `${navLinkClass} st-saas-nav-link--active`,
+                }}
                 className={navLinkClass}
                 onClick={handleLockedNavigation}
               >
@@ -219,7 +231,9 @@ export function TenantAdminFrame({
               <Link
                 to="/t/$slug/facturas"
                 params={{ slug }}
-                activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
+                activeProps={{
+                  className: `${navLinkClass} st-saas-nav-link--active`,
+                }}
                 className={navLinkClass}
                 onClick={handleLockedNavigation}
               >
@@ -231,115 +245,89 @@ export function TenantAdminFrame({
                   onClick={handleLockedNavigation}
                   to="/t/$slug/l/$venue/fidelizacion"
                   params={{ slug, venue: activeVenue.slug }}
-                  activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
+                  activeProps={{
+                    className: `${navLinkClass} st-saas-nav-link--active`,
+                  }}
                   className={navLinkClass}
                 >
                   <Gift className="size-3" />
                   Puntos de clientes
                 </Link>
               )}
-              <details className="group mt-1">
-                <summary className="st-saas-nav-link flex cursor-pointer list-none items-center justify-between px-2.5 py-1.5 text-xs font-medium">
-                  <span>Más opciones</span>
-                  <ChevronDown className="size-3 transition-transform duration-200 group-open:rotate-180" />
-                </summary>
-                <div className="mt-0.5 space-y-0.5 pl-2">
-                  {activeVenue && (
-                    <Link
-                      onClick={handleLockedNavigation}
-                      to="/t/$slug/l/$venue/propinas"
-                      params={{ slug, venue: activeVenue.slug }}
-                      activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
-                      className={navLinkClass}
-                    >
-                      <Coins className="size-3" />
-                      Propinas
-                    </Link>
-                  )}
-                  {activeVenue && (
-                    <Link
-                      onClick={handleLockedNavigation}
-                      to="/t/$slug/l/$venue/documentos-compras"
-                      params={{ slug, venue: activeVenue.slug }}
-                      activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
-                      className={navLinkClass}
-                    >
-                      <FileText className="size-3" />
-                      Revisar compras
-                    </Link>
-                  )}
-                  {activeVenue && (
-                    <>
-                      <Link
-                        onClick={handleLockedNavigation}
-                        to="/t/$slug/l/$venue/productos"
-                        params={{ slug, venue: activeVenue.slug }}
-                        activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
-                        className={navLinkClass}
-                      >
-                        <Package className="size-3" />
-                        Productos y stock
-                      </Link>
-                      <Link
-                        onClick={handleLockedNavigation}
-                        to="/t/$slug/l/$venue/informes"
-                        params={{ slug, venue: activeVenue.slug }}
-                        activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
-                        className={navLinkClass}
-                      >
-                        <BarChart3 className="size-3" />
-                        Rentabilidad
-                      </Link>
-                      <Link
-                        onClick={handleLockedNavigation}
-                        to="/t/$slug/l/$venue/clientes"
-                        params={{ slug, venue: activeVenue.slug }}
-                        activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
-                        className={navLinkClass}
-                      >
-                        <UserRound className="size-3" />
-                        Clientes
-                      </Link>
-                      <Link
-                        onClick={handleLockedNavigation}
-                        to="/t/$slug/l/$venue/pedidos-online"
-                        params={{ slug, venue: activeVenue.slug }}
-                        activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
-                        className={navLinkClass}
-                      >
-                        <ShoppingBag className="size-3" />
-                        Pedidos online
-                      </Link>
-                    </>
-                  )}
-                  {activeVenue && (
-                    <Link
-                      onClick={handleLockedNavigation}
-                      to="/t/$slug/l/$venue/tarjetas-regalo"
-                      params={{ slug, venue: activeVenue.slug }}
-                      activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
-                      className={navLinkClass}
-                    >
-                      <Gift className="size-3" />
-                      Tarjetas regalo
-                    </Link>
-                  )}
+              <div className="mt-0.5 space-y-0.5">
+                {activeVenue && (
                   <Link
-                    to="/t/$slug/comunicaciones"
-                    params={{ slug }}
-                    activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
-                    className={navLinkClass}
                     onClick={handleLockedNavigation}
+                    to="/t/$slug/l/$venue/propinas"
+                    params={{ slug, venue: activeVenue.slug }}
+                    activeProps={{
+                      className: `${navLinkClass} st-saas-nav-link--active`,
+                    }}
+                    className={navLinkClass}
                   >
-                    <Mail className="size-3" />
-                    {t('app.communications')}
+                    <Coins className="size-3" />
+                    Propinas
                   </Link>
-                </div>
-              </details>
+                )}
+                {activeVenue && (
+                  <>
+                    <Link
+                      onClick={handleLockedNavigation}
+                      to="/t/$slug/l/$venue/productos"
+                      params={{ slug, venue: activeVenue.slug }}
+                      activeProps={{
+                        className: `${navLinkClass} st-saas-nav-link--active`,
+                      }}
+                      className={navLinkClass}
+                    >
+                      <Package className="size-3" />
+                      Productos y stock
+                    </Link>
+                    <Link
+                      onClick={handleLockedNavigation}
+                      to="/t/$slug/l/$venue/informes"
+                      params={{ slug, venue: activeVenue.slug }}
+                      activeProps={{
+                        className: `${navLinkClass} st-saas-nav-link--active`,
+                      }}
+                      className={navLinkClass}
+                    >
+                      <BarChart3 className="size-3" />
+                      Rentabilidad
+                    </Link>
+                    <Link
+                      onClick={handleLockedNavigation}
+                      to="/t/$slug/l/$venue/clientes"
+                      params={{ slug, venue: activeVenue.slug }}
+                      activeProps={{
+                        className: `${navLinkClass} st-saas-nav-link--active`,
+                      }}
+                      className={navLinkClass}
+                    >
+                      <UserRound className="size-3" />
+                      Clientes
+                    </Link>
+                  </>
+                )}
+                <Link
+                  to="/t/$slug/comunicaciones"
+                  params={{ slug }}
+                  activeProps={{
+                    className: `${navLinkClass} st-saas-nav-link--active`,
+                  }}
+                  className={navLinkClass}
+                  onClick={handleLockedNavigation}
+                >
+                  <Mail className="size-3" />
+                  {t('app.communications')}
+                </Link>
+              </div>
               <Link
                 to="/t/$slug/equipo"
                 params={{ slug }}
-                activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
+                activeProps={{
+                  className: `${navLinkClass} st-saas-nav-link--active`,
+                }}
                 className={navLinkClass}
                 onClick={handleLockedNavigation}
               >
@@ -354,7 +342,9 @@ export function TenantAdminFrame({
               <Link
                 to="/t/$slug/suscripcion/facturas"
                 params={{ slug }}
-                activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
+                activeProps={{
+                  className: `${navLinkClass} st-saas-nav-link--active`,
+                }}
                 className={navLinkClass}
               >
                 <FileText className="size-3" />
@@ -386,7 +376,10 @@ export function TenantAdminFrame({
               <Button
                 onPress={() => {
                   setShowPaymentDialog(false)
-                  void navigate({ to: '/t/$slug/suscripcion/facturas', params: { slug } })
+                  void navigate({
+                    to: '/t/$slug/suscripcion/facturas',
+                    params: { slug },
+                  })
                 }}
                 type="button"
               >

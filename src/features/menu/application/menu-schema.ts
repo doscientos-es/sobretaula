@@ -22,6 +22,15 @@ export const createMenuCategoryInput = menuTenantInput.extend({
   position: z.number().int().min(0).max(9999).optional(),
 })
 
+export const updateMenuCategoryInput = menuTenantInput.extend({
+  ...categoryNames,
+  categoryId: z.string().uuid(),
+})
+
+export const deleteMenuCategoryInput = menuTenantInput.extend({
+  categoryId: z.string().uuid(),
+})
+
 export const createMenuItemInput = menuTenantInput.extend({
   ...categoryNames,
   categoryId: z.string().uuid(),

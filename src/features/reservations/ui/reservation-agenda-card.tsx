@@ -127,6 +127,7 @@ export function ReservationAgendaCard({
   const [historyEventFilter, setHistoryEventFilter] = useState('all')
   const [agendaLoading, setAgendaLoading] = useState(true)
   const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar')
+  const [hoveredSlot, setHoveredSlot] = useState<{ date: string; top: number } | null>(null)
   const [agendaRefresh, setAgendaRefresh] = useState(0)
   const [depositFilter, setDepositFilter] = useState<'all' | 'pending' | 'paid' | 'attention'>(
     'all',
@@ -335,7 +336,12 @@ export function ReservationAgendaCard({
               onClick={() => setViewMode('calendar')}
               size="sm"
               type="button"
-              variant={viewMode === 'calendar' ? 'secondary' : 'ghost'}
+              variant="ghost"
+              aria-selected={viewMode === 'calendar'}
+              className={cn(
+                'rounded-none border-b-2 border-transparent',
+                viewMode === 'calendar' && 'border-primary',
+              )}
             >
               Calendario
             </Button>
@@ -343,12 +349,17 @@ export function ReservationAgendaCard({
               onClick={() => setViewMode('list')}
               size="sm"
               type="button"
-              variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+              variant="ghost"
+              aria-selected={viewMode === 'list'}
+              className={cn(
+                'rounded-none border-b-2 border-transparent',
+                viewMode === 'list' && 'border-primary',
+              )}
             >
               Lista
             </Button>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5">
             <Button
               aria-label="Semana anterior"
               onClick={() => {
@@ -408,7 +419,7 @@ export function ReservationAgendaCard({
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-3 pt-0">
+      <CardContent className="space-y-2 pt-0">
         <FormFeedback pendingLabel="Actualizando agenda…" state={feedback.state} />
         <div className="grid gap-2 border-b pb-3 sm:grid-cols-[minmax(0,1fr)_12rem]">
           <Field>
@@ -447,9 +458,12 @@ export function ReservationAgendaCard({
           </Field>
         </div>
         {viewMode === 'calendar' ? (
-          <section aria-label="Calendario semanal" className="overflow-x-auto rounded-lg border">
+          <section
+            aria-label="Calendario semanal"
+            className="max-h-[calc(100vh-19rem)] overflow-auto rounded-lg border"
+          >
             <div className="min-w-208">
-              <div className="grid grid-cols-[3.25rem_repeat(7,minmax(7rem,1fr))] border-b">
+              <div className="bg-background sticky top-0 z-30 grid grid-cols-[3.25rem_repeat(7,minmax(7rem,1fr))] border-b">
                 <div aria-hidden="true" />
                 {days.map((day) => {
                   const date = day.toISOString().slice(0, 10)
@@ -524,7 +538,47 @@ export function ReservationAgendaCard({
                           `${date}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`,
                         )
                       }}
+                      onMouseMove={(event) => {
+                        const bounds = event.currentTarget.getBoundingClientRect()
+                        const { hour, minute } = calendarSlotFromY(
+                          event.clientY - bounds.top,
+                          calendarStart,
+                          calendarHourCount,
+                        )
+                        setHoveredSlot({
+                          date,
+                          top: calendarTop(hour, minute, calendarStart),
+                        })
+                      }}
+                      onMouseLeave={() => setHoveredSlot(null)}
                     >
+                      {onCalendarSlotClick
+                        ? Array.from({ length: calendarHourCount * 4 }, (_, index) => {
+                            const hour = calendarStart + Math.floor(index / 4)
+                            const minute = (index % 4) * 15
+                            return (
+                              <button
+                                aria-label={`Añadir reserva el ${date} a las ${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`}
+                                className="hover:bg-primary/10 absolute inset-x-0 z-[1] h-[18px] cursor-pointer"
+                                key={`${date}-${hour}-${minute}`}
+                                onClick={(event) => {
+                                  event.stopPropagation()
+                                  onCalendarSlotClick(
+                                    `${date}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`,
+                                  )
+                                }}
+                                style={{ top: index * 18 }}
+                                type="button"
+                              />
+                            )
+                          })
+                        : null}
+                      {hoveredSlot?.date === date ? (
+                        <span
+                          className="bg-primary/10 border-primary/30 pointer-events-none absolute inset-x-0 z-[5] h-[18px] border-y"
+                          style={{ top: hoveredSlot.top }}
+                        />
+                      ) : null}
                       {date === today &&
                       nowParts.hour >= calendarStart &&
                       nowParts.hour <= calendarEnd ? (
@@ -576,21 +630,23 @@ export function ReservationAgendaCard({
             </div>
           </section>
         ) : null}
-        <div className="flex flex-wrap items-center justify-between gap-2 border-t pt-3">
-          <h3 className="text-sm font-semibold">
-            Reservas del{' '}
-            {new Date(`${agendaDate}T12:00:00.000Z`).toLocaleDateString(locale, {
-              day: 'numeric',
-              month: 'long',
-              weekday: 'long',
-            })}
-          </h3>
-          <output aria-live="polite" className="text-muted-foreground text-sm">
-            {agendaLoading
-              ? 'Cargando agenda…'
-              : `${visibleAgenda.length} reserva${visibleAgenda.length === 1 ? '' : 's'}`}
-          </output>
-        </div>
+        {viewMode === 'list' ? (
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t pt-3">
+            <h3 className="text-sm font-semibold">
+              Reservas del{' '}
+              {new Date(`${agendaDate}T12:00:00.000Z`).toLocaleDateString(locale, {
+                day: 'numeric',
+                month: 'long',
+                weekday: 'long',
+              })}
+            </h3>
+            <output aria-live="polite" className="text-muted-foreground text-sm">
+              {agendaLoading
+                ? 'Cargando agenda…'
+                : `${visibleAgenda.length} reserva${visibleAgenda.length === 1 ? '' : 's'}`}
+            </output>
+          </div>
+        ) : null}
         {hasDeposits ? (
           <label className="text-muted-foreground flex items-center gap-2 text-sm">
             Depósito{' '}

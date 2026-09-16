@@ -64,9 +64,6 @@ function formatDate(value: string | null, locale: Locale): string {
 
 function InvoicePdfButton({ invoice, locale }: { invoice: PlatformFiscalInvoice; locale: Locale }) {
   const feedback = useFormFeedback()
-  if (invoice.status === 'pending_review') {
-    return <span className="text-muted-foreground text-xs">—</span>
-  }
 
   function download() {
     if (feedback.pending) return
@@ -96,8 +93,12 @@ function InvoicePdfButton({ invoice, locale }: { invoice: PlatformFiscalInvoice;
             ? 'Preparant…'
             : 'Preparando…'
           : locale === 'ca'
-            ? 'Descarregar PDF'
-            : 'Descargar PDF'}
+            ? invoice.status === 'pending_review'
+              ? 'Descarregar esborrany'
+              : 'Descarregar PDF'
+            : invoice.status === 'pending_review'
+              ? 'Descargar borrador'
+              : 'Descargar PDF'}
       </Button>
     </span>
   )

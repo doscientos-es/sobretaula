@@ -15,10 +15,12 @@ import {
   createModifierGroupInput,
   createModifierOptionInput,
   createMenuCategoryInput,
+  deleteMenuCategoryInput,
   createMenuItemInput,
   menuTenantInput,
   requireMenuEditor,
   updateMenuItemInput,
+  updateMenuCategoryInput,
 } from './menu-schema'
 
 const importMenuCsvInput = menuTenantInput.extend({
@@ -251,6 +253,41 @@ export const createMenuCategory = createServerFn({ method: 'POST' })
     if (error || !category)
       throw new Error(`menu_category_create_failed:${error?.code ?? 'unknown'}`)
     return { categoryId: category.id as string }
+  })
+
+export const updateMenuCategory = createServerFn({ method: 'POST' })
+  .middleware([authMiddleware, tenantMembershipMiddleware])
+  .validator(updateMenuCategoryInput)
+  .handler(async ({ context, data }) => {
+    requireMenuEditor(context.tenantMembership.role)
+    const supabase = createServiceSupabaseClient()
+    const { error } = await supabase
+      .from('menu_categories')
+      .update({ name_i18n: localizedName(data.nameEs, data.nameCa) })
+      .eq('id', data.categoryId)
+      .eq('tenant_id', data.tenantId)
+    if (error) throw new Error(`menu_category_update_failed:${error.code}`)
+  })
+
+export const deleteMenuCategory = createServerFn({ method: 'POST' })
+  .middleware([authMiddleware, tenantMembershipMiddleware])
+  .validator(deleteMenuCategoryInput)
+  .handler(async ({ context, data }) => {
+    requireMenuEditor(context.tenantMembership.role)
+    const supabase = createServiceSupabaseClient()
+    const { count, error: countError } = await supabase
+      .from('menu_items')
+      .select('id', { count: 'exact', head: true })
+      .eq('category_id', data.categoryId)
+      .eq('tenant_id', data.tenantId)
+    if (countError) throw new Error(`menu_category_delete_check_failed:${countError.code}`)
+    if ((count ?? 0) > 0) throw new Response('Category has menu items', { status: 409 })
+    const { error } = await supabase
+      .from('menu_categories')
+      .delete()
+      .eq('id', data.categoryId)
+      .eq('tenant_id', data.tenantId)
+    if (error) throw new Error(`menu_category_delete_failed:${error.code}`)
   })
 
 export const createMenuItem = createServerFn({ method: 'POST' })

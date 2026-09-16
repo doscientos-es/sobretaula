@@ -25,6 +25,7 @@ import {
   TableRow,
   useFormFeedback,
 } from '@doscientos/ui'
+import { Pencil } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 
 import type { Locale } from '@/shared/lib/i18n/locale'
@@ -85,7 +86,7 @@ export function BillingPage({
     <section className="space-y-6">
       <PageHeader className="border-border/70 border-b pb-6">
         <div>
-          <PageHeaderTitle>Facturación</PageHeaderTitle>
+          <PageHeaderTitle>Configuración fiscal</PageHeaderTitle>
           <PageHeaderDescription>
             Configura la identidad de emisión, las series y el libro de facturas del restaurante.
           </PageHeaderDescription>
@@ -101,7 +102,7 @@ export function BillingPage({
         certificate={overview.certificate}
         isOwner={isOwner}
         onDone={onDone}
-        settings={overview.settings}
+        settings={overview.settings ?? overview.prefill}
         tenantId={tenantId}
       />
       <SeriesCard onDone={onDone} series={overview.series} tenantId={tenantId} />
@@ -120,7 +121,7 @@ function VerifactuCertificateCard({
   certificate: FiscalSettingsView['certificate']
   isOwner: boolean
   onDone: () => void
-  settings: FiscalSettingsView['settings']
+  settings: FiscalSettingsView['settings'] | FiscalSettingsView['prefill']
   tenantId: string
 }) {
   const feedback = useFormFeedback()
@@ -163,6 +164,39 @@ function VerifactuCertificateCard({
     }
   }
 
+  const form = (
+    <form className="grid gap-4 md:grid-cols-2" onSubmit={(event) => void upload(event)}>
+      <Field>
+        <FieldLabel htmlFor="verifactu-certificate">Archivo .pfx o .p12</FieldLabel>
+        <Input
+          accept=".pfx,.p12,application/x-pkcs12"
+          id="verifactu-certificate"
+          onChange={(event) => setFile(event.target.files?.[0] ?? null)}
+          required
+          type="file"
+        />
+      </Field>
+      <Field>
+        <FieldLabel htmlFor="verifactu-password">Contraseña del certificado</FieldLabel>
+        <Input
+          autoComplete="new-password"
+          id="verifactu-password"
+          onChange={(event) => setPassword(event.target.value)}
+          placeholder="Contraseña del archivo"
+          type="password"
+          value={password}
+        />
+      </Field>
+      <div className="flex flex-wrap items-center gap-3 md:col-span-2">
+        <Button disabled={feedback.pending || !file} type="submit">
+          {certificate ? 'Reemplazar certificado' : 'Guardar certificado'}
+        </Button>
+        <AdvisorCertificateDialog />
+        <FormFeedback pendingLabel="Validando y cifrando certificado…" state={feedback.state} />
+      </div>
+    </form>
+  )
+
   return (
     <Card>
       <CardHeader>
@@ -194,40 +228,26 @@ function VerifactuCertificateCard({
           <p className="text-muted-foreground text-sm">
             Solo la persona propietaria puede cambiar el certificado.
           </p>
+        ) : certificate ? (
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4">
+            <p className="text-sm font-medium text-green-700">
+              Certificado correctamente configurado.
+            </p>
+            <Dialog
+              trigger="Actualizar certificado"
+              triggerProps={{ type: 'button', variant: 'outline' }}
+            >
+              <DialogHeader>
+                <DialogTitle>Actualizar certificado VERI*FACTU</DialogTitle>
+                <DialogDescription>
+                  Sube el nuevo certificado para reemplazar el actual.
+                </DialogDescription>
+              </DialogHeader>
+              {form}
+            </Dialog>
+          </div>
         ) : (
-          <form className="grid gap-4 md:grid-cols-2" onSubmit={(event) => void upload(event)}>
-            <Field>
-              <FieldLabel htmlFor="verifactu-certificate">Archivo .pfx o .p12</FieldLabel>
-              <Input
-                accept=".pfx,.p12,application/x-pkcs12"
-                id="verifactu-certificate"
-                onChange={(event) => setFile(event.target.files?.[0] ?? null)}
-                required
-                type="file"
-              />
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="verifactu-password">Contraseña del certificado</FieldLabel>
-              <Input
-                autoComplete="new-password"
-                id="verifactu-password"
-                onChange={(event) => setPassword(event.target.value)}
-                placeholder="Contraseña del archivo"
-                type="password"
-                value={password}
-              />
-            </Field>
-            <div className="flex flex-wrap items-center gap-3 md:col-span-2">
-              <Button disabled={feedback.pending || !file} type="submit">
-                {certificate ? 'Reemplazar certificado' : 'Guardar certificado'}
-              </Button>
-              <AdvisorCertificateDialog />
-              <FormFeedback
-                pendingLabel="Validando y cifrando certificado…"
-                state={feedback.state}
-              />
-            </div>
-          </form>
+          form
         )}
       </CardContent>
     </Card>
@@ -286,6 +306,25 @@ function FiscalSettingsCard({
   const [postalCode, setPostalCode] = useState(source?.postalCode ?? '')
   const [countryCode, setCountryCode] = useState(source?.countryCode ?? 'ES')
 
+  const form = (
+    <FiscalSettingsForm
+      addressLine={addressLine}
+      city={city}
+      countryCode={countryCode}
+      feedback={feedback}
+      issuerNif={issuerNif}
+      legalName={legalName}
+      onAddressLineChange={setAddressLine}
+      onCityChange={setCity}
+      onCountryCodeChange={setCountryCode}
+      onIssuerNifChange={setIssuerNif}
+      onLegalNameChange={setLegalName}
+      onPostalCodeChange={setPostalCode}
+      onSubmit={save}
+      postalCode={postalCode}
+    />
+  )
+
   function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (feedback.pending) return
@@ -326,81 +365,155 @@ function FiscalSettingsCard({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form className="grid gap-4 md:grid-cols-2" onSubmit={save}>
-          <Field>
-            <FieldLabel htmlFor="fiscal-nif">NIF/CIF</FieldLabel>
-            <Input
-              id="fiscal-nif"
-              onChange={(event) => setIssuerNif(event.target.value)}
-              placeholder="Ej. B12345674"
-              required
-              value={issuerNif}
-            />
-          </Field>
-          <Field>
-            <FieldLabel htmlFor="fiscal-name">Razón social</FieldLabel>
-            <Input
-              id="fiscal-name"
-              onChange={(event) => setLegalName(event.target.value)}
-              placeholder="Ej. Casa Muntaner, S.L."
-              required
-              value={legalName}
-            />
-          </Field>
-          <Field>
-            <FieldLabel htmlFor="fiscal-address">Domicilio</FieldLabel>
-            <Input
-              id="fiscal-address"
-              onChange={(event) => setAddressLine(event.target.value)}
-              placeholder="Ej. Carrer de Mallorca, 123"
-              required
-              value={addressLine}
-            />
-          </Field>
-          <Field>
-            <FieldLabel htmlFor="fiscal-city">Población</FieldLabel>
-            <Input
-              id="fiscal-city"
-              onChange={(event) => setCity(event.target.value)}
-              placeholder="Ej. Barcelona"
-              required
-              value={city}
-            />
-          </Field>
-          <Field>
-            <FieldLabel htmlFor="fiscal-postal">Código postal</FieldLabel>
-            <Input
-              id="fiscal-postal"
-              inputMode="numeric"
-              maxLength={5}
-              onChange={(event) => setPostalCode(event.target.value)}
-              pattern="[0-9]{5}"
-              placeholder="Ej. 08008"
-              required
-              value={postalCode}
-            />
-          </Field>
-          <Field>
-            <FieldLabel htmlFor="fiscal-country">País</FieldLabel>
-            <Input
-              id="fiscal-country"
-              maxLength={2}
-              onChange={(event) => setCountryCode(event.target.value)}
-              pattern="[A-Za-z]{2}"
-              placeholder="ES"
-              required
-              value={countryCode}
-            />
-          </Field>
-          <div className="flex min-h-16 flex-col items-start gap-2 md:col-span-2">
-            <Button disabled={feedback.pending} type="submit">
-              Guardar datos fiscales
-            </Button>
-            <FormFeedback pendingLabel="Guardando datos fiscales…" state={feedback.state} />
-          </div>
-        </form>
+        {settings ? (
+          <>
+            <dl className="grid gap-x-6 gap-y-4 text-sm sm:grid-cols-2">
+              <div>
+                <dt className="text-muted-foreground">NIF/CIF</dt>
+                <dd className="font-medium">{settings.issuerNif}</dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Razón social</dt>
+                <dd className="font-medium">{settings.legalName}</dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Domicilio</dt>
+                <dd>{settings.addressLine}</dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Población</dt>
+                <dd>
+                  {settings.postalCode} {settings.city}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">País</dt>
+                <dd>{settings.countryCode}</dd>
+              </div>
+            </dl>
+            <div className="mt-5 flex items-center justify-between gap-3 border-t pt-4">
+              <p className="text-muted-foreground text-sm">
+                Estos son los datos con los que se emiten las facturas.
+              </p>
+              <Dialog
+                trigger={
+                  <Button
+                    aria-label="Editar datos fiscales"
+                    size="icon"
+                    type="button"
+                    variant="outline"
+                  >
+                    <Pencil aria-hidden="true" className="size-4" />
+                  </Button>
+                }
+              >
+                <DialogHeader>
+                  <DialogTitle>Editar datos fiscales</DialogTitle>
+                  <DialogDescription>
+                    Actualiza la identidad fiscal del emisor de facturas.
+                  </DialogDescription>
+                </DialogHeader>
+                {form}
+              </Dialog>
+            </div>
+          </>
+        ) : (
+          form
+        )}
       </CardContent>
     </Card>
+  )
+}
+
+function FiscalSettingsForm({
+  addressLine,
+  city,
+  countryCode,
+  feedback,
+  issuerNif,
+  legalName,
+  onAddressLineChange,
+  onCityChange,
+  onCountryCodeChange,
+  onIssuerNifChange,
+  onLegalNameChange,
+  onPostalCodeChange,
+  onSubmit,
+  postalCode,
+}: {
+  addressLine: string
+  city: string
+  countryCode: string
+  feedback: ReturnType<typeof useFormFeedback>
+  issuerNif: string
+  legalName: string
+  onAddressLineChange: (value: string) => void
+  onCityChange: (value: string) => void
+  onCountryCodeChange: (value: string) => void
+  onIssuerNifChange: (value: string) => void
+  onLegalNameChange: (value: string) => void
+  onPostalCodeChange: (value: string) => void
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void
+  postalCode: string
+}) {
+  const fields: Array<[string, string, string, (value: string) => void, string]> = [
+    ['fiscal-nif', 'NIF/CIF', issuerNif, onIssuerNifChange, 'Ej. B12345674'],
+    ['fiscal-name', 'Razón social', legalName, onLegalNameChange, 'Ej. Casa Muntaner, S.L.'],
+    [
+      'fiscal-address',
+      'Domicilio',
+      addressLine,
+      onAddressLineChange,
+      'Ej. Carrer de Mallorca, 123',
+    ],
+    ['fiscal-city', 'Población', city, onCityChange, 'Ej. Barcelona'],
+  ]
+  return (
+    <form className="grid gap-4 md:grid-cols-2" onSubmit={onSubmit}>
+      {fields.map(([id, label, value, onChange, placeholder]) => (
+        <Field key={id}>
+          <FieldLabel htmlFor={id}>{label}</FieldLabel>
+          <Input
+            id={id}
+            onChange={(event) => onChange(event.target.value)}
+            placeholder={placeholder}
+            required
+            value={value}
+          />
+        </Field>
+      ))}
+      <Field>
+        <FieldLabel htmlFor="fiscal-postal">Código postal</FieldLabel>
+        <Input
+          id="fiscal-postal"
+          inputMode="numeric"
+          maxLength={5}
+          onChange={(event) => onPostalCodeChange(event.target.value)}
+          pattern="[0-9]{5}"
+          placeholder="Ej. 08008"
+          required
+          value={postalCode}
+        />
+      </Field>
+      <Field>
+        <FieldLabel htmlFor="fiscal-country">País</FieldLabel>
+        <Input
+          id="fiscal-country"
+          maxLength={2}
+          onChange={(event) => onCountryCodeChange(event.target.value)}
+          pattern="[A-Za-z]{2}"
+          placeholder="ES"
+          required
+          value={countryCode}
+        />
+      </Field>
+      <div className="flex min-h-16 flex-col items-start gap-2 md:col-span-2">
+        <Button disabled={feedback.pending} type="submit">
+          Guardar datos fiscales
+        </Button>
+        <FormFeedback pendingLabel="Guardando datos fiscales…" state={feedback.state} />
+      </div>
+    </form>
   )
 }
 
@@ -459,34 +572,42 @@ function SeriesCard({
             </TableBody>
           </Table>
         )}
-        <form className="flex flex-wrap items-end gap-3" onSubmit={create}>
-          <Field>
-            <FieldLabel htmlFor="series-code">Código</FieldLabel>
-            <Input
-              id="series-code"
-              onChange={(event) => setCode(event.target.value)}
-              placeholder="Ej. A-2026"
-              required
-              value={code}
-            />
-          </Field>
-          <Field>
-            <FieldLabel htmlFor="series-year">Ejercicio</FieldLabel>
-            <Input
-              id="series-year"
-              max={2100}
-              min={2000}
-              onChange={(event) => setFiscalYear(Number(event.target.value))}
-              placeholder="2026"
-              required
-              type="number"
-              value={fiscalYear}
-            />
-          </Field>
-          <Button disabled={feedback.pending || alreadyExists} type="submit">
-            Crear serie
-          </Button>
-        </form>
+        <Dialog trigger="Añadir otra serie" triggerProps={{ type: 'button', variant: 'outline' }}>
+          <DialogHeader>
+            <DialogTitle>Añadir otra serie</DialogTitle>
+            <DialogDescription>
+              Úsala si necesitas separar facturas por actividad, centro o tipo de emisión.
+            </DialogDescription>
+          </DialogHeader>
+          <form className="flex flex-wrap items-end gap-3" onSubmit={create}>
+            <Field>
+              <FieldLabel htmlFor="series-code">Código</FieldLabel>
+              <Input
+                id="series-code"
+                onChange={(event) => setCode(event.target.value)}
+                placeholder="Ej. B-2026"
+                required
+                value={code}
+              />
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="series-year">Ejercicio</FieldLabel>
+              <Input
+                id="series-year"
+                max={2100}
+                min={2000}
+                onChange={(event) => setFiscalYear(Number(event.target.value))}
+                placeholder="2026"
+                required
+                type="number"
+                value={fiscalYear}
+              />
+            </Field>
+            <Button disabled={feedback.pending || alreadyExists} type="submit">
+              Crear serie
+            </Button>
+          </form>
+        </Dialog>
         {alreadyExists && (
           <p className="text-muted-foreground text-sm">
             Ya existe la serie {normalizedCode} para el ejercicio {fiscalYear}.

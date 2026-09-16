@@ -22,7 +22,14 @@ function MenuRoute() {
   if (catalogQuery.isPending) return <TenantRoutePending />
   if (catalogQuery.error) throw catalogQuery.error
 
-  return <MenuPage catalog={catalogQuery.data} locale={locale} tenantId={tenant.id} />
+  return (
+    <MenuPage
+      catalog={catalogQuery.data}
+      locale={locale}
+      primaryLocale={tenant.defaultLocale}
+      tenantId={tenant.id}
+    />
+  )
 }
 
 function menuCatalogQuery(tenantId: string) {

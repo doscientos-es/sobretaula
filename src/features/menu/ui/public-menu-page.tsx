@@ -1,5 +1,4 @@
 import {
-  Button,
   Card,
   CardContent,
   CardHeader,
@@ -8,80 +7,15 @@ import {
   PageHeaderDescription,
   PageHeaderTitle,
 } from '@doscientos/ui'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 
-import {
-  calculateOnlineOrderTotal,
-  createPublicOnlineOrder,
-  type OnlineOrderLine,
-} from '@/features/online-ordering'
 import { ALLERGEN_LABELS, type Allergen } from '@/features/product/domain/product-costing'
 import type { Locale } from '@/shared/lib/i18n/locale'
 
 import type { MenuCatalog } from '../application/menu'
 import { buildMenuSections, localizedText } from '../domain/menu'
 
-export function PublicMenuPage({
-  catalog,
-  locale,
-  tenantId,
-  venueId,
-}: {
-  catalog: MenuCatalog
-  locale: Locale
-  tenantId?: string
-  venueId?: string
-}) {
-  const [cart, setCart] = useState<OnlineOrderLine[]>([])
-  const [customerName, setCustomerName] = useState('')
-  const [customerPhone, setCustomerPhone] = useState('')
-  const [channel, setChannel] = useState<'pickup' | 'delivery'>('pickup')
-  const [message, setMessage] = useState<string | null>(null)
-  const [pending, setPending] = useState(false)
-  const totalCents = useMemo(() => calculateOnlineOrderTotal(cart), [cart])
-  const addToCart = (menuItemId: string, name: string, unitPriceCents: number) =>
-    setCart((current) => {
-      const existing = current.find((line) => line.menuItemId === menuItemId)
-      if (existing)
-        return current.map((line) =>
-          line === existing ? { ...line, quantity: line.quantity + 1 } : line,
-        )
-      return [...current, { menuItemId, name, quantity: 1, unitPriceCents }]
-    })
-  const removeFromCart = (menuItemId: string) =>
-    setCart((current) =>
-      current.flatMap((line) =>
-        line.menuItemId !== menuItemId
-          ? [line]
-          : line.quantity > 1
-            ? [{ ...line, quantity: line.quantity - 1 }]
-            : [],
-      ),
-    )
-  const submitOrder = async () => {
-    if (pending || !tenantId || !venueId || !customerName.trim() || !cart.length) return
-    setPending(true)
-    setMessage('Enviando pedido…')
-    try {
-      const result = await createPublicOnlineOrder({
-        data: {
-          tenantId,
-          venueId,
-          customerName,
-          customerPhone: customerPhone || undefined,
-          channel,
-          items: cart,
-          idempotencyKey: crypto.randomUUID(),
-        },
-      })
-      setCart([])
-      setMessage(`Pedido recibido · total ${(result.totalCents / 100).toFixed(2)} €`)
-    } catch {
-      setMessage('No hemos podido enviar el pedido. Revisa los datos e inténtalo de nuevo.')
-    } finally {
-      setPending(false)
-    }
-  }
+export function PublicMenuPage({ catalog, locale }: { catalog: MenuCatalog; locale: Locale }) {
   const sections = buildMenuSections({
     categories: catalog.categories,
     items: catalog.items,
@@ -163,87 +97,11 @@ export function PublicMenuPage({
                     ))}
                   </div>
                 ) : null}
-                {tenantId && venueId && item.isAvailable !== false ? (
-                  <button
-                    className="bg-primary text-primary-foreground mt-4 rounded-md px-3 py-2 text-sm"
-                    onClick={() =>
-                      addToCart(item.id, localizedText(item.nameI18n, locale), item.priceCents)
-                    }
-                    type="button"
-                  >
-                    Añadir al pedido
-                  </button>
-                ) : null}
               </article>
             ))}
           </CardContent>
         </Card>
       ))}
-      {tenantId && venueId ? (
-        <Card aria-busy={pending} className="sticky bottom-4 shadow-lg">
-          <CardHeader>
-            <CardTitle>Tu pedido · {(totalCents / 100).toFixed(2)} €</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {cart.length ? (
-              cart.map((line) => (
-                <div className="flex justify-between text-sm" key={line.menuItemId}>
-                  <span>
-                    {line.quantity} × {line.name}
-                  </span>
-                  <span className="flex items-center gap-2">
-                    <span>{((line.quantity * line.unitPriceCents) / 100).toFixed(2)} €</span>
-                    <Button
-                      aria-label={`Quitar una unidad de ${line.name}`}
-                      onClick={() => removeFromCart(line.menuItemId)}
-                      size="sm"
-                      type="button"
-                      variant="outline"
-                    >
-                      −
-                    </Button>
-                  </span>
-                </div>
-              ))
-            ) : (
-              <p className="text-muted-foreground text-sm">Añade platos para empezar.</p>
-            )}
-            <input
-              className="border-input w-full rounded-md border px-3 py-2"
-              onChange={(event) => setCustomerName(event.target.value)}
-              placeholder="Nombre"
-              value={customerName}
-            />
-            <input
-              className="border-input w-full rounded-md border px-3 py-2"
-              onChange={(event) => setCustomerPhone(event.target.value)}
-              placeholder="Teléfono (opcional)"
-              value={customerPhone}
-            />
-            <select
-              className="border-input w-full rounded-md border px-3 py-2"
-              onChange={(event) => setChannel(event.target.value as 'pickup' | 'delivery')}
-              value={channel}
-            >
-              <option value="pickup">Recoger en local</option>
-              <option value="delivery">Entrega</option>
-            </select>
-            <Button
-              className="w-full"
-              disabled={!cart.length || !customerName.trim()}
-              onClick={() => void submitOrder()}
-              type="button"
-            >
-              {pending ? 'Enviando…' : 'Confirmar pedido'}
-            </Button>
-            {message ? (
-              <p aria-live="polite" className="text-sm">
-                {message}
-              </p>
-            ) : null}
-          </CardContent>
-        </Card>
-      ) : null}
     </section>
   )
 }

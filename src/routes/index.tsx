@@ -16,7 +16,6 @@ import {
   ChartNoAxesCombined,
   CircleDollarSign,
   ClipboardList,
-  ShoppingBag,
   Users,
   Utensils,
 } from 'lucide-react'
@@ -144,22 +143,41 @@ function TenantPicker() {
 }
 
 const marketingModules = [
-  { key: 'core', icon: Utensils, outcome: 'Trabaja cada servicio con menos fricción.' },
-  { key: 'inventory', icon: Boxes, outcome: 'Sabe qué te cuesta cada plato y cuándo comprar.' },
-  { key: 'reservations_pro', icon: CalendarDays, outcome: 'Llena mesas y reduce los no-shows.' },
+  {
+    key: 'core',
+    icon: Utensils,
+    outcome: 'Trabaja cada servicio con menos fricción.',
+  },
+  {
+    key: 'inventory',
+    icon: Boxes,
+    outcome: 'Sabe qué te cuesta cada plato y cuándo comprar.',
+  },
+  {
+    key: 'reservations_pro',
+    icon: CalendarDays,
+    outcome: 'Llena mesas y reduce los no-shows.',
+  },
   {
     key: 'analytics',
     icon: ChartNoAxesCombined,
     outcome: 'Descubre qué platos y trabajadores son más rentables.',
   },
-  { key: 'loyalty', icon: Users, outcome: 'Convierte visitas puntuales en clientes habituales.' },
-  { key: 'finance', icon: CircleDollarSign, outcome: 'Ten la caja y la facturación bajo control.' },
   {
-    key: 'online_ordering',
-    icon: ShoppingBag,
-    outcome: 'Vende online sin cambiar tu forma de trabajar.',
+    key: 'loyalty',
+    icon: Users,
+    outcome: 'Convierte visitas puntuales en clientes habituales.',
   },
-  { key: 'workforce', icon: ClipboardList, outcome: 'Organiza turnos, fichajes y propinas.' },
+  {
+    key: 'finance',
+    icon: CircleDollarSign,
+    outcome: 'Ten la caja y la facturación bajo control.',
+  },
+  {
+    key: 'workforce',
+    icon: ClipboardList,
+    outcome: 'Organiza turnos, fichajes y propinas.',
+  },
 ] as const
 
 function MarketingLanding() {

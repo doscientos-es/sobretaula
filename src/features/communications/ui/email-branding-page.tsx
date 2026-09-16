@@ -52,7 +52,15 @@ export function EmailBrandingPage({
     if (feedback.pending || uploadingLogo) return
     feedback.setPending()
     void saveEmailBranding({
-      data: { emailFromName, logoUrl, primaryColor, accentColor, preset, replyToEmail, tenantId },
+      data: {
+        emailFromName,
+        logoUrl,
+        primaryColor,
+        accentColor,
+        preset,
+        replyToEmail,
+        tenantId,
+      },
     })
       .then(() => feedback.setSuccess(t('communications.branding.saveSuccess')))
       .catch(() => feedback.setError(t('communications.branding.saveError')))
@@ -115,9 +123,8 @@ export function EmailBrandingPage({
                     olive: ['#556b2f', '#b7791f'],
                     ocean: ['#1769aa', '#0e7490'],
                     midnight: ['#312e81', '#db2777'],
-                    custom: [primaryColor, accentColor],
                   } as const
-                  const selected = colors[value]
+                  const selected = value === 'custom' ? colors.terracotta : colors[value]
                   if (selected) {
                     setPrimaryColor(selected[0])
                     setAccentColor(selected[1])
@@ -129,7 +136,6 @@ export function EmailBrandingPage({
                 <option value="olive">{t('communications.branding.preset.olive')}</option>
                 <option value="ocean">{t('communications.branding.preset.ocean')}</option>
                 <option value="midnight">{t('communications.branding.preset.midnight')}</option>
-                <option value="custom">{t('communications.branding.preset.custom')}</option>
               </select>
             </Field>
             <Field>
@@ -178,23 +184,6 @@ export function EmailBrandingPage({
               ) : null}
             </Field>
             <Field>
-              <FieldLabel htmlFor="accent-color">
-                {t('communications.branding.accentColor')}
-              </FieldLabel>
-              <input
-                aria-label={t('communications.branding.accentColorPicker')}
-                className="size-10 cursor-pointer rounded border p-1"
-                disabled={!canManage || feedback.pending || uploadingLogo}
-                id="accent-color"
-                onChange={(event) => {
-                  setAccentColor(event.target.value)
-                  setPreset('custom')
-                }}
-                type="color"
-                value={accentColor}
-              />
-            </Field>
-            <Field>
               <FieldLabel htmlFor="reply-to-email">
                 {t('communications.branding.replyToEmail')}
               </FieldLabel>
@@ -217,30 +206,6 @@ export function EmailBrandingPage({
                 type="url"
                 value={logoUrl}
               />
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="primary-color">
-                {t('communications.branding.primaryColor')}
-              </FieldLabel>
-              <div className="flex items-center gap-3">
-                <input
-                  aria-label={t('communications.branding.primaryColorPicker')}
-                  className="size-10 cursor-pointer rounded border p-1"
-                  disabled={!canManage || feedback.pending || uploadingLogo}
-                  id="primary-color"
-                  onChange={(event) => setPrimaryColor(event.target.value)}
-                  type="color"
-                  value={primaryColor}
-                />
-                <Input
-                  aria-label={t('communications.branding.primaryColorValue')}
-                  disabled={!canManage || feedback.pending || uploadingLogo}
-                  onChange={(event) => setPrimaryColor(event.target.value)}
-                  pattern="#[0-9A-Fa-f]{6}"
-                  placeholder="#ff5f4d"
-                  value={primaryColor}
-                />
-              </div>
             </Field>
             <div className="rounded-xl border p-4 sm:mt-6" style={{ borderColor: accentColor }}>
               {logoUrl ? (
@@ -268,6 +233,56 @@ export function EmailBrandingPage({
             ) : null}
           </form>
           <FormFeedback pendingLabel={t('communications.branding.saving')} state={feedback.state} />
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Ejemplo de email para clientes</CardTitle>
+          <CardDescription>
+            Así verán tus clientes un correo de confirmación de reserva.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="mx-auto max-w-xl overflow-hidden rounded-xl border bg-white shadow-sm">
+            <div className="border-b-4 p-6" style={{ borderColor: accentColor }}>
+              {logoUrl ? (
+                <img
+                  alt={`Logo de ${emailFromName || defaultName}`}
+                  className="mb-4 h-10 max-w-48 object-contain object-left"
+                  src={logoUrl}
+                />
+              ) : null}
+              <p className="font-semibold" style={{ color: primaryColor }}>
+                {emailFromName || defaultName}
+              </p>
+            </div>
+            <div className="space-y-4 p-6">
+              <p className="text-muted-foreground text-sm">Para: ana@ejemplo.com</p>
+              <h3 className="text-xl font-semibold">Tu reserva está confirmada</h3>
+              <p className="text-sm leading-6">
+                Hola Ana, te esperamos en Casa Muntaner. Hemos guardado tu reserva con estos datos:
+              </p>
+              <div
+                className="rounded-lg p-4 text-sm"
+                style={{ backgroundColor: `${primaryColor}12` }}
+              >
+                <p>
+                  <strong>Sábado, 20 de septiembre</strong>
+                </p>
+                <p className="mt-1">20:30 · 2 personas</p>
+              </div>
+              <button
+                className="rounded-md px-4 py-2 text-sm font-medium text-white"
+                style={{ backgroundColor: accentColor }}
+                type="button"
+              >
+                Gestionar mi reserva
+              </button>
+              <p className="text-muted-foreground text-xs">
+                Si necesitas hacer algún cambio, responde a este correo.
+              </p>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </section>
