@@ -21,16 +21,7 @@ import {
   useFormFeedback,
 } from '@doscientos/ui'
 import { useQueryClient } from '@tanstack/react-query'
-import {
-  Armchair,
-  Bath,
-  DoorOpen,
-  Footprints,
-  PanelTop,
-  Soup,
-  Square,
-  Table2,
-} from 'lucide-react'
+import { Armchair, Bath, DoorOpen, Footprints, PanelTop, Soup, Square, Table2 } from 'lucide-react'
 import { useState, type FormEvent, type KeyboardEvent, type DragEvent } from 'react'
 
 import { useAsyncEffect } from '@/shared/lib/react/use-async-effect'
@@ -64,12 +55,18 @@ import {
 } from '../domain/geometry'
 
 const elementDefaults: Record<PlanElementKind, { widthCm: number; heightCm: number }> = {
-  wall: { widthCm: 250, heightCm: 25 }, door: { widthCm: 100, heightCm: 100 },
-  window: { widthCm: 150, heightCm: 20 }, bar: { widthCm: 250, heightCm: 100 },
-  stairs: { widthCm: 150, heightCm: 250 }, plant: { widthCm: 60, heightCm: 60 },
-  label: { widthCm: 100, heightCm: 40 }, other: { widthCm: 100, heightCm: 100 },
-  pillar: { widthCm: 40, heightCm: 40 }, bathroom: { widthCm: 200, heightCm: 200 },
-  kitchen: { widthCm: 300, heightCm: 200 }, exit: { widthCm: 100, heightCm: 100 },
+  wall: { widthCm: 250, heightCm: 25 },
+  door: { widthCm: 100, heightCm: 100 },
+  window: { widthCm: 150, heightCm: 20 },
+  bar: { widthCm: 250, heightCm: 100 },
+  stairs: { widthCm: 150, heightCm: 250 },
+  plant: { widthCm: 60, heightCm: 60 },
+  label: { widthCm: 100, heightCm: 40 },
+  other: { widthCm: 100, heightCm: 100 },
+  pillar: { widthCm: 40, heightCm: 40 },
+  bathroom: { widthCm: 200, heightCm: 200 },
+  kitchen: { widthCm: 300, heightCm: 200 },
+  exit: { widthCm: 100, heightCm: 100 },
   obstacle: { widthCm: 100, heightCm: 100 },
 }
 import { FloorPlanCanvas } from './floor-plan-canvas'
@@ -601,7 +598,9 @@ export function FloorPlanPage({
           <Card className="lg:sticky lg:top-6 lg:self-start">
             <CardHeader>
               <CardTitle>Mesas y elementos</CardTitle>
-              <CardDescription>Arrastra una mesa al plano o selecciona algo para editarlo.</CardDescription>
+              <CardDescription>
+                Arrastra una mesa al plano o selecciona algo para editarlo.
+              </CardDescription>
             </CardHeader>
             <CardContent>
               {placements.length === 0 ? (
@@ -628,7 +627,8 @@ export function FloorPlanPage({
                     ? `${selectedIds.length} elementos seleccionados · `
                     : 'Seleccionado: '}
                   {placements.find((item) => item.id === selectedId)?.code ?? 'elemento'} · usa las
-                  flechas para ajustar. Pulsa R para girar y mantén Ctrl/Cmd para seleccionar varios.
+                  flechas para ajustar. Pulsa R para girar y mantén Ctrl/Cmd para seleccionar
+                  varios.
                 </output>
               )}
               {selectedId && (

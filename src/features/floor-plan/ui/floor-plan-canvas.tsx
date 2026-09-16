@@ -134,8 +134,8 @@ export function FloorPlanCanvas({
           <Button
             aria-label="Alejar plano"
             className="size-9 px-0"
-            disabled={zoom <= 1}
-            onClick={() => setZoom((current) => Math.max(1, current - 0.25))}
+            disabled={zoom <= 0.5}
+            onClick={() => setZoom((current) => Math.max(0.5, current - 0.25))}
             type="button"
             variant="outline"
           >
