@@ -217,8 +217,18 @@ export function SchedulingBlocksPage({ tenantId, venueId }: { tenantId: string; 
             </p>
           ) : loadError ? (
             <div className="space-y-2 py-4">
-              <p className="text-destructive text-sm">No se han podido cargar los bloqueos.</p>
-              <Button onClick={() => void load()} size="sm" type="button" variant="outline">
+              <p className="text-destructive text-sm" role="alert">
+                No se han podido cargar los bloqueos.
+              </p>
+              <Button
+                onClick={() => {
+                  setFeedback(null)
+                  void load()
+                }}
+                size="sm"
+                type="button"
+                variant="outline"
+              >
                 Reintentar
               </Button>
             </div>

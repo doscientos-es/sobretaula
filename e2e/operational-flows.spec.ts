@@ -213,6 +213,15 @@ test('@waiter @timekeeping @P1 permite acceder al fichaje', async ({ page }) => 
   await expect(page.getByText(/fichaje|pin|entrada|salida/i).first()).toBeVisible()
 })
 
+test('@waiter @timekeeping @P1 explica que falta el PIN antes de registrar', async ({ page }) => {
+  await openOperationalPage(page, '/fichaje-terminal', 'waiter timekeeping missing pin')
+  const employee = page.getByRole('combobox').first()
+  await employee.fill('E2E')
+  await page.getByRole('option').first().click()
+  await page.getByRole('button', { name: /entrar|iniciar entrada/i }).click()
+  await expect(page.getByRole('alert')).toContainText(/pin/i)
+})
+
 test('@accountant @reports @P1 consulta facturación y exportación', async ({ page }) => {
   await page.goto(`/t/${tenant}/facturas`, { waitUntil: 'domcontentloaded' })
   await expectHealthyPage(page, 'accountant invoices')

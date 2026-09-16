@@ -20,6 +20,26 @@ test('invalid reservation link shows an actionable empty state', async ({ page }
   await expect(page.getByRole('link', { name: 'Volver al inicio' })).toHaveAttribute('href', '/')
 })
 
+test('team invitation requires authentication before showing the accept action', async ({
+  browser,
+}) => {
+  const context = await browser.newContext({ storageState: { cookies: [], origins: [] } })
+  const page = await context.newPage()
+  await page.goto(`/invitacion?token=${'a'.repeat(40)}`)
+  await expect(page).toHaveURL(/\/login/)
+  await context.close()
+})
+
+test('platform invitation requires authentication before showing the accept action', async ({
+  browser,
+}) => {
+  const context = await browser.newContext({ storageState: { cookies: [], origins: [] } })
+  const page = await context.newPage()
+  await page.goto(`/admin/invitacion?token=${'b'.repeat(40)}`)
+  await expect(page).toHaveURL(/\/login/)
+  await context.close()
+})
+
 test('public reservation gives accessible feedback for incomplete guest details', async ({
   page,
 }) => {

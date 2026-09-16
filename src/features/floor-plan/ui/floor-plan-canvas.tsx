@@ -43,6 +43,7 @@ export function FloorPlanCanvas({
   onGridSizeChange,
   onMinimumAisleChange,
   onEmptyPlace,
+  onCreateTable,
   onDropElement,
   onMoveItem,
   onSelectItem,
@@ -63,6 +64,7 @@ export function FloorPlanCanvas({
   onGridSizeChange: (value: number) => void
   onMinimumAisleChange: (value: number) => void
   onEmptyPlace: (xCm: number, yCm: number) => void
+  onCreateTable: (position: { x: number; y: number }) => void
   onDropElement: (kind: PlanElementKind, xCm: number, yCm: number) => void
   onMoveItem: (id: string, xCm: number, yCm: number) => void
   onSelectItem: (id: string, additive?: boolean) => void
@@ -77,6 +79,7 @@ export function FloorPlanCanvas({
   const [dragPreview, setDragPreview] = useState<{ id: string; x: number; y: number }>()
   const [dropGhost, setDropGhost] = useState<{ kind: PlanElementKind; x: number; y: number }>()
   const panPointer = useRef<{ id: number; x: number; y: number } | undefined>(undefined)
+  const dragOffset = useRef<{ x: number; y: number } | undefined>(undefined)
   const viewBox = `${Math.max(0, Math.min(activeVersion.widthCm * (1 - 1 / zoom), (activeVersion.widthCm * (1 - 1 / zoom)) / 2 + pan.x)).toFixed(2)} ${Math.max(0, Math.min(activeVersion.heightCm * (1 - 1 / zoom), (activeVersion.heightCm * (1 - 1 / zoom)) / 2 + pan.y)).toFixed(2)} ${(activeVersion.widthCm / zoom).toFixed(2)} ${(activeVersion.heightCm / zoom).toFixed(2)}`
 
   function finishDrag(event: PointerEvent<SVGSVGElement>) {
@@ -90,9 +93,11 @@ export function FloorPlanCanvas({
     point.x = event.clientX
     point.y = event.clientY
     const planPoint = point.matrixTransform(transform.inverse())
-    onMoveItem(draggingItemId, planPoint.x, planPoint.y)
+    const offset = dragOffset.current ?? { x: 0, y: 0 }
+    onMoveItem(draggingItemId, planPoint.x - offset.x, planPoint.y - offset.y)
     setDraggingItemId(undefined)
     setDragPreview(undefined)
+    dragOffset.current = undefined
   }
 
   function planPointFromEvent(event: {
@@ -236,7 +241,13 @@ export function FloorPlanCanvas({
             </ul>
           </div>
         )}
-        <div className={cn('mx-auto transition-[max-width]', previewDeviceClasses[previewDevice])}>
+        <div
+          className={cn(
+            'mx-auto overflow-hidden rounded-xl border-2 border-dashed border-primary/30 bg-muted/30 p-2',
+            'transition-[max-width]',
+            previewDeviceClasses[previewDevice],
+          )}
+        >
           <svg
             aria-hidden="true"
             className="border-border bg-background h-[min(72vh,760px)] w-full touch-none rounded-lg border select-none"
@@ -250,7 +261,13 @@ export function FloorPlanCanvas({
             onPointerMove={(event) => {
               if (draggingItemId) {
                 const point = planPointFromEvent(event)
-                if (point) setDragPreview({ id: draggingItemId, x: point.x, y: point.y })
+                const offset = dragOffset.current ?? { x: 0, y: 0 }
+                if (point)
+                  setDragPreview({
+                    id: draggingItemId,
+                    x: point.x - offset.x,
+                    y: point.y - offset.y,
+                  })
                 return
               }
               const start = panPointer.current
@@ -270,6 +287,7 @@ export function FloorPlanCanvas({
               panPointer.current = undefined
               setDraggingItemId(undefined)
               setDragPreview(undefined)
+              dragOffset.current = undefined
             }}
             onPointerUp={(event) => {
               if (panPointer.current?.id === event.pointerId) {
@@ -277,12 +295,6 @@ export function FloorPlanCanvas({
                 event.currentTarget.releasePointerCapture?.(event.pointerId)
               }
               finishDrag(event)
-            }}
-            onWheel={(event) => {
-              event.preventDefault()
-              setZoom((current) =>
-                Math.min(3, Math.max(1, current + (event.deltaY < 0 ? 0.25 : -0.25))),
-              )
             }}
             onDragOver={(event) => {
               event.preventDefault()
@@ -295,10 +307,15 @@ export function FloorPlanCanvas({
             onDragLeave={() => setDropGhost(undefined)}
             onDrop={(event) => {
               event.preventDefault()
+              const point = planPointFromEvent(event)
+              if (event.dataTransfer.types.includes('application/x-floor-table')) {
+                if (point) onCreateTable(point)
+                setDropGhost(undefined)
+                return
+              }
               const kind = event.dataTransfer.getData(
                 'application/x-floor-element',
               ) as PlanElementKind
-              const point = planPointFromEvent(event)
               if (point && kind) onDropElement(kind, point.x, point.y)
               setDropGhost(undefined)
             }}
@@ -407,6 +424,12 @@ export function FloorPlanCanvas({
                   onPointerDown={(event) =>
                     (() => {
                       onSelectItem(element.id, event.ctrlKey || event.metaKey)
+                      const point = planPointFromEvent(event)
+                      if (point)
+                        dragOffset.current = {
+                          x: point.x - element.xCm,
+                          y: point.y - element.yCm,
+                        }
                       setDraggingItemId(element.id)
                       event.currentTarget.ownerSVGElement?.setPointerCapture(event.pointerId)
                     })()
@@ -444,6 +467,12 @@ export function FloorPlanCanvas({
                   height={placement.heightCm}
                   onPointerDown={(event) => {
                     onSelectItem(placement.id, event.ctrlKey || event.metaKey)
+                    const point = planPointFromEvent(event)
+                    if (point)
+                      dragOffset.current = {
+                        x: point.x - placement.xCm,
+                        y: point.y - placement.yCm,
+                      }
                     setDraggingItemId(placement.id)
                     event.currentTarget.ownerSVGElement?.setPointerCapture(event.pointerId)
                   }}

@@ -20,7 +20,18 @@ import {
   PageHeaderTitle,
   useFormFeedback,
 } from '@doscientos/ui'
-import { DoorOpen, Footprints, Grid2X2, LayoutGrid, PanelTop, Soup, Square } from 'lucide-react'
+import { useQueryClient } from '@tanstack/react-query'
+import {
+  Armchair,
+  Bath,
+  DoorOpen,
+  Footprints,
+  Grid2X2,
+  PanelTop,
+  Soup,
+  Square,
+  Table2,
+} from 'lucide-react'
 import { useState, type FormEvent, type KeyboardEvent, type DragEvent } from 'react'
 
 import { useAsyncEffect } from '@/shared/lib/react/use-async-effect'
@@ -38,7 +49,6 @@ import {
   undoEditorHistory,
 } from '../domain/editor-history'
 import {
-  findVersionScheduleConflicts,
   selectFloorPlanVersion,
   type FloorPlanData,
   type FloorPlanElement,
@@ -67,14 +77,12 @@ export function FloorPlanPage({
 }) {
   const feedback = useFormFeedback()
   const reload = useLoaderReload()
+  const queryClient = useQueryClient()
   const [tableCode, setTableCode] = useState('1')
   const [tableSeats, setTableSeats] = useState(4)
   const [tableAccessible, setTableAccessible] = useState(false)
   const [tableXCm, setTableXCm] = useState(50)
   const [tableYCm, setTableYCm] = useState(50)
-  const [versionName, setVersionName] = useState('Nueva versión')
-  const [versionActivation, setVersionActivation] = useState('')
-  const [versionDeactivation, setVersionDeactivation] = useState('')
   const [previewDevice] = useState<FloorPlanPreviewDevice>('desktop')
   const [selectedId, setSelectedId] = useState<string>()
   const [selectedIds, setSelectedIds] = useState<string[]>([])
@@ -82,18 +90,26 @@ export function FloorPlanPage({
   const [minimumAisleCm, setMinimumAisleCm] = useState(90)
   const [selectedAreaId, setSelectedAreaId] = useState(data.areas[0]?.id)
   const [initializing, setInitializing] = useState(false)
+  const [initializationFailed, setInitializationFailed] = useState(false)
   const [createAreaOpen, setCreateAreaOpen] = useState(false)
   const [newAreaName, setNewAreaName] = useState('Terraza')
   const [creatingArea, setCreatingArea] = useState(false)
   const [addElementAt, setAddElementAt] = useState<{ x: number; y: number }>()
+  function reloadFloorPlan() {
+    void queryClient.invalidateQueries({
+      queryKey: ['tenant', tenantId, 'venue', venueId, 'floor-plan'],
+    })
+    reload()
+  }
   const activeArea = data.areas.find((area) => area.id === selectedAreaId) ?? data.areas[0]
   const activeVersion = activeArea
     ? (selectFloorPlanVersion(data.versions, activeArea.id) ??
       data.versions.find((version) => version.areaId === activeArea.id))
     : undefined
   useAsyncEffect(() => {
-    if (data.areas.length > 0 || initializing) return
+    if (data.areas.length > 0 || initializing || initializationFailed) return
     setInitializing(true)
+    feedback.setPending()
     void createInitialFloorPlan({
       data: {
         areaName: 'Sala principal',
@@ -106,9 +122,24 @@ export function FloorPlanPage({
         widthCm: 800,
       },
     })
-      .then(() => reload())
-      .catch(() => feedback.setError('No se ha podido preparar el plano inicial.'))
-  }, [data.areas.length, feedback, initializing, reload, tenantId, venueId])
+      .then(() => {
+        reloadFloorPlan()
+        feedback.setSuccess('Plano inicial preparado.')
+      })
+      .catch(() => {
+        setInitializationFailed(true)
+        feedback.setError('No se ha podido preparar el plano inicial.')
+      })
+      .finally(() => setInitializing(false))
+  }, [
+    data.areas.length,
+    feedback,
+    initializationFailed,
+    initializing,
+    reloadFloorPlan,
+    tenantId,
+    venueId,
+  ])
   const savedPlacements = activeVersion
     ? data.placements.filter((placement) => placement.floorPlanVersionId === activeVersion.id)
     : []
@@ -195,7 +226,7 @@ export function FloorPlanPage({
       feedback.setSuccess(`${areaName} preparada.`)
       setCreateAreaOpen(false)
       setNewAreaName('Terraza')
-      reload()
+      reloadFloorPlan()
     } catch {
       feedback.setError('No se ha podido crear la nueva zona.')
     } finally {
@@ -224,8 +255,12 @@ export function FloorPlanPage({
     )
   }
 
-  async function createTable(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
+  async function createTable(
+    event?: FormEvent<HTMLFormElement>,
+    position?: { x: number; y: number },
+    code = tableCode,
+  ) {
+    event?.preventDefault()
     if (!activeArea || !activeVersion) return
     feedback.setPending()
 
@@ -233,7 +268,7 @@ export function FloorPlanPage({
       await createFloorPlanTable({
         data: {
           areaId: activeArea.id,
-          code: tableCode,
+          code,
           heightCm: 100,
           maxSeats: tableSeats,
           minSeats: 1,
@@ -242,15 +277,22 @@ export function FloorPlanPage({
           venueId,
           versionId: activeVersion.id,
           widthCm: 100,
-          xCm: tableXCm,
-          yCm: tableYCm,
+          xCm: position?.x ?? tableXCm,
+          yCm: position?.y ?? tableYCm,
         },
       })
       feedback.setSuccess('Mesa añadida.')
-      reload()
+      reloadFloorPlan()
     } catch {
       feedback.setError('La mesa queda fuera del plano, se solapa o ya existe ese código.')
     }
+  }
+
+  function createQuickTable(position: { x: number; y: number }) {
+    const usedCodes = new Set(placements.map((placement) => placement.code))
+    let number = 1
+    while (usedCodes.has(`M${number}`)) number += 1
+    void createTable(undefined, position, `M${number}`)
   }
 
   function changePlacement(id: string, xCm: number, yCm: number) {
@@ -483,56 +525,30 @@ export function FloorPlanPage({
     )
   }
 
-  async function saveVersion() {
+  async function savePlan() {
     if (!activeVersion) return
     if (layoutIssues.length > 0) {
       feedback.setError('Corrige los problemas del plano antes de publicarlo.')
-      return
-    }
-    const activationDate = new Date(versionActivation)
-    if (!versionActivation || Number.isNaN(activationDate.getTime())) {
-      feedback.setError('Indica una fecha y hora de activación válida.')
-      return
-    }
-    const activeFrom = activationDate.toISOString()
-    const deactivationDate = versionDeactivation ? new Date(versionDeactivation) : undefined
-    if (
-      deactivationDate &&
-      (Number.isNaN(deactivationDate.getTime()) || deactivationDate <= activationDate)
-    ) {
-      feedback.setError('La fecha de fin debe ser posterior a la activación.')
-      return
-    }
-    const scheduleConflicts = findVersionScheduleConflicts([
-      ...data.versions.filter(
-        (version) => version.areaId === activeVersion.areaId && version.id !== activeVersion.id,
-      ),
-      { ...activeVersion, id: 'draft-version', activeFrom },
-    ])
-    if (scheduleConflicts.length > 0) {
-      feedback.setError(
-        'La fecha se solapa con otra versión de esta zona. Elige otra fecha de activación.',
-      )
       return
     }
     feedback.setPending()
     try {
       await saveFloorPlanVersion({
         data: {
-          activeFrom,
-          activeTo: deactivationDate?.toISOString() ?? null,
+          activeFrom: new Date().toISOString(),
+          activeTo: null,
           elements,
-          name: versionName,
+          name: 'Plano',
           placements,
           sourceVersionId: activeVersion.id,
           tenantId,
           venueId,
         },
       })
-      feedback.setSuccess('Versión del plano guardada.')
-      reload()
+      feedback.setSuccess('Plano guardado.')
+      reloadFloorPlan()
     } catch {
-      feedback.setError('No se ha podido guardar la versión del plano.')
+      feedback.setError('No se ha podido guardar el plano.')
     }
   }
 
@@ -546,6 +562,25 @@ export function FloorPlanPage({
           </PageHeaderDescription>
         </div>
       </PageHeader>
+      {initializationFailed ? (
+        <Card>
+          <CardContent className="flex flex-wrap items-center justify-between gap-3 py-4">
+            <p className="text-destructive text-sm" role="alert">
+              No se ha podido preparar el plano inicial.
+            </p>
+            <Button
+              onClick={() => {
+                setInitializationFailed(false)
+              }}
+              size="sm"
+              type="button"
+              variant="outline"
+            >
+              Reintentar
+            </Button>
+          </CardContent>
+        </Card>
+      ) : null}
       {!activeVersion ? (
         <Card className="border-dashed">
           <CardContent className="flex min-h-48 items-center justify-center text-center">
@@ -590,6 +625,7 @@ export function FloorPlanPage({
               setSelectedIds([])
             }}
             onEmptyPlace={(x, y) => setAddElementAt({ x, y })}
+            onCreateTable={createQuickTable}
             onDropElement={(kind, x, y) => addElement(kind, { x, y })}
             onGridSizeChange={setGridSize}
             onMinimumAisleChange={setMinimumAisleCm}
@@ -690,6 +726,21 @@ export function FloorPlanPage({
                 })()}
               <div className="mt-6 space-y-2">
                 <p className="text-muted-foreground text-sm">Elementos estructurales</p>
+                <div
+                  draggable
+                  onDragStart={(event: DragEvent<HTMLDivElement>) =>
+                    event.dataTransfer.setData('application/x-floor-table', 'table')
+                  }
+                >
+                  <Button
+                    className="h-auto w-full justify-start gap-2 border-primary py-3"
+                    onClick={() => createQuickTable({ x: 50, y: 50 })}
+                    type="button"
+                    variant="outline"
+                  >
+                    <Table2 className="size-4" /> Añadir mesa al plano
+                  </Button>
+                </div>
                 <div className="grid grid-cols-2 gap-2">
                   {(
                     [
@@ -697,9 +748,9 @@ export function FloorPlanPage({
                       ['door', 'Puerta', DoorOpen],
                       ['bar', 'Barra', PanelTop],
                       ['stairs', 'Escalera', Footprints],
-                      ['plant', 'Planta', LayoutGrid],
+                      ['plant', 'Planta', Armchair],
                       ['pillar', 'Pilar', Grid2X2],
-                      ['bathroom', 'Baño', Square],
+                      ['bathroom', 'Baño', Bath],
                       ['kitchen', 'Cocina', Soup],
                     ] as const
                   ).map(([kind, label, Icon]) => (
@@ -787,52 +838,6 @@ export function FloorPlanPage({
                 </form>
               )}
               <div className="mt-6 border-t pt-6">
-                <div className="mb-4 text-xs">
-                  <p className="font-medium">Versiones guardadas</p>
-                  <ul aria-label="Versiones guardadas" className="space-y-1">
-                    {data.versions
-                      .filter((version) => version.areaId === activeArea?.id)
-                      .map((version) => (
-                        <li key={version.id}>
-                          {version.name} ·{' '}
-                          {version.activeFrom
-                            ? new Date(version.activeFrom).toLocaleString()
-                            : 'sin fecha'}
-                        </li>
-                      ))}
-                  </ul>
-                </div>
-                <Field>
-                  <FieldLabel htmlFor="version-name">Guardar como versión</FieldLabel>
-                  <Input
-                    id="version-name"
-                    onChange={(event) => setVersionName(event.target.value)}
-                    placeholder="Ej. Verano 2026"
-                    required
-                    value={versionName}
-                  />
-                </Field>
-                <Field className="mt-3">
-                  <FieldLabel htmlFor="version-activation">Activar desde</FieldLabel>
-                  <Input
-                    id="version-activation"
-                    onChange={(event) => setVersionActivation(event.target.value)}
-                    placeholder="Selecciona fecha y hora"
-                    required
-                    type="datetime-local"
-                    value={versionActivation}
-                  />
-                </Field>
-                <Field className="mt-3">
-                  <FieldLabel htmlFor="version-deactivation">Activar hasta (opcional)</FieldLabel>
-                  <Input
-                    id="version-deactivation"
-                    onChange={(event) => setVersionDeactivation(event.target.value)}
-                    placeholder="Opcional"
-                    type="datetime-local"
-                    value={versionDeactivation}
-                  />
-                </Field>
                 <div className="mt-3 flex gap-2">
                   <Button
                     disabled={history.past.length === 0}
@@ -850,10 +855,10 @@ export function FloorPlanPage({
                   </Button>
                   <Button
                     disabled={feedback.pending}
-                    onClick={() => void saveVersion()}
+                    onClick={() => void savePlan()}
                     type="button"
                   >
-                    Guardar
+                    Guardar plano
                   </Button>
                 </div>
               </div>
@@ -902,11 +907,26 @@ export function FloorPlanPage({
       >
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Añadir al plano</DialogTitle>
+            <DialogTitle>¿Qué quieres añadir?</DialogTitle>
             <DialogDescription>
-              Elige un elemento para colocarlo en el punto seleccionado.
+              Para empezar, añade una mesa. Después podrás añadir paredes, puertas y otras zonas.
             </DialogDescription>
           </DialogHeader>
+          <Button
+            className="h-auto justify-start gap-3 py-4 text-base"
+            onClick={() => {
+              if (addElementAt) {
+                setTableXCm(Math.max(0, Math.round(addElementAt.x / gridSize) * gridSize))
+                setTableYCm(Math.max(0, Math.round(addElementAt.y / gridSize) * gridSize))
+              }
+              void createTable(undefined, addElementAt)
+              setAddElementAt(undefined)
+            }}
+            type="button"
+          >
+            <Table2 className="size-5" />
+            Añadir mesa
+          </Button>
           <div className="grid grid-cols-2 gap-2">
             {(
               [
@@ -914,9 +934,9 @@ export function FloorPlanPage({
                 ['door', 'Puerta', DoorOpen],
                 ['bar', 'Barra', PanelTop],
                 ['stairs', 'Escalera', Footprints],
-                ['plant', 'Planta', LayoutGrid],
+                ['plant', 'Planta', Armchair],
                 ['pillar', 'Pilar', Grid2X2],
-                ['bathroom', 'Baño', Square],
+                ['bathroom', 'Baño', Bath],
                 ['kitchen', 'Cocina', Soup],
               ] as const
             ).map(([kind, label, Icon]) => (

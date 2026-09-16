@@ -47,6 +47,8 @@ export function CashRegisterPage({
 }) {
   const feedback = useFormFeedback()
   const [exportMessage, setExportMessage] = useState<string | null>(null)
+  const [exporting, setExporting] = useState(false)
+  const [exportError, setExportError] = useState(false)
   const [amount, setAmount] = useState('')
   const [reason, setReason] = useState('')
   const [outAmount, setOutAmount] = useState('')
@@ -79,6 +81,9 @@ export function CashRegisterPage({
     : 0
 
   function downloadCashHistory() {
+    if (exporting) return
+    setExporting(true)
+    setExportError(false)
     try {
       const csv = buildCashHistoryCsv(
         history.map((entry) => ({
@@ -98,7 +103,10 @@ export function CashRegisterPage({
       URL.revokeObjectURL(url)
       setExportMessage('CSV del histórico descargado.')
     } catch {
+      setExportError(true)
       setExportMessage('No se ha podido generar el CSV del histórico.')
+    } finally {
+      setExporting(false)
     }
   }
   return (
@@ -354,14 +362,24 @@ export function CashRegisterPage({
           <CardHeader>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <CardTitle>Histórico de cierres</CardTitle>
-              <Button onClick={downloadCashHistory} size="sm" type="button" variant="outline">
-                Descargar CSV
+              <Button
+                disabled={exporting}
+                onClick={downloadCashHistory}
+                size="sm"
+                type="button"
+                variant="outline"
+              >
+                {exporting ? 'Preparando CSV…' : 'Descargar CSV'}
               </Button>
             </div>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             {exportMessage ? (
-              <output aria-live="polite" className="text-success block text-sm">
+              <output
+                aria-live="polite"
+                className={`${exportError ? 'text-destructive' : 'text-success'} block text-sm`}
+                role={exportError ? 'alert' : undefined}
+              >
                 {exportMessage}
               </output>
             ) : null}
