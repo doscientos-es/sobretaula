@@ -1,4 +1,4 @@
-import { createFileRoute, notFound } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 
 import {
   getPublicReservation,
@@ -14,11 +14,12 @@ export const Route = createFileRoute('/reserva/$token')({
 })
 
 function ReservationManagementRoute() {
+  const token = Route.useParams().token
   const reservation = Route.useLoaderData()
-  if (!reservation) throw notFound()
+  if (!reservation) return <ReservationNotFound />
   return (
     <LocaleProvider browserDefault storageKey={PUBLIC_LOCALE_STORAGE_KEY}>
-      <PublicReservationManagementPage reservation={reservation} token={Route.useParams().token} />
+      <PublicReservationManagementPage reservation={reservation} token={token} />
     </LocaleProvider>
   )
 }

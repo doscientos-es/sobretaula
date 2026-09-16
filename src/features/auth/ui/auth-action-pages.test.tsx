@@ -15,10 +15,7 @@ describe('authentication action pages', () => {
 
   it('identifies account activation as a team invitation', () => {
     const markup = renderToStaticMarkup(
-      <ActivateAccountPage
-        invitationPath="/invitacion"
-        invitationToken="test-token"
-      />,
+      <ActivateAccountPage invitationPath="/invitacion" invitationToken="test-token" />,
     )
 
     expect(markup).toContain('st-auth-action-card')
