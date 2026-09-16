@@ -247,6 +247,7 @@ export function ReservationPage({
       setGuestPhone('')
       setStartsAt('')
       setReservationOperationId(crypto.randomUUID())
+      setNewReservationOpen(false)
       setAgendaRefreshToken((value) => value + 1)
       onAgendaSearchChange?.({ date: startsAt.slice(0, 10), query: '', status: 'all' })
     } catch {
@@ -266,6 +267,9 @@ export function ReservationPage({
             Organiza cada turno y asigna grupos a la mesa que mejor encaja.
           </PageHeaderDescription>
         </div>
+        <Button onClick={() => setNewReservationOpen(true)} type="button">
+          + Crear reserva
+        </Button>
       </PageHeader>
       <Tabs className="space-y-5" defaultSelectedKey="agenda">
         <TabsList aria-label="Secciones de reservas" className="w-fit">

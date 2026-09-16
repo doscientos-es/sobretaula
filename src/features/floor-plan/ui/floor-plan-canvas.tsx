@@ -38,10 +38,8 @@ export function FloorPlanCanvas({
   elements,
   gridSize,
   layoutIssues,
-  minimumAisleCm,
   onClearSelection,
   onGridSizeChange,
-  onMinimumAisleChange,
   onEmptyPlace,
   onCreateTable,
   onDropElement,
@@ -59,10 +57,8 @@ export function FloorPlanCanvas({
   elements: readonly FloorPlanElement[]
   gridSize: number
   layoutIssues: readonly LayoutIssue[]
-  minimumAisleCm: number
   onClearSelection: () => void
   onGridSizeChange: (value: number) => void
-  onMinimumAisleChange: (value: number) => void
   onEmptyPlace: (xCm: number, yCm: number) => void
   onCreateTable: (position: { x: number; y: number }) => void
   onDropElement: (kind: PlanElementKind, xCm: number, yCm: number) => void
@@ -177,20 +173,6 @@ export function FloorPlanCanvas({
               <option value={100}>1 m</option>
             </select>
           </label>
-          <label className="text-muted-foreground ml-2 flex items-center gap-2 text-sm">
-            Pasillo mínimo
-            <select
-              aria-label="Anchura mínima de pasillo"
-              className="border-border rounded-md border px-2 py-1"
-              onChange={(event) => onMinimumAisleChange(Number(event.target.value))}
-              value={minimumAisleCm}
-            >
-              <option value={0}>Sin validar</option>
-              <option value={75}>75 cm</option>
-              <option value={90}>90 cm</option>
-              <option value={120}>1,2 m</option>
-            </select>
-          </label>
         </div>
         {alignmentGuides.length > 0 && (
           <p aria-live="polite" className="text-muted-foreground pt-2 text-xs">
@@ -216,9 +198,7 @@ export function FloorPlanCanvas({
                 <li key={`${issue.code}-${issue.placementId}-${issue.relatedPlacementId ?? ''}`}>
                   {issue.code === 'overlap'
                     ? `Solape entre ${issue.placementId} y ${issue.relatedPlacementId}`
-                    : issue.code === 'narrow_passage'
-                      ? `Pasillo demasiado estrecho entre ${issue.placementId} y ${issue.relatedPlacementId}`
-                      : issue.code === 'outside_bounds'
+                    : issue.code === 'outside_bounds'
                         ? `${issue.placementId} queda fuera del plano`
                         : `${issue.placementId} tiene un tamaño inválido`}
                 </li>

@@ -19,6 +19,8 @@ export {
   acceptTenantInvitation,
   getTenantTeam,
   inviteTenantMember,
+  removeTenantMember,
+  revokeTenantInvitation,
   suspendTenantMember,
   updateTenantMemberRole,
 } from './application/team'

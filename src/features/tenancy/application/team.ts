@@ -29,6 +29,9 @@ const memberRoleInput = z.enum(TENANT_ROLES)
 const memberStatusInput = z.enum(['active', 'suspended'])
 const inviteInput = tenantTeamInput.merge(teamInvitationFormInput)
 const updateRoleInput = memberInput.extend({ role: assignableRoleInput })
+const invitationEmailInput = tenantTeamInput.pick({ tenantId: true }).extend({
+  email: z.string().email(),
+})
 const invitationTokenInput = z.object({ token: z.string().regex(/^[A-Za-z0-9_-]{40,128}$/) })
 
 export interface TenantTeamMember {
@@ -261,6 +264,19 @@ export const resendTenantInvitation = createServerFn({ method: 'POST' })
     return { kind: 'invitation_resent' as const, role: invitation.role }
   })
 
+/** Revokes a pending invitation without affecting an existing account. */
+export const revokeTenantInvitation = createServerFn({ method: 'POST' })
+  .middleware([authMiddleware, tenantMembershipMiddleware])
+  .validator(invitationEmailInput)
+  .handler(async ({ context, data }) => {
+    requireAssignableRole(context.tenantMembership.role, 'waiter')
+    const { error } = await createRequestSupabaseClient(context.tenantMembership.accessToken).rpc(
+      'revoke_tenant_invitation',
+      { p_email: data.email, p_tenant_id: data.tenantId },
+    )
+    if (error) throw new Response('Forbidden', { status: 403 })
+  })
+
 /** Changes a staff role through the database-enforced tenant hierarchy. */
 export const updateTenantMemberRole = createServerFn({ method: 'POST' })
   .middleware([authMiddleware, tenantMembershipMiddleware])
@@ -281,6 +297,18 @@ export const suspendTenantMember = createServerFn({ method: 'POST' })
   .handler(async ({ context, data }) => {
     const { error } = await createRequestSupabaseClient(context.tenantMembership.accessToken).rpc(
       'suspend_tenant_member',
+      { p_tenant_id: data.tenantId, p_user_id: data.userId },
+    )
+    if (error) throw new Response('Forbidden', { status: 403 })
+  })
+
+/** Removes a member's access while preserving the user account itself. */
+export const removeTenantMember = createServerFn({ method: 'POST' })
+  .middleware([authMiddleware, tenantMembershipMiddleware])
+  .validator(memberInput)
+  .handler(async ({ context, data }) => {
+    const { error } = await createRequestSupabaseClient(context.tenantMembership.accessToken).rpc(
+      'remove_tenant_member',
       { p_tenant_id: data.tenantId, p_user_id: data.userId },
     )
     if (error) throw new Response('Forbidden', { status: 403 })

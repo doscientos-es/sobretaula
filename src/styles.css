@@ -653,24 +653,27 @@ select:not([data-slot]):focus-visible {
 }
 
 .st-saas-nav-group {
-  border-top: 1px solid #f0f0f0;
+  margin-top: 1.25rem;
+  padding-top: 0.75rem;
 }
 
 .st-saas-nav-link {
   color: #606671;
-  min-height: 2.5rem;
+  min-height: 2.25rem;
   line-height: 1.35;
+  transition: color 160ms ease, background-color 160ms ease, transform 160ms ease;
 }
 
 .st-saas-nav-link:hover {
   color: #1d2025;
   background: #f1f1f2;
+  transform: translateX(2px);
 }
 
 .st-saas-nav-link--active {
   color: #17191d;
-  background: color-mix(in srgb, var(--primary) 12%, white);
-  box-shadow: inset 3px 0 0 var(--primary);
+  background: color-mix(in srgb, var(--primary) 10%, white);
+  box-shadow: 0 1px 2px rgb(23 25 29 / 6%);
   font-weight: 650;
 }
 

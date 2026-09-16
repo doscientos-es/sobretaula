@@ -32,8 +32,9 @@ import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
 import {
   getTenantTeam,
   inviteTenantMember,
+  removeTenantMember,
+  revokeTenantInvitation,
   resendTenantInvitation,
-  suspendTenantMember,
   updateTenantMemberRole,
   type TenantTeam,
 } from '../application/team'
@@ -88,6 +89,8 @@ export function TenantTeamPage({
   const [teamError, setTeamError] = useState<string | null>(null)
   const [teamRefresh, setTeamRefresh] = useState(0)
   const [resendingEmail, setResendingEmail] = useState<string | null>(null)
+  const [revokingEmail, setRevokingEmail] = useState<string | null>(null)
+  const [confirmingRemoval, setConfirmingRemoval] = useState<string | null>(null)
   useAsyncEffect(() => {
     let active = true
     setTeamLoading(true)
@@ -344,22 +347,47 @@ export function TenantTeamPage({
                           </SelectList>
                         </SelectContent>
                       </Select>
-                      {member.status === 'active' && (
-                        <Button
-                          disabled={feedback.pending}
-                          onClick={() =>
-                            void run(
-                              () =>
-                                suspendTenantMember({ data: { tenantId, userId: member.userId } }),
-                              'Acceso desactivado.',
-                            )
-                          }
-                          type="button"
-                          variant="outline"
-                        >
-                          Desactivar
-                        </Button>
-                      )}
+                      {member.status === 'active' &&
+                        (confirmingRemoval === member.userId ? (
+                          <div className="flex items-center gap-1.5">
+                            <span className="sr-only">Confirmar eliminación de {member.name}</span>
+                            <Button
+                              disabled={feedback.pending}
+                              onClick={() => {
+                                void run(
+                                  () =>
+                                    removeTenantMember({
+                                      data: { tenantId, userId: member.userId },
+                                    }),
+                                  'Acceso eliminado del restaurante.',
+                                ).finally(() => setConfirmingRemoval(null))
+                              }}
+                              size="sm"
+                              type="button"
+                              variant="destructive"
+                            >
+                              Confirmar
+                            </Button>
+                            <Button
+                              disabled={feedback.pending}
+                              onClick={() => setConfirmingRemoval(null)}
+                              size="sm"
+                              type="button"
+                              variant="ghost"
+                            >
+                              Cancelar
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button
+                            disabled={feedback.pending}
+                            onClick={() => setConfirmingRemoval(member.userId)}
+                            type="button"
+                            variant="outline"
+                          >
+                            Eliminar acceso
+                          </Button>
+                        ))}
                     </div>
                   )}
                 </div>
@@ -404,7 +432,9 @@ export function TenantTeamPage({
                   {new Date(invitation.expiresAt).toLocaleDateString('es-ES')}
                 </p>
                 <Button
-                  disabled={resendingEmail === invitation.email}
+                  disabled={
+                    resendingEmail === invitation.email || revokingEmail === invitation.email
+                  }
                   onClick={() => {
                     setResendingEmail(invitation.email)
                     feedback.setPending()
@@ -421,6 +451,29 @@ export function TenantTeamPage({
                   variant="outline"
                 >
                   {resendingEmail === invitation.email ? 'Enviando…' : 'Reenviar invitación'}
+                </Button>
+                <Button
+                  disabled={
+                    resendingEmail === invitation.email || revokingEmail === invitation.email
+                  }
+                  onClick={() => {
+                    setRevokingEmail(invitation.email)
+                    feedback.setPending()
+                    void revokeTenantInvitation({
+                      data: { tenantId, email: invitation.email },
+                    })
+                      .then(() => {
+                        feedback.setSuccess('Invitación revocada.')
+                        setTeamRefresh((current) => current + 1)
+                      })
+                      .catch((error) => feedback.setError(teamErrorMessage(error)))
+                      .finally(() => setRevokingEmail(null))
+                  }}
+                  size="sm"
+                  type="button"
+                  variant="ghost"
+                >
+                  {revokingEmail === invitation.email ? 'Revocando…' : 'Revocar'}
                 </Button>
               </div>
             ))}

@@ -1,3 +1,5 @@
+import path from 'node:path'
+
 import { test, expect } from '@playwright/test'
 
 test('public reservation page renders the published booking flow', async ({ page }) => {
@@ -256,5 +258,51 @@ test.describe('authenticated restaurant smoke', () => {
     await page.getByRole('button', { name: 'Limpiar búsqueda', exact: true }).click()
     await expect(search).toHaveValue('')
     expect(unlabeledControlWarnings, 'No deben quedar controles sin nombre accesible').toEqual([])
+  })
+
+  test('team invitation lifecycle accepts, assigns every role and removes access', async ({
+    browser,
+    page,
+  }) => {
+    const lifecycleContext = await browser.newContext({
+      storageState: path.resolve('e2e/.auth/waiter.json'),
+    })
+    const lifecyclePage = await lifecycleContext.newPage()
+    await lifecyclePage.goto('/invitacion?token=e2e-team-invitation-token-2026-000000000')
+    await lifecyclePage.waitForLoadState('networkidle')
+    await lifecyclePage.getByRole('button', { name: 'Aceptar invitación' }).click()
+    await lifecyclePage.waitForTimeout(5000)
+    if (new URL(lifecyclePage.url()).pathname === '/invitacion') {
+      throw new Error(`La aceptación falló: ${await lifecyclePage.locator('body').innerText()}`)
+    }
+    await expect(lifecyclePage).toHaveURL(/\/t\/la-fonda-demo/)
+    await lifecycleContext.close()
+
+    await page.goto('/t/la-fonda-demo/equipo')
+    await expect(page.getByText('Personas con acceso', { exact: true })).toBeVisible()
+    const lifecycleEmail = process.env.E2E_WAITER_EMAIL ?? 'e2e-waiter@example.test'
+    const roles = [
+      ['manager', 'Gerente'],
+      ['host', 'Jefe de sala'],
+      ['waiter', 'Camarero'],
+      ['accountant', 'Administración'],
+    ] as const
+    for (const [, roleLabel] of roles) {
+      await page.getByRole('button', { name: 'Camarero', exact: true }).click()
+      await page.getByRole('option', { name: roleLabel, exact: true }).click()
+      await page.getByLabel('Correo').fill(lifecycleEmail)
+      await page.getByRole('button', { name: 'Añadir', exact: true }).click()
+      await expect(page.getByText('La cuenta ya existía y se ha añadido al equipo.')).toBeVisible()
+    }
+
+    await expect(page.getByText('E2E Team Lifecycle', { exact: true })).toBeVisible()
+    await page.getByRole('button', { name: 'Eliminar acceso', exact: true }).click()
+    await page.getByRole('button', { name: 'Confirmar', exact: true }).click()
+    await expect(page.getByText('Acceso eliminado del restaurante.')).toBeVisible()
+    await page.getByRole('button', { name: 'Camarero', exact: true }).click()
+    await page.getByRole('option', { name: 'Camarero', exact: true }).click()
+    await page.getByLabel('Correo').fill(lifecycleEmail)
+    await page.getByRole('button', { name: 'Añadir', exact: true }).click()
+    await expect(page.getByText('La cuenta ya existía y se ha añadido al equipo.')).toBeVisible()
   })
 })

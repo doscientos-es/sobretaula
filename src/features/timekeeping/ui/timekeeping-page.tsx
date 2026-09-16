@@ -4,6 +4,11 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogRoot,
+  DialogTitle,
   Field,
   FieldLabel,
   PageHeader,
@@ -263,6 +268,7 @@ function TimekeepingManagement({
   venueId: string
 }) {
   const [employeeId, setEmployeeId] = useState(management.employees[0]?.userId ?? '')
+  const [shiftDialogOpen, setShiftDialogOpen] = useState(false)
   const [assignmentVenueIds, setAssignmentVenueIds] = useState<string[]>(
     () =>
       management.assignments.find((assignment) => assignment.employeeId === employeeId)?.venueIds ??
@@ -391,6 +397,7 @@ function TimekeepingManagement({
         },
       })
       feedback.setSuccess('Turno guardado en borrador.')
+      setShiftDialogOpen(false)
       onSaved()
     } catch (error) {
       feedback.setError(
@@ -702,23 +709,37 @@ function TimekeepingManagement({
                 Los turnos se guardan inicialmente como borrador para revisión del responsable.
               </p>
             </div>
-            <form className="grid gap-3 md:grid-cols-3" onSubmit={(event) => void saveShift(event)}>
-              <Field>
-                <FieldLabel htmlFor="shift-start">Inicio</FieldLabel>
-                <Input id="shift-start" name="shiftStartsAt" required type="datetime-local" />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="shift-end">Fin</FieldLabel>
-                <Input id="shift-end" name="shiftEndsAt" required type="datetime-local" />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="shift-note">Nota</FieldLabel>
-                <Input id="shift-note" name="shiftNote" placeholder="Zona o servicio" />
-              </Field>
-              <Button className="md:col-span-3" disabled={feedback.pending} type="submit">
-                Añadir turno
-              </Button>
-            </form>
+            <Button onClick={() => setShiftDialogOpen(true)} type="button">
+              + Añadir turno
+            </Button>
+            <DialogRoot onOpenChange={setShiftDialogOpen} open={shiftDialogOpen}>
+              <DialogContent className="max-w-lg">
+                <DialogHeader>
+                  <DialogTitle>Añadir turno</DialogTitle>
+                  <DialogDescription>
+                    Los turnos se guardan como borrador para que puedas revisarlos antes de
+                    publicarlos.
+                  </DialogDescription>
+                </DialogHeader>
+                <form className="grid gap-3" onSubmit={(event) => void saveShift(event)}>
+                  <Field>
+                    <FieldLabel htmlFor="shift-start">Inicio</FieldLabel>
+                    <Input id="shift-start" name="shiftStartsAt" required type="datetime-local" />
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="shift-end">Fin</FieldLabel>
+                    <Input id="shift-end" name="shiftEndsAt" required type="datetime-local" />
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="shift-note">Nota</FieldLabel>
+                    <Input id="shift-note" name="shiftNote" placeholder="Zona o servicio" />
+                  </Field>
+                  <Button disabled={feedback.pending} type="submit">
+                    {feedback.pending ? 'Guardando…' : 'Guardar turno'}
+                  </Button>
+                </form>
+              </DialogContent>
+            </DialogRoot>
             {management.shifts.length > 0 ? (
               <ul className="space-y-2 text-sm">
                 {management.shifts.slice(0, 10).map((shift) => (

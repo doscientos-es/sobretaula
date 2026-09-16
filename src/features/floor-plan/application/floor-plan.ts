@@ -25,7 +25,8 @@ const createTableInput = venueInput
     areaId: z.string().uuid(),
     code: z.string().trim().min(1).max(20),
     heightCm: z.number().int().min(25).max(500),
-    maxSeats: z.number().int().min(1).max(50),
+  maxSeats: z.number().int().min(1).max(50),
+  normalSeats: z.number().int().min(1).max(50).default(4),
     minSeats: z.number().int().min(1).max(50),
     isAccessible: z.boolean().default(false),
     shape: z.enum(['square', 'rectangle', 'round', 'oval', 'custom']).default('square'),
@@ -145,7 +146,7 @@ export async function loadFloorPlan(
   const [tablesResult, initialPlacementsResult, elementsResult] = await Promise.all([
     supabase
       .from('tables')
-      .select('code, id')
+      .select('code, id, min_seats, normal_seats, max_seats')
       .eq('tenant_id', data.tenantId)
       .eq('venue_id', data.venueId),
     supabase
@@ -178,7 +179,14 @@ export async function loadFloorPlan(
   const error = [tablesResult.error, placementsResult.error, elementsResult.error].find(Boolean)
   if (error) throw new Error(`floor_plan_load_failed:${error.code}`)
 
-  const tableCodes = new Map((tablesResult.data ?? []).map((table) => [table.id, table.code]))
+  const tableDetails = new Map(
+    (tablesResult.data ?? []).map((table) => [table.id, {
+      code: table.code,
+      minSeats: table.min_seats,
+      normalSeats: table.normal_seats,
+      maxSeats: table.max_seats,
+    }]),
+  )
 
   return {
     areas: (areasResult.data ?? []).map((area) => ({
@@ -201,7 +209,7 @@ export async function loadFloorPlan(
       yCm: element.y_cm,
     })),
     placements: (placementsResult.data ?? []).map((placement) => ({
-      code: tableCodes.get(placement.table_id) ?? '—',
+      ...(tableDetails.get(placement.table_id) ?? { code: '—', minSeats: 1, normalSeats: 4, maxSeats: 4 }),
       floorPlanVersionId: placement.floor_plan_version_id,
       heightCm: placement.height_cm,
       id: placement.table_id,
@@ -329,6 +337,7 @@ export const createFloorPlanTable = createServerFn({ method: 'POST' })
       code: data.code,
       max_seats: data.maxSeats,
       min_seats: data.minSeats,
+      normal_seats: data.normalSeats,
       is_accessible: data.isAccessible,
       shape: data.shape,
       tenant_id: data.tenantId,
@@ -359,6 +368,7 @@ export const createFloorPlanTable = createServerFn({ method: 'POST' })
 
     return { tableId: table.id }
   })
+
 
 /** Saves the editor state as a new version instead of mutating a published layout. */
 export const saveFloorPlanVersion = createServerFn({ method: 'POST' })

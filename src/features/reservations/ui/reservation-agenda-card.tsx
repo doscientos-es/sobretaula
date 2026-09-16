@@ -97,6 +97,8 @@ export function ReservationAgendaCard({
     () => agendaSearch?.status ?? 'all',
   )
   const [agenda, setAgenda] = useState<ReservationAgendaItem[]>([])
+  const [weeklyAgenda, setWeeklyAgenda] = useState<Record<string, ReservationAgendaItem[]>>({})
+  const [calendarMode, setCalendarMode] = useState(true)
   const [eventsByReservation, setEventsByReservation] = useState<
     Record<string, ReservationEvent[]>
   >({})
@@ -157,6 +159,27 @@ export function ReservationAgendaCard({
       cancelled = true
     }
   }, [agendaDate, agendaRefresh, refreshToken, setError, tenantId, venueId])
+
+  useEffect(() => {
+    let cancelled = false
+    const monday = new Date(`${agendaDate}T12:00:00.000Z`)
+    monday.setUTCDate(monday.getUTCDate() - ((monday.getUTCDay() + 6) % 7))
+    void Promise.all(
+      Array.from({ length: 7 }, (_, index) => {
+        const day = new Date(monday)
+        day.setUTCDate(day.getUTCDate() + index)
+        const date = day.toISOString().slice(0, 10)
+        return getReservationsForDate({ data: { date, tenantId, venueId } }).then(
+          (items) => [date, items] as const,
+        )
+      }),
+    ).then((entries) => {
+      if (!cancelled) setWeeklyAgenda(Object.fromEntries(entries))
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [agendaDate, agendaRefresh, refreshToken, tenantId, venueId])
 
   useAsyncEffect(() => {
     if (agendaSearch?.date && agendaSearch.date !== agendaDate) setAgendaDate(agendaSearch.date)
@@ -281,12 +304,64 @@ export function ReservationAgendaCard({
             />
             {agendaLoading ? 'Actualizando…' : 'Actualizar agenda'}
           </Button>
+          <Button
+            onClick={() => setCalendarMode((current) => !current)}
+            size="sm"
+            type="button"
+            variant="outline"
+          >
+            {calendarMode ? 'Vista lista' : 'Vista calendario'}
+          </Button>
         </div>
         <CardDescription>Reservas del día seleccionado en este local.</CardDescription>
         <p className="text-muted-foreground text-xs">Se actualiza automáticamente cada minuto.</p>
       </CardHeader>
       <CardContent className="space-y-4">
         <FormFeedback pendingLabel="Actualizando agenda…" state={feedback.state} />
+        {calendarMode ? (
+          <div className="grid gap-2 md:grid-cols-7">
+            {Array.from({ length: 7 }, (_, index) => {
+              const day = new Date(`${agendaDate}T12:00:00.000Z`)
+              day.setUTCDate(day.getUTCDate() - ((day.getUTCDay() + 6) % 7) + index)
+              const date = day.toISOString().slice(0, 10)
+              const items = weeklyAgenda[date] ?? []
+              return (
+                <div className="bg-muted/20 min-h-36 rounded-lg border p-2" key={date}>
+                  <p className="text-muted-foreground text-xs font-semibold">
+                    {day.toLocaleDateString(locale, { weekday: 'short', day: 'numeric' })}
+                  </p>
+                  <div className="mt-2 space-y-1.5">
+                    {items.slice(0, 5).map((item) => (
+                      <button
+                        className="bg-background hover:border-primary w-full rounded-md border p-2 text-left text-xs transition-colors"
+                        key={item.id}
+                        onClick={() => {
+                          setAgendaDate(date)
+                          setCalendarMode(false)
+                        }}
+                        type="button"
+                      >
+                        <span className="font-medium">
+                          {new Date(item.startsAt).toLocaleTimeString(locale, {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </span>{' '}
+                        {item.guestName ?? 'Sin nombre'}
+                      </button>
+                    ))}
+                    {items.length > 5 ? (
+                      <p className="text-muted-foreground text-xs">+{items.length - 5} más</p>
+                    ) : null}
+                    {items.length === 0 ? (
+                      <p className="text-muted-foreground py-4 text-center text-xs">—</p>
+                    ) : null}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        ) : null}
         <Field>
           <FieldLabel htmlFor="agenda-date">Día</FieldLabel>
           <Input

@@ -12,6 +12,7 @@ import { Link, useNavigate, useParams } from '@tanstack/react-router'
 import {
   BarChart3,
   CalendarDays,
+  ChevronDown,
   ConciergeBell,
   Coins,
   ExternalLink,
@@ -238,8 +239,9 @@ export function TenantAdminFrame({
                 </Link>
               )}
               <details className="group mt-1">
-                <summary className="st-saas-nav-link cursor-pointer list-none px-2.5 py-1.5 text-xs font-medium">
-                  Más opciones
+                <summary className="st-saas-nav-link flex cursor-pointer list-none items-center justify-between px-2.5 py-1.5 text-xs font-medium">
+                  <span>Más opciones</span>
+                  <ChevronDown className="size-3 transition-transform duration-200 group-open:rotate-180" />
                 </summary>
                 <div className="mt-0.5 space-y-0.5 pl-2">
                   {activeVenue && (

@@ -48,7 +48,6 @@ import {
   DEFAULT_GRID_SIZE_CM,
   findPlacementCollisions,
   findBlockedAccesses,
-  findNarrowPassages,
   isPlacementWithinBounds,
   movePlacement,
   validateLayout,
@@ -93,7 +92,6 @@ export function FloorPlanPage({
   const [selectedId, setSelectedId] = useState<string>()
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [gridSize, setGridSize] = useState(DEFAULT_GRID_SIZE_CM)
-  const [minimumAisleCm, setMinimumAisleCm] = useState(90)
   const [selectedAreaId, setSelectedAreaId] = useState(data.areas[0]?.id)
   const [initializing, setInitializing] = useState(false)
   const [initializationFailed, setInitializationFailed] = useState(false)
@@ -169,16 +167,7 @@ export function FloorPlanPage({
         : [id],
     )
   }
-  const layoutIssues = activeVersion
-    ? [
-        ...validateLayout(placements, activeVersion),
-        ...findNarrowPassages(placements, minimumAisleCm).map((passage) => ({
-          code: 'narrow_passage' as const,
-          placementId: passage.firstPlacementId,
-          relatedPlacementId: passage.secondPlacementId,
-        })),
-      ]
-    : []
+  const layoutIssues = activeVersion ? validateLayout(placements, activeVersion) : []
   const blockedAccesses = findBlockedAccesses(placements, elements)
   const selectedPlacement = placements.find((item) => item.id === selectedId)
   const alignmentGuides = selectedPlacement
@@ -289,8 +278,14 @@ export function FloorPlanPage({
       })
       feedback.setSuccess('Mesa añadida.')
       reloadFloorPlan()
-    } catch {
-      feedback.setError('La mesa queda fuera del plano, se solapa o ya existe ese código.')
+    } catch (error) {
+      feedback.setError(
+        error instanceof Response && error.status === 422
+          ? 'No hay espacio libre en ese punto. Prueba a soltar la mesa en otra zona.'
+          : error instanceof Error && error.message.includes('23505')
+            ? 'Ya existe una mesa con ese código.'
+            : 'No se ha podido añadir la mesa. Inténtalo de nuevo.',
+      )
     }
   }
 
@@ -298,7 +293,29 @@ export function FloorPlanPage({
     const usedCodes = new Set(placements.map((placement) => placement.code))
     let number = 1
     while (usedCodes.has(`M${number}`)) number += 1
-    void createTable(undefined, position, `M${number}`)
+    const tableSize = { heightCm: 100, widthCm: 100 }
+    const requested = {
+      xCm: Math.min(Math.max(0, position.x), activeVersion.widthCm - tableSize.widthCm),
+      yCm: Math.min(Math.max(0, position.y), activeVersion.heightCm - tableSize.heightCm),
+    }
+    const candidate = Array.from({ length: 200 }, (_, index) => {
+      const step = 50
+      return {
+        ...tableSize,
+        id: 'new-table',
+        xCm: Math.max(0, requested.xCm + (index % 10) * step),
+        yCm: Math.max(0, requested.yCm + Math.floor(index / 10) * step),
+      }
+    }).find(
+      (item) =>
+        isPlacementWithinBounds(item, activeVersion) &&
+        findPlacementCollisions(item, placements).length === 0,
+    )
+    if (!candidate) {
+      feedback.setError('No hay espacio libre suficiente para colocar otra mesa.')
+      return
+    }
+    void createTable(undefined, { x: candidate.xCm, y: candidate.yCm }, `M${number}`)
   }
 
   function changePlacement(id: string, xCm: number, yCm: number) {
@@ -578,7 +595,6 @@ export function FloorPlanPage({
             elements={elements}
             gridSize={gridSize}
             layoutIssues={layoutIssues}
-            minimumAisleCm={minimumAisleCm}
             onClearSelection={() => {
               setSelectedId(undefined)
               setSelectedIds([])
@@ -587,7 +603,6 @@ export function FloorPlanPage({
             onCreateTable={createQuickTable}
             onDropElement={(kind, x, y) => addElement(kind, { x, y })}
             onGridSizeChange={setGridSize}
-            onMinimumAisleChange={setMinimumAisleCm}
             onMoveItem={moveItem}
             onSelectItem={selectItem}
             placements={placements}

@@ -1,5 +1,6 @@
 // oxlint-disable no-console
 
+import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
 
@@ -396,6 +397,37 @@ async function main() {
   for (const [role, [email, password, displayName]] of Object.entries(roleCredentials)) {
     users[role] = await ensureUser(email, password, displayName)
   }
+
+  // The dedicated waiter account is used to exercise invitation acceptance.
+  // It is already authenticated by the Playwright setup, so this avoids
+  // creating a second ad-hoc identity that could drift from the test project.
+  const lifecycleEmail = process.env.E2E_WAITER_EMAIL ?? 'e2e-waiter@example.test'
+  const lifecycleUserId = users.waiter
+  const lifecycleToken = 'e2e-team-invitation-token-2026-000000000'
+  const lifecycleTokenHash = crypto.createHash('sha256').update(lifecycleToken).digest('hex')
+  await request(`/rest/v1/memberships?tenant_id=eq.${tenantId}&user_id=eq.${lifecycleUserId}`, {
+    method: 'DELETE',
+    headers: { Prefer: 'return=minimal' },
+  })
+  await request(
+    `/rest/v1/invitations?tenant_id=eq.${tenantId}&email=eq.${encodeURIComponent(lifecycleEmail)}`,
+    { method: 'DELETE', headers: { Prefer: 'return=minimal' } },
+  )
+  await request(`/rest/v1/invitations?token_hash=eq.${lifecycleTokenHash}`, {
+    method: 'DELETE',
+    headers: { Prefer: 'return=minimal' },
+  })
+  await request('/rest/v1/invitations', {
+    method: 'POST',
+    headers: { Prefer: 'return=minimal' },
+    body: JSON.stringify({
+      tenant_id: tenantId,
+      email: lifecycleEmail,
+      role: 'waiter',
+      token_hash: lifecycleTokenHash,
+      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    }),
+  })
 
   await request('/rest/v1/memberships?on_conflict=tenant_id,user_id', {
     method: 'POST',

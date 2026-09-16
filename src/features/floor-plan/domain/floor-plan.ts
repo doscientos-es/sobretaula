@@ -143,6 +143,9 @@ export function findVersionScheduleConflicts(
 
 export interface FloorPlanTablePlacement extends PlanPlacement {
   code: string
+  minSeats?: number
+  normalSeats?: number
+  maxSeats?: number
   floorPlanVersionId: string
   isLocked?: boolean
 }

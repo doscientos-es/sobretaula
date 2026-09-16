@@ -43,6 +43,10 @@ export function teamErrorMessage(error: unknown): string {
     return 'No se pudo guardar la invitación. Comprueba que el restaurante esté disponible e inténtalo de nuevo.'
   if (message.includes('team_member_upsert_failed'))
     return 'No se pudo incorporar la cuenta existente. Inténtalo de nuevo o usa una invitación.'
+  if (message.includes('membership_not_found'))
+    return 'Ese acceso ya no existe o ha cambiado. Actualiza la página e inténtalo de nuevo.'
+  if (message.includes('owner_or_self_membership_cannot_be_removed'))
+    return 'No puedes eliminar tu propio acceso ni el del propietario.'
   if (status === 401 || message.includes('Unauthenticated'))
     return 'Tu sesión ha caducado. Inicia sesión de nuevo e inténtalo de nuevo.'
   if (status === 403 || message.includes('Forbidden'))

@@ -18,7 +18,7 @@ export interface Position {
   yCm: number
 }
 
-export type LayoutIssueCode = 'invalid_size' | 'outside_bounds' | 'overlap' | 'narrow_passage'
+export type LayoutIssueCode = 'invalid_size' | 'outside_bounds' | 'overlap'
 
 export interface LayoutIssue {
   code: LayoutIssueCode
