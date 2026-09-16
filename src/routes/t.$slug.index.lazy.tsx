@@ -18,6 +18,10 @@ function TenantHomeRoute() {
   if (metrics.isPending || setupStatus.isPending) return <TenantHomeSkeleton />
   if (metrics.error) throw metrics.error
   if (setupStatus.error) throw setupStatus.error
+  // A query can briefly leave the pending state while its data is still
+  // unavailable during hydration/refetch. Never render the dashboard with a
+  // partial snapshot: keep the useful shell visible until both payloads exist.
+  if (!metrics.data || !setupStatus.data) return <TenantHomeSkeleton />
 
   return (
     <TenantHomePage

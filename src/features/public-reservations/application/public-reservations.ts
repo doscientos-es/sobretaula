@@ -288,7 +288,10 @@ export const cancelPublicReservation = createServerFn({ method: 'POST' })
       { p_token_hash: hashPublicToken(data.token) },
     )
     if (error) throw new Error(`public_reservation_cancel_failed:${error.code}`)
-    return { cancelled: cancelled === true }
+    // PostgREST returns a scalar boolean for current RPCs, while older
+    // deployed signatures may serialize it as a single-row array. Accept both
+    // representations so a valid cancellation is never shown as unavailable.
+    return { cancelled: cancelled === true || (Array.isArray(cancelled) && cancelled[0] === true) }
   })
 
 export const reschedulePublicReservation = createServerFn({ method: 'POST' })
@@ -301,5 +304,5 @@ export const reschedulePublicReservation = createServerFn({ method: 'POST' })
       { p_starts_at: data.startsAt, p_token_hash: hashPublicToken(data.token) },
     )
     if (error) throw new Error(`public_reservation_reschedule_failed:${error.code}`)
-    return { rescheduled: updated === true }
+    return { rescheduled: updated === true || (Array.isArray(updated) && updated[0] === true) }
   })

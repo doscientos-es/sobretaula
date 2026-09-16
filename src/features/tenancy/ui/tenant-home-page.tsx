@@ -46,6 +46,9 @@ export function TenantHomePage({
     formatMessage(locale, key, values)
   const [copied, setCopied] = useState(false)
   const [copyFailed, setCopyFailed] = useState(false)
+  // Keep the shell renderable while an older dehydrated query snapshot is
+  // being replaced by the current dashboard contract.
+  const actionItems = metrics.actionItems ?? []
   const timeFormatter = new Intl.DateTimeFormat(locale, {
     hour: '2-digit',
     minute: '2-digit',
@@ -165,9 +168,9 @@ export function TenantHomePage({
           <CardTitle>{message('dashboard.todayPriorities')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {metrics.actionItems.length > 0 ? (
+          {actionItems.length > 0 ? (
             <ul className="divide-border divide-y">
-              {metrics.actionItems.map((item) => {
+              {actionItems.map((item) => {
                 const venue = venues.find((candidate) => candidate.id === item.venueId)
                 if (!venue) return null
 

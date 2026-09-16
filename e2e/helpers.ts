@@ -17,7 +17,6 @@ export async function openOperationalPage(page: Page, path: string, label: strin
   // TanStack Start streams the shell before the lazy route hydrates. Give the
   // client a deterministic hydration point before interacting with controls.
   await page.waitForLoadState('domcontentloaded')
-  await page.waitForTimeout(500)
   await page.locator('body').waitFor({ state: 'visible' })
   await expectHealthyPage(page, label)
   await expect(

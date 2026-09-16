@@ -8,6 +8,7 @@ import {
   FormFeedback,
   useFormFeedback,
 } from '@doscientos/ui'
+import { ArrowRight, ShieldCheck, Utensils } from 'lucide-react'
 
 import { acceptPlatformInvitation } from '../application/platform-operators'
 
@@ -28,9 +29,21 @@ export function PlatformInvitationPage({ token }: { token: string }) {
   }
 
   return (
-    <main className="st-auth-shell">
-      <Card className="st-auth-card relative w-full max-w-md">
+    <main className="st-auth-action-shell st-auth-shell st-auth-shell--orange">
+      <span aria-hidden="true" className="st-auth-orb st-auth-orb--lime" />
+      <span aria-hidden="true" className="st-auth-orb st-auth-orb--mint" />
+      <Card className="st-auth-action-card st-auth-card relative">
         <CardHeader>
+          <div className="st-auth-action-brand">
+            <span className="st-brand-mark size-9 rounded-xl">
+              <Utensils aria-hidden="true" className="size-5" />
+            </span>
+            <span>SobreTaula</span>
+          </div>
+          <div className="st-auth-action-icon">
+            <ShieldCheck aria-hidden="true" className="size-5" />
+          </div>
+          <p className="st-auth-action-eyebrow">Permiso global</p>
           <CardTitle>Acceso a la plataforma</CardTitle>
           <CardDescription>
             Confirma que quieres aceptar el acceso global concedido a tu cuenta.
@@ -44,10 +57,11 @@ export function PlatformInvitationPage({ token }: { token: string }) {
             onClick={() => void accept()}
             size="lg"
           >
-            Aceptar acceso de plataforma
+            Aceptar acceso de plataforma <ArrowRight className="size-4" />
           </Button>
         </CardContent>
       </Card>
+      <p className="st-auth-action-footer">© {new Date().getFullYear()} SobreTaula</p>
     </main>
   )
 }

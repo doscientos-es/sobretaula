@@ -15,7 +15,7 @@ describe('PasswordRequirementsIndicator', () => {
 
     expect(markup).toContain('aria-label="Falta: Al menos 12 caracteres."')
     expect(markup).toContain('data-slot="password-requirements-indicator"')
-    expect(markup).toContain('role="status"')
+    expect(markup).toContain('<output ')
     expect(markup).toContain('title="Falta: Al menos 12 caracteres."')
   })
 

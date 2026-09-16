@@ -66,7 +66,7 @@ export default defineConfig({
     {
       name: 'public',
       testMatch: /smoke\.spec\.ts/,
-      grep: /public reservation|cacheable/,
+      grep: /public reservation|cacheable|invalid reservation/,
       use: { ...devices['Desktop Chrome'] },
     },
     {

@@ -13,12 +13,6 @@ import {
   PageHeader,
   PageHeaderDescription,
   PageHeaderTitle,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectList,
-  SelectTrigger,
-  SelectValue,
   useFormFeedback,
 } from '@doscientos/ui'
 import { useState } from 'react'

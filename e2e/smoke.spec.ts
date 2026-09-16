@@ -14,6 +14,32 @@ test('tokenized reservation management is never cacheable', async ({ request }) 
   expect(response.headers()['cache-control']).toBe('no-store')
 })
 
+test('invalid reservation link shows an actionable empty state', async ({ page }) => {
+  await page.goto('/reserva/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
+  await expect(page.getByRole('heading', { name: 'Reserva no encontrada' })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Volver al inicio' })).toHaveAttribute('href', '/')
+})
+
+test('public reservation gives accessible feedback for incomplete guest details', async ({
+  page,
+}) => {
+  await page.goto('/reservar/la-fonda-demo')
+  await page.locator('#public-service').waitFor({ state: 'visible' })
+  await page.waitForLoadState('networkidle')
+  await page.locator('#public-service').selectOption({ index: 1 })
+  await expect(page.locator('#public-date option:not([value=""])').first()).toBeAttached()
+  await page.locator('#public-date').selectOption({ index: 1 })
+  await expect(page.locator('#public-time option:not([value=""])').first()).toBeAttached()
+  await page.locator('#public-time').selectOption({ index: 1 })
+  for (const checkbox of await page.getByRole('checkbox').all()) await checkbox.check()
+
+  await page.getByRole('button', { name: 'Reservar mesa' }).click()
+
+  await expect(page.locator('[role="alert"], [aria-live="assertive"]')).toContainText(
+    /datos|nombre|email|completa/i,
+  )
+})
+
 test.describe('authenticated restaurant smoke', () => {
   test.skip(
     !process.env.E2E_STORAGE_STATE,
@@ -24,9 +50,24 @@ test.describe('authenticated restaurant smoke', () => {
 
   test('tenant home does not render an error boundary', async ({ page }) => {
     const slug = process.env.E2E_TENANT_SLUG ?? 'la-fonda-demo'
+    const runtimeErrors: string[] = []
+    page.on('pageerror', (error) => runtimeErrors.push(error.message))
+    page.on('console', (message) => {
+      if (message.type() === 'error') {
+        const sourceUrl = message.location().url
+        if (!sourceUrl.includes('@tanstack-start/styles.css'))
+          runtimeErrors.push(`${message.text()} @ ${sourceUrl}`)
+      }
+    })
+    page.on('response', (response) => {
+      if (response.status() === 404 && !response.url().includes('@tanstack-start/styles.css'))
+        runtimeErrors.push(`HTTP 404 @ ${response.url()}`)
+    })
     await page.goto(`/t/${slug}`)
+    await page.waitForLoadState('networkidle')
     await expect(page.getByText('No se ha podido cargar esta pantalla')).toHaveCount(0)
     await expect(page.locator('body')).not.toBeEmpty()
+    expect(runtimeErrors, 'tenant home no debe emitir errores de runtime').toEqual([])
   })
 
   for (const path of [
@@ -44,6 +85,7 @@ test.describe('authenticated restaurant smoke', () => {
     '/t/la-fonda-demo/l/principal/informes',
     '/t/la-fonda-demo/l/principal/productos',
     '/t/la-fonda-demo/l/principal/documentos-compras',
+    '/t/la-fonda-demo/l/principal/pedidos-online',
     '/t/la-fonda-demo/l/principal/propinas',
     '/t/la-fonda-demo/l/principal/fidelizacion',
     '/t/la-fonda-demo/l/principal/tarjetas-regalo',
@@ -86,5 +128,15 @@ test.describe('authenticated restaurant smoke', () => {
     await page.goto('/t/la-fonda-demo/l/principal/productos')
     await expect(page.getByText('Ingredientes e inventario', { exact: true })).toBeVisible()
     await expect(page.getByText(/stock actual/i)).toBeVisible()
+    await page.getByLabel('Buscar ingrediente').fill('no-existe-e2e-xyz')
+    await expect(page.getByText('Sin resultados', { exact: true })).toBeVisible()
+  })
+
+  test('online orders exposes a stable empty state when there are no orders', async ({ page }) => {
+    await page.goto('/t/la-fonda-demo/l/principal/pedidos-online')
+    await expect(page.getByRole('heading', { name: 'Pedidos online', exact: true })).toBeVisible()
+    await expect(
+      page.getByText('No hay pedidos en este estado.', { exact: true }).first(),
+    ).toBeVisible()
   })
 })

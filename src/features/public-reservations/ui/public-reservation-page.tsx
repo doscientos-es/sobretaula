@@ -330,6 +330,7 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
               <form
                 aria-busy={availabilityLoading || feedback.pending}
                 className="grid gap-4"
+                noValidate
                 onSubmit={(event) => void submit(event)}
               >
                 <Field>

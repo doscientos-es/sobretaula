@@ -145,6 +145,29 @@ async function main() {
   )
   console.log(`Reset E2E table sessions: ${removedSessions?.length ?? 0}`)
 
+  // Public reservation specs create future bookings. Remove only bookings in
+  // this dedicated tenant so failed/retried runs cannot exhaust availability.
+  // Reservations have an append-only audit trail, so never delete them from
+  // the fixture reset. Cancel only reservations created by this E2E harness
+  // through the same public RPC used by the guest management flow.
+  const e2eGuests = await request(
+    `/rest/v1/guests?tenant_id=eq.${tenantId}&email=like.e2e-reservation-%25@example.test&select=id`,
+  )
+  let cancelledReservations = 0
+  for (const guest of e2eGuests) {
+    const reservations = await request(
+      `/rest/v1/reservations?tenant_id=eq.${tenantId}&guest_id=eq.${guest.id}&status=in.(pending,confirmed)&select=public_token_hash`,
+    )
+    for (const reservation of reservations) {
+      const cancelled = await request('/rest/v1/rpc/cancel_public_reservation', {
+        method: 'POST',
+        body: JSON.stringify({ p_token_hash: reservation.public_token_hash }),
+      })
+      if (cancelled === true) cancelledReservations += 1
+    }
+  }
+  console.log(`Reset E2E reservations: ${cancelledReservations} cancelled`)
+
   const areaDefinitions = [
     { name: 'Interior', assignment_priority: 10 },
     { name: 'Terraza', assignment_priority: 20 },

@@ -11,7 +11,7 @@ import {
   Input,
   useFormFeedback,
 } from '@doscientos/ui'
-import { CheckCircle2, Utensils } from 'lucide-react'
+import { ArrowRight, CheckCircle2, ShieldCheck, UserRoundPlus, Utensils } from 'lucide-react'
 import { useEffect, useState, type FormEvent } from 'react'
 
 import { createBrowserSupabaseClient } from '@/shared/lib/supabase/client'
@@ -85,14 +85,25 @@ export function ActivateAccountPage({
   }
 
   return (
-    <main className="st-auth-shell">
+    <main className="st-auth-action-shell st-auth-shell st-auth-shell--orange">
       <span aria-hidden="true" className="st-auth-orb st-auth-orb--lime" />
       <span aria-hidden="true" className="st-auth-orb st-auth-orb--mint" />
-      <Card className="st-auth-card relative w-full max-w-md">
+      <Card className="st-auth-action-card st-auth-card relative">
         <CardHeader>
-          <div className="st-brand-mark mb-3">
-            <Utensils className="size-5" />
+          <div className="st-auth-action-brand">
+            <span className="st-brand-mark size-9 rounded-xl">
+              <Utensils aria-hidden="true" className="size-5" />
+            </span>
+            <span>SobreTaula</span>
           </div>
+          <div className="st-auth-action-icon">
+            {sessionReady ? (
+              <UserRoundPlus aria-hidden="true" className="size-5" />
+            ) : (
+              <ShieldCheck aria-hidden="true" className="size-5" />
+            )}
+          </div>
+          <p className="st-auth-action-eyebrow">Invitación al equipo</p>
           <CardTitle>Activa tu cuenta</CardTitle>
           <CardDescription>Elige una contraseña para entrar en SobreTaula.</CardDescription>
         </CardHeader>
@@ -124,7 +135,7 @@ export function ActivateAccountPage({
               </Field>
               <FormFeedback pendingLabel="Activando cuenta…" state={feedback.state} />
               <Button className="w-full" disabled={feedback.pending} size="lg" type="submit">
-                Activar y unirme al equipo
+                Activar y unirme al equipo <ArrowRight className="size-4" />
               </Button>
               {requiresLogin && (
                 <Button
@@ -143,6 +154,7 @@ export function ActivateAccountPage({
           )}
         </CardContent>
       </Card>
+      <p className="st-auth-action-footer">© {new Date().getFullYear()} SobreTaula</p>
     </main>
   )
 }

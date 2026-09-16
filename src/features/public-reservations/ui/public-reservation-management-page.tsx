@@ -55,6 +55,7 @@ export function PublicReservationManagementPage({
   const t = createTranslator(locale)
   const [current, setCurrent] = useState(reservation)
   const [busy, setBusy] = useState(false)
+  const [confirmingCancel, setConfirmingCancel] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [newDate, setNewDate] = useState(() =>
@@ -63,7 +64,6 @@ export function PublicReservationManagementPage({
   const cancelled = current.status === 'cancelled'
 
   async function cancel() {
-    if (!window.confirm(t('public.cancelConfirm'))) return
     setBusy(true)
     setError('')
     setSuccess('')
@@ -75,6 +75,7 @@ export function PublicReservationManagementPage({
       }
       setCurrent({ ...current, status: 'cancelled' })
       setSuccess(t('public.cancelled'))
+      setConfirmingCancel(false)
     } catch {
       setError(t('public.cancelFailed'))
     } finally {
@@ -139,6 +140,11 @@ export function PublicReservationManagementPage({
           {formatDateTime(current.startsAt, current.timezone, locale)} · {current.partySize}{' '}
           {current.partySize === 1 ? t('public.people.single') : t('public.people.multiple')}
         </p>
+        {busy && (
+          <output aria-live="polite" className="text-muted-foreground mt-4 block text-sm">
+            {t('public.waitlist.busy')}
+          </output>
+        )}
         {error && (
           <p aria-live="assertive" className="text-destructive mt-4">
             {error}
@@ -168,12 +174,35 @@ export function PublicReservationManagementPage({
               value={newDate}
             />
             <div className="flex flex-wrap gap-3">
-              <Button disabled={busy || !newDate} onPress={() => void reschedule()}>
+              <Button disabled={busy || !newDate} onClick={() => void reschedule()}>
                 {busy ? t('public.waitlist.busy') : t('public.saveChange')}
               </Button>
-              <Button disabled={busy} onPress={() => void cancel()} variant="outline">
-                {t('public.cancelReservation')}
-              </Button>
+              {confirmingCancel ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  <output aria-live="polite" className="text-destructive text-xs">
+                    {t('public.cancelConfirm')}
+                  </output>
+                  <Button disabled={busy} onClick={() => void cancel()} variant="destructive">
+                    Confirmar cancelación
+                  </Button>
+                  <Button
+                    disabled={busy}
+                    onClick={() => setConfirmingCancel(false)}
+                    variant="outline"
+                  >
+                    Seguir editando
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  disabled={busy}
+                  onClick={() => setConfirmingCancel(true)}
+                  onPress={() => setConfirmingCancel(true)}
+                  variant="outline"
+                >
+                  {t('public.cancelReservation')}
+                </Button>
+              )}
             </div>
           </div>
         )}

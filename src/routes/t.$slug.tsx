@@ -467,9 +467,15 @@ function TenantRouteError({ error, reset }: { error: unknown; reset: () => void 
     error instanceof Error
       ? error.message.match(/(inc-[a-z0-9-]+|[0-9a-f]{8}-[0-9a-f-]{27,})$/i)?.[1]
       : null
+  const showSubscriptionLink = status === 402
+  const destination = showSubscriptionLink
+    ? 'Ver suscripción'
+    : status === 403
+      ? 'Volver al restaurante'
+      : 'Ir al inicio'
 
   return (
-    <main aria-live="assertive" className="mx-auto w-full max-w-2xl p-6 sm:p-10">
+    <main aria-live="assertive" className="mx-auto w-full max-w-2xl p-6 sm:p-10" role="alert">
       <Card>
         <CardHeader>
           <CardTitle>{title}</CardTitle>
@@ -482,13 +488,23 @@ function TenantRouteError({ error, reset }: { error: unknown; reset: () => void 
           <Button onPress={reset} type="button">
             Reintentar
           </Button>
-          <Link
-            className="text-primary text-sm font-medium underline underline-offset-4"
-            params={{ slug }}
-            to="/t/$slug/suscripcion/facturas"
-          >
-            Ver suscripción
-          </Link>
+          {showSubscriptionLink ? (
+            <Link
+              className="text-primary text-sm font-medium underline underline-offset-4"
+              params={{ slug }}
+              to="/t/$slug/suscripcion/facturas"
+            >
+              {destination}
+            </Link>
+          ) : (
+            <Link
+              className="text-primary text-sm font-medium underline underline-offset-4"
+              params={{ slug }}
+              to="/t/$slug"
+            >
+              {destination}
+            </Link>
+          )}
         </CardContent>
       </Card>
     </main>

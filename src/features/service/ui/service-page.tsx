@@ -459,9 +459,16 @@ export function ServicePage({
                 </div>
                 {serviceView === 'plan' &&
                   (visiblePlacements.length === 0 ? (
-                    <p className="text-muted-foreground rounded-lg border border-dashed p-6 text-center text-sm">
-                      Esta zona todavía no tiene mesas configuradas en el plano activo.
-                    </p>
+                    <div className="text-muted-foreground rounded-lg border border-dashed p-6 text-center text-sm">
+                      <p>Esta zona todavía no tiene mesas configuradas en el plano activo.</p>
+                      <Link
+                        className="text-primary mt-3 inline-flex font-medium underline underline-offset-4"
+                        params={{ slug: tenantSlug, venue: venueSlug }}
+                        to="/t/$slug/l/$venue/plano"
+                      >
+                        Configurar mesas en el plano
+                      </Link>
+                    </div>
                   ) : (
                     <ServicePlan
                       onToggleTable={toggleTable}
@@ -499,9 +506,16 @@ export function ServicePage({
               </CardHeader>
               <CardContent>
                 {board.tables.length === 0 ? (
-                  <p className="text-muted-foreground text-sm">
-                    Este local todavía no tiene mesas activas.
-                  </p>
+                  <div className="text-muted-foreground text-sm">
+                    <p>Este local todavía no tiene mesas activas.</p>
+                    <Link
+                      className="text-primary mt-2 inline-flex font-medium underline underline-offset-4"
+                      params={{ slug: tenantSlug, venue: venueSlug }}
+                      to="/t/$slug/l/$venue/plano"
+                    >
+                      Configurar mesas en el plano
+                    </Link>
+                  </div>
                 ) : (
                   <ul className="grid gap-2 sm:grid-cols-2">
                     {visibleTables.map((table) => {

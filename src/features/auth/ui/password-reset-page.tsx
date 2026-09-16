@@ -11,7 +11,7 @@ import {
   Input,
   useFormFeedback,
 } from '@doscientos/ui'
-import { CheckCircle2, Utensils } from 'lucide-react'
+import { ArrowRight, CheckCircle2, KeyRound, ShieldCheck, Utensils } from 'lucide-react'
 import { useEffect, useState, type FormEvent } from 'react'
 
 import { createBrowserSupabaseClient } from '@/shared/lib/supabase/client'
@@ -97,14 +97,25 @@ export function PasswordResetPage() {
   }
 
   return (
-    <main className="st-auth-shell">
+    <main className="st-auth-action-shell st-auth-shell st-auth-shell--orange">
       <span aria-hidden="true" className="st-auth-orb st-auth-orb--lime" />
       <span aria-hidden="true" className="st-auth-orb st-auth-orb--mint" />
-      <Card className="st-auth-card relative w-full max-w-md">
+      <Card className="st-auth-action-card st-auth-card relative">
         <CardHeader>
-          <div className="st-brand-mark mb-3">
-            <Utensils className="size-5" />
+          <div className="st-auth-action-brand">
+            <span className="st-brand-mark size-9 rounded-xl">
+              <Utensils aria-hidden="true" className="size-5" />
+            </span>
+            <span>SobreTaula</span>
           </div>
+          <div className="st-auth-action-icon">
+            {sessionReady ? (
+              <KeyRound aria-hidden="true" className="size-5" />
+            ) : (
+              <ShieldCheck aria-hidden="true" className="size-5" />
+            )}
+          </div>
+          <p className="st-auth-action-eyebrow">Enlace seguro</p>
           <CardTitle>Restablece tu contraseña</CardTitle>
           <CardDescription>Elige una contraseña nueva para volver a entrar.</CardDescription>
         </CardHeader>
@@ -157,7 +168,7 @@ export function PasswordResetPage() {
               </Field>
               <FormFeedback pendingLabel="Guardando contraseña…" state={feedback.state} />
               <Button className="w-full" disabled={feedback.pending} size="lg" type="submit">
-                Guardar contraseña
+                Guardar contraseña <ArrowRight className="size-4" />
               </Button>
               {requiresLogin && (
                 <Button
@@ -188,6 +199,7 @@ export function PasswordResetPage() {
           )}
         </CardContent>
       </Card>
+      <p className="st-auth-action-footer">© {new Date().getFullYear()} SobreTaula</p>
     </main>
   )
 }

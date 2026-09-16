@@ -12,8 +12,8 @@ importers:
         specifier: 0.1.4
         version: 0.1.4(react@19.2.8)
       '@doscientos/ui':
-        specifier: ^0.1.39
-        version: 0.1.39(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+        specifier: ^0.1.40
+        version: 0.1.40(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       '@fontsource-variable/geist':
         specifier: ^5.3.0
         version: 5.3.0
@@ -210,8 +210,8 @@ packages:
       react:
         optional: true
 
-  '@doscientos/ui@0.1.39':
-    resolution: {integrity: sha512-ETdh2G3Dd8z2lbPpI7CoW91LONhdk+aZ0Wf/8ZZfTXsE8EQzNLrwxwwOWjqrFKrAblxaXFnZtqh+BrE9UWPDoQ==}
+  '@doscientos/ui@0.1.40':
+    resolution: {integrity: sha512-ZsnomRt8VMAN5+ghqsbzqRVkCEIKfxNWk+nzxXB07byuBAWiyYQLKlk7rLebGRgOJEgQAIywn76NXBTRe8RQTg==}
     peerDependencies:
       react: '>=18.3.0'
       react-dom: '>=18.3.0'
@@ -2180,7 +2180,7 @@ snapshots:
     optionalDependencies:
       react: 19.2.8
 
-  '@doscientos/ui@0.1.39(react-dom@19.2.8(react@19.2.8))(react@19.2.8)':
+  '@doscientos/ui@0.1.40(react-dom@19.2.8(react@19.2.8))(react@19.2.8)':
     dependencies:
       class-variance-authority: 0.7.1
       cn: 0.2.6

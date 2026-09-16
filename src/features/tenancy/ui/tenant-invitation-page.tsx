@@ -8,7 +8,7 @@ import {
   FormFeedback,
   useFormFeedback,
 } from '@doscientos/ui'
-import { UsersRound, Utensils } from 'lucide-react'
+import { ArrowRight, UsersRound, Utensils } from 'lucide-react'
 
 import { acceptTenantInvitation } from '../application/team'
 
@@ -29,17 +29,21 @@ export function TenantInvitationPage({ token }: { token: string }) {
   }
 
   return (
-    <main className="st-auth-shell">
+    <main className="st-auth-action-shell st-auth-shell st-auth-shell--orange">
       <span aria-hidden="true" className="st-auth-orb st-auth-orb--lime" />
       <span aria-hidden="true" className="st-auth-orb st-auth-orb--mint" />
-      <Card className="st-auth-card relative w-full max-w-md">
+      <Card className="st-auth-action-card st-auth-card relative">
         <CardHeader>
-          <div className="flex items-center gap-3">
-            <span className="st-brand-mark">
-              <Utensils className="size-5" />
+          <div className="st-auth-action-brand">
+            <span className="st-brand-mark size-9 rounded-xl">
+              <Utensils aria-hidden="true" className="size-5" />
             </span>
-            <UsersRound className="text-primary size-5" />
+            <span>SobreTaula</span>
           </div>
+          <div className="st-auth-action-icon">
+            <UsersRound aria-hidden="true" className="size-5" />
+          </div>
+          <p className="st-auth-action-eyebrow">Invitación al equipo</p>
           <CardTitle>Únete al equipo</CardTitle>
           <CardDescription>
             Confirma que quieres acceder a este restaurante con tu cuenta.
@@ -53,10 +57,11 @@ export function TenantInvitationPage({ token }: { token: string }) {
             onClick={() => void accept()}
             size="lg"
           >
-            Aceptar invitación
+            Aceptar invitación <ArrowRight className="size-4" />
           </Button>
         </CardContent>
       </Card>
+      <p className="st-auth-action-footer">© {new Date().getFullYear()} SobreTaula</p>
     </main>
   )
 }

@@ -306,6 +306,56 @@ select:not([data-slot]):focus-visible {
   border-radius: 1.25rem;
 }
 
+.st-auth-action-shell {
+  grid-template-rows: 1fr auto;
+}
+
+.st-auth-shell.st-auth-action-shell > .st-auth-action-card {
+  width: min(100%, 30rem);
+  box-shadow: 0 1.5rem 3rem rgb(188 63 37 / 20%);
+}
+
+.st-auth-action-card [data-slot='card-header'] {
+  padding-bottom: 1.25rem;
+}
+
+.st-auth-action-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  color: var(--foreground);
+  font-size: 0.875rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.st-auth-action-icon {
+  display: flex;
+  width: 2.75rem;
+  height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  border-radius: 0.875rem;
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+}
+
+.st-auth-action-eyebrow {
+  margin-bottom: 0.5rem;
+  color: var(--primary);
+  font-size: 0.8125rem;
+  font-weight: 650;
+}
+
+.st-auth-action-footer {
+  z-index: 1;
+  margin-top: 1.5rem;
+  color: #5f4036;
+  font-size: 0.75rem;
+}
+
 .st-auth-shell > section,
 .st-auth-shell > [data-slot='card'] {
   z-index: 1;

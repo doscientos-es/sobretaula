@@ -346,12 +346,13 @@ export function ProductPage({
             <Field>
               <FieldLabel htmlFor="ingredient-unit">Unidad</FieldLabel>
               <Select
+                aria-label="Unidad"
                 id="ingredient-unit"
                 className="w-full"
                 onSelectionChange={(key) => setUnit(String(key))}
                 selectedKey={unit}
               >
-                <SelectTrigger>
+                <SelectTrigger aria-label="Unidad">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -430,6 +431,7 @@ export function ProductPage({
         <CardContent className="space-y-4">
           <Field>
             <AutocompleteCombobox
+              aria-label="Producto"
               emptyState="No hay productos que coincidan."
               getItemKey={(item) => item.id}
               getItemLabel={(item) => item.name}
@@ -459,6 +461,7 @@ export function ProductPage({
           >
             <Field>
               <AutocompleteCombobox
+                aria-label="Pedido relacionado (opcional)"
                 emptyState="No hay pedidos disponibles que coincidan."
                 getItemKey={(order) => order.id}
                 getItemLabel={(order) => `Pedido ${order.id.slice(0, 8)}`}
@@ -485,6 +488,7 @@ export function ProductPage({
             </Field>
             <Field>
               <AutocompleteCombobox
+                aria-label="Ingrediente de receta"
                 emptyState="No hay ingredientes que coincidan."
                 getItemKey={(item) => item.id}
                 getItemLabel={(item) => item.name}
@@ -572,6 +576,7 @@ export function ProductPage({
           >
             <Field>
               <AutocompleteCombobox
+                aria-label="Ingrediente"
                 emptyState="No hay ingredientes que coincidan."
                 getItemKey={(ingredient) => ingredient.id}
                 getItemLabel={(ingredient) => ingredient.name}
@@ -587,12 +592,13 @@ export function ProductPage({
               <Field>
                 <FieldLabel htmlFor="movement-waste-reason">Motivo de merma</FieldLabel>
                 <Select
+                  aria-label="Motivo de merma"
                   id="movement-waste-reason"
                   className="w-full"
                   onSelectionChange={(key) => setWasteReason(String(key) as typeof wasteReason)}
                   selectedKey={wasteReason}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger aria-label="Motivo de merma">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -611,12 +617,13 @@ export function ProductPage({
             <Field>
               <FieldLabel htmlFor="movement-kind">Tipo</FieldLabel>
               <Select
+                aria-label="Tipo de movimiento"
                 id="movement-kind"
                 className="w-full"
                 onSelectionChange={(key) => setMovementKind(String(key) as typeof movementKind)}
                 selectedKey={movementKind}
               >
-                <SelectTrigger>
+                <SelectTrigger aria-label="Tipo de movimiento">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -679,6 +686,7 @@ export function ProductPage({
             >
               <Field>
                 <AutocompleteCombobox
+                  aria-label="Proveedor"
                   emptyState="No hay proveedores que coincidan."
                   getItemKey={(supplier) => supplier.id}
                   getItemLabel={(supplier) => supplier.name}
@@ -713,6 +721,7 @@ export function ProductPage({
               </Field>
               <Field>
                 <AutocompleteCombobox
+                  aria-label="Ingrediente de recepción"
                   emptyState="No hay ingredientes que coincidan."
                   getItemKey={(ingredient) => ingredient.id}
                   getItemLabel={(ingredient) => ingredient.name}

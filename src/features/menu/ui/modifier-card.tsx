@@ -10,12 +10,6 @@ import {
   FieldLabel,
   FormFeedback,
   Input,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectList,
-  SelectTrigger,
-  SelectValue,
   useFormFeedback,
 } from '@doscientos/ui'
 import { useState, type FormEvent } from 'react'

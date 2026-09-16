@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 
@@ -32,9 +33,19 @@ setup('authenticate E2E roles against Supabase-test', async ({ page }) => {
     'Requires SUPABASE_TEST_URL and dedicated E2E accounts',
   )
   if (!process.env.SUPABASE_TEST_URL) return
+  // Reset only the dedicated E2E tenant before creating sessions. Without
+  // this, a previous run can leave tables occupied and make P0 flows fail for
+  // reasons unrelated to the UI under test.
+  execFileSync(process.execPath, ['scripts/e2e-seed.mjs'], {
+    cwd: process.cwd(),
+    stdio: 'inherit',
+  })
   for (const { role, email, password } of configured) {
     const statePath = path.resolve(`e2e/.auth/${role}.json`)
-    if (process.env.E2E_REUSE_STORAGE_STATE !== 'false' && fs.existsSync(statePath)) {
+    // A session cookie alone is not proof that the state is still valid. Keep
+    // reuse opt-in so expired auth cannot make the authenticated suite fail in
+    // misleading ways; CI and local runs re-authenticate by default.
+    if (process.env.E2E_REUSE_STORAGE_STATE === 'true' && fs.existsSync(statePath)) {
       const state = JSON.parse(fs.readFileSync(statePath, 'utf8')) as { cookies?: unknown[] }
       if (
         Array.isArray(state.cookies) &&

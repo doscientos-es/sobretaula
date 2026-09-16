@@ -12,7 +12,7 @@ import {
   useFormFeedback,
 } from '@doscientos/ui'
 import { Link } from '@tanstack/react-router'
-import { ArrowRight, Utensils } from 'lucide-react'
+import { ArrowRight, KeyRound, MailCheck, Utensils } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 
 import { isAuthEmailRateLimited } from '@/shared/lib/supabase/auth-email-rate-limit'
@@ -54,17 +54,30 @@ export function ForgotPasswordPage() {
   }
 
   return (
-    <main className="st-auth-shell">
+    <main className="st-auth-action-shell st-auth-shell st-auth-shell--orange">
       <span aria-hidden="true" className="st-auth-orb st-auth-orb--lime" />
       <span aria-hidden="true" className="st-auth-orb st-auth-orb--mint" />
-      <Card className="st-auth-card relative w-full max-w-md">
+      <Card className="st-auth-action-card st-auth-card relative">
         <CardHeader>
-          <div className="st-brand-mark mb-3">
-            <Utensils className="size-5" />
+          <div className="st-auth-action-brand">
+            <span className="st-brand-mark size-9 rounded-xl">
+              <Utensils aria-hidden="true" className="size-5" />
+            </span>
+            <span>SobreTaula</span>
           </div>
-          <CardTitle>¿Olvidaste tu contraseña?</CardTitle>
+          <div className="st-auth-action-icon">
+            {submitted ? (
+              <MailCheck aria-hidden="true" className="size-5" />
+            ) : (
+              <KeyRound aria-hidden="true" className="size-5" />
+            )}
+          </div>
+          <p className="st-auth-action-eyebrow">Acceso a tu cuenta</p>
+          <CardTitle>{submitted ? 'Revisa tu correo' : 'Recupera tu contraseña'}</CardTitle>
           <CardDescription>
-            Escribe tu correo y te enviaremos un enlace para restablecerla.
+            {submitted
+              ? 'Te hemos indicado cómo continuar de forma segura.'
+              : 'Escribe tu correo y te enviaremos un enlace para restablecerla.'}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -78,7 +91,7 @@ export function ForgotPasswordPage() {
                 type="button"
                 variant="outline"
               >
-                Volver a iniciar sesión
+                Volver a iniciar sesión <ArrowRight className="size-4" />
               </Button>
             </div>
           ) : (
@@ -109,6 +122,7 @@ export function ForgotPasswordPage() {
           )}
         </CardContent>
       </Card>
+      <p className="st-auth-action-footer">© {new Date().getFullYear()} SobreTaula</p>
     </main>
   )
 }
