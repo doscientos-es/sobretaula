@@ -394,7 +394,10 @@ export function TenantTeamPage({
           </CardHeader>
           <CardContent className="space-y-2">
             {visibleTeam.invitations.map((invitation) => (
-              <div key={invitation.email} className="flex items-center justify-between gap-3 text-sm">
+              <div
+                key={invitation.email}
+                className="flex items-center justify-between gap-3 text-sm"
+              >
                 <p>
                   {invitation.email} · {roleLabel[invitation.role]} · caduca{' '}
                   {new Date(invitation.expiresAt).toLocaleDateString('es-ES')}

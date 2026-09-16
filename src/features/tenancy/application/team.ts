@@ -255,7 +255,8 @@ export const resendTenantInvitation = createServerFn({ method: 'POST' })
     const { error: inviteError } = await service.auth.admin.inviteUserByEmail(data.email, {
       redirectTo: invitationRedirect(token),
     })
-    if (isAuthEmailRateLimited(inviteError)) throw new Response('Invitation email rate limited', { status: 429 })
+    if (isAuthEmailRateLimited(inviteError))
+      throw new Response('Invitation email rate limited', { status: 429 })
     if (inviteError) throw new Error('tenant_invitation_delivery_failed')
     return { kind: 'invitation_resent' as const, role: invitation.role }
   })
