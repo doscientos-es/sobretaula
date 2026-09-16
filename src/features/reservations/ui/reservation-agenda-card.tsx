@@ -618,7 +618,14 @@ export function ReservationAgendaCard({
             ))}
           </ul>
         ) : !agendaLoading ? (
-          <p className="text-muted-foreground text-sm">No hay reservas para este día.</p>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-muted-foreground text-sm">No hay reservas para este día.</p>
+            {onNewReservation ? (
+              <Button onClick={onNewReservation} size="sm" type="button">
+                Crear reserva
+              </Button>
+            ) : null}
+          </div>
         ) : null}
       </CardContent>
     </Card>
