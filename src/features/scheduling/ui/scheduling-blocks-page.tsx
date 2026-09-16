@@ -37,14 +37,19 @@ export function SchedulingBlocksPage({ tenantId, venueId }: { tenantId: string; 
   const [pending, setPending] = useState(false)
   const [feedback, setFeedback] = useState<string | null>(null)
   const load = useCallback(
-    () => getSchedulingBlocks({ data: { tenantId, venueId } }).then(setBlocks),
+    () =>
+      getSchedulingBlocks({ data: { tenantId, venueId } })
+        .then(setBlocks)
+        .catch(() => setFeedback('No se han podido cargar los bloqueos.')),
     [tenantId, venueId],
   )
   useEffect(() => {
     void load()
   }, [load])
   useEffect(() => {
-    void getSchedulingAreas({ data: { tenantId, venueId } }).then(setAreas)
+    void getSchedulingAreas({ data: { tenantId, venueId } })
+      .then(setAreas)
+      .catch(() => setFeedback('No se han podido cargar las zonas del local.'))
   }, [tenantId, venueId])
   async function submit(event: FormEvent) {
     event.preventDefault()

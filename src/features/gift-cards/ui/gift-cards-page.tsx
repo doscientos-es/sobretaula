@@ -1,5 +1,5 @@
 import { Button, Card, CardContent, CardHeader, CardTitle, Input } from '@doscientos/ui'
-import { useCallback, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 
 import { useAsyncEffect } from '@/shared/lib/react/use-async-effect'
 
@@ -15,12 +15,18 @@ export function GiftCardsPage({ tenantId }: { tenantId: string }) {
   const [code, setCode] = useState('')
   const [amount, setAmount] = useState('')
   const [feedback, setFeedback] = useState<string | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [hasMore, setHasMore] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [pendingAction, setPendingAction] = useState<'issue' | 'redeem' | null>(null)
+  const [pendingCancelId, setPendingCancelId] = useState<string | null>(null)
+  const loadVersion = useRef(0)
   const load = useCallback(
     async (requestedPage = page, requestedSearch = search) => {
+      const version = ++loadVersion.current
+      setLoading(true)
       try {
         const result = await listGiftCards({
           data: {
@@ -30,10 +36,14 @@ export function GiftCardsPage({ tenantId }: { tenantId: string }) {
             search: requestedSearch,
           },
         })
+        if (version !== loadVersion.current) return
         setCards(result.items)
         setHasMore(result.hasMore)
+        setLoadError(null)
       } catch {
-        setFeedback('No se han podido cargar las tarjetas.')
+        if (version === loadVersion.current) setLoadError('No se han podido cargar las tarjetas.')
+      } finally {
+        if (version === loadVersion.current) setLoading(false)
       }
     },
     [page, search, tenantId],
@@ -132,31 +142,52 @@ export function GiftCardsPage({ tenantId }: { tenantId: string }) {
             placeholder="Buscar por código"
             value={search}
           />
-          <ul className="divide-border divide-y">
-            {cards.map((card) => (
-              <li className="flex justify-between py-3 text-sm" key={card.id}>
-                <span className="font-medium">{card.code}</span>
-                <span className="flex items-center gap-2">
-                  {(card.balanceCents / 100).toFixed(2)} € de{' '}
-                  {(card.initialBalanceCents / 100).toFixed(2)} € · {card.status}
-                  {card.status === 'active' ? (
-                    <Button
-                      onClick={() =>
-                        void cancelGiftCard({
-                          data: { tenantId, cardId: card.id },
-                        }).then(() => load())
-                      }
-                      size="sm"
-                      type="button"
-                      variant="outline"
-                    >
-                      Anular
-                    </Button>
-                  ) : null}
-                </span>
-              </li>
-            ))}
-          </ul>
+          {loading ? (
+            <output aria-busy="true" className="text-muted-foreground block py-6 text-sm">
+              Cargando tarjetas…
+            </output>
+          ) : loadError ? (
+            <div className="flex flex-wrap items-center gap-3 py-6" role="alert">
+              <span className="text-destructive text-sm">{loadError}</span>
+              <Button onPress={() => void load()} size="sm" type="button" variant="outline">
+                Reintentar
+              </Button>
+            </div>
+          ) : cards.length ? (
+            <ul className="divide-border divide-y">
+              {cards.map((card) => (
+                <li className="flex justify-between py-3 text-sm" key={card.id}>
+                  <span className="font-medium">{card.code}</span>
+                  <span className="flex items-center gap-2">
+                    {(card.balanceCents / 100).toFixed(2)} € de{' '}
+                    {(card.initialBalanceCents / 100).toFixed(2)} € · {card.status}
+                    {card.status === 'active' ? (
+                      <Button
+                        disabled={pendingCancelId === card.id || pendingAction !== null}
+                        onClick={() => {
+                          setPendingCancelId(card.id)
+                          void cancelGiftCard({ data: { tenantId, cardId: card.id } })
+                            .then(() => load())
+                            .then(() => setFeedback('Tarjeta anulada.'))
+                            .catch(() => setFeedback('No se ha podido anular la tarjeta.'))
+                            .finally(() => setPendingCancelId(null))
+                        }}
+                        size="sm"
+                        type="button"
+                        variant="outline"
+                      >
+                        {pendingCancelId === card.id ? 'Anulando…' : 'Anular'}
+                      </Button>
+                    ) : null}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-muted-foreground py-6 text-center text-sm">
+              No hay tarjetas que coincidan.
+            </p>
+          )}
           <div className="mt-4 flex items-center justify-between">
             <Button
               disabled={page === 1}

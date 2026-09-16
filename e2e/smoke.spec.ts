@@ -143,6 +143,7 @@ test.describe('authenticated restaurant smoke', () => {
   test('guest directory recovers from a search with no matches', async ({ page }) => {
     await page.goto('/t/la-fonda-demo/l/principal/clientes')
     await expect(page.getByRole('heading', { name: 'Clientes', exact: true })).toBeVisible()
+    await page.waitForLoadState('networkidle')
     const search = page.getByLabel('Buscar clientes')
     await search.fill(`no-existe-e2e-${Date.now()}`)
     await expect(page.getByText('No hay clientes que coincidan.', { exact: true })).toBeVisible({

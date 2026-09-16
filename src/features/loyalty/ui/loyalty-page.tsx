@@ -1,5 +1,5 @@
 import { Button, Card, CardContent, CardHeader, CardTitle, Input } from '@doscientos/ui'
-import { useCallback, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 
 import { useAsyncEffect } from '@/shared/lib/react/use-async-effect'
 
@@ -19,19 +19,23 @@ export function LoyaltyPage({ tenantId }: { tenantId: string }) {
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(false)
   const [loading, setLoading] = useState(true)
+  const loadVersion = useRef(0)
   const load = useCallback(async () => {
+    const version = ++loadVersion.current
     setLoading(true)
     try {
       const result = await listLoyaltyGuests({
         data: { tenantId, page, pageSize: 25 },
       })
+      if (version !== loadVersion.current) return
       setGuests(result.items)
       setHasMore(result.hasMore)
       setFeedback(null)
     } catch {
-      setFeedback('No se han podido cargar los puntos de clientes.')
+      if (version === loadVersion.current)
+        setFeedback('No se han podido cargar los puntos de clientes.')
     } finally {
-      setLoading(false)
+      if (version === loadVersion.current) setLoading(false)
     }
   }, [page, tenantId])
   useAsyncEffect(load, [load])
