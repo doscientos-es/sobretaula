@@ -1,4 +1,4 @@
-import { Tabs, TabsContent, TabsList, TabsPanels, TabsTrigger } from '@doscientos/ui'
+import { Button, Tabs, TabsContent, TabsList, TabsPanels, TabsTrigger } from '@doscientos/ui'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, getRouteApi } from '@tanstack/react-router'
 import { useState } from 'react'
@@ -51,21 +51,33 @@ function ReportRoute() {
               }
             />
           ) : (
-            <ReportBlockState isError={report.isError} label="el informe de ventas" />
+            <ReportBlockState
+              isError={report.isError}
+              label="el informe de ventas"
+              onRetry={() => void report.refetch()}
+            />
           )}
         </TabsContent>
         <TabsContent id="rentabilidad">
           {report.data ? (
             <ProfitCockpit report={report.data} tenantId={tenant.id} venueId={venue.id} />
           ) : (
-            <ReportBlockState isError={report.isError} label="la rentabilidad" />
+            <ReportBlockState
+              isError={report.isError}
+              label="la rentabilidad"
+              onRetry={() => void report.refetch()}
+            />
           )}
         </TabsContent>
         <TabsContent id="productos">
           {report.data ? (
             <ProductSalesSummary products={report.data.productSummary} />
           ) : (
-            <ReportBlockState isError={report.isError} label="los productos vendidos" />
+            <ReportBlockState
+              isError={report.isError}
+              label="los productos vendidos"
+              onRetry={() => void report.refetch()}
+            />
           )}
         </TabsContent>
       </TabsPanels>
@@ -73,13 +85,31 @@ function ReportRoute() {
   )
 }
 
-function ReportBlockState({ isError, label }: { isError: boolean; label: string }) {
+function ReportBlockState({
+  isError,
+  label,
+  onRetry,
+}: {
+  isError: boolean
+  label: string
+  onRetry: () => void
+}) {
   return (
     <div
       aria-live="polite"
+      {...(isError ? { role: 'alert' } : {})}
       className="border-border/70 bg-card text-muted-foreground rounded-xl border p-6 text-sm"
     >
-      {isError ? `No se ha podido cargar ${label}.` : `Cargando ${label}…`}
+      {isError ? (
+        <span className="flex flex-wrap items-center gap-3">
+          <span>No se ha podido cargar {label}.</span>
+          <Button onPress={onRetry} size="sm" type="button" variant="outline">
+            Reintentar
+          </Button>
+        </span>
+      ) : (
+        `Cargando ${label}…`
+      )}
     </div>
   )
 }
