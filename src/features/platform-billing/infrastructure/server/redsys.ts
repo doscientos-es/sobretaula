@@ -145,18 +145,18 @@ export function createRedsysPaymentForm({
   if (!Number.isInteger(amountCents) || amountCents <= 0) throw new Error('invalid_redsys_amount')
   if (!/^[A-Za-z0-9]{4,12}$/.test(merchantOrder)) throw new Error('invalid_redsys_order')
   const merchantParameters = encodeParameters({
-    Ds_Merchant_Amount: String(amountCents),
-    Ds_Merchant_Currency: config.currency,
-    Ds_Merchant_MerchantCode: config.merchantCode,
-    Ds_Merchant_MerchantURL: merchantUrl,
-    Ds_Merchant_Order: merchantOrder,
-    Ds_Merchant_Terminal: config.terminal,
-    Ds_Merchant_UrlOK: successUrl,
-    Ds_Merchant_UrlKO: cancelUrl,
-    Ds_Merchant_TransactionType: '0',
-    Ds_Merchant_Identifier: 'REQUIRED',
-    Ds_Merchant_COF_INI: 'S',
-    Ds_Merchant_COF_TYPE: 'R',
+    DS_MERCHANT_AMOUNT: String(amountCents),
+    DS_MERCHANT_CURRENCY: config.currency,
+    DS_MERCHANT_MERCHANTCODE: config.merchantCode,
+    DS_MERCHANT_MERCHANTURL: merchantUrl,
+    DS_MERCHANT_ORDER: merchantOrder,
+    DS_MERCHANT_TERMINAL: config.terminal,
+    DS_MERCHANT_URLOK: successUrl,
+    DS_MERCHANT_URLKO: cancelUrl,
+    DS_MERCHANT_TRANSACTIONTYPE: '0',
+    DS_MERCHANT_IDENTIFIER: 'REQUIRED',
+    DS_MERCHANT_COF_INI: 'S',
+    DS_MERCHANT_COF_TYPE: 'R',
   })
   const signatureVersion = 'HMAC_SHA512_V2'
   const signature = signParameters({

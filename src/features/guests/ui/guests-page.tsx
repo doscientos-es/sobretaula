@@ -47,6 +47,7 @@ export function GuestsPage({ tenantId, venueId }: { tenantId: string; venueId: s
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [mergeTarget, setMergeTarget] = useState('')
+  const [confirmingMerge, setConfirmingMerge] = useState(false)
   const [reloadToken, setReloadToken] = useState(0)
   const [tags, setTags] = useState<Array<{ id: string; label: string }>>([])
   const [attribute, setAttribute] = useState('')
@@ -395,14 +396,13 @@ export function GuestsPage({ tenantId, venueId }: { tenantId: string; venueId: s
                         </Select>
                         <Button
                           disabled={!mergeTarget || saving}
-                          onClick={() =>
+                          onClick={() => {
+                            if (!confirmingMerge) {
+                              setConfirmingMerge(true)
+                              return
+                            }
                             void (async () => {
-                              if (
-                                !window.confirm(
-                                  '¿Fusionar este cliente? Esta acción no se puede deshacer.',
-                                )
-                              )
-                                return
+                              setConfirmingMerge(false)
                               setSaving(true)
                               try {
                                 await mergeGuests({
@@ -428,13 +428,23 @@ export function GuestsPage({ tenantId, venueId }: { tenantId: string; venueId: s
                                 setSaving(false)
                               }
                             })()
-                          }
+                          }}
                           size="sm"
                           type="button"
                           variant="outline"
                         >
-                          Fusionar
+                          {confirmingMerge ? 'Confirmar fusión' : 'Fusionar'}
                         </Button>
+                        {confirmingMerge ? (
+                          <Button
+                            onClick={() => setConfirmingMerge(false)}
+                            size="sm"
+                            type="button"
+                            variant="ghost"
+                          >
+                            Volver
+                          </Button>
+                        ) : null}
                       </div>
                       {guest.history.length ? (
                         <div className="grid gap-1 text-xs">

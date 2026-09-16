@@ -319,6 +319,7 @@ export function ReservationPage({
                 tenantId={tenantId}
                 timezone={timezone}
                 venueId={venueId}
+                onNewReservation={() => setNewReservationOpen(true)}
               />
             ) : null}
           </TabsContent>

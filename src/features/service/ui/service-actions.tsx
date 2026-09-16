@@ -80,6 +80,7 @@ export function ServiceActions({
   const [splitCovers, setSplitCovers] = useState(1)
   const [sessionId, setSessionId] = useState('')
   const [mergeSourceId, setMergeSourceId] = useState('')
+  const [confirmingClose, setConfirmingClose] = useState(false)
   const selectedSession = board.sessions.find((session) => session.id === sessionId)
   const pacingNow = now ?? new Date()
   const [internalNote, setInternalNote] = useState(selectedSession?.internalNote ?? '')
@@ -488,31 +489,46 @@ export function ServiceActions({
               </Button>
               <Button
                 disabled={feedback.pending || !sessionId}
-                onClick={() =>
-                  window.confirm('¿Cerrar esta cuenta y liberar sus mesas?')
-                    ? !isOnline
-                      ? (enqueueServiceOperation(
-                          offlineStore,
-                          createCloseSessionOperation({
-                            sessionId,
-                            tenantId,
-                            venueId,
-                          }),
-                        ),
-                        feedback.setSuccess('Cierre guardado para cuando vuelva la conexión.'))
-                      : void run(
-                          () =>
-                            closeSession({
-                              data: { sessionId, tenantId, venueId },
-                            }),
-                          'No se ha podido cerrar. Si queda saldo pendiente, cobra la cuenta primero.',
-                        )
-                    : undefined
-                }
+                onClick={() => setConfirmingClose(true)}
                 type="button"
               >
                 Cerrar cuenta
               </Button>
+              {confirmingClose ? (
+                <span className="flex basis-full flex-wrap items-center justify-end gap-2 text-xs">
+                  <span>¿Cerrar esta cuenta y liberar sus mesas?</span>
+                  <Button
+                    disabled={feedback.pending}
+                    onClick={() => {
+                      setConfirmingClose(false)
+                      if (!isOnline) {
+                        enqueueServiceOperation(
+                          offlineStore,
+                          createCloseSessionOperation({ sessionId, tenantId, venueId }),
+                        )
+                        feedback.setSuccess('Cierre guardado para cuando vuelva la conexión.')
+                        return
+                      }
+                      void run(
+                        () => closeSession({ data: { sessionId, tenantId, venueId } }),
+                        'No se ha podido cerrar. Si queda saldo pendiente, cobra la cuenta primero.',
+                      )
+                    }}
+                    size="sm"
+                    type="button"
+                  >
+                    Confirmar cierre
+                  </Button>
+                  <Button
+                    onClick={() => setConfirmingClose(false)}
+                    size="sm"
+                    type="button"
+                    variant="outline"
+                  >
+                    Volver
+                  </Button>
+                </span>
+              ) : null}
             </div>
             {canSplitSelected && (
               <Field className="max-w-xs">

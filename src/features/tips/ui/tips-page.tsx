@@ -75,6 +75,7 @@ export function TipsPage({
   const feedback = useFormFeedback()
   const [result, setResult] = useState<Awaited<ReturnType<typeof closeTipsPeriod>> | null>(null)
   const [editingEntryId, setEditingEntryId] = useState<string | null>(null)
+  const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null)
   const editingEntry = overview.entries.find((entry) => entry.id === editingEntryId) ?? null
   const [editAmount, setEditAmount] = useState('')
   const [editNote, setEditNote] = useState('')
@@ -157,12 +158,7 @@ export function TipsPage({
     }
   }
   async function removeEntry(entry: Overview['entries'][number]) {
-    if (
-      !window.confirm(
-        `¿Eliminar el cierre del ${entry.tip_date}? Se conservará el trazo en el historial.`,
-      )
-    )
-      return
+    setConfirmingDeleteId(null)
     setEditingEntryId(entry.id)
     try {
       await deleteTipEntry({ data: { tenantId, venueId, entryId: entry.id } })
@@ -458,13 +454,34 @@ export function TipsPage({
                       <Button
                         aria-label={`Eliminar cierre del ${entry.tip_date}`}
                         disabled={editingEntryId === entry.id}
-                        onClick={() => void removeEntry(entry)}
+                        onClick={() => setConfirmingDeleteId(entry.id)}
                         size="icon"
                         type="button"
                         variant="ghost"
                       >
                         <Trash2 aria-hidden="true" className="text-destructive size-4" />
                       </Button>
+                      {confirmingDeleteId === entry.id ? (
+                        <span className="flex items-center gap-2 text-xs">
+                          <span>¿Eliminar y conservar el historial?</span>
+                          <Button
+                            disabled={editingEntryId === entry.id}
+                            onClick={() => void removeEntry(entry)}
+                            size="sm"
+                            type="button"
+                          >
+                            Confirmar
+                          </Button>
+                          <Button
+                            onClick={() => setConfirmingDeleteId(null)}
+                            size="sm"
+                            type="button"
+                            variant="outline"
+                          >
+                            Volver
+                          </Button>
+                        </span>
+                      ) : null}
                     </>
                   ) : null}
                 </span>

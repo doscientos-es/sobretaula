@@ -85,6 +85,8 @@ export function ServiceQueue({
   const [estimatedWait, setEstimatedWait] = useState('')
   const [requestedAt, setRequestedAt] = useState('')
   const [queueFilter, setQueueFilter] = useState<'all' | 'delayed' | 'upcoming'>('all')
+  const [confirmingCancelId, setConfirmingCancelId] = useState<string | null>(null)
+  const [confirmingNoShowId, setConfirmingNoShowId] = useState<string | null>(null)
   const offlineStore = useMemo(
     () => createServiceOfflineStore(tenantId, venueId),
     [tenantId, venueId],
@@ -314,50 +316,90 @@ export function ServiceQueue({
                       </Button>
                       <Button
                         disabled={feedback.pending || !canMarkNoShow(reservation.startsAt, now)}
-                        onClick={() =>
-                          window.confirm('¿Marcar esta reserva como no presentada?')
-                            ? isOnline
-                              ? void run(
-                                  () =>
-                                    markReservationNoShow({
-                                      data: {
-                                        reservationId: reservation.id,
-                                        tenantId,
-                                        venueId,
-                                      },
-                                    }),
-                                  'No se ha podido marcar como no presentada.',
-                                  'Reserva marcada como no presentada.',
-                                )
-                              : transitionReservationOffline('no-show', reservation.id)
-                            : undefined
-                        }
+                        onClick={() => setConfirmingNoShowId(reservation.id)}
                         type="button"
                         variant="outline"
                       >
                         No-show
                       </Button>
+                      {confirmingNoShowId === reservation.id ? (
+                        <span className="flex basis-full flex-wrap items-center justify-end gap-2 text-xs">
+                          <span>¿Marcar como no presentada?</span>
+                          <Button
+                            disabled={feedback.pending}
+                            onClick={() => {
+                              setConfirmingNoShowId(null)
+                              if (!isOnline) {
+                                transitionReservationOffline('no-show', reservation.id)
+                                return
+                              }
+                              void run(
+                                () =>
+                                  markReservationNoShow({
+                                    data: { reservationId: reservation.id, tenantId, venueId },
+                                  }),
+                                'No se ha podido marcar como no presentada.',
+                                'Reserva marcada como no presentada.',
+                              )
+                            }}
+                            size="sm"
+                            type="button"
+                          >
+                            Confirmar no-show
+                          </Button>
+                          <Button
+                            onClick={() => setConfirmingNoShowId(null)}
+                            size="sm"
+                            type="button"
+                            variant="outline"
+                          >
+                            Volver
+                          </Button>
+                        </span>
+                      ) : null}
                       <Button
                         disabled={feedback.pending}
-                        onClick={() => {
-                          if (window.confirm('¿Cancelar esta reserva y liberar su mesa?')) {
-                            void run(
-                              () =>
-                                cancelReservation({
-                                  data: { reservationId: reservation.id, tenantId, venueId },
-                                }),
-                              'No se ha podido cancelar la reserva.',
-                              'Reserva cancelada y mesa liberada.',
-                            )
-                          } else {
-                            transitionReservationOffline('cancel', reservation.id)
-                          }
-                        }}
+                        onClick={() => setConfirmingCancelId(reservation.id)}
                         type="button"
                         variant="outline"
                       >
                         Cancelar
                       </Button>
+                      {confirmingCancelId === reservation.id ? (
+                        <span className="flex basis-full flex-wrap items-center justify-end gap-2 text-xs">
+                          <span>¿Cancelar y liberar la mesa?</span>
+                          <Button
+                            disabled={feedback.pending}
+                            onClick={() => {
+                              setConfirmingCancelId(null)
+                              if (!isOnline) {
+                                transitionReservationOffline('cancel', reservation.id)
+                                return
+                              }
+                              void run(
+                                () =>
+                                  cancelReservation({
+                                    data: { reservationId: reservation.id, tenantId, venueId },
+                                  }),
+                                'No se ha podido cancelar la reserva.',
+                                'Reserva cancelada y mesa liberada.',
+                              )
+                            }}
+                            size="sm"
+                            type="button"
+                          >
+                            Confirmar cancelación
+                          </Button>
+                          <Button
+                            onClick={() => setConfirmingCancelId(null)}
+                            size="sm"
+                            type="button"
+                            variant="outline"
+                          >
+                            Volver
+                          </Button>
+                        </span>
+                      ) : null}
                     </span>
                   </li>
                 )

@@ -51,7 +51,7 @@ describe('Redsys notification helpers', () => {
   it('builds a hosted form with a verifiable signature', () => {
     const form = createRedsysPaymentForm({
       amountCents: 14900,
-      merchantOrder: 'BILL202601',
+      merchantOrder: '2026BILL01',
       merchantUrl: 'https://example.test/api/webhooks/redsys',
       successUrl: 'https://example.test/ok',
       cancelUrl: 'https://example.test/ko',
@@ -64,6 +64,15 @@ describe('Redsys notification helpers', () => {
       },
     })
     expect(form.url).toContain('sis-t.redsys.es')
+    expect(
+      JSON.parse(Buffer.from(form.merchantParameters, 'base64url').toString('utf8')),
+    ).toMatchObject({
+      DS_MERCHANT_AMOUNT: '14900',
+      DS_MERCHANT_COF_INI: 'S',
+      DS_MERCHANT_COF_TYPE: 'R',
+      DS_MERCHANT_IDENTIFIER: 'REQUIRED',
+      DS_MERCHANT_ORDER: '2026BILL01',
+    })
     expect(
       verifyRedsysSignature({
         merchantParameters: form.merchantParameters,

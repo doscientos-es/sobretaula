@@ -1,4 +1,4 @@
-import { randomBytes, randomUUID } from 'node:crypto'
+import { randomBytes, randomInt, randomUUID } from 'node:crypto'
 
 import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
@@ -12,7 +12,9 @@ import { createRedsysPaymentForm, readRedsysConfig } from '../infrastructure/ser
 const input = z.object({ tenantId: z.string().uuid() })
 
 function orderReference(): string {
-  return `ST${randomBytes(5).toString('hex').toUpperCase()}`
+  return `${randomInt(10_000).toString().padStart(4, '0')}${randomBytes(4)
+    .toString('hex')
+    .toUpperCase()}`
 }
 
 /** Creates the first authenticated charge and returns a hosted Redsys form. */
