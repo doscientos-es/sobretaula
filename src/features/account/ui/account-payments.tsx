@@ -396,7 +396,7 @@ export function AccountPayments({
                   onSelectionChange={(key) => setMethod(String(key) as PaymentMethod)}
                   selectedKey={method}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger aria-label="Método de pago">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -430,7 +430,7 @@ export function AccountPayments({
                   onSelectionChange={(key) => setParts(Number(key))}
                   selectedKey={String(parts)}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger aria-label="Número de partes">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -456,7 +456,7 @@ export function AccountPayments({
                   }}
                   selectedKey={splitMode}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger aria-label="Tipo de división">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -577,7 +577,7 @@ export function AccountPayments({
                   onSelectionChange={(key) => setMixedMethodA(String(key) as PaymentMethod)}
                   selectedKey={mixedMethodA}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger aria-label="Primer método de pago">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -610,7 +610,7 @@ export function AccountPayments({
                   onSelectionChange={(key) => setMixedMethodB(String(key) as PaymentMethod)}
                   selectedKey={mixedMethodB}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger aria-label="Segundo método de pago">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>

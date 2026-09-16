@@ -221,7 +221,7 @@ export function PlatformTenantProvisioningForm() {
                 onSelectionChange={(key) => setDefaultLocale(String(key) as 'ca' | 'es')}
                 selectedKey={defaultLocale}
               >
-                <SelectTrigger>
+                <SelectTrigger aria-label="Idioma predeterminado">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -240,7 +240,7 @@ export function PlatformTenantProvisioningForm() {
                 onSelectionChange={(key) => setTimezone(String(key))}
                 selectedKey={timezone}
               >
-                <SelectTrigger>
+                <SelectTrigger aria-label="Zona horaria">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

@@ -361,6 +361,7 @@ export function ServiceActions({
           <div className="space-y-3 border-t pt-6">
             <Field>
               <AutocompleteCombobox
+                aria-label="Cuenta a cobrar"
                 emptyState="No hay cuentas que coincidan."
                 getItemKey={(session) => session.id}
                 getItemLabel={(session) => describeSession(session, board.tables)}
@@ -547,6 +548,7 @@ export function ServiceActions({
               <div className="space-y-2">
                 <Field>
                   <AutocompleteCombobox
+                    aria-label="Cuenta relacionada"
                     emptyState="No hay otras cuentas que coincidan."
                     getItemKey={(session) => session.id}
                     getItemLabel={(session) => describeSession(session, board.tables)}

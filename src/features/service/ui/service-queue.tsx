@@ -240,7 +240,7 @@ export function ServiceQueue({
                 onSelectionChange={(key) => setQueueFilter(String(key) as typeof queueFilter)}
                 selectedKey={queueFilter}
               >
-                <SelectTrigger>
+                <SelectTrigger aria-label="Filtrar reservas">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

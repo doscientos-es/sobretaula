@@ -236,6 +236,15 @@ test.describe('authenticated restaurant smoke', () => {
   })
 
   test('team search recovers from no matches', async ({ page }) => {
+    const unlabeledControlWarnings: string[] = []
+    page.on('console', (message) => {
+      if (
+        message.type() === 'warning' &&
+        message.text().includes('If you do not provide a visible label')
+      ) {
+        unlabeledControlWarnings.push(`${message.text()} @ ${message.location().url}`)
+      }
+    })
     await page.goto('/t/la-fonda-demo/equipo')
     await expect(page.getByText('Personas con acceso', { exact: true })).toBeVisible()
     await page.waitForLoadState('networkidle')
@@ -246,5 +255,6 @@ test.describe('authenticated restaurant smoke', () => {
     ).toBeVisible()
     await page.getByRole('button', { name: 'Limpiar búsqueda', exact: true }).click()
     await expect(search).toHaveValue('')
+    expect(unlabeledControlWarnings, 'No deben quedar controles sin nombre accesible').toEqual([])
   })
 })

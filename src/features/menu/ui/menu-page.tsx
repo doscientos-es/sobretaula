@@ -112,7 +112,7 @@ export function MenuPage({
             onSelectionChange={(key) => setVisibility(String(key) as typeof visibility)}
             selectedKey={visibility}
           >
-            <SelectTrigger>
+            <SelectTrigger aria-label="Filtrar por visibilidad">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -128,7 +128,7 @@ export function MenuPage({
             onSelectionChange={(key) => setStation(String(key) as typeof station)}
             selectedKey={station}
           >
-            <SelectTrigger>
+            <SelectTrigger aria-label="Filtrar por estación">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

@@ -172,7 +172,7 @@ export function PlatformSettingsPage({ settings }: { settings: PlatformFiscalSet
                 id="platform-environment"
                 name="environment"
               >
-                <SelectTrigger>
+                <SelectTrigger aria-label="Entorno de plataforma">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

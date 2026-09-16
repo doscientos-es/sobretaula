@@ -136,7 +136,7 @@ export function PlatformOperatorsPage({
                 }}
                 selectedKey={role}
               >
-                <SelectTrigger>
+                <SelectTrigger aria-label="Rol del operador">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -205,7 +205,7 @@ export function PlatformOperatorsPage({
                         )
                       }}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger aria-label={`Rol de ${operator.name}`}>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>

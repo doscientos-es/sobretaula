@@ -81,7 +81,7 @@ export function PlatformAuditPage({ events }: { events: readonly PlatformAuditEv
             }
             selectedKey={action}
           >
-            <SelectTrigger>
+            <SelectTrigger aria-label="Filtrar por acción de auditoría">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

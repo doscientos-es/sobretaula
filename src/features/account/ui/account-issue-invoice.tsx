@@ -85,7 +85,7 @@ export function AccountIssueInvoice({
               onSelectionChange={(key) => setSeriesId(String(key))}
               selectedKey={seriesId}
             >
-              <SelectTrigger>
+              <SelectTrigger aria-label="Serie de factura">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

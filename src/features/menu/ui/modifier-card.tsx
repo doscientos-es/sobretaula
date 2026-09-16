@@ -95,6 +95,7 @@ export function ModifierCard({
         <form className="grid gap-4 md:grid-cols-2" onSubmit={(event) => void submit(event)}>
           <Field>
             <AutocompleteCombobox
+              aria-label="Plato relacionado"
               emptyState="No hay platos que coincidan."
               getItemKey={(item) => item.id}
               getItemLabel={(item) => localizedText(item.nameI18n, 'es')}
@@ -163,6 +164,7 @@ export function ModifierCard({
             <>
               <Field>
                 <AutocompleteCombobox
+                  aria-label="Ingrediente de stock"
                   description="Para que el stock se descuente bien, completa también el ingrediente que consume."
                   emptyState="No hay ingredientes que coincidan."
                   getItemKey={(ingredient) => ingredient.id}
@@ -176,6 +178,7 @@ export function ModifierCard({
               </Field>
               <Field>
                 <AutocompleteCombobox
+                  aria-label="Ingrediente de receta"
                   emptyState="No hay ingredientes que coincidan."
                   getItemKey={(ingredient) => ingredient.id}
                   getItemLabel={(ingredient) => ingredient.name}

@@ -153,6 +153,7 @@ export function AccountAddItem({
         <form className="grid gap-4" onSubmit={add}>
           <Field>
             <AutocompleteCombobox
+              aria-label="Plato"
               emptyState="No hay platos activos que coincidan."
               getItemKey={(item) => item.id}
               getItemLabel={(item) =>

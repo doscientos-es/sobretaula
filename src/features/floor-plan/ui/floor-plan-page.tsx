@@ -595,24 +595,25 @@ export function FloorPlanPage({
             selectedId={selectedId}
             selectedIds={selectedIds}
           />
-          <Card className="lg:sticky lg:top-6 lg:self-start">
-            <CardHeader>
+          <Card className="border-l-0 shadow-sm lg:sticky lg:top-6 lg:self-start">
+            <CardHeader className="px-4 pt-4 pb-3">
               <CardTitle>Mesas y elementos</CardTitle>
               <CardDescription>
                 Arrastra una mesa al plano o selecciona algo para editarlo.
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="px-4 pt-0 pb-4">
               {placements.length === 0 ? (
                 <p className="text-muted-foreground text-sm">Aún no hay mesas en esta área.</p>
               ) : (
-                <ul className="space-y-2 text-sm">
+                <ul className="space-y-1 text-sm">
                   {placements.map((placement) => (
                     <li key={placement.id}>
                       <Button
                         aria-label={`Mesa ${placement.code}. X ${placement.xCm}, Y ${placement.yCm}. Usa las flechas para moverla.`}
                         onKeyDown={(event) => moveWithKeyboard(event, placement.id)}
                         onFocus={() => selectItem(placement.id)}
+                        className="w-full justify-start px-2 py-1.5 text-left transition-transform duration-150 hover:translate-x-0.5"
                         type="button"
                       >
                         {`Mesa ${placement.code} · ${placement.xCm}, ${placement.yCm}`}
@@ -622,7 +623,7 @@ export function FloorPlanPage({
                 </ul>
               )}
               {selectedId && (
-                <output className="bg-muted mt-3 block rounded-lg px-3 py-2 text-xs">
+                <output className="bg-muted/60 mt-3 block rounded-md px-2.5 py-2 text-xs">
                   {selectedIds.length > 1
                     ? `${selectedIds.length} elementos seleccionados · `
                     : 'Seleccionado: '}
@@ -632,8 +633,12 @@ export function FloorPlanPage({
                 </output>
               )}
               {selectedId && (
-                <div className="mt-3 flex gap-2">
-                  <Button onClick={removeSelected} type="button">
+                <div className="mt-2 flex gap-2">
+                  <Button
+                    className="transition-transform duration-150 hover:-translate-y-0.5"
+                    onClick={removeSelected}
+                    type="button"
+                  >
                     Eliminar
                   </Button>
                 </div>
@@ -645,8 +650,8 @@ export function FloorPlanPage({
                     elements.find((item) => item.id === selectedId)
                   if (!selected) return null
                   return (
-                    <div className="border-border mt-4 space-y-3 rounded-lg border p-3">
-                      <p className="text-sm font-medium">Propiedades</p>
+                    <div className="border-border/70 bg-muted/20 mt-3 space-y-2 rounded-md border p-2.5">
+                      <p className="text-xs font-semibold tracking-wide">Medidas y posición</p>
                       <div className="grid grid-cols-2 gap-2">
                         {(['xCm', 'yCm', 'widthCm', 'heightCm'] as const).map((key) => (
                           <Field key={key}>
@@ -682,8 +687,8 @@ export function FloorPlanPage({
                     </div>
                   )
                 })()}
-              <div className="mt-6 space-y-2">
-                <p className="text-muted-foreground text-sm">Elementos estructurales</p>
+              <div className="mt-4 space-y-2">
+                <p className="text-muted-foreground text-xs font-medium">Añadir al plano</p>
                 <div
                   draggable
                   onDragStart={(event: DragEvent<HTMLDivElement>) =>
@@ -691,7 +696,7 @@ export function FloorPlanPage({
                   }
                 >
                   <Button
-                    className="border-primary h-auto w-full justify-start gap-2 py-3"
+                    className="border-primary/60 h-auto w-full justify-start gap-2 py-2.5 transition-transform duration-150 hover:-translate-y-0.5"
                     onClick={() => createQuickTable({ x: 50, y: 50 })}
                     type="button"
                     variant="outline"
@@ -719,7 +724,7 @@ export function FloorPlanPage({
                       key={kind}
                     >
                       <Button
-                        className="h-auto w-full justify-start gap-2 py-3"
+                        className="h-auto w-full justify-start gap-2 py-2 transition-transform duration-150 hover:-translate-y-0.5"
                         onClick={() => addElement(kind)}
                         type="button"
                         variant="outline"
@@ -731,9 +736,12 @@ export function FloorPlanPage({
                 </div>
               </div>
               {activeArea && (
-                <form className="mt-6 grid gap-3" onSubmit={(event) => void createTable(event)}>
+                <form
+                  className="border-border/60 mt-4 grid gap-2 border-t pt-3"
+                  onSubmit={(event) => void createTable(event)}
+                >
                   <Field>
-                    <FieldLabel htmlFor="table-code">Código</FieldLabel>
+                    <FieldLabel htmlFor="table-code">Código de mesa</FieldLabel>
                     <Input
                       id="table-code"
                       onChange={(event) => setTableCode(event.target.value)}
@@ -743,7 +751,7 @@ export function FloorPlanPage({
                     />
                   </Field>
                   <Field>
-                    <FieldLabel htmlFor="table-seats">Comensales máximos</FieldLabel>
+                    <FieldLabel htmlFor="table-seats">Número de comensales</FieldLabel>
                     <Input
                       id="table-seats"
                       min={1}

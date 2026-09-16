@@ -81,7 +81,7 @@ export function ChannelPriceCard({
               onSelectionChange={(key) => setItemId(String(key) === 'empty' ? '' : String(key))}
               selectedKey={itemId || 'empty'}
             >
-              <SelectTrigger>
+              <SelectTrigger aria-label="Producto">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -104,7 +104,7 @@ export function ChannelPriceCard({
               onSelectionChange={(key) => setChannel(String(key) as typeof channel)}
               selectedKey={channel}
             >
-              <SelectTrigger>
+              <SelectTrigger aria-label="Canal">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

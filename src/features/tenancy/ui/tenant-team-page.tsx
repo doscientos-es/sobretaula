@@ -32,6 +32,7 @@ import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
 import {
   getTenantTeam,
   inviteTenantMember,
+  resendTenantInvitation,
   suspendTenantMember,
   updateTenantMemberRole,
   type TenantTeam,
@@ -86,6 +87,7 @@ export function TenantTeamPage({
   const [teamLoading, setTeamLoading] = useState(false)
   const [teamError, setTeamError] = useState<string | null>(null)
   const [teamRefresh, setTeamRefresh] = useState(0)
+  const [resendingEmail, setResendingEmail] = useState<string | null>(null)
   useAsyncEffect(() => {
     let active = true
     setTeamLoading(true)
@@ -392,11 +394,33 @@ export function TenantTeamPage({
           </CardHeader>
           <CardContent className="space-y-2">
             {visibleTeam.invitations.map((invitation) => (
-              <p key={invitation.email} className="text-sm">
-                {invitation.email} · {roleLabel[invitation.role]} · caduca{' '}
-                {new Date(invitation.expiresAt).toLocaleDateString('es-ES')}
-              </p>
+              <div key={invitation.email} className="flex items-center justify-between gap-3 text-sm">
+                <p>
+                  {invitation.email} · {roleLabel[invitation.role]} · caduca{' '}
+                  {new Date(invitation.expiresAt).toLocaleDateString('es-ES')}
+                </p>
+                <Button
+                  disabled={resendingEmail === invitation.email}
+                  onClick={() => {
+                    setResendingEmail(invitation.email)
+                    feedback.setPending()
+                    void resendTenantInvitation({ data: { tenantId, email: invitation.email } })
+                      .then(() => {
+                        feedback.setSuccess('Invitación reenviada.')
+                        setTeamRefresh((current) => current + 1)
+                      })
+                      .catch(() => feedback.setError('No se ha podido reenviar la invitación.'))
+                      .finally(() => setResendingEmail(null))
+                  }}
+                  size="sm"
+                  type="button"
+                  variant="outline"
+                >
+                  {resendingEmail === invitation.email ? 'Enviando…' : 'Reenviar invitación'}
+                </Button>
+              </div>
             ))}
+            <FormFeedback pendingLabel="Enviando invitación…" state={feedback.state} />
           </CardContent>
         </Card>
       )}

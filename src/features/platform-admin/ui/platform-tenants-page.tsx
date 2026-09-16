@@ -98,7 +98,7 @@ export function PlatformTenantsPage({ tenants }: { tenants: PlatformDashboardTen
             onSelectionChange={(key) => setStatus(String(key) as TenantDirectoryStatus)}
             selectedKey={status}
           >
-            <SelectTrigger>
+            <SelectTrigger aria-label="Filtrar por estado">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -121,7 +121,7 @@ export function PlatformTenantsPage({ tenants }: { tenants: PlatformDashboardTen
             }
             selectedKey={subscription ?? 'none'}
           >
-            <SelectTrigger>
+            <SelectTrigger aria-label="Filtrar por suscripción">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -141,7 +141,7 @@ export function PlatformTenantsPage({ tenants }: { tenants: PlatformDashboardTen
             onSelectionChange={(key) => setOrder(String(key) as TenantDirectoryOrder)}
             selectedKey={order}
           >
-            <SelectTrigger>
+            <SelectTrigger aria-label="Ordenar tenants">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

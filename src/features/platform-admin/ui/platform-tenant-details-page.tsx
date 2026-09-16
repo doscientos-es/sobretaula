@@ -252,7 +252,7 @@ export function PlatformTenantDetailsPage({
                   id="tenant-locale"
                   name="defaultLocale"
                 >
-                  <SelectTrigger>
+                  <SelectTrigger aria-label="Idioma del tenant">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -272,7 +272,7 @@ export function PlatformTenantDetailsPage({
                   isRequired
                   name="timezone"
                 >
-                  <SelectTrigger>
+                  <SelectTrigger aria-label="Zona horaria del tenant">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>

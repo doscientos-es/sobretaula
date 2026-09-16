@@ -386,7 +386,7 @@ export function GuestsPage({ tenantId, venueId }: { tenantId: string; venueId: s
                           )}
                           selectedKey={mergeTarget || 'empty'}
                         >
-                          <SelectTrigger>
+                          <SelectTrigger aria-label="Cliente al que fusionar">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -572,7 +572,7 @@ export function GuestsPage({ tenantId, venueId }: { tenantId: string; venueId: s
                           }
                           selectedKey={noteCategory}
                         >
-                          <SelectTrigger>
+                          <SelectTrigger aria-label="Categoría de la nota">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>

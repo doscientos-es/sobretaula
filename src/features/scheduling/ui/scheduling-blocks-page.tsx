@@ -148,7 +148,7 @@ export function SchedulingBlocksPage({ tenantId, venueId }: { tenantId: string; 
               onSelectionChange={(key) => setBlockType(String(key))}
               selectedKey={blockType}
             >
-              <SelectTrigger>
+              <SelectTrigger aria-label="Tipo de bloqueo">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -166,7 +166,7 @@ export function SchedulingBlocksPage({ tenantId, venueId }: { tenantId: string; 
               onSelectionChange={(key) => setAreaId(String(key) === 'all' ? '' : String(key))}
               selectedKey={areaId || 'all'}
             >
-              <SelectTrigger>
+              <SelectTrigger aria-label="Área del bloqueo">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

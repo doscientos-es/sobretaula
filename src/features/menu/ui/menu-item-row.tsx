@@ -123,7 +123,7 @@ export function MenuItemRow({
           onSelectionChange={(key) => setStationDraft(String(key) as KitchenStation)}
           selectedKey={stationDraft}
         >
-          <SelectTrigger>
+          <SelectTrigger aria-label={`Estación de ${name}`}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

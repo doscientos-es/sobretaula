@@ -222,6 +222,44 @@ export const inviteTenantMember = createServerFn({ method: 'POST' })
     return { kind: 'invitation_sent' as const }
   })
 
+/** Renews and re-sends a pending tenant invitation without creating a duplicate. */
+export const resendTenantInvitation = createServerFn({ method: 'POST' })
+  .middleware([authMiddleware, tenantMembershipMiddleware])
+  .validator(tenantTeamInput.pick({ tenantId: true }).extend({ email: z.string().email() }))
+  .handler(async ({ context, data }) => {
+    requireAssignableRole(context.tenantMembership.role, 'waiter')
+    const service = createServiceSupabaseClient()
+    const request = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    const { data: invitation, error: invitationError } = await request
+      .from('invitations')
+      .select('role')
+      .eq('tenant_id', data.tenantId)
+      .eq('email', data.email)
+      .is('accepted_at', null)
+      .maybeSingle()
+    if (invitationError) throw new Error(`tenant_invitation_lookup_failed:${invitationError.code}`)
+    if (!invitation) throw new Response('Invitation not found', { status: 404 })
+
+    const token = randomBytes(32).toString('base64url')
+    const { error: updateError } = await request
+      .from('invitations')
+      .update({
+        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        token_hash: hashInvitationToken(token),
+      })
+      .eq('tenant_id', data.tenantId)
+      .eq('email', data.email)
+      .is('accepted_at', null)
+    if (updateError) throw new Error(`tenant_invitation_update_failed:${updateError.code}`)
+
+    const { error: inviteError } = await service.auth.admin.inviteUserByEmail(data.email, {
+      redirectTo: invitationRedirect(token),
+    })
+    if (isAuthEmailRateLimited(inviteError)) throw new Response('Invitation email rate limited', { status: 429 })
+    if (inviteError) throw new Error('tenant_invitation_delivery_failed')
+    return { kind: 'invitation_resent' as const, role: invitation.role }
+  })
+
 /** Changes a staff role through the database-enforced tenant hierarchy. */
 export const updateTenantMemberRole = createServerFn({ method: 'POST' })
   .middleware([authMiddleware, tenantMembershipMiddleware])

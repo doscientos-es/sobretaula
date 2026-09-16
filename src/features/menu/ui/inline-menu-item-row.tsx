@@ -141,7 +141,7 @@ export function InlineMenuItemRow({
           placeholder="IVA"
           selectedKey={vatRate}
         >
-          <SelectTrigger className="h-8 min-w-24">
+          <SelectTrigger aria-label="IVA del nuevo plato" className="h-8 min-w-24">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -174,7 +174,7 @@ export function InlineMenuItemRow({
           placeholder="Estación"
           selectedKey={kitchenStation}
         >
-          <SelectTrigger className="h-8 min-w-28">
+          <SelectTrigger aria-label="Estación del nuevo plato" className="h-8 min-w-28">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
