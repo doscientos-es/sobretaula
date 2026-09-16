@@ -100,6 +100,7 @@ export function ReservationPage({
   const [reservationOperationId, setReservationOperationId] = useState(() => crypto.randomUUID())
   const [agendaRefreshToken, setAgendaRefreshToken] = useState(0)
   const [newReservationOpen, setNewReservationOpen] = useState(false)
+  const [exportOpen, setExportOpen] = useState(false)
   const [exportFrom, setExportFrom] = useState(() => zonedDateKey(new Date(), timezone))
   const [exportTo, setExportTo] = useState(() => zonedDateKey(new Date(), timezone))
   const [exporting, setExporting] = useState(false)
@@ -121,6 +122,7 @@ export function ReservationPage({
       link.click()
       URL.revokeObjectURL(url)
       feedback.setSuccess('CSV de reservas descargado.')
+      setExportOpen(false)
     } catch {
       feedback.setError('No se ha podido exportar la agenda de reservas.')
     } finally {
@@ -260,22 +262,27 @@ export function ReservationPage({
 
   return (
     <section className="space-y-6">
-      <PageHeader className="border-border/70 border-b pb-6">
-        <div>
-          <PageHeaderTitle>Reservas</PageHeaderTitle>
-          <PageHeaderDescription>
-            Organiza cada turno y asigna grupos a la mesa que mejor encaja.
-          </PageHeaderDescription>
-        </div>
-        <Button onClick={() => setNewReservationOpen(true)} type="button">
-          + Crear reserva
-        </Button>
-      </PageHeader>
       <Tabs className="space-y-5" defaultSelectedKey="agenda">
-        <TabsList aria-label="Secciones de reservas" className="w-fit">
-          <TabsTrigger id="agenda">Agenda</TabsTrigger>
-          <TabsTrigger id="turnos">Turnos</TabsTrigger>
-        </TabsList>
+        <PageHeader className="border-border/70 border-b pb-6">
+          <div>
+            <PageHeaderTitle>Reservas</PageHeaderTitle>
+            <PageHeaderDescription>
+              Organiza cada turno y asigna grupos a la mesa que mejor encaja.
+            </PageHeaderDescription>
+          </div>
+          <div className="flex items-center gap-3">
+            <TabsList aria-label="Secciones de reservas" className="w-fit">
+              <TabsTrigger id="agenda">Agenda</TabsTrigger>
+              <TabsTrigger id="turnos">Turnos</TabsTrigger>
+            </TabsList>
+            <Button onClick={() => setNewReservationOpen(true)} type="button">
+              + Crear reserva
+            </Button>
+            <Button onClick={() => setExportOpen(true)} size="sm" type="button" variant="outline">
+              Exportar
+            </Button>
+          </div>
+        </PageHeader>
         <TabsPanels>
           <TabsContent id="agenda">
             <ReservationAgendaCard
@@ -287,49 +294,11 @@ export function ReservationPage({
               timezone={timezone}
               venueId={venueId}
               onNewReservation={() => setNewReservationOpen(true)}
+              onCalendarSlotClick={(value) => {
+                setStartsAt(value)
+                setNewReservationOpen(true)
+              }}
             />
-            <Card className="mt-4">
-              <CardContent className="grid items-center gap-2 py-3 sm:grid-cols-[auto_minmax(0,1fr)_auto_minmax(0,1fr)_auto]">
-                <span className="text-sm font-medium">Exportar CSV</span>
-                <Field className="min-w-0">
-                  <FieldLabel className="sr-only" htmlFor="reservation-export-from">
-                    Desde
-                  </FieldLabel>
-                  <Input
-                    aria-label="Exportar desde"
-                    className="h-9 w-full min-w-0"
-                    id="reservation-export-from"
-                    onChange={(event) => setExportFrom(event.target.value)}
-                    type="date"
-                    value={exportFrom}
-                  />
-                </Field>
-                <span aria-hidden="true" className="text-muted-foreground">
-                  —
-                </span>
-                <Field className="min-w-0">
-                  <FieldLabel className="sr-only" htmlFor="reservation-export-to">
-                    Hasta
-                  </FieldLabel>
-                  <Input
-                    aria-label="Exportar hasta"
-                    className="h-9 w-full min-w-0"
-                    id="reservation-export-to"
-                    onChange={(event) => setExportTo(event.target.value)}
-                    type="date"
-                    value={exportTo}
-                  />
-                </Field>
-                <Button
-                  disabled={exporting}
-                  onClick={() => void exportReservations()}
-                  size="sm"
-                  type="button"
-                >
-                  {exporting ? 'Preparando…' : 'Descargar'}
-                </Button>
-              </CardContent>
-            </Card>
           </TabsContent>
           <TabsContent id="turnos">
             <details className="group">
@@ -792,6 +761,43 @@ export function ReservationPage({
                           Crear reserva
                         </Button>
                       </form>
+                    </CardContent>
+                  </DialogContent>
+                </DialogRoot>
+                <DialogRoot onOpenChange={setExportOpen} open={exportOpen}>
+                  <DialogContent className="max-w-md">
+                    <CardHeader>
+                      <CardTitle>Exportar reservas</CardTitle>
+                      <CardDescription>Descarga un CSV del periodo seleccionado.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="grid gap-4">
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <Field>
+                          <FieldLabel htmlFor="reservation-export-from">Desde</FieldLabel>
+                          <Input
+                            id="reservation-export-from"
+                            onChange={(event) => setExportFrom(event.target.value)}
+                            type="date"
+                            value={exportFrom}
+                          />
+                        </Field>
+                        <Field>
+                          <FieldLabel htmlFor="reservation-export-to">Hasta</FieldLabel>
+                          <Input
+                            id="reservation-export-to"
+                            onChange={(event) => setExportTo(event.target.value)}
+                            type="date"
+                            value={exportTo}
+                          />
+                        </Field>
+                      </div>
+                      <Button
+                        disabled={exporting}
+                        onClick={() => void exportReservations()}
+                        type="button"
+                      >
+                        {exporting ? 'Preparando…' : 'Descargar CSV'}
+                      </Button>
                     </CardContent>
                   </DialogContent>
                 </DialogRoot>

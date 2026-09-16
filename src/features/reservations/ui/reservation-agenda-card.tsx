@@ -16,6 +16,12 @@ import { ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 
 import { cancelReservation, markReservationNoShow } from '@/features/service'
+import {
+  calendarHours,
+  calendarSlotFromY,
+  calendarTop,
+  weekDays,
+} from '@/shared/lib/calendar/weekly-calendar'
 import { zonedDateKey, zonedDateTimeParts, zonedLocalToIso } from '@/shared/lib/date/zoned-time'
 import type { Locale } from '@/shared/lib/i18n/locale'
 import { useAsyncEffect } from '@/shared/lib/react/use-async-effect'
@@ -44,30 +50,6 @@ function shiftDate(value: string, days: number): string {
   const date = new Date(`${value}T12:00:00.000Z`)
   date.setUTCDate(date.getUTCDate() + days)
   return date.toISOString().slice(0, 10)
-}
-
-function weekDays(value: string): Date[] {
-  const monday = new Date(`${value}T12:00:00.000Z`)
-  monday.setUTCDate(monday.getUTCDate() - ((monday.getUTCDay() + 6) % 7))
-  return Array.from({ length: 7 }, (_, index) => {
-    const day = new Date(monday)
-    day.setUTCDate(day.getUTCDate() + index)
-    return day
-  })
-}
-
-function calendarHours(agenda: Record<string, ReservationAgendaItem[]>, timeZone: string) {
-  const minutes = Object.values(agenda)
-    .flat()
-    .map((item) => {
-      const { hour, minute } = zonedDateTimeParts(new Date(item.startsAt), timeZone)
-      return hour * 60 + minute
-    })
-  const earliestHour = minutes.length ? Math.floor(Math.min(...minutes) / 60) : 11
-  const latestHour = minutes.length ? Math.ceil(Math.max(...minutes) / 60) + 1 : 23
-  const start = Math.max(8, Math.min(11, earliestHour))
-  const end = Math.min(24, Math.max(23, latestHour))
-  return { end, start }
 }
 
 function localDateTimeValue(value: string, timeZone: string): string {
@@ -115,6 +97,7 @@ export function ReservationAgendaCard({
   venueId,
   refreshToken = 0,
   onNewReservation,
+  onCalendarSlotClick,
 }: {
   agendaSearch?: ReservationAgendaSearch | undefined
   locale: Locale
@@ -124,6 +107,7 @@ export function ReservationAgendaCard({
   venueId: string
   refreshToken?: number
   onNewReservation?: () => void
+  onCalendarSlotClick?: (value: string) => void
 }) {
   const feedback = useFormFeedback()
   const { setError } = feedback
@@ -142,6 +126,7 @@ export function ReservationAgendaCard({
   const [expandedReservationId, setExpandedReservationId] = useState<string | null>(null)
   const [historyEventFilter, setHistoryEventFilter] = useState('all')
   const [agendaLoading, setAgendaLoading] = useState(true)
+  const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar')
   const [agendaRefresh, setAgendaRefresh] = useState(0)
   const [depositFilter, setDepositFilter] = useState<'all' | 'pending' | 'paid' | 'attention'>(
     'all',
@@ -153,6 +138,7 @@ export function ReservationAgendaCard({
   const [editingStartsAt, setEditingStartsAt] = useState('')
   const [editingPartySize, setEditingPartySize] = useState(1)
   const hasDeposits = agenda.some((item) => item.deposit !== null)
+  const nowParts = zonedDateTimeParts(new Date(), timezone)
   const days = weekDays(agendaDate)
   const today = zonedDateKey(new Date(), timezone)
   const { end: calendarEnd, start: calendarStart } = calendarHours(weeklyAgenda, timezone)
@@ -344,14 +330,32 @@ export function ReservationAgendaCard({
             <CardTitle>Agenda semanal</CardTitle>
             <CardDescription className="mt-1 capitalize">{weekLabel}</CardDescription>
           </div>
-          <div className="flex items-center gap-1 rounded-md border p-1">
+          <div className="flex items-center gap-1">
+            <Button
+              onClick={() => setViewMode('calendar')}
+              size="sm"
+              type="button"
+              variant={viewMode === 'calendar' ? 'secondary' : 'ghost'}
+            >
+              Calendario
+            </Button>
+            <Button
+              onClick={() => setViewMode('list')}
+              size="sm"
+              type="button"
+              variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+            >
+              Lista
+            </Button>
+          </div>
+          <div className="flex items-center gap-1">
             <Button
               aria-label="Semana anterior"
               onClick={() => {
                 const date = shiftDate(agendaDate, -7)
                 selectAgendaDate(date)
               }}
-              size="icon-sm"
+              size="icon"
               type="button"
               variant="ghost"
             >
@@ -362,7 +366,7 @@ export function ReservationAgendaCard({
                 const date = dateOffset(0, timezone)
                 selectAgendaDate(date)
               }}
-              size="sm"
+              size="default"
               type="button"
               variant="ghost"
             >
@@ -374,7 +378,7 @@ export function ReservationAgendaCard({
                 const date = shiftDate(agendaDate, 7)
                 selectAgendaDate(date)
               }}
-              size="icon-sm"
+              size="icon"
               type="button"
               variant="ghost"
             >
@@ -401,136 +405,12 @@ export function ReservationAgendaCard({
                 )}
               />
             </Button>
-            {onNewReservation ? <Button onClick={onNewReservation}>Nueva reserva</Button> : null}
           </div>
         </div>
-        <p className="text-muted-foreground text-xs">
-          Selecciona un día o una reserva para abrir el detalle. Se actualiza automáticamente cada
-          minuto.
-        </p>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-3 pt-0">
         <FormFeedback pendingLabel="Actualizando agenda…" state={feedback.state} />
-        <section aria-label="Calendario semanal" className="overflow-x-auto rounded-lg border">
-          <div className="min-w-208">
-            <div className="grid grid-cols-[3.25rem_repeat(7,minmax(7rem,1fr))] border-b">
-              <div aria-hidden="true" />
-              {days.map((day) => {
-                const date = day.toISOString().slice(0, 10)
-                const selected = date === agendaDate
-                const isToday = date === today
-                return (
-                  <button
-                    aria-label={`Ver reservas del ${day.toLocaleDateString(locale, {
-                      day: 'numeric',
-                      month: 'long',
-                    })}`}
-                    className={cn(
-                      'border-l px-2 py-3 text-center transition-colors hover:bg-muted/50',
-                      selected && 'bg-primary/10',
-                    )}
-                    key={date}
-                    onClick={() => {
-                      selectAgendaDate(date)
-                    }}
-                    type="button"
-                  >
-                    <span className="text-muted-foreground block text-[11px] font-semibold uppercase">
-                      {day.toLocaleDateString(locale, { weekday: 'short' })}
-                    </span>
-                    <span
-                      className={cn(
-                        'mx-auto mt-1 flex size-7 items-center justify-center rounded-full text-sm font-semibold',
-                        isToday && 'bg-primary text-primary-foreground',
-                      )}
-                    >
-                      {day.getUTCDate()}
-                    </span>
-                  </button>
-                )
-              })}
-            </div>
-            <div className="grid grid-cols-[3.25rem_repeat(7,minmax(7rem,1fr))]">
-              <div className="relative border-r" style={{ height: calendarHeight }}>
-                {Array.from({ length: calendarHourCount + 1 }, (_, index) => (
-                  <span
-                    className="text-muted-foreground absolute -top-2 right-2 text-[10px]"
-                    key={calendarStart + index}
-                    style={{ top: index * 72 }}
-                  >
-                    {String((calendarStart + index) % 24).padStart(2, '0')}:00
-                  </span>
-                ))}
-              </div>
-              {days.map((day) => {
-                const date = day.toISOString().slice(0, 10)
-                return (
-                  <div
-                    className={cn(
-                      'relative border-r last:border-r-0',
-                      date === today && 'bg-primary/[0.03]',
-                    )}
-                    key={date}
-                    style={{
-                      backgroundImage:
-                        'repeating-linear-gradient(to bottom, transparent 0, transparent 71px, hsl(var(--border) / 0.7) 72px)',
-                      height: calendarHeight,
-                    }}
-                  >
-                    {(weeklyAgenda[date] ?? []).map((item) => {
-                      const parts = zonedDateTimeParts(new Date(item.startsAt), timezone)
-                      const top = Math.max(
-                        0,
-                        ((parts.hour * 60 + parts.minute - calendarStart * 60) / 60) * 72,
-                      )
-                      return (
-                        <button
-                          aria-label={`${parts.hour.toString().padStart(2, '0')}:${parts.minute.toString().padStart(2, '0')}, ${item.guestName ?? 'Sin nombre'}, ${item.partySize} comensales`}
-                          className={cn(
-                            'absolute inset-x-1 z-10 overflow-hidden rounded border px-1.5 py-1 text-left text-[11px] leading-tight shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                            calendarEventClass(item.status),
-                          )}
-                          key={item.id}
-                          onClick={() => {
-                            selectAgendaDate(date)
-                          }}
-                          style={{ height: 50, top }}
-                          title={`${item.guestName ?? 'Sin nombre'} · ${item.partySize} comensales`}
-                          type="button"
-                        >
-                          <span className="block truncate font-semibold">
-                            {String(parts.hour).padStart(2, '0')}:
-                            {String(parts.minute).padStart(2, '0')} ·{' '}
-                            {item.guestName ?? 'Sin nombre'}
-                          </span>
-                          <span className="block truncate text-[10px] opacity-80">
-                            {item.partySize} com. · {reservationStatusLabel(item.status)}
-                          </span>
-                        </button>
-                      )
-                    })}
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        </section>
-        <div className="flex flex-wrap items-center justify-between gap-2 border-t pt-4">
-          <h3 className="text-sm font-semibold">
-            Reservas del{' '}
-            {new Date(`${agendaDate}T12:00:00.000Z`).toLocaleDateString(locale, {
-              day: 'numeric',
-              month: 'long',
-              weekday: 'long',
-            })}
-          </h3>
-          <output aria-live="polite" className="text-muted-foreground text-sm">
-            {agendaLoading
-              ? 'Cargando agenda…'
-              : `${visibleAgenda.length} reserva${visibleAgenda.length === 1 ? '' : 's'}`}
-          </output>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-2 border-b pb-3 sm:grid-cols-[minmax(0,1fr)_12rem]">
           <Field>
             <FieldLabel htmlFor="agenda-query">Buscar cliente</FieldLabel>
             <Input
@@ -565,6 +445,151 @@ export function ReservationAgendaCard({
               <option value="no_show">No presentadas</option>
             </select>
           </Field>
+        </div>
+        {viewMode === 'calendar' ? (
+          <section aria-label="Calendario semanal" className="overflow-x-auto rounded-lg border">
+            <div className="min-w-208">
+              <div className="grid grid-cols-[3.25rem_repeat(7,minmax(7rem,1fr))] border-b">
+                <div aria-hidden="true" />
+                {days.map((day) => {
+                  const date = day.toISOString().slice(0, 10)
+                  const selected = date === agendaDate
+                  const isToday = date === today
+                  return (
+                    <button
+                      aria-label={`Ver reservas del ${day.toLocaleDateString(locale, {
+                        day: 'numeric',
+                        month: 'long',
+                      })}`}
+                      className={cn(
+                        'border-l px-2 py-3 text-center transition-colors hover:bg-muted/50',
+                        selected && 'bg-primary/10',
+                      )}
+                      key={date}
+                      onClick={() => {
+                        selectAgendaDate(date)
+                      }}
+                      type="button"
+                    >
+                      <span className="text-muted-foreground block text-[11px] font-semibold uppercase">
+                        {day.toLocaleDateString(locale, { weekday: 'short' })}
+                      </span>
+                      <span
+                        className={cn(
+                          'mx-auto mt-1 flex size-7 items-center justify-center rounded-full text-sm font-semibold',
+                          isToday && 'bg-primary text-primary-foreground',
+                        )}
+                      >
+                        {day.getUTCDate()}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+              <div className="grid grid-cols-[3.25rem_repeat(7,minmax(7rem,1fr))]">
+                <div className="relative border-r" style={{ height: calendarHeight }}>
+                  {Array.from({ length: calendarHourCount + 1 }, (_, index) => (
+                    <span
+                      className="text-muted-foreground absolute -top-2 right-2 text-[10px]"
+                      key={calendarStart + index}
+                      style={{ top: index * 72 }}
+                    >
+                      {String((calendarStart + index) % 24).padStart(2, '0')}:00
+                    </span>
+                  ))}
+                </div>
+                {days.map((day) => {
+                  const date = day.toISOString().slice(0, 10)
+                  return (
+                    <div
+                      className={cn(
+                        'relative border-r last:border-r-0',
+                        date === today && 'bg-primary/[0.03]',
+                      )}
+                      key={date}
+                      style={{
+                        backgroundImage:
+                          'repeating-linear-gradient(to bottom, transparent 0, transparent 71px, hsl(var(--border) / 0.7) 72px)',
+                        height: calendarHeight,
+                      }}
+                      onClick={(event) => {
+                        if (!onCalendarSlotClick) return
+                        const bounds = event.currentTarget.getBoundingClientRect()
+                        const { hour, minute } = calendarSlotFromY(
+                          event.clientY - bounds.top,
+                          calendarStart,
+                          calendarHourCount,
+                        )
+                        onCalendarSlotClick(
+                          `${date}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`,
+                        )
+                      }}
+                    >
+                      {date === today &&
+                      nowParts.hour >= calendarStart &&
+                      nowParts.hour <= calendarEnd ? (
+                        <span
+                          aria-label="Hora actual"
+                          className="bg-primary pointer-events-none absolute inset-x-0 z-20 h-0.5"
+                          style={{
+                            top: calendarTop(nowParts.hour, nowParts.minute, calendarStart),
+                          }}
+                        />
+                      ) : null}
+                      {(weeklyAgenda[date] ?? []).map((item) => {
+                        const parts = zonedDateTimeParts(new Date(item.startsAt), timezone)
+                        const top = Math.max(
+                          0,
+                          calendarTop(parts.hour, parts.minute, calendarStart),
+                        )
+                        return (
+                          <button
+                            aria-label={`${parts.hour.toString().padStart(2, '0')}:${parts.minute.toString().padStart(2, '0')}, ${item.guestName ?? 'Sin nombre'}, ${item.partySize} comensales`}
+                            className={cn(
+                              'absolute inset-x-1 z-10 overflow-hidden rounded border px-1.5 py-1 text-left text-[11px] leading-tight shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                              calendarEventClass(item.status),
+                            )}
+                            key={item.id}
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              selectAgendaDate(date)
+                            }}
+                            style={{ height: 50, top }}
+                            title={`${item.guestName ?? 'Sin nombre'} · ${item.partySize} comensales`}
+                            type="button"
+                          >
+                            <span className="block truncate font-semibold">
+                              {String(parts.hour).padStart(2, '0')}:
+                              {String(parts.minute).padStart(2, '0')} ·{' '}
+                              {item.guestName ?? 'Sin nombre'}
+                            </span>
+                            <span className="block truncate text-[10px] opacity-80">
+                              {item.partySize} com. · {reservationStatusLabel(item.status)}
+                            </span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </section>
+        ) : null}
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t pt-3">
+          <h3 className="text-sm font-semibold">
+            Reservas del{' '}
+            {new Date(`${agendaDate}T12:00:00.000Z`).toLocaleDateString(locale, {
+              day: 'numeric',
+              month: 'long',
+              weekday: 'long',
+            })}
+          </h3>
+          <output aria-live="polite" className="text-muted-foreground text-sm">
+            {agendaLoading
+              ? 'Cargando agenda…'
+              : `${visibleAgenda.length} reserva${visibleAgenda.length === 1 ? '' : 's'}`}
+          </output>
         </div>
         {hasDeposits ? (
           <label className="text-muted-foreground flex items-center gap-2 text-sm">
@@ -825,11 +850,6 @@ export function ReservationAgendaCard({
         ) : !agendaLoading ? (
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-muted-foreground text-sm">No hay reservas para este día.</p>
-            {onNewReservation ? (
-              <Button onClick={onNewReservation} size="sm" type="button">
-                Crear reserva
-              </Button>
-            ) : null}
           </div>
         ) : null}
       </CardContent>

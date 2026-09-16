@@ -4,6 +4,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  Button,
   PageHeader,
   PageHeaderDescription,
   PageHeaderTitle,
@@ -20,6 +21,8 @@ import {
   TableRow,
   Input,
 } from '@doscientos/ui'
+import { ArrowRight, BookOpen, Layers3, Plus } from 'lucide-react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 
 import type { Locale } from '@/shared/lib/i18n/locale'
@@ -54,6 +57,7 @@ export function MenuPage({
     locale,
   })
   const reload = useLoaderReload()
+  const queryClient = useQueryClient()
   const [query, setQuery] = useState('')
   const [visibility, setVisibility] = useState<'all' | 'active' | 'inactive'>('all')
   const [station, setStation] = useState<KitchenStation | 'all'>('all')
@@ -73,6 +77,11 @@ export function MenuPage({
     setStation('all')
   }
 
+  function reloadMenu() {
+    void queryClient.invalidateQueries({ queryKey: ['tenant', tenantId, 'menu-catalog'] })
+    reload()
+  }
+
   return (
     <section className="space-y-6">
       <PageHeader className="border-border/70 border-b pb-6">
@@ -86,7 +95,8 @@ export function MenuPage({
           categories={catalog.categories}
           categoryOpen={categoryOpen}
           onCategoryOpenChange={setCategoryOpen}
-          onDone={reload}
+          onDone={reloadMenu}
+          primaryLocale={locale}
           tenantId={tenantId}
         />
       </PageHeader>
@@ -154,26 +164,34 @@ export function MenuPage({
         </CardContent>
       </Card>
       {sections.length === 0 ? (
-        <Card className="border-dashed">
-          <CardHeader className="items-center gap-3 py-12 text-center">
-            <div
-              aria-hidden="true"
-              className="bg-primary/10 grid size-14 place-items-center rounded-2xl text-2xl"
-            >
-              🍽️
+        <Card className="overflow-hidden border-dashed">
+          <CardContent className="grid items-center gap-8 p-6 sm:grid-cols-[minmax(0,1fr)_18rem] sm:p-10">
+            <div>
+              <div className="bg-primary/10 text-primary mb-5 grid size-11 place-items-center rounded-xl">
+                <BookOpen aria-hidden="true" className="size-5" />
+              </div>
+              <p className="text-muted-foreground mb-2 text-sm font-medium">Tu carta empieza aquí</p>
+              <CardTitle className="text-2xl tracking-tight">Construye una carta lista para vender</CardTitle>
+              <CardDescription className="mt-2 max-w-lg text-sm leading-6">
+                Organiza tus platos por categorías y añade precios, IVA y estación de cocina desde un mismo lugar.
+              </CardDescription>
+              <Button className="mt-6" onClick={() => setCategoryOpen(true)} type="button">
+                <Plus aria-hidden="true" className="size-4" /> Crear primera categoría
+                <ArrowRight aria-hidden="true" className="size-4" />
+              </Button>
             </div>
-            <CardTitle>Empieza a construir tu carta</CardTitle>
-            <CardDescription className="max-w-md">
-              Crea una categoría —por ejemplo, Entrantes o Postres— y añade sus platos desde ahí.
-            </CardDescription>
-            <button
-              className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex h-10 items-center justify-center rounded-md px-4 text-sm font-medium shadow-sm transition-colors"
-              onClick={() => setCategoryOpen(true)}
-              type="button"
-            >
-              Crear primera categoría
-            </button>
-          </CardHeader>
+            <div className="bg-muted/40 rounded-xl p-4">
+              <p className="mb-3 text-xs font-semibold uppercase tracking-wide">Cómo empezar</p>
+              <ol className="space-y-3 text-sm">
+                <li className="flex gap-3"><span className="bg-background grid size-6 shrink-0 place-items-center rounded-full text-xs font-semibold">1</span><span>Crea una categoría</span></li>
+                <li className="flex gap-3"><span className="bg-background grid size-6 shrink-0 place-items-center rounded-full text-xs font-semibold">2</span><span>Añade tu primer plato</span></li>
+                <li className="flex gap-3"><span className="bg-background grid size-6 shrink-0 place-items-center rounded-full text-xs font-semibold">3</span><span>Déjalo listo para sala</span></li>
+              </ol>
+              <div className="text-muted-foreground mt-4 flex items-center gap-2 border-t pt-3 text-xs">
+                <Layers3 aria-hidden="true" className="size-3.5" /> También puedes importar la carta desde CSV.
+              </div>
+            </div>
+          </CardContent>
         </Card>
       ) : visibleSections.length === 0 ? (
         <Card>
@@ -221,14 +239,14 @@ export function MenuPage({
                         item={item}
                         key={item.id}
                         locale={locale}
-                        onDone={reload}
+                        onDone={reloadMenu}
                         tenantId={tenantId}
                       />
                     ))}
                     <InlineMenuItemRow
                       categoryId={section.category.id}
                       locale={locale}
-                      onDone={reload}
+                        onDone={reloadMenu}
                       tenantId={tenantId}
                     />
                   </TableBody>

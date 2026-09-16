@@ -18,9 +18,9 @@ import { summarizePosTerminal } from '../domain/terminal-summary'
 
 function TerminalMetric({ label, value }: { label: string; value: number }) {
   return (
-    <div className="bg-card hover:border-border-strong rounded-xl border p-4 shadow-[var(--ui-shadow-hairline)] transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-[var(--ui-shadow-surface)] motion-reduce:transform-none">
+    <div className="bg-card rounded-lg border px-3 py-2.5 shadow-none">
       <p className="text-muted-foreground text-xs font-medium tracking-wide">{label}</p>
-      <p className="mt-1.5 text-2xl font-semibold tabular-nums">{value}</p>
+      <p className="mt-0.5 text-xl font-semibold tabular-nums">{value}</p>
     </div>
   )
 }
@@ -50,8 +50,8 @@ export function PosTerminalPage({
   const params = { slug, venue }
 
   return (
-    <section className="space-y-6">
-      <PageHeader className="border-border/70 border-b pb-6">
+    <section className="space-y-4">
+      <PageHeader className="border-border/70 border-b pb-4">
         <div>
           <PageHeaderTitle>TPV</PageHeaderTitle>
           <PageHeaderDescription>
@@ -59,15 +59,15 @@ export function PosTerminalPage({
           </PageHeaderDescription>
         </div>
       </PageHeader>
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
         <TerminalMetric label="Cuentas abiertas" value={summary.activeSessions} />
         <TerminalMetric label="Mesas libres" value={summary.availableTables} />
         <TerminalMetric label="Comandas pendientes" value={summary.pendingItems} />
         <TerminalMetric label="Listo para servir" value={summary.readyItems} />
       </div>
-      <div className="grid gap-3 lg:grid-cols-3">
+      <div className="grid gap-2 lg:grid-cols-4">
         <Link
-          className="group bg-card hover:border-border-strong hover:bg-muted/40 focus-visible:outline-ring rounded-xl border p-4 shadow-[var(--ui-shadow-hairline)] transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-[var(--ui-shadow-surface)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transform-none"
+          className="group bg-card hover:bg-muted/40 focus-visible:outline-ring rounded-lg border p-3 shadow-none transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
           params={params}
           to="/t/$slug/l/$venue/servicio"
         >
@@ -83,7 +83,7 @@ export function PosTerminalPage({
           </span>
         </Link>
         <Link
-          className="group bg-card hover:border-border-strong hover:bg-muted/40 focus-visible:outline-ring rounded-xl border p-4 shadow-[var(--ui-shadow-hairline)] transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-[var(--ui-shadow-surface)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transform-none"
+          className="group bg-card hover:bg-muted/40 focus-visible:outline-ring rounded-lg border p-3 shadow-none transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
           params={params}
           to="/t/$slug/l/$venue/reservas"
         >
@@ -99,7 +99,7 @@ export function PosTerminalPage({
           </span>
         </Link>
         <Link
-          className="group bg-card hover:border-border-strong hover:bg-muted/40 focus-visible:outline-ring rounded-xl border p-4 shadow-[var(--ui-shadow-hairline)] transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-[var(--ui-shadow-surface)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transform-none"
+          className="group bg-card hover:bg-muted/40 focus-visible:outline-ring rounded-lg border p-3 shadow-none transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
           params={params}
           to="/t/$slug/l/$venue/fichaje-terminal"
         >
@@ -116,7 +116,7 @@ export function PosTerminalPage({
         </Link>
         {canManageCash && (
           <Link
-            className="group bg-card hover:border-border-strong hover:bg-muted/40 focus-visible:outline-ring rounded-xl border p-4 shadow-[var(--ui-shadow-hairline)] transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-[var(--ui-shadow-surface)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transform-none"
+            className="group bg-card hover:bg-muted/40 focus-visible:outline-ring rounded-lg border p-3 shadow-none transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
             params={params}
             to="/t/$slug/l/$venue/caja"
           >
@@ -133,9 +133,9 @@ export function PosTerminalPage({
           </Link>
         )}
       </div>
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
+      <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_20rem]">
         <Card>
-          <CardHeader>
+          <CardHeader className="px-4 py-4">
             <CardTitle>{accountWorkspace ? 'Comanda seleccionada' : 'Cuentas activas'}</CardTitle>
             <CardDescription>
               {accountWorkspace
@@ -153,7 +153,7 @@ export function PosTerminalPage({
               </Link>
             )}
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-4 pt-0">
             {accountWorkspace ??
               (board.sessions.length === 0 ? (
                 <p className="text-muted-foreground text-sm">
@@ -199,10 +199,10 @@ export function PosTerminalPage({
           </CardContent>
         </Card>
         <Card>
-          <CardHeader>
+          <CardHeader className="px-4 py-4">
             <CardTitle>Atención de sala</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3 text-sm">
+          <CardContent className="space-y-2 px-4 pt-0 text-sm">
             <p>
               <strong>{summary.reservedTables}</strong> mesas reservadas
             </p>

@@ -15,6 +15,8 @@ import {
 } from '@doscientos/ui'
 import { useState, type DragEvent, type FormEvent } from 'react'
 
+import type { Locale } from '@/shared/lib/i18n/locale'
+
 import { createMenuCategory, importMenuCsv } from '../application/menu'
 import type { MenuCategory } from '../domain/menu'
 import { previewMenuCsv, type MenuImportPreview } from '../domain/menu-import'
@@ -24,18 +26,21 @@ export function MenuForms({
   categories,
   onDone,
   tenantId,
+  primaryLocale,
   categoryOpen,
   onCategoryOpenChange,
 }: {
   categories: readonly MenuCategory[]
   onDone: () => void
   tenantId: string
+  primaryLocale: Locale
   categoryOpen?: boolean
   onCategoryOpenChange?: (open: boolean) => void
 }) {
   const feedback = useFormFeedback()
   const [categoryName, setCategoryName] = useState('')
   const [categoryNameCa, setCategoryNameCa] = useState('')
+  const [categoryTranslationsOpen, setCategoryTranslationsOpen] = useState(false)
   const [csv, setCsv] = useState('')
   const [csvPreview, setCsvPreview] = useState<MenuImportPreview | null>(null)
   const [csvFileName, setCsvFileName] = useState('')
@@ -64,8 +69,9 @@ export function MenuForms({
       () =>
         createMenuCategory({
           data: {
-            ...(categoryNameCa ? { nameCa: categoryNameCa } : {}),
-            nameEs: categoryName,
+            ...(primaryLocale === 'ca'
+              ? { nameCa: categoryName, nameEs: categoryNameCa || categoryName }
+              : { nameCa: categoryNameCa || undefined, nameEs: categoryName }),
             position: categories.length,
             tenantId,
           },
@@ -141,12 +147,16 @@ export function MenuForms({
         <DialogContent className="max-w-2xl">
           <CardHeader>
             <CardTitle>Nueva categoría</CardTitle>
-            <CardDescription>El nombre en castellano es obligatorio.</CardDescription>
+          <CardDescription>
+            Escribe el nombre principal que verá tu equipo y tus clientes.
+          </CardDescription>
           </CardHeader>
           <CardContent>
             <form className="grid gap-4" onSubmit={addCategory}>
               <Field>
-                <FieldLabel htmlFor="category-name-es">Nombre</FieldLabel>
+                <FieldLabel htmlFor="category-name-es">
+                  Nombre principal ({primaryLocale === 'ca' ? 'catalán' : 'castellano'})
+                </FieldLabel>
                 <Input
                   id="category-name-es"
                   onChange={(event) => setCategoryName(event.target.value)}
@@ -155,15 +165,37 @@ export function MenuForms({
                   value={categoryName}
                 />
               </Field>
-              <Field>
-                <FieldLabel htmlFor="category-name-ca">Nom (català, opcional)</FieldLabel>
-                <Input
-                  id="category-name-ca"
-                  onChange={(event) => setCategoryNameCa(event.target.value)}
-                  placeholder="Ej. Entrants"
-                  value={categoryNameCa}
-                />
-              </Field>
+              <details
+                className="group rounded-lg border px-3 py-2"
+                onToggle={(event) => setCategoryTranslationsOpen(event.currentTarget.open)}
+                open={categoryTranslationsOpen}
+              >
+                <summary className="cursor-pointer list-none text-sm font-medium marker:hidden">
+                  <span className="flex items-center justify-between gap-3">
+                    Añadir traducciones
+                    <span aria-hidden="true" className="text-muted-foreground text-lg leading-none">
+                      {categoryTranslationsOpen ? '−' : '+'}
+                    </span>
+                  </span>
+                </summary>
+                <div className="border-border/60 mt-3 grid gap-3 border-t pt-3">
+                  <p className="text-muted-foreground text-xs">
+                    Añade el nombre para los idiomas que tengas activos. El nombre principal se
+                    mostrará si no hay traducción.
+                  </p>
+                  <Field>
+                    <FieldLabel htmlFor="category-name-ca">
+                      {primaryLocale === 'ca' ? 'Castellano' : 'Catalán'}
+                    </FieldLabel>
+                    <Input
+                      id="category-name-ca"
+                      onChange={(event) => setCategoryNameCa(event.target.value)}
+                      placeholder={primaryLocale === 'ca' ? 'Ej. Entrantes' : 'Ej. Entrants'}
+                      value={categoryNameCa}
+                    />
+                  </Field>
+                </div>
+              </details>
               <Button disabled={feedback.pending} type="submit">
                 Crear categoría
               </Button>

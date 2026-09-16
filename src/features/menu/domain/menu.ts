@@ -119,7 +119,8 @@ export function filterMenuSections(
     })
     const keepEmptyCategory = Boolean(normalizedQuery) && categoryMatches && !hasItemFilters
 
-    return items.length > 0 || keepEmptyCategory ? [{ ...section, items }] : []
+    const keepEmptySection = !normalizedQuery && !hasItemFilters
+    return items.length > 0 || keepEmptyCategory || keepEmptySection ? [{ ...section, items }] : []
   })
 }
 

@@ -255,9 +255,15 @@ test('@host @reservations @P0 conecta reserva pública con agenda', async ({ pag
   await expectHealthyPage(page, 'public reservation')
   await expect(page.getByRole('button', { name: /reservar mesa/i })).toBeVisible()
   await openOperationalPage(page, '/reservas', 'host reservations')
-  await expect(page.getByRole('heading', { name: 'Agenda semanal' })).toBeVisible()
+  await expect(page.getByText('Agenda semanal', { exact: true })).toBeVisible()
   await expect(page.getByRole('region', { name: 'Calendario semanal' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Semana siguiente' })).toBeVisible()
+  await page.setViewportSize({ width: 390, height: 844 })
+  await expect
+    .poll(() =>
+      page.locator('html').evaluate((element) => element.scrollWidth <= element.clientWidth),
+    )
+    .toBe(true)
 })
 
 test('@host @service @P0 muestra la operación de sala', async ({ page }) => {
