@@ -26,7 +26,6 @@ import {
   Bath,
   DoorOpen,
   Footprints,
-  Grid2X2,
   PanelTop,
   Soup,
   Square,
@@ -63,6 +62,16 @@ import {
   movePlacement,
   validateLayout,
 } from '../domain/geometry'
+
+const elementDefaults: Record<PlanElementKind, { widthCm: number; heightCm: number }> = {
+  wall: { widthCm: 250, heightCm: 25 }, door: { widthCm: 100, heightCm: 100 },
+  window: { widthCm: 150, heightCm: 20 }, bar: { widthCm: 250, heightCm: 100 },
+  stairs: { widthCm: 150, heightCm: 250 }, plant: { widthCm: 60, heightCm: 60 },
+  label: { widthCm: 100, heightCm: 40 }, other: { widthCm: 100, heightCm: 100 },
+  pillar: { widthCm: 40, heightCm: 40 }, bathroom: { widthCm: 200, heightCm: 200 },
+  kitchen: { widthCm: 300, heightCm: 200 }, exit: { widthCm: 100, heightCm: 100 },
+  obstacle: { widthCm: 100, heightCm: 100 },
+}
 import { FloorPlanCanvas } from './floor-plan-canvas'
 import type { FloorPlanPreviewDevice } from './floor-plan-setup-card'
 
@@ -385,7 +394,7 @@ export function FloorPlanPage({
     if (!activeVersion) return
     const element: FloorPlanElement = {
       floorPlanVersionId: activeVersion.id,
-      heightCm: kind === 'wall' ? 25 : 100,
+      heightCm: elementDefaults[kind].heightCm,
       id: crypto.randomUUID(),
       kind,
       label:
@@ -412,7 +421,7 @@ export function FloorPlanPage({
                             : kind === 'exit'
                               ? 'Salida'
                               : 'Etiqueta',
-      widthCm: kind === 'wall' ? 250 : 100,
+      widthCm: elementDefaults[kind].widthCm,
       xCm: Math.max(0, Math.round(position.x / gridSize) * gridSize),
       yCm: Math.max(0, Math.round(position.y / gridSize) * gridSize),
     }
@@ -422,53 +431,6 @@ export function FloorPlanPage({
         elements: [...elements, element],
       }),
     )
-  }
-
-  function duplicateSelected() {
-    if (!selectedId || !activeVersion) return
-    const table = placements.find((item) => item.id === selectedId)
-    if (table) {
-      const copyId = crypto.randomUUID()
-      const copy = Array.from({ length: 40 }, (_, index) => ({
-        ...table,
-        id: copyId,
-        code: `${table.code}-copia`,
-        xCm: table.xCm + ((index + 1) % 8) * 25,
-        yCm: table.yCm + Math.floor((index + 1) / 8) * 25,
-      })).find(
-        (candidate) =>
-          isPlacementWithinBounds(candidate, activeVersion) &&
-          findPlacementCollisions(candidate, placements).length === 0,
-      )
-      if (!copy) {
-        feedback.setError('No hay espacio libre suficiente para duplicar esta mesa.')
-        return
-      }
-      setHistory((current) =>
-        commitEditorHistory(current, {
-          ...current.present,
-          placements: [...placements, copy],
-        }),
-      )
-      selectItem(copy.id)
-      return
-    }
-    const element = elements.find((item) => item.id === selectedId)
-    if (element) {
-      const copy = {
-        ...element,
-        id: crypto.randomUUID(),
-        xCm: element.xCm + 25,
-        yCm: element.yCm + 25,
-      }
-      setHistory((current) =>
-        commitEditorHistory(current, {
-          ...current.present,
-          elements: [...elements, copy],
-        }),
-      )
-      selectItem(copy.id)
-    }
   }
 
   function removeSelected() {
@@ -638,8 +600,8 @@ export function FloorPlanPage({
           />
           <Card className="lg:sticky lg:top-6 lg:self-start">
             <CardHeader>
-              <CardTitle>Edición y mesas</CardTitle>
-              <CardDescription>Selecciona una mesa o elemento para editarlo.</CardDescription>
+              <CardTitle>Mesas y elementos</CardTitle>
+              <CardDescription>Arrastra una mesa al plano o selecciona algo para editarlo.</CardDescription>
             </CardHeader>
             <CardContent>
               {placements.length === 0 ? (
@@ -666,15 +628,11 @@ export function FloorPlanPage({
                     ? `${selectedIds.length} elementos seleccionados · `
                     : 'Seleccionado: '}
                   {placements.find((item) => item.id === selectedId)?.code ?? 'elemento'} · usa las
-                  flechas para ajustar. Pulsa R para girar y Ctrl/Cmd+D para duplicar; mantén
-                  Ctrl/Cmd para seleccionar varios.
+                  flechas para ajustar. Pulsa R para girar y mantén Ctrl/Cmd para seleccionar varios.
                 </output>
               )}
               {selectedId && (
                 <div className="mt-3 flex gap-2">
-                  <Button onClick={duplicateSelected} type="button" variant="outline">
-                    Duplicar
-                  </Button>
                   <Button onClick={removeSelected} type="button">
                     Eliminar
                   </Button>
@@ -733,7 +691,7 @@ export function FloorPlanPage({
                   }
                 >
                   <Button
-                    className="h-auto w-full justify-start gap-2 border-primary py-3"
+                    className="border-primary h-auto w-full justify-start gap-2 py-3"
                     onClick={() => createQuickTable({ x: 50, y: 50 })}
                     type="button"
                     variant="outline"
@@ -749,7 +707,6 @@ export function FloorPlanPage({
                       ['bar', 'Barra', PanelTop],
                       ['stairs', 'Escalera', Footprints],
                       ['plant', 'Planta', Armchair],
-                      ['pillar', 'Pilar', Grid2X2],
                       ['bathroom', 'Baño', Bath],
                       ['kitchen', 'Cocina', Soup],
                     ] as const
@@ -797,32 +754,6 @@ export function FloorPlanPage({
                       value={tableSeats}
                     />
                   </Field>
-                  <div className="grid grid-cols-2 gap-3">
-                    <Field>
-                      <FieldLabel htmlFor="table-x">X (cm)</FieldLabel>
-                      <Input
-                        id="table-x"
-                        min={0}
-                        onChange={(event) => setTableXCm(Number(event.target.value))}
-                        placeholder="100"
-                        required
-                        type="number"
-                        value={tableXCm}
-                      />
-                    </Field>
-                    <Field>
-                      <FieldLabel htmlFor="table-y">Y (cm)</FieldLabel>
-                      <Input
-                        id="table-y"
-                        min={0}
-                        onChange={(event) => setTableYCm(Number(event.target.value))}
-                        placeholder="100"
-                        required
-                        type="number"
-                        value={tableYCm}
-                      />
-                    </Field>
-                  </div>
                   <label className="flex items-center gap-2 text-sm">
                     <input
                       checked={tableAccessible}
@@ -853,11 +784,7 @@ export function FloorPlanPage({
                   >
                     Rehacer
                   </Button>
-                  <Button
-                    disabled={feedback.pending}
-                    onClick={() => void savePlan()}
-                    type="button"
-                  >
+                  <Button disabled={feedback.pending} onClick={() => void savePlan()} type="button">
                     Guardar plano
                   </Button>
                 </div>
@@ -935,7 +862,6 @@ export function FloorPlanPage({
                 ['bar', 'Barra', PanelTop],
                 ['stairs', 'Escalera', Footprints],
                 ['plant', 'Planta', Armchair],
-                ['pillar', 'Pilar', Grid2X2],
                 ['bathroom', 'Baño', Bath],
                 ['kitchen', 'Cocina', Soup],
               ] as const

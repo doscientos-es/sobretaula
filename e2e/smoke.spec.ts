@@ -22,7 +22,8 @@ test('invalid reservation link shows an actionable empty state', async ({ page }
 
 test('team invitation requires authentication before showing the accept action', async ({
   browser,
-}) => {
+}, testInfo) => {
+  testInfo.skip(testInfo.project.name !== 'public', 'security boundary belongs to public project')
   const context = await browser.newContext({ storageState: { cookies: [], origins: [] } })
   const page = await context.newPage()
   await page.goto(`/invitacion?token=${'a'.repeat(40)}`)
@@ -32,7 +33,8 @@ test('team invitation requires authentication before showing the accept action',
 
 test('platform invitation requires authentication before showing the accept action', async ({
   browser,
-}) => {
+}, testInfo) => {
+  testInfo.skip(testInfo.project.name !== 'public', 'security boundary belongs to public project')
   const context = await browser.newContext({ storageState: { cookies: [], origins: [] } })
   const page = await context.newPage()
   await page.goto(`/admin/invitacion?token=${'b'.repeat(40)}`)
