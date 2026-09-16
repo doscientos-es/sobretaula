@@ -82,6 +82,9 @@ export function TipsPage({
   const [selectedTipDate, setSelectedTipDate] = useState(() =>
     new Date().toISOString().slice(0, 10),
   )
+  const [exportFrom, setExportFrom] = useState(() => quickPeriod('month').from)
+  const [exportTo, setExportTo] = useState(() => quickPeriod('month').to)
+  const [exporting, setExporting] = useState(false)
   const registeredTipDates = new Set(overview.registeredTipDates)
   const selectedDateAlreadyRegistered = registeredTipDates.has(selectedTipDate)
   const lastClosedTo = overview.periods[0]?.to_date ?? null
@@ -170,6 +173,29 @@ export function TipsPage({
       setEditingEntryId(null)
     }
   }
+  async function exportCsv() {
+    if (!exportFrom || !exportTo || exportTo < exportFrom) {
+      feedback.setError('Indica un periodo válido para exportar.')
+      return
+    }
+    setExporting(true)
+    try {
+      const csv = await exportTipsCsv({
+        data: { tenantId, venueId, from: exportFrom, to: exportTo },
+      })
+      const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }))
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `propinas-${exportFrom}-${exportTo}.csv`
+      link.click()
+      URL.revokeObjectURL(url)
+      feedback.setSuccess('CSV de propinas descargado.')
+    } catch {
+      feedback.setError('No se ha podido exportar el bote.')
+    } finally {
+      setExporting(false)
+    }
+  }
   return (
     <section className="space-y-6">
       <PageHeader>
@@ -179,31 +205,35 @@ export function TipsPage({
             Apunta sólo el total al cerrar el día. El reparto se calcula por horas fichadas.
           </PageHeaderDescription>
         </div>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => {
-            const from = window.prompt('Exportar desde (AAAA-MM-DD)', quickPeriod('month').from)
-            const to =
-              from === null
-                ? null
-                : window.prompt('Exportar hasta (AAAA-MM-DD)', quickPeriod('month').to)
-            if (!from || !to) return
-            void exportTipsCsv({ data: { tenantId, venueId, from, to } })
-              .then((csv) => {
-                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
-                const url = URL.createObjectURL(blob)
-                const link = document.createElement('a')
-                link.href = url
-                link.download = `propinas-${from}-${to}.csv`
-                link.click()
-                URL.revokeObjectURL(url)
-              })
-              .catch(() => feedback.setError('No se ha podido exportar el bote.'))
-          }}
-        >
-          <Download aria-hidden="true" className="mr-2 size-4" /> Exportar CSV
-        </Button>
+        <div className="flex flex-wrap items-end gap-2">
+          <Field>
+            <FieldLabel htmlFor="tips-export-from">Desde</FieldLabel>
+            <Input
+              id="tips-export-from"
+              onChange={(event) => setExportFrom(event.target.value)}
+              type="date"
+              value={exportFrom}
+            />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="tips-export-to">Hasta</FieldLabel>
+            <Input
+              id="tips-export-to"
+              onChange={(event) => setExportTo(event.target.value)}
+              type="date"
+              value={exportTo}
+            />
+          </Field>
+          <Button
+            disabled={exporting}
+            type="button"
+            variant="outline"
+            onClick={() => void exportCsv()}
+          >
+            <Download aria-hidden="true" className="mr-2 size-4" />{' '}
+            {exporting ? 'Exportando…' : 'Exportar CSV'}
+          </Button>
+        </div>
       </PageHeader>
       <div className="grid gap-4 md:grid-cols-3">
         <Card>

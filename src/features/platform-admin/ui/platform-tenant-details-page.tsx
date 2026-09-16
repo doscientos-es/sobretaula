@@ -79,6 +79,7 @@ export function PlatformTenantDetailsPage({
 }) {
   const configurationFeedback = useFormFeedback()
   const statusFeedback = useFormFeedback()
+  const [statusConfirming, setStatusConfirming] = useState(false)
   const deletionFeedback = useFormFeedback()
   const [isEditingConfiguration, setIsEditingConfiguration] = useState(false)
   const [deletionConfirmation, setDeletionConfirmation] = useState('')
@@ -126,13 +127,11 @@ export function PlatformTenantDetailsPage({
     if (statusFeedback.pending) return
     const form = event.currentTarget
     const values = new FormData(form)
-    if (
-      !window.confirm(
-        `Vas a ${statusAction.status === 'suspended' ? 'suspender' : 'reactivar'} ${tenant.tenantName}. ${statusAction.description}`,
-      )
-    ) {
+    if (!statusConfirming) {
+      setStatusConfirming(true)
       return
     }
+    setStatusConfirming(false)
     statusFeedback.setPending()
     void updatePlatformTenantStatus({
       data: {
@@ -154,13 +153,6 @@ export function PlatformTenantDetailsPage({
     if (deletionFeedback.pending) return
     if (deletionConfirmation !== tenant.tenantSlug) return
     const values = new FormData(event.currentTarget)
-    if (
-      !window.confirm(
-        `Vas a borrar PERMANENTEMENTE ${tenant.tenantName}. Esta acción no se puede deshacer.`,
-      )
-    ) {
-      return
-    }
     deletionFeedback.setPending()
     void deletePlatformTenant({
       data: {
@@ -473,8 +465,13 @@ export function PlatformTenantDetailsPage({
                 type="submit"
                 variant="outline"
               >
-                {statusAction.label}
+                {statusConfirming ? 'Confirmar cambio' : statusAction.label}
               </Button>
+              {statusConfirming ? (
+                <Button onClick={() => setStatusConfirming(false)} type="button" variant="outline">
+                  Volver
+                </Button>
+              ) : null}
               <div className="md:col-span-2">
                 <p className="text-muted-foreground text-sm">{statusAction.description}</p>
                 <FormFeedback pendingLabel="Actualizando estado…" state={statusFeedback.state} />

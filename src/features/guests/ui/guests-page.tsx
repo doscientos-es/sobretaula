@@ -254,7 +254,11 @@ export function GuestsPage({ tenantId, venueId }: { tenantId: string; venueId: s
         </CardHeader>
         <CardContent>
           {loading ? (
-            <p className="text-muted-foreground text-sm">Cargando clientes…</p>
+            <output aria-busy="true" className="space-y-3">
+              <span className="sr-only">Cargando clientes…</span>
+              <div className="bg-muted h-4 w-48 animate-pulse rounded" />
+              <div className="bg-muted h-4 w-72 animate-pulse rounded" />
+            </output>
           ) : error ? (
             <div className="grid gap-2" role="alert">
               <p className="text-destructive text-sm">{error}</p>
@@ -373,9 +377,10 @@ export function GuestsPage({ tenantId, venueId }: { tenantId: string; venueId: s
                         </label>
                         <Select
                           id={`merge-${guest.id}`}
-                          onSelectionChange={(key) =>
-                            setMergeTarget(String(key) === 'empty' ? '' : String(key))
-                          }
+                          onSelectionChange={(key) => (
+                            setMergeTarget(String(key) === 'empty' ? '' : String(key)),
+                            setConfirmingMerge(false)
+                          )}
                           selectedKey={mergeTarget || 'empty'}
                         >
                           <SelectTrigger>
@@ -615,7 +620,14 @@ export function GuestsPage({ tenantId, venueId }: { tenantId: string; venueId: s
               ))}
             </ul>
           ) : (
-            <p className="text-muted-foreground text-sm">No hay clientes que coincidan.</p>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-muted-foreground text-sm">No hay clientes que coincidan.</p>
+              {query ? (
+                <Button onClick={() => setQuery('')} size="sm" type="button" variant="outline">
+                  Limpiar búsqueda
+                </Button>
+              ) : null}
+            </div>
           )}
         </CardContent>
       </Card>
