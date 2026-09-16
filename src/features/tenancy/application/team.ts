@@ -66,7 +66,13 @@ function hashInvitationToken(token: string): string {
 }
 
 function invitationRedirect(token: string): string {
-  const appUrl = process.env.APP_URL
+  const configuredAppUrl = process.env.APP_URL
+  const appUrl =
+    configuredAppUrl && !configuredAppUrl.includes('localhost')
+      ? configuredAppUrl
+      : process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}`
+        : configuredAppUrl
   if (!appUrl) throw new Error('app_url_not_configured')
   const url = new URL('/activar-cuenta', appUrl)
   url.searchParams.set('token', token)
