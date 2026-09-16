@@ -67,6 +67,67 @@ test('@owner @activation @P0 activa y revisa el espacio operativo', async ({ pag
   ).toBeVisible()
 })
 
+test('@owner @floor-plan @P0 crea y edita un plano completo', async ({ page }) => {
+  await openOperationalPage(page, '/plano', 'owner floor plan lifecycle')
+  await expect(page.getByRole('heading', { name: 'Plano de sala', exact: true })).toBeVisible()
+
+  const areaName = `E2E Terraza ${Date.now()}`
+  await page.getByRole('button', { name: /añadir planta o zona/i }).click()
+  await expect(page.getByRole('dialog', { name: /nueva planta o zona/i })).toBeVisible()
+  await page.getByLabel('Nombre', { exact: true }).fill(areaName)
+  await page.getByLabel('Ancho (cm)').fill('1000')
+  await page.getByLabel('Fondo (cm)').fill('700')
+  await page.getByRole('button', { name: 'Crear planta', exact: true }).click()
+  await expect(page.getByRole('dialog', { name: /nueva planta o zona/i })).toBeHidden({
+    timeout: 15000,
+  })
+  await page.reload({ waitUntil: 'networkidle' })
+
+  const area = page.getByRole('button', { name: areaName, exact: true })
+  await expect(area, 'la nueva zona debe persistir y poder seleccionarse').toBeVisible()
+  await area.click()
+
+  await page.getByRole('button', { name: 'Editar medidas del plano' }).click()
+  const dimensionsDialog = page.getByRole('dialog', { name: /medidas del plano/i })
+  await expect(dimensionsDialog).toBeVisible()
+  await dimensionsDialog.getByLabel('Ancho (cm)').fill('1200')
+  await dimensionsDialog.getByLabel('Fondo (cm)').fill('800')
+  await dimensionsDialog.getByRole('button', { name: 'Guardar medidas', exact: true }).click()
+  await expect(dimensionsDialog).toBeHidden({
+    timeout: 15000,
+  })
+  await page.reload({ waitUntil: 'networkidle' })
+  await page.getByRole('button', { name: areaName, exact: true }).click()
+  await expect(page.getByText(/12 m × 8 m/)).toBeVisible()
+
+  await page.getByRole('button', { name: 'Pared', exact: true }).last().click()
+  await page.getByRole('button', { name: 'Cocina', exact: true }).last().click()
+  await expect(page.locator('svg text').filter({ hasText: 'Pared' })).toBeVisible()
+  await expect(page.locator('svg text').filter({ hasText: 'Cocina' })).toBeVisible()
+
+  await page.getByRole('button', { name: /añadir mesa al plano/i }).click()
+  const newTable = page.getByRole('button', { name: /Mesa M\d+ ·/ }).last()
+  await expect(newTable, 'la mesa recién creada debe aparecer en el listado').toBeVisible()
+  await newTable.click()
+  await expect(page.getByRole('dialog', { name: /editar mesa o elemento/i })).toBeVisible()
+  await page.getByLabel('Número de mesa').fill(`E2E-${Date.now()}`)
+  await page.getByLabel('Número de mesa').press('Tab')
+  await page.getByLabel('x (cm)').fill('300')
+  await page.getByLabel('y (cm)').fill('300')
+  await page.getByRole('button', { name: 'Eliminar', exact: true }).click()
+  await expect(page.getByRole('button', { name: /Mesa E2E-/ })).toHaveCount(0)
+
+  await page.getByRole('button', { name: 'Guardar plano', exact: true }).click()
+  await expect(page.locator('[aria-live], [role="status"], [role="alert"]')).toContainText(
+    /plano guardado|corrige|solapa|no se ha podido/i,
+    { timeout: 15000 },
+  )
+  await page.reload({ waitUntil: 'networkidle' })
+  await page.getByRole('button', { name: areaName, exact: true }).click()
+  await expect(page.locator('svg text').filter({ hasText: 'Pared' })).toBeVisible()
+  await expect(page.locator('svg text').filter({ hasText: 'Cocina' })).toBeVisible()
+})
+
 test('@owner @cash @P0 abre la caja y conserva el estado', async ({ page }) => {
   await openOperationalPage(page, '/caja', 'owner cash')
   await expect(page.getByRole('heading', { name: /caja/i })).toBeVisible()

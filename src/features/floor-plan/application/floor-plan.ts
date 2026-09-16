@@ -25,8 +25,8 @@ const createTableInput = venueInput
     areaId: z.string().uuid(),
     code: z.string().trim().min(1).max(20),
     heightCm: z.number().int().min(25).max(500),
-  maxSeats: z.number().int().min(1).max(50),
-  normalSeats: z.number().int().min(1).max(50).default(4),
+    maxSeats: z.number().int().min(1).max(50),
+    normalSeats: z.number().int().min(1).max(50).default(4),
     minSeats: z.number().int().min(1).max(50),
     isAccessible: z.boolean().default(false),
     shape: z.enum(['square', 'rectangle', 'round', 'oval', 'custom']).default('square'),
@@ -76,6 +76,15 @@ const saveFloorPlanVersionInput = venueInput.extend({
   name: z.string().trim().min(1).max(100),
   placements: z.array(placementInput).max(150),
   sourceVersionId: z.string().uuid(),
+})
+const updateTableCodeInput = venueInput.extend({
+  tableId: z.string().uuid(),
+  code: z.string().trim().min(1).max(20),
+})
+const resizeFloorPlanInput = venueInput.extend({
+  versionId: z.string().uuid(),
+  widthCm: z.number().int().min(100).max(10_000),
+  heightCm: z.number().int().min(100).max(10_000),
 })
 
 function requireManager(role: string): void {
@@ -143,7 +152,7 @@ export async function loadFloorPlan(
   // The operational map only needs tables, placements and visual markers.
   // Event layouts and table presets remain legacy data but are intentionally
   // not loaded here: they are not part of the reliable day-to-day workflow.
-  const [tablesResult, initialPlacementsResult, elementsResult] = await Promise.all([
+  const [initialTablesResult, initialPlacementsResult, elementsResult] = await Promise.all([
     supabase
       .from('tables')
       .select('code, id, min_seats, normal_seats, max_seats')
@@ -160,6 +169,14 @@ export async function loadFloorPlan(
       .eq('tenant_id', data.tenantId)
       .in('floor_plan_version_id', versionIds),
   ])
+  let tablesResult: typeof initialTablesResult = initialTablesResult
+  if (tablesResult.error?.code === '42703') {
+    tablesResult = (await supabase
+      .from('tables')
+      .select('code, id, min_seats, max_seats')
+      .eq('tenant_id', data.tenantId)
+      .eq('venue_id', data.venueId)) as unknown as typeof tablesResult
+  }
   let placementsResult = initialPlacementsResult
   if (placementsResult.error?.code === '42703') {
     const legacy = await supabase
@@ -180,12 +197,15 @@ export async function loadFloorPlan(
   if (error) throw new Error(`floor_plan_load_failed:${error.code}`)
 
   const tableDetails = new Map(
-    (tablesResult.data ?? []).map((table) => [table.id, {
-      code: table.code,
-      minSeats: table.min_seats,
-      normalSeats: table.normal_seats,
-      maxSeats: table.max_seats,
-    }]),
+    (tablesResult.data ?? []).map((table) => [
+      table.id,
+      {
+        code: table.code,
+        minSeats: table.min_seats,
+        normalSeats: table.normal_seats ?? Math.min(table.max_seats, Math.max(table.min_seats, 4)),
+        maxSeats: table.max_seats,
+      },
+    ]),
   )
 
   return {
@@ -209,7 +229,12 @@ export async function loadFloorPlan(
       yCm: element.y_cm,
     })),
     placements: (placementsResult.data ?? []).map((placement) => ({
-      ...(tableDetails.get(placement.table_id) ?? { code: '—', minSeats: 1, normalSeats: 4, maxSeats: 4 }),
+      ...(tableDetails.get(placement.table_id) ?? {
+        code: '—',
+        minSeats: 1,
+        normalSeats: 4,
+        maxSeats: 4,
+      }),
       floorPlanVersionId: placement.floor_plan_version_id,
       heightCm: placement.height_cm,
       id: placement.table_id,
@@ -344,8 +369,12 @@ export const createFloorPlanTable = createServerFn({ method: 'POST' })
       venue_id: data.venueId,
     }
     let tableResult = await supabase.from('tables').insert(tablePayload).select('id').single()
-    if (tableResult.error?.code === '42703') {
-      const { is_accessible: _unused, ...legacyPayload } = tablePayload
+    if (tableResult.error?.code === '42703' || tableResult.error?.code === 'PGRST204') {
+      const {
+        is_accessible: _unusedAccessible,
+        normal_seats: _unusedNormal,
+        ...legacyPayload
+      } = tablePayload
       tableResult = await supabase.from('tables').insert(legacyPayload).select('id').single()
     }
     const { data: table, error: tableError } = tableResult
@@ -369,6 +398,32 @@ export const createFloorPlanTable = createServerFn({ method: 'POST' })
     return { tableId: table.id }
   })
 
+export const resizeFloorPlan = createServerFn({ method: 'POST' })
+  .middleware([authMiddleware, tenantMembershipMiddleware])
+  .validator(resizeFloorPlanInput)
+  .handler(async ({ context, data }) => {
+    requireManager(context.tenantMembership.role)
+    const { error } = await createRequestSupabaseClient(context.tenantMembership.accessToken)
+      .from('floor_plan_versions')
+      .update({ width_cm: data.widthCm, height_cm: data.heightCm })
+      .eq('id', data.versionId)
+      .eq('tenant_id', data.tenantId)
+    if (error) throw new Error(`floor_plan_resize_failed:${error.code}`)
+  })
+
+export const updateFloorPlanTableCode = createServerFn({ method: 'POST' })
+  .middleware([authMiddleware, tenantMembershipMiddleware])
+  .validator(updateTableCodeInput)
+  .handler(async ({ context, data }) => {
+    requireManager(context.tenantMembership.role)
+    const { error } = await createRequestSupabaseClient(context.tenantMembership.accessToken)
+      .from('tables')
+      .update({ code: data.code })
+      .eq('id', data.tableId)
+      .eq('tenant_id', data.tenantId)
+      .eq('venue_id', data.venueId)
+    if (error) throw new Error(`floor_plan_table_code_update_failed:${error.code}`)
+  })
 
 /** Saves the editor state as a new version instead of mutating a published layout. */
 export const saveFloorPlanVersion = createServerFn({ method: 'POST' })

@@ -24,6 +24,7 @@ import {
   SelectValue,
   useFormFeedback,
 } from '@doscientos/ui'
+import { useQueryClient } from '@tanstack/react-query'
 import { useState, type FormEvent } from 'react'
 
 import { useAsyncEffect } from '@/shared/lib/react/use-async-effect'
@@ -78,6 +79,7 @@ export function TenantTeamPage({
   viewerRole: TenantRole
 }) {
   const feedback = useFormFeedback()
+  const queryClient = useQueryClient()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [role, setRole] = useState<(typeof ASSIGNABLE_TENANT_ROLES)[number]>('waiter')
@@ -89,6 +91,7 @@ export function TenantTeamPage({
   const [teamError, setTeamError] = useState<string | null>(null)
   const [teamRefresh, setTeamRefresh] = useState(0)
   const [resendingEmail, setResendingEmail] = useState<string | null>(null)
+  const [generatedInvitationLink, setGeneratedInvitationLink] = useState<string | null>(null)
   const [revokingEmail, setRevokingEmail] = useState<string | null>(null)
   const [confirmingRemoval, setConfirmingRemoval] = useState<string | null>(null)
   useAsyncEffect(() => {
@@ -118,6 +121,8 @@ export function TenantTeamPage({
     try {
       const result = await action()
       feedback.setSuccess(typeof success === 'function' ? success(result) : success)
+      setTeamRefresh((current) => current + 1)
+      await queryClient.invalidateQueries({ queryKey: ['tenant', tenantId, 'team'] })
       reload()
     } catch (error) {
       feedback.setError(teamErrorMessage(error))
@@ -439,8 +444,9 @@ export function TenantTeamPage({
                     setResendingEmail(invitation.email)
                     feedback.setPending()
                     void resendTenantInvitation({ data: { tenantId, email: invitation.email } })
-                      .then(() => {
+                      .then((result) => {
                         feedback.setSuccess('Invitación reenviada.')
+                        setGeneratedInvitationLink(result.actionLink)
                         setTeamRefresh((current) => current + 1)
                       })
                       .catch(() => feedback.setError('No se ha podido reenviar la invitación.'))
@@ -478,6 +484,16 @@ export function TenantTeamPage({
               </div>
             ))}
             <FormFeedback pendingLabel="Enviando invitación…" state={feedback.state} />
+            {generatedInvitationLink ? (
+              <a
+                className="text-primary text-sm underline"
+                href={generatedInvitationLink}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Abrir enlace de invitación generado
+              </a>
+            ) : null}
           </CardContent>
         </Card>
       )}

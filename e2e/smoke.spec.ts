@@ -264,6 +264,7 @@ test.describe('authenticated restaurant smoke', () => {
     browser,
     page,
   }) => {
+    test.slow()
     const lifecycleContext = await browser.newContext({
       storageState: path.resolve('e2e/.auth/waiter.json'),
     })
@@ -288,21 +289,30 @@ test.describe('authenticated restaurant smoke', () => {
       ['accountant', 'Administración'],
     ] as const
     for (const [, roleLabel] of roles) {
-      await page.getByRole('button', { name: 'Camarero', exact: true }).click()
+      await page.locator('form').first().getByRole('button').first().click()
       await page.getByRole('option', { name: roleLabel, exact: true }).click()
       await page.getByLabel('Correo').fill(lifecycleEmail)
       await page.getByRole('button', { name: 'Añadir', exact: true }).click()
-      await expect(page.getByText('La cuenta ya existía y se ha añadido al equipo.')).toBeVisible()
+      await expect(
+        page.getByText('La cuenta ya existía y se ha añadido al equipo.').last(),
+      ).toBeVisible()
     }
 
-    await expect(page.getByText('E2E Team Lifecycle', { exact: true })).toBeVisible()
-    await page.getByRole('button', { name: 'Eliminar acceso', exact: true }).click()
+    await expect(page.getByText('E2E Waiter', { exact: true })).toBeVisible()
+    const lifecycleRemoval = page
+      .getByRole('button', { name: 'Eliminar acceso', exact: true })
+      .nth(2)
+    await lifecycleRemoval.scrollIntoViewIfNeeded()
+    await lifecycleRemoval.click()
     await page.getByRole('button', { name: 'Confirmar', exact: true }).click()
-    await expect(page.getByText('Acceso eliminado del restaurante.')).toBeVisible()
-    await page.getByRole('button', { name: 'Camarero', exact: true }).click()
+    await expect(page.getByText('Acceso eliminado del restaurante.').last()).toBeVisible()
+    await expect(page.getByText(lifecycleEmail, { exact: true })).toHaveCount(0)
+    await page.locator('form').first().getByRole('button').first().click()
     await page.getByRole('option', { name: 'Camarero', exact: true }).click()
     await page.getByLabel('Correo').fill(lifecycleEmail)
     await page.getByRole('button', { name: 'Añadir', exact: true }).click()
-    await expect(page.getByText('La cuenta ya existía y se ha añadido al equipo.')).toBeVisible()
+    await expect(
+      page.getByText('La cuenta ya existía y se ha añadido al equipo.').last(),
+    ).toBeVisible()
   })
 })

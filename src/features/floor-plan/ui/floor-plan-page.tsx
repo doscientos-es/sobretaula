@@ -7,13 +7,12 @@ import {
   CardTitle,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogRoot,
   DialogTitle,
+  DialogFooter,
   Field,
   FieldLabel,
-  FormFeedback,
   Input,
   PageHeader,
   PageHeaderDescription,
@@ -22,7 +21,7 @@ import {
 } from '@doscientos/ui'
 import { useQueryClient } from '@tanstack/react-query'
 import { Armchair, Bath, DoorOpen, Footprints, PanelTop, Soup, Square, Table2 } from 'lucide-react'
-import { useState, type FormEvent, type KeyboardEvent, type DragEvent } from 'react'
+import { useState, type KeyboardEvent, type DragEvent } from 'react'
 
 import { useAsyncEffect } from '@/shared/lib/react/use-async-effect'
 import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
@@ -30,6 +29,8 @@ import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
 import {
   createFloorPlanTable,
   createInitialFloorPlan,
+  resizeFloorPlan,
+  updateFloorPlanTableCode,
   saveFloorPlanVersion,
 } from '../application/floor-plan'
 import {
@@ -83,22 +84,24 @@ export function FloorPlanPage({
   const feedback = useFormFeedback()
   const reload = useLoaderReload()
   const queryClient = useQueryClient()
-  const [tableCode, setTableCode] = useState('1')
-  const [tableSeats, setTableSeats] = useState(4)
-  const [tableAccessible, setTableAccessible] = useState(false)
-  const [tableXCm, setTableXCm] = useState(50)
-  const [tableYCm, setTableYCm] = useState(50)
+  const defaultTableSeats = 4
   const [previewDevice] = useState<FloorPlanPreviewDevice>('desktop')
   const [selectedId, setSelectedId] = useState<string>()
   const [selectedIds, setSelectedIds] = useState<string[]>([])
-  const [gridSize, setGridSize] = useState(DEFAULT_GRID_SIZE_CM)
+  const gridSize = DEFAULT_GRID_SIZE_CM
   const [selectedAreaId, setSelectedAreaId] = useState(data.areas[0]?.id)
   const [initializing, setInitializing] = useState(false)
   const [initializationFailed, setInitializationFailed] = useState(false)
   const [createAreaOpen, setCreateAreaOpen] = useState(false)
   const [newAreaName, setNewAreaName] = useState('Terraza')
+  const [newAreaWidth, setNewAreaWidth] = useState(800)
+  const [newAreaHeight, setNewAreaHeight] = useState(600)
+  const [planWidth, setPlanWidth] = useState(800)
+  const [planHeight, setPlanHeight] = useState(600)
   const [creatingArea, setCreatingArea] = useState(false)
   const [addElementAt, setAddElementAt] = useState<{ x: number; y: number }>()
+  const [propertiesDialogOpen, setPropertiesDialogOpen] = useState(false)
+  const [dimensionsDialogOpen, setDimensionsDialogOpen] = useState(false)
   function reloadFloorPlan() {
     void queryClient.invalidateQueries({
       queryKey: ['tenant', tenantId, 'venue', venueId, 'floor-plan'],
@@ -110,6 +113,31 @@ export function FloorPlanPage({
     ? (selectFloorPlanVersion(data.versions, activeArea.id) ??
       data.versions.find((version) => version.areaId === activeArea.id))
     : undefined
+  useAsyncEffect(() => {
+    if (activeVersion) {
+      setPlanWidth(activeVersion.widthCm)
+      setPlanHeight(activeVersion.heightCm)
+    }
+  }, [activeVersion?.id, activeVersion?.widthCm, activeVersion?.heightCm])
+  async function resizePlan() {
+    if (!activeVersion || planWidth < 100 || planHeight < 100) return
+    feedback.setPending()
+    try {
+      await resizeFloorPlan({
+        data: {
+          heightCm: planHeight,
+          tenantId,
+          venueId,
+          versionId: activeVersion.id,
+          widthCm: planWidth,
+        },
+      })
+      feedback.setSuccess('Tamaño del plano actualizado.')
+      reloadFloorPlan()
+    } catch {
+      feedback.setError('No se ha podido cambiar el tamaño del plano.')
+    }
+  }
   useAsyncEffect(() => {
     if (data.areas.length > 0 || initializing || initializationFailed) return
     setInitializing(true)
@@ -169,35 +197,6 @@ export function FloorPlanPage({
   }
   const layoutIssues = activeVersion ? validateLayout(placements, activeVersion) : []
   const blockedAccesses = findBlockedAccesses(placements, elements)
-  const selectedPlacement = placements.find((item) => item.id === selectedId)
-  const alignmentGuides = selectedPlacement
-    ? placements
-        .filter((item) => item.id !== selectedPlacement.id)
-        .flatMap((item) => {
-          const guides: Array<{ axis: 'x' | 'y'; value: number }> = []
-          const selectedX = [
-            selectedPlacement.xCm,
-            selectedPlacement.xCm + selectedPlacement.widthCm / 2,
-            selectedPlacement.xCm + selectedPlacement.widthCm,
-          ]
-          const selectedY = [
-            selectedPlacement.yCm,
-            selectedPlacement.yCm + selectedPlacement.heightCm / 2,
-            selectedPlacement.yCm + selectedPlacement.heightCm,
-          ]
-          const otherX = [item.xCm, item.xCm + item.widthCm / 2, item.xCm + item.widthCm]
-          const otherY = [item.yCm, item.yCm + item.heightCm / 2, item.yCm + item.heightCm]
-          const xMatch = otherX.find((candidate) =>
-            selectedX.some((value) => Math.abs(value - candidate) <= gridSize / 2),
-          )
-          const yMatch = otherY.find((candidate) =>
-            selectedY.some((value) => Math.abs(value - candidate) <= gridSize / 2),
-          )
-          if (xMatch !== undefined) guides.push({ axis: 'x', value: xMatch })
-          if (yMatch !== undefined) guides.push({ axis: 'y', value: yMatch })
-          return guides
-        })
-    : []
   async function createArea() {
     const areaName = newAreaName.trim()
     if (!areaName) return
@@ -208,14 +207,14 @@ export function FloorPlanPage({
         data: {
           areaName,
           floorNumber: null,
-          heightCm: 600,
+          heightCm: newAreaHeight,
           outdoorOpen: true,
           spaceType: areaName.toLocaleLowerCase().includes('terraza')
             ? 'outdoor_terrace'
             : 'indoor',
           tenantId,
           venueId,
-          widthCm: 800,
+          widthCm: newAreaWidth,
         },
       })
       feedback.setSuccess(`${areaName} preparada.`)
@@ -250,35 +249,65 @@ export function FloorPlanPage({
     )
   }
 
-  async function createTable(
-    event?: FormEvent<HTMLFormElement>,
-    position?: { x: number; y: number },
-    code = tableCode,
-  ) {
-    event?.preventDefault()
+  async function createTable(position: { x: number; y: number }, code: string) {
     if (!activeArea || !activeVersion) return
     feedback.setPending()
+    const optimisticId = `optimistic-${crypto.randomUUID()}`
+    const optimisticPlacement = {
+      code,
+      floorPlanVersionId: activeVersion.id,
+      heightCm: 100,
+      id: optimisticId,
+      maxSeats: defaultTableSeats,
+      minSeats: 1,
+      normalSeats: defaultTableSeats,
+      widthCm: 100,
+      xCm: position.x,
+      yCm: position.y,
+    }
+    setHistory((current) =>
+      commitEditorHistory(current, {
+        ...current.present,
+        placements: [...current.present.placements, optimisticPlacement],
+      }),
+    )
 
     try {
-      await createFloorPlanTable({
+      const result = await createFloorPlanTable({
         data: {
           areaId: activeArea.id,
           code,
           heightCm: 100,
-          maxSeats: tableSeats,
+          maxSeats: defaultTableSeats,
           minSeats: 1,
-          isAccessible: tableAccessible,
+          isAccessible: false,
           tenantId,
           venueId,
           versionId: activeVersion.id,
           widthCm: 100,
-          xCm: position?.x ?? tableXCm,
-          yCm: position?.y ?? tableYCm,
+          xCm: position.x,
+          yCm: position.y,
         },
       })
+      setHistory((current) =>
+        commitEditorHistory(current, {
+          ...current.present,
+          placements: current.present.placements.map((placement) =>
+            placement.id === optimisticId ? { ...placement, id: result.tableId } : placement,
+          ),
+        }),
+      )
       feedback.setSuccess('Mesa añadida.')
       reloadFloorPlan()
     } catch (error) {
+      setHistory((current) =>
+        commitEditorHistory(current, {
+          ...current.present,
+          placements: current.present.placements.filter(
+            (placement) => placement.id !== optimisticId,
+          ),
+        }),
+      )
       feedback.setError(
         error instanceof Response && error.status === 422
           ? 'No hay espacio libre en ese punto. Prueba a soltar la mesa en otra zona.'
@@ -290,13 +319,20 @@ export function FloorPlanPage({
   }
 
   function createQuickTable(position: { x: number; y: number }) {
+    if (!activeVersion) return
     const usedCodes = new Set(placements.map((placement) => placement.code))
     let number = 1
     while (usedCodes.has(`M${number}`)) number += 1
     const tableSize = { heightCm: 100, widthCm: 100 }
     const requested = {
-      xCm: Math.min(Math.max(0, position.x), activeVersion.widthCm - tableSize.widthCm),
-      yCm: Math.min(Math.max(0, position.y), activeVersion.heightCm - tableSize.heightCm),
+      xCm: Math.min(
+        Math.max(0, Math.round(position.x / gridSize) * gridSize),
+        activeVersion.widthCm - tableSize.widthCm,
+      ),
+      yCm: Math.min(
+        Math.max(0, Math.round(position.y / gridSize) * gridSize),
+        activeVersion.heightCm - tableSize.heightCm,
+      ),
     }
     const candidate = Array.from({ length: 200 }, (_, index) => {
       const step = 50
@@ -315,7 +351,7 @@ export function FloorPlanPage({
       feedback.setError('No hay espacio libre suficiente para colocar otra mesa.')
       return
     }
-    void createTable(undefined, { x: candidate.xCm, y: candidate.yCm }, `M${number}`)
+    void createTable({ x: candidate.xCm, y: candidate.yCm }, `M${number}`)
   }
 
   function changePlacement(id: string, xCm: number, yCm: number) {
@@ -461,7 +497,9 @@ export function FloorPlanPage({
   }
 
   function updateSelected(
-    values: Partial<Pick<FloorPlanElement, 'heightCm' | 'label' | 'widthCm' | 'xCm' | 'yCm'>>,
+    values: Partial<Pick<FloorPlanElement, 'heightCm' | 'label' | 'widthCm' | 'xCm' | 'yCm'>> & {
+      code?: string
+    },
   ) {
     if (!selectedId || !activeVersion) return
     const selectedTable = placements.find((item) => item.id === selectedId)
@@ -590,7 +628,6 @@ export function FloorPlanPage({
           <FloorPlanCanvas
             activeArea={activeArea}
             activeVersion={activeVersion}
-            alignmentGuides={alignmentGuides}
             blockedAccesses={blockedAccesses}
             elements={elements}
             gridSize={gridSize}
@@ -602,14 +639,126 @@ export function FloorPlanPage({
             onEmptyPlace={(x, y) => setAddElementAt({ x, y })}
             onCreateTable={createQuickTable}
             onDropElement={(kind, x, y) => addElement(kind, { x, y })}
-            onGridSizeChange={setGridSize}
             onMoveItem={moveItem}
+            onItemClick={(id) => {
+              selectItem(id)
+              setPropertiesDialogOpen(true)
+            }}
+            onEditDimensions={() => setDimensionsDialogOpen(true)}
             onSelectItem={selectItem}
             placements={placements}
             previewDevice={previewDevice}
             selectedId={selectedId}
             selectedIds={selectedIds}
           />
+          <DialogRoot onOpenChange={setDimensionsDialogOpen} open={dimensionsDialogOpen}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Medidas del plano</DialogTitle>
+                <DialogDescription>Define el tamaño real de esta sala.</DialogDescription>
+              </DialogHeader>
+              <div className="grid grid-cols-2 gap-3">
+                <Field>
+                  <FieldLabel htmlFor="dialog-plan-width">Ancho (cm)</FieldLabel>
+                  <Input
+                    id="dialog-plan-width"
+                    min={100}
+                    onChange={(event) => setPlanWidth(Number(event.target.value))}
+                    type="number"
+                    value={planWidth}
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="dialog-plan-height">Fondo (cm)</FieldLabel>
+                  <Input
+                    id="dialog-plan-height"
+                    min={100}
+                    onChange={(event) => setPlanHeight(Number(event.target.value))}
+                    type="number"
+                    value={planHeight}
+                  />
+                </Field>
+              </div>
+              <p className="text-muted-foreground text-sm">
+                {(planWidth / 100).toFixed(2)} × {(planHeight / 100).toFixed(2)} m
+              </p>
+              <Button
+                disabled={feedback.pending}
+                onClick={() => {
+                  void resizePlan().then(() => setDimensionsDialogOpen(false))
+                }}
+                type="button"
+              >
+                Guardar medidas
+              </Button>
+            </DialogContent>
+          </DialogRoot>
+          <DialogRoot onOpenChange={setPropertiesDialogOpen} open={propertiesDialogOpen}>
+            <DialogContent className="max-w-lg">
+              <DialogHeader>
+                <DialogTitle>Editar mesa o elemento</DialogTitle>
+                <DialogDescription>Ajusta sus medidas y posición en centímetros.</DialogDescription>
+              </DialogHeader>
+              {(() => {
+                const selected =
+                  placements.find((item) => item.id === selectedId) ??
+                  elements.find((item) => item.id === selectedId)
+                if (!selected) return null
+                return (
+                  <div className="grid grid-cols-2 gap-3">
+                    {'code' in selected && (
+                      <Field className="col-span-2">
+                        <FieldLabel htmlFor="dialog-table-code">Número de mesa</FieldLabel>
+                        <Input
+                          id="dialog-table-code"
+                          onChange={(event) => updateSelected({ code: event.target.value })}
+                          onBlur={(event) => {
+                            void updateFloorPlanTableCode({
+                              data: {
+                                code: event.target.value,
+                                tableId: selected.id,
+                                tenantId,
+                                venueId,
+                              },
+                            })
+                          }}
+                          value={selected.code}
+                        />
+                      </Field>
+                    )}
+                    {(['xCm', 'yCm', 'widthCm', 'heightCm'] as const).map((key) => (
+                      <Field key={key}>
+                        <FieldLabel htmlFor={`dialog-selected-${key}`}>
+                          {key.replace('Cm', ' (cm)')}
+                        </FieldLabel>
+                        <Input
+                          id={`dialog-selected-${key}`}
+                          min={0}
+                          onChange={(event) =>
+                            updateSelected({ [key]: Number(event.target.value) })
+                          }
+                          type="number"
+                          value={selected[key]}
+                        />
+                      </Field>
+                    ))}
+                    <div className="col-span-2 flex justify-end border-t pt-3">
+                      <Button
+                        onClick={() => {
+                          removeSelected()
+                          setPropertiesDialogOpen(false)
+                        }}
+                        type="button"
+                        variant="destructive"
+                      >
+                        Eliminar elemento
+                      </Button>
+                    </div>
+                  </div>
+                )
+              })()}
+            </DialogContent>
+          </DialogRoot>
           <Card className="border-l-0 shadow-sm lg:sticky lg:top-6 lg:self-start">
             <CardHeader className="px-4 pt-4 pb-3">
               <CardTitle>Mesas y elementos</CardTitle>
@@ -626,6 +775,10 @@ export function FloorPlanPage({
                     <li key={placement.id}>
                       <Button
                         aria-label={`Mesa ${placement.code}. X ${placement.xCm}, Y ${placement.yCm}. Usa las flechas para moverla.`}
+                        onClick={() => {
+                          selectItem(placement.id)
+                          setPropertiesDialogOpen(true)
+                        }}
                         onKeyDown={(event) => moveWithKeyboard(event, placement.id)}
                         onFocus={() => selectItem(placement.id)}
                         className="w-full justify-start px-2 py-1.5 text-left transition-transform duration-150 hover:translate-x-0.5"
@@ -637,71 +790,6 @@ export function FloorPlanPage({
                   ))}
                 </ul>
               )}
-              {selectedId && (
-                <output className="bg-muted/60 mt-3 block rounded-md px-2.5 py-2 text-xs">
-                  {selectedIds.length > 1
-                    ? `${selectedIds.length} elementos seleccionados · `
-                    : 'Seleccionado: '}
-                  {placements.find((item) => item.id === selectedId)?.code ?? 'elemento'} · usa las
-                  flechas para ajustar. Pulsa R para girar y mantén Ctrl/Cmd para seleccionar
-                  varios.
-                </output>
-              )}
-              {selectedId && (
-                <div className="mt-2 flex gap-2">
-                  <Button
-                    className="transition-transform duration-150 hover:-translate-y-0.5"
-                    onClick={removeSelected}
-                    type="button"
-                  >
-                    Eliminar
-                  </Button>
-                </div>
-              )}
-              {selectedId &&
-                (() => {
-                  const selected =
-                    placements.find((item) => item.id === selectedId) ??
-                    elements.find((item) => item.id === selectedId)
-                  if (!selected) return null
-                  return (
-                    <div className="border-border/70 bg-muted/20 mt-3 space-y-2 rounded-md border p-2.5">
-                      <p className="text-xs font-semibold tracking-wide">Medidas y posición</p>
-                      <div className="grid grid-cols-2 gap-2">
-                        {(['xCm', 'yCm', 'widthCm', 'heightCm'] as const).map((key) => (
-                          <Field key={key}>
-                            <FieldLabel htmlFor={`selected-${key}`}>
-                              {key.replace('Cm', ' (cm)')}
-                            </FieldLabel>
-                            <Input
-                              id={`selected-${key}`}
-                              min={0}
-                              onChange={(event) =>
-                                updateSelected({
-                                  [key]: Number(event.target.value),
-                                })
-                              }
-                              placeholder="0"
-                              type="number"
-                              value={selected[key]}
-                            />
-                          </Field>
-                        ))}
-                      </div>
-                      {'label' in selected && (
-                        <Field>
-                          <FieldLabel htmlFor="selected-label">Etiqueta</FieldLabel>
-                          <Input
-                            id="selected-label"
-                            onChange={(event) => updateSelected({ label: event.target.value })}
-                            placeholder="Ej. Barra o puerta"
-                            value={selected.label ?? ''}
-                          />
-                        </Field>
-                      )}
-                    </div>
-                  )
-                })()}
               <div className="mt-4 space-y-2">
                 <p className="text-muted-foreground text-xs font-medium">Añadir al plano</p>
                 <div
@@ -750,49 +838,8 @@ export function FloorPlanPage({
                   ))}
                 </div>
               </div>
-              {activeArea && (
-                <form
-                  className="border-border/60 mt-4 grid gap-2 border-t pt-3"
-                  onSubmit={(event) => void createTable(event)}
-                >
-                  <Field>
-                    <FieldLabel htmlFor="table-code">Código de mesa</FieldLabel>
-                    <Input
-                      id="table-code"
-                      onChange={(event) => setTableCode(event.target.value)}
-                      placeholder="Ej. M1"
-                      required
-                      value={tableCode}
-                    />
-                  </Field>
-                  <Field>
-                    <FieldLabel htmlFor="table-seats">Número de comensales</FieldLabel>
-                    <Input
-                      id="table-seats"
-                      min={1}
-                      onChange={(event) => setTableSeats(Number(event.target.value))}
-                      placeholder="4"
-                      required
-                      type="number"
-                      value={tableSeats}
-                    />
-                  </Field>
-                  <label className="flex items-center gap-2 text-sm">
-                    <input
-                      checked={tableAccessible}
-                      onChange={(event) => setTableAccessible(event.target.checked)}
-                      type="checkbox"
-                    />
-                    Mesa accesible
-                  </label>
-                  <FormFeedback pendingLabel="Guardando cambios…" state={feedback.state} />
-                  <Button disabled={feedback.pending} type="submit">
-                    Añadir mesa
-                  </Button>
-                </form>
-              )}
               <div className="mt-6 border-t pt-6">
-                <div className="mt-3 flex gap-2">
+                <div className="flex gap-2">
                   <Button
                     disabled={history.past.length === 0}
                     onClick={() => setHistory(undoEditorHistory)}
@@ -840,6 +887,28 @@ export function FloorPlanPage({
                 required
               />
             </Field>
+            <div className="grid grid-cols-2 gap-3">
+              <Field>
+                <FieldLabel htmlFor="new-area-width">Ancho (cm)</FieldLabel>
+                <Input
+                  id="new-area-width"
+                  min={100}
+                  onChange={(event) => setNewAreaWidth(Number(event.target.value))}
+                  type="number"
+                  value={newAreaWidth}
+                />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="new-area-height">Fondo (cm)</FieldLabel>
+                <Input
+                  id="new-area-height"
+                  min={100}
+                  onChange={(event) => setNewAreaHeight(Number(event.target.value))}
+                  type="number"
+                  value={newAreaHeight}
+                />
+              </Field>
+            </div>
             <DialogFooter>
               <Button onClick={() => setCreateAreaOpen(false)} type="button" variant="outline">
                 Cancelar
@@ -865,11 +934,7 @@ export function FloorPlanPage({
           <Button
             className="h-auto justify-start gap-3 py-4 text-base"
             onClick={() => {
-              if (addElementAt) {
-                setTableXCm(Math.max(0, Math.round(addElementAt.x / gridSize) * gridSize))
-                setTableYCm(Math.max(0, Math.round(addElementAt.y / gridSize) * gridSize))
-              }
-              void createTable(undefined, addElementAt)
+              if (addElementAt) createQuickTable(addElementAt)
               setAddElementAt(undefined)
             }}
             type="button"

@@ -7,6 +7,7 @@ import {
   CardTitle,
   cn,
 } from '@doscientos/ui'
+import { Settings2 } from 'lucide-react'
 import { useRef, useState, type PointerEvent } from 'react'
 
 import {
@@ -25,22 +26,17 @@ const previewDeviceClasses: Record<FloorPlanPreviewDevice, string> = {
   tablet: 'max-w-[768px]',
 }
 
-interface AlignmentGuide {
-  axis: 'x' | 'y'
-  value: number
-}
-
 export function FloorPlanCanvas({
   activeArea: _activeArea,
   activeVersion,
-  alignmentGuides,
   blockedAccesses,
   elements,
   gridSize,
   layoutIssues,
   onClearSelection,
-  onGridSizeChange,
   onEmptyPlace,
+  onItemClick,
+  onEditDimensions,
   onCreateTable,
   onDropElement,
   onMoveItem,
@@ -52,14 +48,14 @@ export function FloorPlanCanvas({
 }: {
   activeArea: FloorPlanArea | undefined
   activeVersion: FloorPlanVersion
-  alignmentGuides: readonly AlignmentGuide[]
   blockedAccesses: readonly { accessId: string; placementId: string }[]
   elements: readonly FloorPlanElement[]
   gridSize: number
   layoutIssues: readonly LayoutIssue[]
   onClearSelection: () => void
-  onGridSizeChange: (value: number) => void
   onEmptyPlace: (xCm: number, yCm: number) => void
+  onItemClick: (id: string) => void
+  onEditDimensions: () => void
   onCreateTable: (position: { x: number; y: number }) => void
   onDropElement: (kind: PlanElementKind, xCm: number, yCm: number) => void
   onMoveItem: (id: string, xCm: number, yCm: number) => void
@@ -76,7 +72,23 @@ export function FloorPlanCanvas({
   const [dropGhost, setDropGhost] = useState<{ kind: PlanElementKind; x: number; y: number }>()
   const panPointer = useRef<{ id: number; x: number; y: number } | undefined>(undefined)
   const dragOffset = useRef<{ x: number; y: number } | undefined>(undefined)
+  const emptyPointer = useRef<{ id: number; x: number; y: number } | undefined>(undefined)
+  const itemPointer = useRef<
+    { id: string; pointerId: number; x: number; y: number; moved: boolean } | undefined
+  >(undefined)
+  const suppressClick = useRef(false)
   const viewBox = `${Math.max(0, Math.min(activeVersion.widthCm * (1 - 1 / zoom), (activeVersion.widthCm * (1 - 1 / zoom)) / 2 + pan.x)).toFixed(2)} ${Math.max(0, Math.min(activeVersion.heightCm * (1 - 1 / zoom), (activeVersion.heightCm * (1 - 1 / zoom)) / 2 + pan.y)).toFixed(2)} ${(activeVersion.widthCm / zoom).toFixed(2)} ${(activeVersion.heightCm / zoom).toFixed(2)}`
+  const dragging = dragPreview
+    ? placements.find((item) => item.id === dragPreview.id) ?? elements.find((item) => item.id === dragPreview.id)
+    : undefined
+  const dragGuides = dragging && dragPreview
+    ? [
+        { axis: 'x' as const, value: dragPreview.x },
+        { axis: 'x' as const, value: dragPreview.x + dragging.widthCm / 2 },
+        { axis: 'y' as const, value: dragPreview.y },
+        { axis: 'y' as const, value: dragPreview.y + dragging.heightCm / 2 },
+      ]
+    : []
 
   function finishDrag(event: PointerEvent<SVGSVGElement>) {
     if (!draggingItemId) return
@@ -114,19 +126,28 @@ export function FloorPlanCanvas({
     return point.matrixTransform(transform.inverse())
   }
 
-  const selected =
-    placements.find((item) => item.id === selectedId) ??
-    elements.find((item) => item.id === selectedId)
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="relative">
         <CardTitle>{activeVersion.name}</CardTitle>
-        <CardDescription>
-          {activeVersion.widthCm / 100} m × {activeVersion.heightCm / 100} m · {placements.length}{' '}
-          mesas
-        </CardDescription>
-        <div className="flex flex-wrap items-center gap-1.5 pt-1" aria-label="Controles del plano">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <CardDescription>
+            {activeVersion.widthCm / 100} m × {activeVersion.heightCm / 100} m · {placements.length}{' '}
+            mesas
+          </CardDescription>
+          <Button
+            aria-label="Editar medidas del plano"
+            className="size-7 px-0"
+            onClick={onEditDimensions}
+            size="icon"
+            type="button"
+            variant="ghost"
+          >
+            <Settings2 className="size-3.5" />
+          </Button>
+        </div>
+        <div className="flex items-center gap-1.5 pt-1 lg:absolute lg:top-5 lg:right-5 lg:pt-0" aria-label="Controles del plano">
           <Button
             aria-label="Alejar plano"
             className="size-9 px-0"
@@ -151,6 +172,8 @@ export function FloorPlanCanvas({
             +
           </Button>
           <Button
+            aria-label="Restablecer zoom y posición"
+            className="px-2 text-xs"
             onClick={() => {
               setZoom(1)
               setPan({ x: 0, y: 0 })
@@ -158,33 +181,10 @@ export function FloorPlanCanvas({
             type="button"
             variant="ghost"
           >
-            Restablecer
+            Centrar
           </Button>
-          <label className="text-muted-foreground ml-2 flex items-center gap-2 text-sm">
-            Cuadrícula
-            <select
-              aria-label="Tamaño de cuadrícula"
-              className="border-border rounded-md border px-2 py-1"
-              onChange={(event) => onGridSizeChange(Number(event.target.value))}
-              value={gridSize}
-            >
-              <option value={25}>25 cm</option>
-              <option value={50}>50 cm</option>
-              <option value={100}>1 m</option>
-            </select>
-          </label>
+          <span className="text-muted-foreground ml-1 text-xs">Grid 25 cm</span>
         </div>
-        {alignmentGuides.length > 0 && (
-          <p aria-live="polite" className="text-muted-foreground pt-2 text-xs">
-            Ajuste automático activo:{' '}
-            {alignmentGuides.some((guide) => guide.axis === 'x') ? 'alineación vertical' : ''}
-            {alignmentGuides.some((guide) => guide.axis === 'x') &&
-            alignmentGuides.some((guide) => guide.axis === 'y')
-              ? ' y '
-              : ''}
-            {alignmentGuides.some((guide) => guide.axis === 'y') ? 'alineación horizontal' : ''}
-          </p>
-        )}
       </CardHeader>
       <CardContent>
         {layoutIssues.length > 0 && (
@@ -199,8 +199,8 @@ export function FloorPlanCanvas({
                   {issue.code === 'overlap'
                     ? `Solape entre ${issue.placementId} y ${issue.relatedPlacementId}`
                     : issue.code === 'outside_bounds'
-                        ? `${issue.placementId} queda fuera del plano`
-                        : `${issue.placementId} tiene un tamaño inválido`}
+                      ? `${issue.placementId} queda fuera del plano`
+                      : `${issue.placementId} tiene un tamaño inválido`}
                 </li>
               ))}
             </ul>
@@ -239,15 +239,37 @@ export function FloorPlanCanvas({
               event.currentTarget.setPointerCapture(event.pointerId)
             }}
             onPointerMove={(event) => {
+              if (emptyPointer.current?.id === event.pointerId) {
+                const moved = Math.hypot(
+                  event.clientX - emptyPointer.current.x,
+                  event.clientY - emptyPointer.current.y,
+                )
+                if (moved > 6) {
+                  emptyPointer.current = undefined
+                  suppressClick.current = true
+                }
+              }
               if (draggingItemId) {
+                if (
+                  itemPointer.current?.pointerId === event.pointerId &&
+                  Math.hypot(
+                    event.clientX - itemPointer.current.x,
+                    event.clientY - itemPointer.current.y,
+                  ) > 6
+                )
+                  itemPointer.current.moved = true
+                suppressClick.current = true
                 const point = planPointFromEvent(event)
                 const offset = dragOffset.current ?? { x: 0, y: 0 }
-                if (point)
+                if (point) {
+                  const rawX = point.x - offset.x
+                  const rawY = point.y - offset.y
                   setDragPreview({
                     id: draggingItemId,
-                    x: point.x - offset.x,
-                    y: point.y - offset.y,
+                    x: event.altKey ? rawX : Math.round(rawX / gridSize) * gridSize,
+                    y: event.altKey ? rawY : Math.round(rawY / gridSize) * gridSize,
                   })
+                }
                 return
               }
               const start = panPointer.current
@@ -265,6 +287,8 @@ export function FloorPlanCanvas({
             }}
             onPointerCancel={() => {
               panPointer.current = undefined
+              emptyPointer.current = undefined
+              itemPointer.current = undefined
               setDraggingItemId(undefined)
               setDragPreview(undefined)
               dragOffset.current = undefined
@@ -275,6 +299,8 @@ export function FloorPlanCanvas({
                 event.currentTarget.releasePointerCapture?.(event.pointerId)
               }
               finishDrag(event)
+              itemPointer.current = undefined
+              emptyPointer.current = undefined
             }}
             onDragOver={(event) => {
               event.preventDefault()
@@ -321,61 +347,18 @@ export function FloorPlanCanvas({
               height={activeVersion.heightCm}
               onPointerDown={(event) => {
                 onClearSelection()
+                emptyPointer.current = { id: event.pointerId, x: event.clientX, y: event.clientY }
+              }}
+              onClick={(event) => {
+                if (suppressClick.current) {
+                  suppressClick.current = false
+                  return
+                }
                 const point = planPointFromEvent(event)
                 if (point) onEmptyPlace(point.x, point.y)
               }}
               width={activeVersion.widthCm}
             />
-            {selected && (
-              <g
-                aria-hidden="true"
-                pointerEvents="none"
-                stroke="var(--ring)"
-                strokeDasharray="12 10"
-                opacity="0.45"
-                strokeWidth="1.5"
-              >
-                <line
-                  x1={selected.xCm + selected.widthCm / 2}
-                  x2={selected.xCm + selected.widthCm / 2}
-                  y1={0}
-                  y2={activeVersion.heightCm}
-                />
-                <line
-                  x1={0}
-                  x2={activeVersion.widthCm}
-                  y1={selected.yCm + selected.heightCm / 2}
-                  y2={selected.yCm + selected.heightCm / 2}
-                />
-              </g>
-            )}
-            {alignmentGuides.map((guide, index) =>
-              guide.axis === 'x' ? (
-                <line
-                  key={`guide-${index}`}
-                  opacity="0.65"
-                  stroke="var(--primary)"
-                  strokeDasharray="8 8"
-                  strokeWidth="1.5"
-                  x1={guide.value}
-                  x2={guide.value}
-                  y1={0}
-                  y2={activeVersion.heightCm}
-                />
-              ) : (
-                <line
-                  key={`guide-${index}`}
-                  opacity="0.65"
-                  stroke="var(--primary)"
-                  strokeDasharray="8 8"
-                  strokeWidth="1.5"
-                  x1={0}
-                  x2={activeVersion.widthCm}
-                  y1={guide.value}
-                  y2={guide.value}
-                />
-              ),
-            )}
             {dropGhost && (
               <rect
                 aria-hidden="true"
@@ -388,6 +371,13 @@ export function FloorPlanCanvas({
                 x={dropGhost.x}
                 y={dropGhost.y}
               />
+            )}
+            {dragGuides.map((guide, index) =>
+              guide.axis === 'x' ? (
+                <line key={`drag-guide-${index}`} opacity="0.7" pointerEvents="none" stroke="var(--primary)" strokeDasharray="8 8" strokeWidth="1.5" x1={guide.value} x2={guide.value} y1={0} y2={activeVersion.heightCm} />
+              ) : (
+                <line key={`drag-guide-${index}`} opacity="0.7" pointerEvents="none" stroke="var(--primary)" strokeDasharray="8 8" strokeWidth="1.5" x1={0} x2={activeVersion.widthCm} y1={guide.value} y2={guide.value} />
+              ),
             )}
             {elements.map((element) => (
               <g
@@ -404,6 +394,13 @@ export function FloorPlanCanvas({
                   onPointerDown={(event) =>
                     (() => {
                       onSelectItem(element.id, event.ctrlKey || event.metaKey)
+                      itemPointer.current = {
+                        id: element.id,
+                        pointerId: event.pointerId,
+                        x: event.clientX,
+                        y: event.clientY,
+                        moved: false,
+                      }
                       const point = planPointFromEvent(event)
                       if (point)
                         dragOffset.current = {
@@ -414,6 +411,13 @@ export function FloorPlanCanvas({
                       event.currentTarget.ownerSVGElement?.setPointerCapture(event.pointerId)
                     })()
                   }
+                  onClick={() => {
+                    if (suppressClick.current) {
+                      suppressClick.current = false
+                      return
+                    }
+                    onItemClick(element.id)
+                  }}
                   opacity={0.65}
                   rx="4"
                   stroke={selectedIds.includes(element.id) ? 'var(--ring)' : 'transparent'}
@@ -447,6 +451,13 @@ export function FloorPlanCanvas({
                   height={placement.heightCm}
                   onPointerDown={(event) => {
                     onSelectItem(placement.id, event.ctrlKey || event.metaKey)
+                    itemPointer.current = {
+                      id: placement.id,
+                      pointerId: event.pointerId,
+                      x: event.clientX,
+                      y: event.clientY,
+                      moved: false,
+                    }
                     const point = planPointFromEvent(event)
                     if (point)
                       dragOffset.current = {
@@ -455,6 +466,13 @@ export function FloorPlanCanvas({
                       }
                     setDraggingItemId(placement.id)
                     event.currentTarget.ownerSVGElement?.setPointerCapture(event.pointerId)
+                  }}
+                  onClick={() => {
+                    if (suppressClick.current) {
+                      suppressClick.current = false
+                      return
+                    }
+                    onItemClick(placement.id)
                   }}
                   opacity={0.85}
                   rx="12"

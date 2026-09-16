@@ -126,8 +126,16 @@ describeRls('tenant RLS isolation', () => {
     if (auditError) throw auditError
 
     const { error: venueError } = await admin.from('venues').insert([
-      { name: `Venue A ${nonce}`, tenant_id: tenantAId },
-      { name: `Venue B ${nonce}`, tenant_id: tenantBId },
+      {
+        name: `Venue A ${nonce}`,
+        slug: `rls-venue-a-${nonce.slice(0, 8)}`,
+        tenant_id: tenantAId,
+      },
+      {
+        name: `Venue B ${nonce}`,
+        slug: `rls-venue-b-${nonce.slice(0, 8)}`,
+        tenant_id: tenantBId,
+      },
     ])
     if (venueError) throw venueError
 
@@ -161,9 +169,11 @@ describeRls('tenant RLS isolation', () => {
   it('rejects a write against a tenant where the user has no membership', async () => {
     if (!fixture) throw new Error('RLS fixture is unavailable.')
 
-    const { error } = await fixture.userA
-      .from('venues')
-      .insert({ name: 'Forbidden cross-tenant venue', tenant_id: fixture.tenantBId })
+    const { error } = await fixture.userA.from('venues').insert({
+      name: 'Forbidden cross-tenant venue',
+      slug: 'forbidden-cross-tenant',
+      tenant_id: fixture.tenantBId,
+    })
 
     expect(error).not.toBeNull()
   })

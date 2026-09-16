@@ -255,13 +255,22 @@ export const resendTenantInvitation = createServerFn({ method: 'POST' })
       .is('accepted_at', null)
     if (updateError) throw new Error(`tenant_invitation_update_failed:${updateError.code}`)
 
-    const { error: inviteError } = await service.auth.admin.inviteUserByEmail(data.email, {
-      redirectTo: invitationRedirect(token),
+    const { data: users, error: usersError } = await service.auth.admin.listUsers({ perPage: 1000 })
+    const user = users?.users.find(
+      (candidate) => candidate.email?.toLowerCase() === data.email.toLowerCase(),
+    )
+    if (usersError || !user) throw new Error('tenant_invitation_user_not_found')
+    const { data: link, error: linkError } = await service.auth.admin.generateLink({
+      type: 'invite',
+      email: data.email,
+      options: { redirectTo: invitationRedirect(token) },
     })
-    if (isAuthEmailRateLimited(inviteError))
-      throw new Response('Invitation email rate limited', { status: 429 })
-    if (inviteError) throw new Error('tenant_invitation_delivery_failed')
-    return { kind: 'invitation_resent' as const, role: invitation.role }
+    if (linkError || !link.properties?.action_link) throw new Error('tenant_invitation_link_failed')
+    return {
+      actionLink: link.properties.action_link,
+      kind: 'invitation_resent' as const,
+      role: invitation.role,
+    }
   })
 
 /** Revokes a pending invitation without affecting an existing account. */

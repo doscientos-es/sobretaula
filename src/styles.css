@@ -661,7 +661,10 @@ select:not([data-slot]):focus-visible {
   color: #606671;
   min-height: 2.25rem;
   line-height: 1.35;
-  transition: color 160ms ease, background-color 160ms ease, transform 160ms ease;
+  transition:
+    color 160ms ease,
+    background-color 160ms ease,
+    transform 160ms ease;
 }
 
 .st-saas-nav-link:hover {
