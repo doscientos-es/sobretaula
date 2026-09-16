@@ -12,7 +12,7 @@ import {
   cn,
   useFormFeedback,
 } from '@doscientos/ui'
-import { RefreshCw } from 'lucide-react'
+import { ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 
 import { cancelReservation, markReservationNoShow } from '@/features/service'
@@ -36,6 +36,12 @@ function canMarkNoShow(startsAt: string): boolean {
 
 function dateOffset(days: number, timeZone: string): string {
   const date = new Date(`${zonedDateKey(new Date(), timeZone)}T12:00:00.000Z`)
+  date.setUTCDate(date.getUTCDate() + days)
+  return date.toISOString().slice(0, 10)
+}
+
+function shiftDate(value: string, days: number): string {
+  const date = new Date(`${value}T12:00:00.000Z`)
   date.setUTCDate(date.getUTCDate() + days)
   return date.toISOString().slice(0, 10)
 }
@@ -283,7 +289,7 @@ export function ReservationAgendaCard({
     <Card aria-busy={agendaLoading || feedback.pending}>
       <CardHeader>
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <CardTitle>Agenda</CardTitle>
+          <CardTitle>Agenda semanal</CardTitle>
           {onNewReservation ? <Button onClick={onNewReservation}>Nueva reserva</Button> : null}
           <Button
             disabled={agendaLoading}
@@ -304,16 +310,53 @@ export function ReservationAgendaCard({
             />
             {agendaLoading ? 'Actualizando…' : 'Actualizar agenda'}
           </Button>
-          <Button
-            onClick={() => setCalendarMode((current) => !current)}
-            size="sm"
-            type="button"
-            variant="outline"
-          >
-            {calendarMode ? 'Vista lista' : 'Vista calendario'}
-          </Button>
+          <div className="flex items-center gap-1 rounded-md border p-1">
+            <Button
+              aria-label="Semana anterior"
+              onClick={() => {
+                const date = shiftDate(agendaDate, -7)
+                setAgendaLoading(true)
+                setAgendaDate(date)
+                updateSearch({ date })
+              }}
+              size="icon-sm"
+              type="button"
+              variant="ghost"
+            >
+              <ChevronLeft aria-hidden="true" className="size-4" />
+            </Button>
+            <Button
+              onClick={() => {
+                const date = dateOffset(0, timezone)
+                setAgendaLoading(true)
+                setAgendaDate(date)
+                updateSearch({ date })
+              }}
+              size="sm"
+              type="button"
+              variant="ghost"
+            >
+              Hoy
+            </Button>
+            <Button
+              aria-label="Semana siguiente"
+              onClick={() => {
+                const date = shiftDate(agendaDate, 7)
+                setAgendaLoading(true)
+                setAgendaDate(date)
+                updateSearch({ date })
+              }}
+              size="icon-sm"
+              type="button"
+              variant="ghost"
+            >
+              <ChevronRight aria-hidden="true" className="size-4" />
+            </Button>
+          </div>
         </div>
-        <CardDescription>Reservas del día seleccionado en este local.</CardDescription>
+        <CardDescription>
+          Consulta las reservas de toda la semana y abre un día para ver el detalle.
+        </CardDescription>
         <p className="text-muted-foreground text-xs">Se actualiza automáticamente cada minuto.</p>
       </CardHeader>
       <CardContent className="space-y-4">

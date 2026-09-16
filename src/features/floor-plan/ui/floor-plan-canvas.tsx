@@ -85,10 +85,12 @@ export function FloorPlanCanvas({
   const dragGuides =
     dragging && dragPreview
       ? [
-          { axis: 'x' as const, value: dragPreview.x },
-          { axis: 'x' as const, value: dragPreview.x + dragging.widthCm / 2 },
-          { axis: 'y' as const, value: dragPreview.y },
-          { axis: 'y' as const, value: dragPreview.y + dragging.heightCm / 2 },
+          { axis: 'x' as const, opacity: 0.22, value: dragPreview.x },
+          { axis: 'x' as const, opacity: 0.7, value: dragPreview.x + dragging.widthCm / 2 },
+          { axis: 'x' as const, opacity: 0.22, value: dragPreview.x + dragging.widthCm },
+          { axis: 'y' as const, opacity: 0.22, value: dragPreview.y },
+          { axis: 'y' as const, opacity: 0.7, value: dragPreview.y + dragging.heightCm / 2 },
+          { axis: 'y' as const, opacity: 0.22, value: dragPreview.y + dragging.heightCm },
         ]
       : []
 
@@ -225,17 +227,22 @@ export function FloorPlanCanvas({
             </ul>
           </div>
         )}
-        <div
-          className={cn(
-            'mx-auto overflow-hidden rounded-xl border-2 border-dashed border-primary/30 bg-muted/30 p-2',
-            'transition-[max-width]',
+          <div
+            className={cn(
+            'w-full min-w-0 overflow-hidden',
             previewDeviceClasses[previewDevice],
           )}
         >
           <svg
             aria-hidden="true"
-            className="border-border bg-background h-[min(72vh,760px)] w-full touch-none rounded-lg border select-none"
+            className="border-border bg-background h-[clamp(300px,calc(100dvh-450px),720px)] w-full touch-none overscroll-contain rounded-lg border select-none"
             focusable="false"
+            onWheelCapture={(event) => {
+              event.preventDefault()
+              event.stopPropagation()
+              const direction = event.deltaY > 0 ? 0.9 : 1.1
+              setZoom((current) => Math.max(0.5, Math.min(3, current * direction)))
+            }}
             onPointerDown={(event) => {
               if (event.button !== 1 && !event.altKey) return
               event.preventDefault()
@@ -363,6 +370,19 @@ export function FloorPlanCanvas({
               }}
               width={activeVersion.widthCm}
             />
+            <rect
+              aria-hidden="true"
+              fill="none"
+              height={activeVersion.heightCm}
+              pointerEvents="none"
+              rx="4"
+              stroke="var(--foreground)"
+              strokeOpacity="0.7"
+              strokeWidth="6"
+              width={activeVersion.widthCm}
+              x="0"
+              y="0"
+            />
             {dropGhost && (
               <rect
                 aria-hidden="true"
@@ -380,7 +400,7 @@ export function FloorPlanCanvas({
               guide.axis === 'x' ? (
                 <line
                   key={`drag-guide-${index}`}
-                  opacity="0.7"
+                  opacity={guide.opacity}
                   pointerEvents="none"
                   stroke="var(--primary)"
                   strokeDasharray="8 8"
@@ -393,7 +413,7 @@ export function FloorPlanCanvas({
               ) : (
                 <line
                   key={`drag-guide-${index}`}
-                  opacity="0.7"
+                  opacity={guide.opacity}
                   pointerEvents="none"
                   stroke="var(--primary)"
                   strokeDasharray="8 8"
@@ -437,12 +457,9 @@ export function FloorPlanCanvas({
                       event.currentTarget.ownerSVGElement?.setPointerCapture(event.pointerId)
                     })()
                   }
-                  onClick={() => {
-                    if (suppressClick.current) {
-                      suppressClick.current = false
-                      return
-                    }
-                    onItemClick(element.id)
+                  onPointerUp={() => {
+                    if (itemPointer.current?.id === element.id && !itemPointer.current.moved)
+                      onItemClick(element.id)
                   }}
                   opacity={0.65}
                   rx="4"
@@ -457,6 +474,16 @@ export function FloorPlanCanvas({
                     {element.label}
                   </text>
                 )}
+                <g
+                  aria-label={`Editar ${element.label ?? 'elemento'}`}
+                  onClick={() => onItemClick(element.id)}
+                  onPointerDown={(event) => event.stopPropagation()}
+                  role="button"
+                  tabIndex={0}
+                >
+                  <circle cx={element.xCm + element.widthCm - 18} cy={element.yCm + element.heightCm - 18} fill="var(--background)" r="14" stroke="var(--border)" strokeWidth="2" />
+                  <text fill="var(--foreground)" fontSize="16" pointerEvents="none" textAnchor="middle" x={element.xCm + element.widthCm - 18} y={element.yCm + element.heightCm - 13}>✎</text>
+                </g>
               </g>
             ))}
             {placements.map((placement) => (
@@ -493,12 +520,9 @@ export function FloorPlanCanvas({
                     setDraggingItemId(placement.id)
                     event.currentTarget.ownerSVGElement?.setPointerCapture(event.pointerId)
                   }}
-                  onClick={() => {
-                    if (suppressClick.current) {
-                      suppressClick.current = false
-                      return
-                    }
-                    onItemClick(placement.id)
+                  onPointerUp={() => {
+                    if (itemPointer.current?.id === placement.id && !itemPointer.current.moved)
+                      onItemClick(placement.id)
                   }}
                   opacity={0.85}
                   rx="12"
@@ -518,6 +542,16 @@ export function FloorPlanCanvas({
                 >
                   {placement.code}
                 </text>
+                <g
+                  aria-label={`Editar mesa ${placement.code}`}
+                  onClick={() => onItemClick(placement.id)}
+                  onPointerDown={(event) => event.stopPropagation()}
+                  role="button"
+                  tabIndex={0}
+                >
+                  <circle cx={placement.xCm + placement.widthCm - 18} cy={placement.yCm + placement.heightCm - 18} fill="var(--background)" r="14" stroke="var(--border)" strokeWidth="2" />
+                  <text fill="var(--foreground)" fontSize="16" pointerEvents="none" textAnchor="middle" x={placement.xCm + placement.widthCm - 18} y={placement.yCm + placement.heightCm - 13}>✎</text>
+                </g>
               </g>
             ))}
           </svg>

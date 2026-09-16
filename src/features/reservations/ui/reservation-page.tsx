@@ -279,16 +279,17 @@ export function ReservationPage({
         <TabsPanels>
           <TabsContent id="agenda">
             <Card className="mb-5">
-              <CardHeader>
-                <CardTitle>Exportar agenda</CardTitle>
-                <CardDescription>
-                  Descarga las reservas del periodo para operación y revisión. No incluye mesas ni
-                  tokens de gestión.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-wrap items-end gap-3">
+              <CardContent className="flex flex-wrap items-end gap-3 py-4">
+                <div className="mr-auto min-w-44">
+                  <CardTitle className="text-base">Exportar agenda</CardTitle>
+                  <CardDescription className="mt-1 text-xs">
+                    Reservas del periodo seleccionado
+                  </CardDescription>
+                </div>
                 <Field>
-                  <FieldLabel htmlFor="reservation-export-from">Desde</FieldLabel>
+                  <FieldLabel className="text-xs" htmlFor="reservation-export-from">
+                    Desde
+                  </FieldLabel>
                   <Input
                     id="reservation-export-from"
                     onChange={(event) => setExportFrom(event.target.value)}
@@ -297,7 +298,9 @@ export function ReservationPage({
                   />
                 </Field>
                 <Field>
-                  <FieldLabel htmlFor="reservation-export-to">Hasta</FieldLabel>
+                  <FieldLabel className="text-xs" htmlFor="reservation-export-to">
+                    Hasta
+                  </FieldLabel>
                   <Input
                     id="reservation-export-to"
                     onChange={(event) => setExportTo(event.target.value)}

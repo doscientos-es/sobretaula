@@ -13,6 +13,7 @@ import {
   DialogFooter,
   Field,
   FieldLabel,
+  FormFeedback,
   Input,
   PageHeader,
   PageHeaderDescription,
@@ -20,7 +21,7 @@ import {
   useFormFeedback,
 } from '@doscientos/ui'
 import { useQueryClient } from '@tanstack/react-query'
-import { Armchair, Bath, DoorOpen, Footprints, PanelTop, Soup, Square, Table2 } from 'lucide-react'
+import { Armchair, Bath, DoorOpen, Footprints, PanelTop, Plus, Soup, Square, Table2 } from 'lucide-react'
 import { useEffect, useRef, useState, type KeyboardEvent, type DragEvent } from 'react'
 
 import { useAsyncEffect } from '@/shared/lib/react/use-async-effect'
@@ -181,6 +182,7 @@ export function FloorPlanPage({
   )
   const { elements, placements } = history.present
   const autosaveReady = useRef(false)
+  const skipNextAutosave = useRef(false)
   function selectItem(id: string, additive = false) {
     setSelectedId(id)
     setSelectedIds((current) =>
@@ -294,8 +296,9 @@ export function FloorPlanPage({
         }),
       )
       feedback.setSuccess('Mesa añadida.')
-      reloadFloorPlan()
+      skipNextAutosave.current = true
     } catch (error) {
+      skipNextAutosave.current = true
       setHistory((current) =>
         commitEditorHistory(current, {
           ...current.present,
@@ -318,7 +321,7 @@ export function FloorPlanPage({
     if (!activeVersion) return
     const usedCodes = new Set(placements.map((placement) => placement.code))
     let number = 1
-    while (usedCodes.has(`M${number}`)) number += 1
+    while (usedCodes.has(String(number))) number += 1
     const tableSize = { heightCm: 100, widthCm: 100 }
     const requested = {
       xCm: Math.min(
@@ -347,7 +350,7 @@ export function FloorPlanPage({
       feedback.setError('No hay espacio libre suficiente para colocar otra mesa.')
       return
     }
-    void createTable({ x: candidate.xCm, y: candidate.yCm }, `M${number}`)
+    void createTable({ x: candidate.xCm, y: candidate.yCm }, String(number))
   }
 
   function changePlacement(id: string, xCm: number, yCm: number) {
@@ -564,6 +567,11 @@ export function FloorPlanPage({
 
   useEffect(() => {
     if (!activeVersion) return
+    if (placements.some((placement) => placement.id.startsWith('optimistic-'))) return
+    if (skipNextAutosave.current) {
+      skipNextAutosave.current = false
+      return
+    }
     if (!autosaveReady.current) {
       autosaveReady.current = true
       return
@@ -573,8 +581,8 @@ export function FloorPlanPage({
   }, [elements, placements])
 
   return (
-    <section className="space-y-6">
-      <PageHeader className="border-border/70 border-b pb-6">
+    <section className="flex h-[calc(100dvh-8rem)] min-h-0 flex-col gap-4 overflow-hidden">
+      <PageHeader className="border-border/70 shrink-0 border-b pb-4">
         <div>
           <PageHeaderTitle>Plano de sala</PageHeaderTitle>
           <PageHeaderDescription>
@@ -582,6 +590,11 @@ export function FloorPlanPage({
           </PageHeaderDescription>
         </div>
       </PageHeader>
+      <FormFeedback
+        className="shrink-0"
+        pendingLabel="Guardando cambios…"
+        state={feedback.state}
+      />
       {initializationFailed ? (
         <Card>
           <CardContent className="flex flex-wrap items-center justify-between gap-3 py-4">
@@ -610,7 +623,7 @@ export function FloorPlanPage({
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_18rem]">
+        <div className="grid min-h-0 gap-4">
           <div
             className="flex items-center gap-2 overflow-x-auto lg:col-span-2"
             role="tablist"
@@ -631,32 +644,47 @@ export function FloorPlanPage({
               + Añadir planta o zona
             </Button>
           </div>
-          <FloorPlanCanvas
-            activeArea={activeArea}
-            activeVersion={activeVersion}
-            blockedAccesses={blockedAccesses}
-            elements={elements}
-            gridSize={gridSize}
-            layoutIssues={layoutIssues}
-            onClearSelection={() => {
-              setSelectedId(undefined)
-              setSelectedIds([])
-            }}
-            onEmptyPlace={(x, y) => setAddElementAt({ x, y })}
-            onCreateTable={createQuickTable}
-            onDropElement={(kind, x, y) => addElement(kind, { x, y })}
-            onMoveItem={moveItem}
-            onItemClick={(id) => {
-              selectItem(id)
-              setPropertiesDialogOpen(true)
-            }}
-            onEditDimensions={() => setDimensionsDialogOpen(true)}
-            onSelectItem={selectItem}
-            placements={placements}
-            previewDevice={previewDevice}
-            selectedId={selectedId}
-            selectedIds={selectedIds}
-          />
+          <div className="relative">
+            <FloorPlanCanvas
+              activeArea={activeArea}
+              activeVersion={activeVersion}
+              blockedAccesses={blockedAccesses}
+              elements={elements}
+              gridSize={gridSize}
+              layoutIssues={layoutIssues}
+              onClearSelection={() => {
+                setSelectedId(undefined)
+                setSelectedIds([])
+              }}
+              onEmptyPlace={(x, y) => setAddElementAt({ x, y })}
+              onCreateTable={createQuickTable}
+              onDropElement={(kind, x, y) => addElement(kind, { x, y })}
+              onMoveItem={moveItem}
+              onItemClick={(id) => {
+                selectItem(id)
+                setPropertiesDialogOpen(true)
+              }}
+              onEditDimensions={() => setDimensionsDialogOpen(true)}
+              onSelectItem={selectItem}
+              placements={placements}
+              previewDevice={previewDevice}
+              selectedId={selectedId}
+              selectedIds={selectedIds}
+            />
+            <Button
+              className="absolute right-6 bottom-6 z-10 rounded-full px-4 shadow-lg"
+              onClick={() =>
+                activeVersion &&
+                setAddElementAt({
+                  x: activeVersion.widthCm / 2,
+                  y: activeVersion.heightCm / 2,
+                })
+              }
+              type="button"
+            >
+              <Plus className="size-4" /> Añadir
+            </Button>
+          </div>
           <DialogRoot onOpenChange={setDimensionsDialogOpen} open={dimensionsDialogOpen}>
             <DialogContent className="max-w-md">
               <DialogHeader>
@@ -765,7 +793,7 @@ export function FloorPlanPage({
               })()}
             </DialogContent>
           </DialogRoot>
-          <Card className="border-l-0 shadow-sm lg:sticky lg:top-6 lg:self-start">
+          <Card className="hidden">
             <CardHeader className="px-4 pt-4 pb-3">
               <CardTitle>Mesas y elementos</CardTitle>
               <CardDescription>
