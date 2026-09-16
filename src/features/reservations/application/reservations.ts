@@ -33,6 +33,7 @@ const updateServiceInput = serviceInput.extend({
   serviceId: z.string().uuid(),
 })
 const reservationInput = venueInput.extend({
+  durationMinutes: z.number().int().min(15).max(480).default(90),
   guestName: z.string().trim().min(1).max(200).optional(),
   guestPhone: z.string().trim().min(3).max(40).optional(),
   partySize: z.number().int().min(1).max(50),
@@ -73,6 +74,7 @@ export interface ReservationService {
   slotMinutes: number
   maxCoversPerSlot: number | null
   maxReservationsPerSlot: number | null
+  durationMinutesByParty: Readonly<Record<string, number>>
 }
 
 export interface ReservationAgendaItem {
@@ -139,7 +141,9 @@ async function loadReservationServices(
   const { data: rules, error: rulesError } = rows.length
     ? await supabase
         .from('availability_rules')
-        .select('max_covers_per_slot, max_reservations_per_slot, service_id, slot_minutes')
+        .select(
+          'duration_minutes_by_party, max_covers_per_slot, max_reservations_per_slot, service_id, slot_minutes',
+        )
         .in(
           'service_id',
           rows.map((service) => service.id),
@@ -157,6 +161,8 @@ async function loadReservationServices(
     slotMinutes: rulesByService.get(service.id)?.slot_minutes ?? 15,
     maxCoversPerSlot: rulesByService.get(service.id)?.max_covers_per_slot ?? null,
     maxReservationsPerSlot: rulesByService.get(service.id)?.max_reservations_per_slot ?? null,
+    durationMinutesByParty: (rulesByService.get(service.id)?.duration_minutes_by_party ??
+      {}) as Record<string, number>,
   }))
 }
 
@@ -437,6 +443,23 @@ export const createReservationService = createServerFn({ method: 'POST' })
     requireReservationServiceEditor(context.tenantMembership.role)
     if (data.endsAtTime <= data.startsAtTime) throw new Response('Invalid service', { status: 422 })
     const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    const { data: overlappingServices, error: overlapError } = await supabase
+      .from('services')
+      .select('ends_at_time, starts_at_time')
+      .eq('tenant_id', data.tenantId)
+      .eq('venue_id', data.venueId)
+      .eq('weekday', data.weekday)
+      .eq('is_active', true)
+    if (overlapError)
+      throw new Error(`reservation_service_overlap_check_failed:${overlapError.code}`)
+    if (
+      (overlappingServices ?? []).some(
+        (service) =>
+          service.starts_at_time < data.endsAtTime && data.startsAtTime < service.ends_at_time,
+      )
+    ) {
+      throw new Error('reservation_service_time_overlap')
+    }
     const { data: service, error: serviceError } = await supabase
       .from('services')
       .insert({
@@ -473,6 +496,24 @@ export const updateReservationService = createServerFn({ method: 'POST' })
     requireReservationServiceEditor(context.tenantMembership.role)
     if (data.endsAtTime <= data.startsAtTime) throw new Response('Invalid service', { status: 422 })
     const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    const { data: overlappingServices, error: overlapError } = await supabase
+      .from('services')
+      .select('ends_at_time, id, starts_at_time')
+      .eq('tenant_id', data.tenantId)
+      .eq('venue_id', data.venueId)
+      .eq('weekday', data.weekday)
+      .eq('is_active', true)
+      .neq('id', data.serviceId)
+    if (overlapError)
+      throw new Error(`reservation_service_overlap_check_failed:${overlapError.code}`)
+    if (
+      (overlappingServices ?? []).some(
+        (service) =>
+          service.starts_at_time < data.endsAtTime && data.startsAtTime < service.ends_at_time,
+      )
+    ) {
+      throw new Error('reservation_service_time_overlap')
+    }
     const { data: service, error: serviceError } = await supabase
       .from('services')
       .update({
@@ -617,6 +658,7 @@ export const createReservation = createServerFn({ method: 'POST' })
     }
     const rule: AvailabilityRule = {
       durationMinutesByParty: ruleResult.data.duration_minutes_by_party as Record<string, number>,
+      durationMinutesOverride: data.durationMinutes,
       maxCoversPerSlot: ruleResult.data.max_covers_per_slot,
       maxLeadDays: ruleResult.data.max_lead_days,
       maxReservationsPerSlot: ruleResult.data.max_reservations_per_slot,

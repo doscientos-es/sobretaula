@@ -89,11 +89,16 @@ export function PlatformConsolePage({ dashboard }: { dashboard: PlatformDashboar
         </Card>
         <Card>
           <CardHeader>
-            <CardDescription>Control pendiente</CardDescription>
-            <CardTitle>{dashboard.fiscalReviewCount + dashboard.pendingInvitationCount}</CardTitle>
+            <CardDescription>Facturación y control</CardDescription>
+            <CardTitle>
+              {dashboard.fiscalReviewCount +
+                dashboard.fiscalOutboxErrorCount +
+                dashboard.pendingInvitationCount}
+            </CardTitle>
           </CardHeader>
           <CardContent className="text-muted-foreground text-sm">
-            {dashboard.fiscalReviewCount} facturas fiscales · {dashboard.pendingInvitationCount}{' '}
+            {dashboard.fiscalReviewCount} en revisión · {dashboard.fiscalOutboxErrorCount} con error
+            · {dashboard.fiscalOutboxPendingCount} pendientes · {dashboard.pendingInvitationCount}{' '}
             invitaciones
           </CardContent>
         </Card>

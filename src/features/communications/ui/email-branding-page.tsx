@@ -91,8 +91,8 @@ export function EmailBrandingPage({
   }
 
   return (
-    <section className="space-y-6">
-      <PageHeader className="border-border/70 border-b pb-6">
+    <section className="grid gap-6 md:grid-cols-2">
+      <PageHeader className="border-border/70 border-b pb-6 md:col-span-2">
         <div>
           <PageHeaderTitle>{t('communications.branding.title')}</PageHeaderTitle>
           <PageHeaderDescription>{t('communications.branding.description')}</PageHeaderDescription>

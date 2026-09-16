@@ -13,6 +13,8 @@ const subscriptionStatusInput = z.enum(['active', 'canceled', 'past_due', 'trial
 export interface PlatformDashboard {
   currentUserId: string
   fiscalReviewCount: number
+  fiscalOutboxErrorCount: number
+  fiscalOutboxPendingCount: number
   monthlyRecurringRevenueCents: number
   outstandingBalanceCents: number
   overdueSubscriptionCount: number
@@ -66,6 +68,8 @@ export const getPlatformDashboard = createServerFn({ method: 'GET' })
       venuesResult,
       invoicesResult,
       fiscalResult,
+      fiscalOutboxErrorResult,
+      fiscalOutboxPendingResult,
       invitationsResult,
     ] = await Promise.all([
       supabase
@@ -85,6 +89,14 @@ export const getPlatformDashboard = createServerFn({ method: 'GET' })
         .in('status', ['open', 'failed']),
       supabase.from('platform_fiscal_invoices').select('id').eq('status', 'pending_review'),
       supabase
+        .from('platform_fiscal_outbox')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'needs_review'),
+      supabase
+        .from('platform_fiscal_outbox')
+        .select('id', { count: 'exact', head: true })
+        .in('status', ['pending', 'processing', 'retryable_error']),
+      supabase
         .from('platform_invitations')
         .select('id')
         .is('accepted_at', null)
@@ -96,6 +108,8 @@ export const getPlatformDashboard = createServerFn({ method: 'GET' })
       venuesResult,
       invoicesResult,
       fiscalResult,
+      fiscalOutboxErrorResult,
+      fiscalOutboxPendingResult,
       invitationsResult,
     ]
     if (results.some((result) => result.error)) throw new Error('platform_dashboard_load_failed')
@@ -135,6 +149,8 @@ export const getPlatformDashboard = createServerFn({ method: 'GET' })
     return {
       currentUserId: context.principal.userId,
       fiscalReviewCount: fiscalResult.data?.length ?? 0,
+      fiscalOutboxErrorCount: fiscalOutboxErrorResult.count ?? 0,
+      fiscalOutboxPendingCount: fiscalOutboxPendingResult.count ?? 0,
       monthlyRecurringRevenueCents: subscriptions
         .filter((subscription) => subscription.status !== 'canceled')
         .reduce((total, subscription) => total + subscription.monthlyNetCents, 0),

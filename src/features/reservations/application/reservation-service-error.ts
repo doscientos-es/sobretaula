@@ -29,6 +29,8 @@ export function reservationServiceErrorMessage(error: unknown): string {
     return 'Solo las personas propietarias o responsables pueden configurar turnos. Pídeles acceso o que creen el turno.'
   if (message.includes('reservation_service_create_failed:23505'))
     return 'Ya existe un turno con ese nombre para ese día. Edítalo o usa otro nombre.'
+  if (message.includes('reservation_service_time_overlap'))
+    return 'Ya existe un turno abierto en ese horario para ese día. Ajusta las horas o edita el turno existente.'
   if (status === 404)
     return 'Este turno ya no está disponible. Actualiza la página e inténtalo de nuevo.'
   if (status === 422 || /ZodError|validation|invalid_type/i.test(message))

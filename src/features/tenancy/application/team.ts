@@ -156,7 +156,7 @@ export const getTenantTeam = createServerFn({ method: 'GET' })
     }
   })
 
-/** Adds an existing account immediately or emails a one-use invitation to a new worker. */
+/** Adds a confirmed account immediately or creates an invitation for an unconfirmed account. */
 export const inviteTenantMember = createServerFn({ method: 'POST' })
   .middleware([authMiddleware, tenantMembershipMiddleware])
   .validator(inviteInput)
@@ -172,16 +172,45 @@ export const inviteTenantMember = createServerFn({ method: 'POST' })
 
     const request = createRequestSupabaseClient(context.tenantMembership.accessToken)
     if (existing) {
-      const { error } = await request.rpc('upsert_tenant_member', {
-        p_role: data.role,
-        p_tenant_id: data.tenantId,
-        p_user_id: existing.user_id,
-      })
-      if (error) {
-        if (error.code === '42501') throw new Response('Forbidden', { status: 403 })
-        throw new Error(`team_member_upsert_failed:${error.code}`)
+      const { data: account, error: accountError } = await service.auth.admin.getUserById(
+        existing.user_id,
+      )
+      if (accountError || !account.user) throw new Error('team_account_lookup_failed')
+
+      // An account created through Supabase's invite flow has no confirmation yet.
+      // It must accept the team invitation and set its password before gaining access.
+      if (account.user.email_confirmed_at) {
+        const { error } = await request.rpc('upsert_tenant_member', {
+          p_role: data.role,
+          p_tenant_id: data.tenantId,
+          p_user_id: existing.user_id,
+        })
+        if (error) {
+          if (error.code === '42501') throw new Response('Forbidden', { status: 403 })
+          throw new Error(`team_member_upsert_failed:${error.code}`)
+        }
+        return { kind: 'member_added' as const }
       }
-      return { kind: 'member_added' as const }
+
+      const token = randomBytes(32).toString('base64url')
+      const { error: invitationError } = await request.from('invitations').upsert(
+        {
+          email: data.email,
+          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          role: data.role,
+          tenant_id: data.tenantId,
+          token_hash: hashInvitationToken(token),
+        },
+        { onConflict: 'tenant_id,email' },
+      )
+      if (invitationError) throw new Error(`tenant_invitation_save_failed:${invitationError.code}`)
+      const { data: link, error: linkError } = await service.auth.admin.generateLink({
+        type: 'invite',
+        email: data.email,
+        options: { redirectTo: invitationRedirect(token) },
+      })
+      if (linkError || !link.properties?.action_link) throw new Error('tenant_invitation_link_failed')
+      return { actionLink: link.properties.action_link, kind: 'invitation_sent' as const }
     }
 
     if (!data.name)

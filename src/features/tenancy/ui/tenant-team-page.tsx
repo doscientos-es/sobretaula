@@ -130,6 +130,7 @@ export function TenantTeamPage({
         refetchType: 'none',
       })
       reload()
+      return result
     } catch (error) {
       feedback.setError(teamErrorMessage(error))
     }
@@ -161,6 +162,9 @@ export function TenantTeamPage({
       },
       (result) => teamInvitationSuccessMessage(result.kind),
     )
+    .then((result) => {
+      if (result && 'actionLink' in result) setGeneratedInvitationLink(result.actionLink)
+    })
   }
 
   return (

@@ -1,5 +1,6 @@
 export interface AvailabilityRule {
   durationMinutesByParty: Readonly<Record<string, number>>
+  durationMinutesOverride?: number
   maxCoversPerSlot: number | null
   maxReservationsPerSlot: number | null
   maxLeadDays: number
@@ -128,7 +129,8 @@ export function checkAvailability({
   serviceStartsAt: Date
   tables: readonly AvailabilityTable[]
 }): AvailabilityResult {
-  const endsAt = new Date(requestedStartsAt.getTime() + durationForParty(rule, partySize) * 60_000)
+  const duration = rule.durationMinutesOverride ?? durationForParty(rule, partySize)
+  const endsAt = new Date(requestedStartsAt.getTime() + duration * 60_000)
   const requested = { endsAt, startsAt: requestedStartsAt }
   const minStart = new Date(now.getTime() + rule.minLeadMinutes * 60_000)
   const maxStart = new Date(now.getTime() + rule.maxLeadDays * 86_400_000)

@@ -24,6 +24,8 @@ import {
   Textarea,
   useFormFeedback,
 } from '@doscientos/ui'
+import { useQueryClient } from '@tanstack/react-query'
+import { Info } from 'lucide-react'
 import { useState, type DragEvent, type FormEvent } from 'react'
 
 import { zonedDateKey, zonedLocalToIso } from '@/shared/lib/date/zoned-time'
@@ -45,6 +47,20 @@ import { previewReservationCsv, type ReservationImportPreview } from '../domain/
 import { ReservationAgendaCard } from './reservation-agenda-card'
 
 const weekdays = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
+const scheduleStartHour = 8
+const scheduleEndHour = 24
+
+function FieldInfo({ text }: { text: string }) {
+  return (
+    <span
+      aria-label={text}
+      className="text-primary inline-flex cursor-help align-middle"
+      title={text}
+    >
+      <Info aria-hidden="true" className="size-3.5" />
+    </span>
+  )
+}
 
 function describeServiceRules(service: ReservationService): string {
   const covers = service.maxCoversPerSlot
@@ -78,6 +94,8 @@ export function ReservationPage({
   onAgendaSearchChange?: (search: ReservationAgendaSearch) => void
 }) {
   const feedback = useFormFeedback()
+  const queryClient = useQueryClient()
+  const serviceFeedback = useFormFeedback()
   const [serviceName, setServiceName] = useState('Comida')
   const [weekday, setWeekday] = useState(1)
   const [serviceStartsAt, setServiceStartsAt] = useState('13:00')
@@ -89,6 +107,7 @@ export function ReservationPage({
   const [guestName, setGuestName] = useState('')
   const [guestPhone, setGuestPhone] = useState('')
   const [partySize, setPartySize] = useState(2)
+  const [durationMinutes, setDurationMinutes] = useState(90)
   const [startsAt, setStartsAt] = useState('')
   const [termsTitle, setTermsTitle] = useState(terms[0]?.title ?? 'Condiciones de reserva')
   const [termsBody, setTermsBody] = useState(terms[0]?.body ?? '')
@@ -160,6 +179,7 @@ export function ReservationPage({
   }
 
   function loadService(service: ReservationService) {
+    serviceFeedback.reset()
     setServiceFormOpen(true)
     setEditingServiceId(service.id)
     setServiceName(service.name)
@@ -174,14 +194,14 @@ export function ReservationPage({
   async function configureService(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (serviceEndsAt <= serviceStartsAt) {
-      feedback.setError('La hora de cierre debe ser posterior a la de apertura.')
+      serviceFeedback.setError('La hora de cierre debe ser posterior a la de apertura.')
       return
     }
     if (serviceSlotMinutes < 5 || serviceSlotMinutes > 120) {
-      feedback.setError('El intervalo debe estar entre 5 y 120 minutos.')
+      serviceFeedback.setError('El intervalo debe estar entre 5 y 120 minutos.')
       return
     }
-    feedback.setPending()
+    serviceFeedback.setPending()
     try {
       const payload = {
         endsAtTime: serviceEndsAt,
@@ -203,9 +223,12 @@ export function ReservationPage({
       }
       setEditingServiceId(null)
       setServiceFormOpen(false)
+      await queryClient.invalidateQueries({
+        queryKey: ['tenant', tenantId, 'venue', venueId, 'reservations-workspace'],
+      })
       reload()
     } catch (error) {
-      feedback.setError(reservationServiceErrorMessage(error))
+      serviceFeedback.setError(reservationServiceErrorMessage(error))
     }
   }
 
@@ -242,6 +265,7 @@ export function ReservationPage({
           ...(guestName ? { guestName } : {}),
           ...(guestPhone ? { guestPhone } : {}),
           partySize,
+          durationMinutes,
           serviceId,
           startsAt: startsAtIso,
           operationId: reservationOperationId,
@@ -474,7 +498,7 @@ export function ReservationPage({
               </div>
             </details>
             <DialogRoot onOpenChange={setServiceFormOpen} open={serviceFormOpen}>
-              <DialogContent className="max-w-xl">
+              <DialogContent className="max-h-[calc(100svh-2rem)] max-w-xl overflow-y-auto">
                 <CardHeader>
                   <CardTitle>{editingServiceId ? 'Editar turno' : 'Añadir turno'}</CardTitle>
                   <CardDescription>
@@ -485,9 +509,15 @@ export function ReservationPage({
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <form className="grid gap-4" onSubmit={(event) => void configureService(event)}>
+                  <form
+                    className="grid gap-4 [&_.text-muted-foreground]:hidden"
+                    onSubmit={(event) => void configureService(event)}
+                  >
                     <Field>
-                      <FieldLabel htmlFor="service-name">Nombre del turno</FieldLabel>
+                      <FieldLabel htmlFor="service-name">
+                        Nombre del turno{' '}
+                        <FieldInfo text="Nombre fácil de reconocer, como Comida o Cena." />
+                      </FieldLabel>
                       <Input
                         id="service-name"
                         onChange={(event) => setServiceName(event.target.value)}
@@ -501,7 +531,10 @@ export function ReservationPage({
                       </FieldDescription>
                     </Field>
                     <Field>
-                      <FieldLabel htmlFor="service-weekday">Día de la semana</FieldLabel>
+                      <FieldLabel htmlFor="service-weekday">
+                        Día de la semana{' '}
+                        <FieldInfo text="El turno se repetirá cada semana en el día elegido." />
+                      </FieldLabel>
                       <select
                         id="service-weekday"
                         onChange={(event) => setWeekday(Number(event.target.value))}
@@ -520,7 +553,10 @@ export function ReservationPage({
                     </Field>
                     <div className="grid gap-4 sm:grid-cols-2">
                       <Field>
-                        <FieldLabel htmlFor="service-starts-at">Apertura del turno</FieldLabel>
+                        <FieldLabel htmlFor="service-starts-at">
+                          Apertura del turno{' '}
+                          <FieldInfo text="Hora a partir de la que se pueden reservar mesas." />
+                        </FieldLabel>
                         <Input
                           id="service-starts-at"
                           onChange={(event) => setServiceStartsAt(event.target.value)}
@@ -533,7 +569,9 @@ export function ReservationPage({
                         </FieldDescription>
                       </Field>
                       <Field>
-                        <FieldLabel htmlFor="service-ends-at">Cierre del turno</FieldLabel>
+                        <FieldLabel htmlFor="service-ends-at">
+                          Cierre del turno <FieldInfo text="Hora límite para iniciar reservas." />
+                        </FieldLabel>
                         <Input
                           id="service-ends-at"
                           onChange={(event) => setServiceEndsAt(event.target.value)}
@@ -547,7 +585,8 @@ export function ReservationPage({
                       </Field>
                       <Field>
                         <FieldLabel htmlFor="service-slot-minutes">
-                          Intervalo entre reservas
+                          Intervalo entre reservas{' '}
+                          <FieldInfo text="Cada cuánto aparece una hora de llegada. No es la duración de la comida." />
                         </FieldLabel>
                         <Input
                           id="service-slot-minutes"
@@ -566,7 +605,8 @@ export function ReservationPage({
                       </Field>
                       <Field>
                         <FieldLabel htmlFor="service-max-covers">
-                          Cubiertos máximos por intervalo
+                          Cubiertos máximos por intervalo{' '}
+                          <FieldInfo text="Máximo de personas que pueden entrar en esa franja." />
                         </FieldLabel>
                         <Input
                           id="service-max-covers"
@@ -584,7 +624,8 @@ export function ReservationPage({
                       </Field>
                       <Field>
                         <FieldLabel htmlFor="service-max-reservations">
-                          Reservas máximas por intervalo
+                          Reservas máximas por intervalo{' '}
+                          <FieldInfo text="Máximo de reservas que pueden empezar en esa franja." />
                         </FieldLabel>
                         <Input
                           id="service-max-reservations"
@@ -603,22 +644,25 @@ export function ReservationPage({
                         </FieldDescription>
                       </Field>
                     </div>
-                    <FormFeedback pendingLabel="Creando turno…" state={feedback.state} />
-                    <Button disabled={feedback.pending} type="submit">
-                      {editingServiceId ? 'Guardar cambios' : 'Crear turno'}
-                    </Button>
-                    {editingServiceId ? (
-                      <Button
-                        onClick={() => {
-                          setEditingServiceId(null)
-                          setServiceFormOpen(false)
-                        }}
-                        type="button"
-                        variant="ghost"
-                      >
-                        Cancelar
+                    <FormFeedback pendingLabel="Creando turno…" state={serviceFeedback.state} />
+                    <div className="flex flex-wrap justify-end gap-2">
+                      {editingServiceId ? (
+                        <Button
+                          onClick={() => {
+                            serviceFeedback.reset()
+                            setEditingServiceId(null)
+                            setServiceFormOpen(false)
+                          }}
+                          type="button"
+                          variant="ghost"
+                        >
+                          Cancelar
+                        </Button>
+                      ) : null}
+                      <Button disabled={serviceFeedback.pending} type="submit">
+                        {editingServiceId ? 'Guardar cambios' : 'Crear turno'}
                       </Button>
-                    ) : null}
+                    </div>
                   </form>
                 </CardContent>
               </DialogContent>
@@ -635,6 +679,7 @@ export function ReservationPage({
                 </div>
                 <Button
                   onClick={() => {
+                    serviceFeedback.reset()
                     setEditingServiceId(null)
                     setServiceFormOpen(true)
                   }}
@@ -643,15 +688,19 @@ export function ReservationPage({
                   Añadir turno
                 </Button>
               </CardHeader>
-              <CardContent>
-                <ul className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <CardContent className="overflow-x-auto">
+                <div className="text-muted-foreground relative mb-2 flex min-w-[900px] justify-between px-3 text-xs">
+                  <span>{scheduleStartHour}:00 · Mañana</span>
+                  <span>{scheduleEndHour - 1}:00 · Noche</span>
+                </div>
+                <ul className="grid min-w-[900px] grid-cols-7 gap-2">
                   {weekdays.map((weekdayName, weekdayIndex) => {
                     const weekdayServices = services.filter(
                       (service) => service.weekday === weekdayIndex,
                     )
 
                     return (
-                      <li className="bg-muted/20 min-h-32 rounded-lg border p-3" key={weekdayName}>
+                      <li className="bg-muted/20 min-h-96 rounded-lg border p-3" key={weekdayName}>
                         <p className="font-medium">{weekdayName}</p>
                         {weekdayServices.length > 0 ? (
                           <ul className="mt-2 grid gap-2">
@@ -738,6 +787,21 @@ export function ReservationPage({
                         type="number"
                         value={partySize}
                       />
+                    </Field>
+                    <Field>
+                      <FieldLabel htmlFor="reservation-duration">Duración prevista</FieldLabel>
+                      <Input
+                        id="reservation-duration"
+                        min={15}
+                        max={480}
+                        onChange={(event) => setDurationMinutes(Number(event.target.value))}
+                        required
+                        type="number"
+                        value={durationMinutes}
+                      />
+                      <FieldDescription>
+                        Tiempo estimado de ocupación de la mesa, en minutos.
+                      </FieldDescription>
                     </Field>
                     <Field>
                       <FieldLabel htmlFor="reservation-guest">Nombre (opcional)</FieldLabel>
@@ -847,6 +911,21 @@ export function ReservationPage({
                     type="number"
                     value={partySize}
                   />
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="calendar-reservation-duration">Duración prevista</FieldLabel>
+                  <Input
+                    id="calendar-reservation-duration"
+                    min={15}
+                    max={480}
+                    onChange={(event) => setDurationMinutes(Number(event.target.value))}
+                    required
+                    type="number"
+                    value={durationMinutes}
+                  />
+                  <FieldDescription>
+                    Tiempo estimado de ocupación de la mesa, en minutos.
+                  </FieldDescription>
                 </Field>
                 <Button disabled={feedback.pending} type="submit">
                   Crear reserva

@@ -22,7 +22,7 @@ function errorStatus(error: unknown): number | undefined {
 export function teamInvitationSuccessMessage(kind: 'member_added' | 'invitation_sent'): string {
   return kind === 'member_added'
     ? 'La cuenta ya existía y se ha añadido al equipo.'
-    : 'Invitación enviada. La persona deberá revisar su correo.'
+    : 'Invitación pendiente. La persona debe aceptarla y crear su contraseña.'
 }
 
 /** Explains safe, recoverable team-management failures, including serialized server errors. */
