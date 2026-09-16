@@ -8,6 +8,7 @@ export const Route = createFileRoute('/t/$slug/l/$venue/reservas')({
     date: z.string().date().optional(),
     q: z.string().trim().max(100).optional(),
     status: z.enum(['all', 'pending', 'confirmed', 'seated', 'cancelled', 'no_show']).optional(),
+    section: z.enum(['agenda', 'turnos']).optional(),
   }),
   loader: ({ context }) => ({ tenant: context.tenant, venue: context.venue }),
   ...tenantRouteState,

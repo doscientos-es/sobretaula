@@ -12,6 +12,7 @@ import { Link, useNavigate, useParams } from '@tanstack/react-router'
 import {
   BarChart3,
   CalendarDays,
+  Clock3,
   ConciergeBell,
   Coins,
   ExternalLink,
@@ -188,6 +189,7 @@ export function TenantAdminFrame({
                 </Link>
                 <Link
                   to="/t/$slug/l/$venue/reservas"
+                  search={{ section: 'agenda' }}
                   params={{ slug, venue: activeVenue.slug }}
                   activeProps={{
                     className: `${navLinkClass} st-saas-nav-link--active`,
@@ -196,7 +198,18 @@ export function TenantAdminFrame({
                   onClick={handleLockedNavigation}
                 >
                   <CalendarDays className="size-3" />
-                  {t('nav.reservations')}
+                  Agenda
+                </Link>
+                <Link
+                  to="/t/$slug/l/$venue/reservas"
+                  params={{ slug, venue: activeVenue.slug }}
+                  search={{ section: 'turnos' }}
+                  activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
+                  className={navLinkClass}
+                  onClick={handleLockedNavigation}
+                >
+                  <Clock3 className="size-3" />
+                  Turnos
                 </Link>
               </nav>
             </div>

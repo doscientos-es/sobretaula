@@ -46,6 +46,7 @@ function ReservationsRoute() {
       timezone={tenant.timezone}
       venueId={venue.id}
       terms={terms}
+      initialSection={search.section ?? 'agenda'}
     />
   )
 }

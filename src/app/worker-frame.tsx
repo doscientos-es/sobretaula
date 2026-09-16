@@ -1,5 +1,5 @@
 import { Link, useParams } from '@tanstack/react-router'
-import { CalendarDays, ConciergeBell, Map, Utensils } from 'lucide-react'
+import { CalendarDays, Clock3, ConciergeBell, Map, Utensils } from 'lucide-react'
 import type { ReactNode } from 'react'
 
 import { AppShellFrame } from '@/app/app-shell-frame'
@@ -98,8 +98,18 @@ export function WorkerFrame({
                   className={navLinkClass}
                   params={venueParams}
                   to="/t/$slug/l/$venue/reservas"
+                  search={{ section: 'agenda' }}
                 >
-                  <CalendarDays className="size-3" /> {t('nav.reservations')}
+                  <CalendarDays className="size-3" /> Agenda
+                </Link>
+                <Link
+                  activeProps={{ className: `${navLinkClass} st-saas-nav-link--active` }}
+                  className={navLinkClass}
+                  params={venueParams}
+                  search={{ section: 'turnos' }}
+                  to="/t/$slug/l/$venue/reservas"
+                >
+                  <Clock3 className="size-3" /> Turnos
                 </Link>
               </>
             )}

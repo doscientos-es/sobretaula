@@ -104,124 +104,125 @@ export function EmailBrandingPage({
           <CardDescription>{t('communications.branding.cardDescription')}</CardDescription>
         </CardHeader>
         <CardContent>
-          <form
-            aria-busy={feedback.pending || uploadingLogo}
-            className="grid gap-5 sm:grid-cols-2"
-            onSubmit={submit}
-          >
-            <Field className="sm:col-span-2">
-              <FieldLabel htmlFor="theme-preset">{t('communications.branding.preset')}</FieldLabel>
-              <select
-                className="focus-visible:outline-ring min-h-10 rounded-md border px-3 focus-visible:outline-2 focus-visible:outline-offset-2"
-                disabled={!canManage || feedback.pending || uploadingLogo}
-                id="theme-preset"
-                onChange={(event) => {
-                  const value = event.target.value as EmailBranding['preset']
-                  setPreset(value)
-                  const colors = {
-                    terracotta: ['#0f766e', '#c34d3e'],
-                    olive: ['#556b2f', '#b7791f'],
-                    ocean: ['#1769aa', '#0e7490'],
-                    midnight: ['#312e81', '#db2777'],
-                  } as const
-                  const selected = value === 'custom' ? colors.terracotta : colors[value]
-                  if (selected) {
-                    setPrimaryColor(selected[0])
-                    setAccentColor(selected[1])
-                  }
-                }}
-                value={preset}
-              >
-                <option value="terracotta">{t('communications.branding.preset.terracotta')}</option>
-                <option value="olive">{t('communications.branding.preset.olive')}</option>
-                <option value="ocean">{t('communications.branding.preset.ocean')}</option>
-                <option value="midnight">{t('communications.branding.preset.midnight')}</option>
-              </select>
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="email-from-name">
-                {t('communications.branding.senderName')}
-              </FieldLabel>
-              <Input
-                disabled={!canManage || feedback.pending || uploadingLogo}
-                id="email-from-name"
-                maxLength={120}
-                onChange={(event) => setEmailFromName(event.target.value)}
-                placeholder="Ej. Casa Muntaner"
-                required
-                value={emailFromName}
-              />
-              {canManage ? (
-                <div className="mt-3 space-y-2">
-                  <FieldLabel htmlFor="logo-upload">
-                    {t('communications.branding.logoUpload')}
-                  </FieldLabel>
-                  <input
-                    accept="image/png,image/jpeg,image/webp"
-                    className="file:bg-muted block text-sm file:mr-3 file:rounded-md file:border-0 file:px-3 file:py-2 file:font-medium disabled:opacity-60"
-                    disabled={feedback.pending || uploadingLogo}
-                    id="logo-upload"
-                    onChange={(event) => void uploadLogo(event)}
-                    type="file"
-                  />
-                  {logoUploadState !== 'idle' ? (
-                    <output
-                      aria-live="polite"
-                      className={
-                        logoUploadState === 'error'
-                          ? 'text-destructive block text-xs'
-                          : 'text-muted-foreground block text-xs'
-                      }
-                    >
-                      {logoUploadState === 'pending'
-                        ? t('communications.branding.logoUploading')
-                        : logoUploadState === 'success'
-                          ? t('communications.branding.logoUploaded')
-                          : t('communications.branding.logoUploadError')}
-                    </output>
-                  ) : null}
-                </div>
-              ) : null}
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="reply-to-email">
-                {t('communications.branding.replyToEmail')}
-              </FieldLabel>
-              <Input
-                disabled={!canManage || feedback.pending || uploadingLogo}
-                id="reply-to-email"
-                onChange={(event) => setReplyToEmail(event.target.value)}
-                placeholder="reservas@turestaurante.es"
-                type="email"
-                value={replyToEmail}
-              />
-            </Field>
-            <Field className="sm:col-span-2">
-              <FieldLabel htmlFor="logo-url">{t('communications.branding.logoUrl')}</FieldLabel>
-              <Input
-                disabled={!canManage || feedback.pending || uploadingLogo}
-                id="logo-url"
-                onChange={(event) => setLogoUrl(event.target.value)}
-                placeholder="https://…/logo.png"
-                type="url"
-                value={logoUrl}
-              />
-            </Field>
-            <div className="rounded-xl border p-4 sm:mt-6" style={{ borderColor: accentColor }}>
-              {logoUrl ? (
-                <img
-                  alt={`Logo de ${emailFromName || defaultName}`}
-                  className="mb-3 h-8 max-w-40 object-contain object-left"
-                  src={logoUrl}
+          <div className="grid gap-6 md:grid-cols-2 md:items-start">
+            <form
+              aria-busy={feedback.pending || uploadingLogo}
+              className="grid gap-5 sm:grid-cols-2"
+              onSubmit={submit}
+            >
+              <Field className="sm:col-span-2">
+                <FieldLabel htmlFor="theme-preset">
+                  {t('communications.branding.preset')}
+                </FieldLabel>
+                <select
+                  className="focus-visible:outline-ring min-h-10 rounded-md border px-3 focus-visible:outline-2 focus-visible:outline-offset-2"
+                  disabled={!canManage || feedback.pending || uploadingLogo}
+                  id="theme-preset"
+                  onChange={(event) => {
+                    const value = event.target.value as EmailBranding['preset']
+                    setPreset(value)
+                    const colors = {
+                      terracotta: ['#0f766e', '#c34d3e'],
+                      olive: ['#556b2f', '#b7791f'],
+                      ocean: ['#1769aa', '#0e7490'],
+                      midnight: ['#312e81', '#db2777'],
+                    } as const
+                    const selected = value === 'custom' ? colors.terracotta : colors[value]
+                    if (selected) {
+                      setPrimaryColor(selected[0])
+                      setAccentColor(selected[1])
+                    }
+                  }}
+                  value={preset}
+                >
+                  <option value="terracotta">
+                    {t('communications.branding.preset.terracotta')}
+                  </option>
+                  <option value="olive">{t('communications.branding.preset.olive')}</option>
+                  <option value="ocean">{t('communications.branding.preset.ocean')}</option>
+                  <option value="midnight">{t('communications.branding.preset.midnight')}</option>
+                </select>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="email-from-name">
+                  {t('communications.branding.senderName')}
+                </FieldLabel>
+                <Input
+                  disabled={!canManage || feedback.pending || uploadingLogo}
+                  id="email-from-name"
+                  maxLength={120}
+                  onChange={(event) => setEmailFromName(event.target.value)}
+                  placeholder="Ej. Casa Muntaner"
+                  required
+                  value={emailFromName}
                 />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="reply-to-email">
+                  {t('communications.branding.replyToEmail')}
+                </FieldLabel>
+                <Input
+                  disabled={!canManage || feedback.pending || uploadingLogo}
+                  id="reply-to-email"
+                  onChange={(event) => setReplyToEmail(event.target.value)}
+                  placeholder="reservas@turestaurante.es"
+                  type="email"
+                  value={replyToEmail}
+                />
+              </Field>
+              {canManage ? (
+                <fieldset className="border-border space-y-4 rounded-xl border p-4 sm:col-span-2">
+                  <legend className="px-1 text-sm font-semibold">
+                    {t('communications.branding.logo')}
+                  </legend>
+                  <p className="text-muted-foreground text-sm">
+                    {t('communications.branding.logoDescription')}
+                  </p>
+                  <div className="space-y-2">
+                    <FieldLabel htmlFor="logo-upload">
+                      {t('communications.branding.logoUpload')}
+                    </FieldLabel>
+                    <input
+                      accept="image/png,image/jpeg,image/webp"
+                      className="file:bg-muted block text-sm file:mr-3 file:rounded-md file:border-0 file:px-3 file:py-2 file:font-medium disabled:opacity-60"
+                      disabled={feedback.pending || uploadingLogo}
+                      id="logo-upload"
+                      onChange={(event) => void uploadLogo(event)}
+                      type="file"
+                    />
+                    {logoUploadState !== 'idle' ? (
+                      <output
+                        aria-live="polite"
+                        className={
+                          logoUploadState === 'error'
+                            ? 'text-destructive block text-xs'
+                            : 'text-muted-foreground block text-xs'
+                        }
+                      >
+                        {logoUploadState === 'pending'
+                          ? t('communications.branding.logoUploading')
+                          : logoUploadState === 'success'
+                            ? t('communications.branding.logoUploaded')
+                            : t('communications.branding.logoUploadError')}
+                      </output>
+                    ) : null}
+                  </div>
+                  <div className="space-y-2">
+                    <FieldLabel htmlFor="logo-url">
+                      {t('communications.branding.logoUrl')}
+                    </FieldLabel>
+                    <Input
+                      disabled={feedback.pending || uploadingLogo}
+                      id="logo-url"
+                      onChange={(event) => setLogoUrl(event.target.value)}
+                      placeholder="https://…/logo.png"
+                      type="url"
+                      value={logoUrl}
+                    />
+                  </div>
+                </fieldset>
               ) : null}
-              <p className="font-semibold" style={{ color: primaryColor }}>
-                {emailFromName || defaultName}
-              </p>
-              <p className="text-muted-foreground mt-1 text-xs">
-                {t('communications.branding.preview')}
-              </p>
-            </div>
+            </form>
             {canManage ? (
               <div className="sm:col-span-2">
                 <Button disabled={feedback.pending || uploadingLogo} type="submit">
@@ -231,7 +232,7 @@ export function EmailBrandingPage({
                 </Button>
               </div>
             ) : null}
-          </form>
+          </div>
           <FormFeedback pendingLabel={t('communications.branding.saving')} state={feedback.state} />
         </CardContent>
       </Card>

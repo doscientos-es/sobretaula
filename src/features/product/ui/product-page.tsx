@@ -34,10 +34,10 @@ import {
   TabsPanels,
   TabsTrigger,
   useFormFeedback,
-} from "@doscientos/ui";
-import { useEffect, useMemo, useState } from "react";
+} from '@doscientos/ui'
+import { useEffect, useMemo, useState } from 'react'
 
-import { useAsyncEffect } from "@/shared/lib/react/use-async-effect";
+import { useAsyncEffect } from '@/shared/lib/react/use-async-effect'
 
 import {
   addInventoryMovement,
@@ -51,26 +51,26 @@ import {
   type getInventory,
   type listPurchaseOrders,
   type listSuppliers,
-} from "../application/product";
-import { ALLERGENS, calculateRecipeCost } from "../domain/product-costing";
-import { buildPurchaseRecommendation } from "../domain/purchase-recommendation";
+} from '../application/product'
+import { ALLERGENS, calculateRecipeCost } from '../domain/product-costing'
+import { buildPurchaseRecommendation } from '../domain/purchase-recommendation'
 
 const ALLERGEN_LABELS: Record<(typeof ALLERGENS)[number], string> = {
-  gluten: "Gluten",
-  crustaceans: "Crustáceos",
-  eggs: "Huevos",
-  fish: "Pescado",
-  peanuts: "Cacahuetes",
-  soy: "Soja",
-  milk: "Leche",
-  nuts: "Frutos de cáscara",
-  celery: "Apio",
-  mustard: "Mostaza",
-  sesame: "Sésamo",
-  sulphites: "Sulfitos",
-  lupin: "Altramuces",
-  molluscs: "Moluscos",
-};
+  gluten: 'Gluten',
+  crustaceans: 'Crustáceos',
+  eggs: 'Huevos',
+  fish: 'Pescado',
+  peanuts: 'Cacahuetes',
+  soy: 'Soja',
+  milk: 'Leche',
+  nuts: 'Frutos de cáscara',
+  celery: 'Apio',
+  mustard: 'Mostaza',
+  sesame: 'Sésamo',
+  sulphites: 'Sulfitos',
+  lupin: 'Altramuces',
+  molluscs: 'Moluscos',
+}
 
 export function ProductPage({
   ingredients,
@@ -82,24 +82,24 @@ export function ProductPage({
   suppliers,
   purchaseOrders,
 }: {
-  ingredients: Awaited<ReturnType<typeof listIngredients>>;
-  stock: Awaited<ReturnType<typeof getInventory>>;
-  menuItems: { id: string; name: string }[];
-  tenantId: string;
-  venueId: string;
-  onDone: () => void;
-  suppliers: Awaited<ReturnType<typeof listSuppliers>>;
-  purchaseOrders: Awaited<ReturnType<typeof listPurchaseOrders>>;
+  ingredients: Awaited<ReturnType<typeof listIngredients>>
+  stock: Awaited<ReturnType<typeof getInventory>>
+  menuItems: { id: string; name: string }[]
+  tenantId: string
+  venueId: string
+  onDone: () => void
+  suppliers: Awaited<ReturnType<typeof listSuppliers>>
+  purchaseOrders: Awaited<ReturnType<typeof listPurchaseOrders>>
 }) {
-  const feedback = useFormFeedback();
-  const [ingredientList, setIngredientList] = useState(ingredients);
-  const [ingredientSearchInput, setIngredientSearchInput] = useState("");
-  const [ingredientSearch, setIngredientSearch] = useState("");
-  const [ingredientPage, setIngredientPage] = useState(ingredients.page);
-  const [ingredientLoading, setIngredientLoading] = useState(false);
-  const [ingredientLoadError, setIngredientLoadError] = useState(false);
-  const [ingredientRefresh, setIngredientRefresh] = useState(0);
-  const ingredientItems = ingredientList.items;
+  const feedback = useFormFeedback()
+  const [ingredientList, setIngredientList] = useState(ingredients)
+  const [ingredientSearchInput, setIngredientSearchInput] = useState('')
+  const [ingredientSearch, setIngredientSearch] = useState('')
+  const [ingredientPage, setIngredientPage] = useState(ingredients.page)
+  const [ingredientLoading, setIngredientLoading] = useState(false)
+  const [ingredientLoadError, setIngredientLoadError] = useState(false)
+  const [ingredientRefresh, setIngredientRefresh] = useState(0)
+  const ingredientItems = ingredientList.items
   const purchaseRecommendations = useMemo(
     () =>
       ingredientItems
@@ -114,30 +114,26 @@ export function ProductPage({
         )
         .filter((recommendation) => recommendation.quantity > 0),
     [ingredientItems, stock.stock],
-  );
-  const [supplierId, setSupplierId] = useState("");
-  const [supplierName, setSupplierName] = useState("");
-  const [deliveryReference, setDeliveryReference] = useState("");
-  const [deliveryQuantity, setDeliveryQuantity] = useState("");
-  const [deliveryCost, setDeliveryCost] = useState("");
-  const [deliveryIngredientId, setDeliveryIngredientId] = useState("");
-  const [purchaseOrderId, setPurchaseOrderId] = useState("");
-  const [pendingRecommendationId, setPendingRecommendationId] = useState<
-    string | null
-  >(null);
+  )
+  const [supplierId, setSupplierId] = useState('')
+  const [supplierName, setSupplierName] = useState('')
+  const [deliveryReference, setDeliveryReference] = useState('')
+  const [deliveryQuantity, setDeliveryQuantity] = useState('')
+  const [deliveryCost, setDeliveryCost] = useState('')
+  const [deliveryIngredientId, setDeliveryIngredientId] = useState('')
+  const [purchaseOrderId, setPurchaseOrderId] = useState('')
+  const [pendingRecommendationId, setPendingRecommendationId] = useState<string | null>(null)
   async function createRecommendedPurchase(
     recommendation: (typeof purchaseRecommendations)[number],
   ) {
-    if (feedback.pending) return;
-    const selectedSupplierId = supplierId || suppliers.items[0]?.id;
+    if (feedback.pending) return
+    const selectedSupplierId = supplierId || suppliers.items[0]?.id
     if (!selectedSupplierId) {
-      feedback.setError(
-        "Crea o selecciona un proveedor antes de generar el pedido.",
-      );
-      return;
+      feedback.setError('Crea o selecciona un proveedor antes de generar el pedido.')
+      return
     }
-    setPendingRecommendationId(recommendation.ingredientId);
-    feedback.setPending();
+    setPendingRecommendationId(recommendation.ingredientId)
+    feedback.setPending()
     try {
       await createPurchaseOrder({
         data: {
@@ -153,28 +149,26 @@ export function ProductPage({
             },
           ],
         },
-      });
-      feedback.setSuccess(
-        `Pedido creado para ${recommendation.ingredientName}.`,
-      );
-      onDone();
+      })
+      feedback.setSuccess(`Pedido creado para ${recommendation.ingredientName}.`)
+      onDone()
     } catch {
-      feedback.setError("No se ha podido crear el pedido recomendado.");
+      feedback.setError('No se ha podido crear el pedido recomendado.')
     } finally {
-      setPendingRecommendationId(null);
+      setPendingRecommendationId(null)
     }
   }
   async function receiveDelivery(event: React.FormEvent) {
-    event.preventDefault();
-    if (feedback.pending || !deliveryIngredientId) return;
-    feedback.setPending();
+    event.preventDefault()
+    if (feedback.pending || !deliveryIngredientId) return
+    feedback.setPending()
     try {
-      let selectedSupplierId = supplierId;
+      let selectedSupplierId = supplierId
       if (!selectedSupplierId) {
         const created = await createSupplier({
           data: { tenantId, name: supplierName },
-        });
-        selectedSupplierId = created.supplierId;
+        })
+        selectedSupplierId = created.supplierId
       }
       const created = await createDeliveryNote({
         data: {
@@ -192,30 +186,30 @@ export function ProductPage({
             },
           ],
         },
-      });
+      })
       await receiveDeliveryNote({
         data: { tenantId, deliveryNoteId: created.deliveryNoteId },
-      });
-      setDeliveryReference("");
-      setDeliveryQuantity("");
-      setDeliveryCost("");
-      feedback.setSuccess("Albarán recibido y stock actualizado.");
-      onDone();
+      })
+      setDeliveryReference('')
+      setDeliveryQuantity('')
+      setDeliveryCost('')
+      feedback.setSuccess('Albarán recibido y stock actualizado.')
+      onDone()
     } catch {
-      feedback.setError("No se ha podido recibir el albarán.");
+      feedback.setError('No se ha podido recibir el albarán.')
     }
   }
   useEffect(() => {
     const timeout = window.setTimeout(() => {
-      setIngredientPage(1);
-      setIngredientSearch(ingredientSearchInput);
-    }, 250);
-    return () => window.clearTimeout(timeout);
-  }, [ingredientSearchInput]);
+      setIngredientPage(1)
+      setIngredientSearch(ingredientSearchInput)
+    }, 250)
+    return () => window.clearTimeout(timeout)
+  }, [ingredientSearchInput])
   useAsyncEffect(() => {
-    let cancelled = false;
-    setIngredientLoading(true);
-    setIngredientLoadError(false);
+    let cancelled = false
+    setIngredientLoading(true)
+    setIngredientLoadError(false)
     void listIngredients({
       data: {
         page: ingredientPage,
@@ -226,111 +220,93 @@ export function ProductPage({
       },
     })
       .then((result) => {
-        if (!cancelled) setIngredientList(result);
+        if (!cancelled) setIngredientList(result)
       })
       .catch(() => {
-        if (!cancelled) setIngredientLoadError(true);
+        if (!cancelled) setIngredientLoadError(true)
       })
       .finally(() => {
-        if (!cancelled) setIngredientLoading(false);
-      });
+        if (!cancelled) setIngredientLoading(false)
+      })
     return () => {
-      cancelled = true;
-    };
-  }, [
-    ingredientPage,
-    ingredientRefresh,
-    ingredientSearch,
-    ingredients.pageSize,
-    tenantId,
-    venueId,
-  ]);
-  const [name, setName] = useState("");
-  const [unit, setUnit] = useState("kg");
-  const [cost, setCost] = useState("");
-  const [minimum, setMinimum] = useState("");
-  const [ingredientAllergens, setIngredientAllergens] = useState<
-    (typeof ALLERGENS)[number][]
-  >([]);
-  const [ingredientIsVegan, setIngredientIsVegan] = useState(false);
-  const [ingredientId, setIngredientId] = useState("");
-  const [movementQuantity, setMovementQuantity] = useState("");
-  const [movementKind, setMovementKind] = useState<
-    "purchase" | "waste" | "adjustment"
-  >("purchase");
+      cancelled = true
+    }
+  }, [ingredientPage, ingredientRefresh, ingredientSearch, ingredients.pageSize, tenantId, venueId])
+  const [name, setName] = useState('')
+  const [unit, setUnit] = useState('kg')
+  const [cost, setCost] = useState('')
+  const [minimum, setMinimum] = useState('')
+  const [ingredientAllergens, setIngredientAllergens] = useState<(typeof ALLERGENS)[number][]>([])
+  const [ingredientIsVegan, setIngredientIsVegan] = useState(false)
+  const [ingredientId, setIngredientId] = useState('')
+  const [movementQuantity, setMovementQuantity] = useState('')
+  const [movementKind, setMovementKind] = useState<'purchase' | 'waste' | 'adjustment'>('purchase')
   const [wasteReason, setWasteReason] = useState<
-    | "expiry"
-    | "breakage"
-    | "overproduction"
-    | "return"
-    | "internal_consumption"
-    | "other"
-  >("other");
-  const [reason, setReason] = useState("");
-  const [menuItemId, setMenuItemId] = useState("");
-  const [recipeIngredientId, setRecipeIngredientId] = useState("");
-  const [recipeQuantity, setRecipeQuantity] = useState("");
+    'expiry' | 'breakage' | 'overproduction' | 'return' | 'internal_consumption' | 'other'
+  >('other')
+  const [reason, setReason] = useState('')
+  const [menuItemId, setMenuItemId] = useState('')
+  const [recipeIngredientId, setRecipeIngredientId] = useState('')
+  const [recipeQuantity, setRecipeQuantity] = useState('')
   const [recipeLines, setRecipeLines] = useState<
     { ingredientId: string; quantity: number; wastePercent: number }[]
-  >([]);
+  >([])
   const recipePreview = useMemo(
     () =>
       calculateRecipeCost(
         recipeLines.map((line) => {
-          const ingredient = ingredientItems.find(
-            (item) => item.id === line.ingredientId,
-          );
+          const ingredient = ingredientItems.find((item) => item.id === line.ingredientId)
           return {
-            name: ingredient?.name ?? "Ingrediente",
+            name: ingredient?.name ?? 'Ingrediente',
             quantity: line.quantity,
             costCentsPerUnit: ingredient?.costCentsPerUnit ?? 0,
             wastePercent: line.wastePercent,
             allergens: ingredient?.allergens ?? [],
             isVegan: ingredient?.isVegan ?? false,
-          };
+          }
         }),
       ),
     [ingredientItems, recipeLines],
-  );
+  )
   async function submit(event: React.FormEvent) {
-    event.preventDefault();
-    if (feedback.pending) return;
-    feedback.setPending();
+    event.preventDefault()
+    if (feedback.pending) return
+    feedback.setPending()
     try {
       await createIngredient({
         data: {
           tenantId,
           name,
-          unit: unit as "g" | "kg" | "ml" | "l" | "unit",
+          unit: unit as 'g' | 'kg' | 'ml' | 'l' | 'unit',
           costCentsPerUnit: Number(cost),
           minimumStock: Number(minimum),
           allergens: ingredientAllergens,
           isVegan: ingredientIsVegan,
         },
-      });
-      setName("");
-      setCost("");
-      setMinimum("");
-      setIngredientAllergens([]);
-      setIngredientIsVegan(false);
-      feedback.setSuccess("Ingrediente creado.");
-      onDone();
+      })
+      setName('')
+      setCost('')
+      setMinimum('')
+      setIngredientAllergens([])
+      setIngredientIsVegan(false)
+      feedback.setSuccess('Ingrediente creado.')
+      onDone()
     } catch {
-      feedback.setError("No se ha podido crear el ingrediente.");
+      feedback.setError('No se ha podido crear el ingrediente.')
     }
   }
   async function saveRecipe() {
-    if (feedback.pending || !menuItemId || recipeLines.length === 0) return;
-    feedback.setPending();
+    if (feedback.pending || !menuItemId || recipeLines.length === 0) return
+    feedback.setPending()
     try {
       await replaceRecipe({
         data: { tenantId, menuItemId, lines: recipeLines },
-      });
-      feedback.setSuccess("Receta guardada.");
-      setRecipeLines([]);
-      onDone();
+      })
+      feedback.setSuccess('Receta guardada.')
+      setRecipeLines([])
+      onDone()
     } catch {
-      feedback.setError("No se ha podido guardar la receta.");
+      feedback.setError('No se ha podido guardar la receta.')
     }
   }
   return (
@@ -355,15 +331,13 @@ export function ProductPage({
                     <strong>{recommendation.quantity} unidades</strong>
                     <Button
                       disabled={feedback.pending}
-                      onClick={() =>
-                        void createRecommendedPurchase(recommendation)
-                      }
+                      onClick={() => void createRecommendedPurchase(recommendation)}
                       size="sm"
                       type="button"
                     >
                       {pendingRecommendationId === recommendation.ingredientId
-                        ? "Creando…"
-                        : "Crear pedido"}
+                        ? 'Creando…'
+                        : 'Crear pedido'}
                     </Button>
                   </div>
                 </li>
@@ -392,16 +366,12 @@ export function ProductPage({
                       La base que alimenta recetas, carta y disponibilidad.
                     </p>
                   </div>
-                  <Dialog
-                    trigger="Añadir ingrediente"
-                    triggerProps={{ type: "button" }}
-                  >
+                  <Dialog trigger="Añadir ingrediente" triggerProps={{ type: 'button' }}>
                     <DialogContent className="max-w-2xl">
                       <DialogHeader>
                         <DialogTitle>Nuevo ingrediente</DialogTitle>
                         <DialogDescription>
-                          Define la unidad, coste, mínimo y atributos
-                          alimentarios.
+                          Define la unidad, coste, mínimo y atributos alimentarios.
                         </DialogDescription>
                       </DialogHeader>
                       <div className="space-y-4">
@@ -411,9 +381,7 @@ export function ProductPage({
                           onSubmit={(event) => void submit(event)}
                         >
                           <Field>
-                            <FieldLabel htmlFor="ingredient-name">
-                              Nombre
-                            </FieldLabel>
+                            <FieldLabel htmlFor="ingredient-name">Nombre</FieldLabel>
                             <Input
                               id="ingredient-name"
                               onChange={(e) => setName(e.target.value)}
@@ -423,9 +391,7 @@ export function ProductPage({
                             />
                           </Field>
                           <Field>
-                            <FieldLabel htmlFor="ingredient-unit">
-                              Unidad
-                            </FieldLabel>
+                            <FieldLabel htmlFor="ingredient-unit">Unidad</FieldLabel>
                             <Select
                               aria-label="Unidad"
                               id="ingredient-unit"
@@ -448,9 +414,7 @@ export function ProductPage({
                             </Select>
                           </Field>
                           <Field>
-                            <FieldLabel htmlFor="ingredient-cost">
-                              Coste céntimos/unidad
-                            </FieldLabel>
+                            <FieldLabel htmlFor="ingredient-cost">Coste céntimos/unidad</FieldLabel>
                             <Input
                               id="ingredient-cost"
                               min="0"
@@ -462,9 +426,7 @@ export function ProductPage({
                             />
                           </Field>
                           <Field>
-                            <FieldLabel htmlFor="ingredient-minimum">
-                              Mínimo
-                            </FieldLabel>
+                            <FieldLabel htmlFor="ingredient-minimum">Mínimo</FieldLabel>
                             <Input
                               id="ingredient-minimum"
                               min="0"
@@ -483,17 +445,13 @@ export function ProductPage({
                               <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
                                 {ALLERGENS.map((allergen) => (
                                   <Checkbox
-                                    isSelected={ingredientAllergens.includes(
-                                      allergen,
-                                    )}
+                                    isSelected={ingredientAllergens.includes(allergen)}
                                     key={allergen}
                                     onChange={(selected) =>
                                       setIngredientAllergens((current) =>
                                         selected
                                           ? [...current, allergen]
-                                          : current.filter(
-                                              (value) => value !== allergen,
-                                            ),
+                                          : current.filter((value) => value !== allergen),
                                       )
                                     }
                                   >
@@ -511,9 +469,7 @@ export function ProductPage({
                           </div>
                           <DialogFooter className="sm:col-span-2">
                             <Button disabled={feedback.pending} type="submit">
-                              {feedback.pending
-                                ? "Guardando…"
-                                : "Crear ingrediente"}
+                              {feedback.pending ? 'Guardando…' : 'Crear ingrediente'}
                             </Button>
                           </DialogFooter>
                         </form>
@@ -523,10 +479,9 @@ export function ProductPage({
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="bg-muted/30 rounded-lg p-4 text-sm text-muted-foreground">
-                  Usa “Añadir ingrediente” para dar de alta materias primas.
-                  Después podrás consultar existencias, mínimos y capacidad de
-                  venta desde esta pestaña.
+                <div className="bg-muted/30 text-muted-foreground rounded-lg p-4 text-sm">
+                  Usa “Añadir ingrediente” para dar de alta materias primas. Después podrás
+                  consultar existencias, mínimos y capacidad de venta desde esta pestaña.
                 </div>
                 {/* legacy creation form moved to the dialog above */}
                 {false && (
@@ -569,9 +524,7 @@ export function ProductPage({
                       </Select>
                     </Field>
                     <Field>
-                      <FieldLabel htmlFor="ingredient-cost">
-                        Coste céntimos/unidad
-                      </FieldLabel>
+                      <FieldLabel htmlFor="ingredient-cost">Coste céntimos/unidad</FieldLabel>
                       <Input
                         id="ingredient-cost"
                         min="0"
@@ -583,9 +536,7 @@ export function ProductPage({
                       />
                     </Field>
                     <Field>
-                      <FieldLabel htmlFor="ingredient-minimum">
-                        Mínimo
-                      </FieldLabel>
+                      <FieldLabel htmlFor="ingredient-minimum">Mínimo</FieldLabel>
                       <Input
                         id="ingredient-minimum"
                         min="0"
@@ -596,20 +547,14 @@ export function ProductPage({
                         value={minimum}
                       />
                     </Field>
-                    <Button
-                      className="self-end"
-                      disabled={feedback.pending}
-                      type="submit"
-                    >
-                      {feedback.pending ? "Guardando…" : "Añadir"}
+                    <Button className="self-end" disabled={feedback.pending} type="submit">
+                      {feedback.pending ? 'Guardando…' : 'Añadir'}
                     </Button>
                   </form>
                 )}
                 {false && (
                   <fieldset className="border-border rounded-lg border p-3">
-                    <legend className="px-1 text-sm font-medium">
-                      Información alimentaria
-                    </legend>
+                    <legend className="px-1 text-sm font-medium">Información alimentaria</legend>
                     <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
                       {ALLERGENS.map((allergen) => (
                         <Checkbox
@@ -626,23 +571,17 @@ export function ProductPage({
                           {ALLERGEN_LABELS[allergen]}
                         </Checkbox>
                       ))}
-                      <Checkbox
-                        isSelected={ingredientIsVegan}
-                        onChange={setIngredientIsVegan}
-                      >
+                      <Checkbox isSelected={ingredientIsVegan} onChange={setIngredientIsVegan}>
                         Es vegano
                       </Checkbox>
                     </div>
                     <p className="text-muted-foreground mt-2 text-xs">
-                      Las recetas heredarán automáticamente estos alérgenos y la
-                      etiqueta vegana en la carta.
+                      Las recetas heredarán automáticamente estos alérgenos y la etiqueta vegana en
+                      la carta.
                     </p>
                   </fieldset>
                 )}
-                <FormFeedback
-                  pendingLabel="Guardando…"
-                  state={feedback.state}
-                />
+                <FormFeedback pendingLabel="Guardando…" state={feedback.state} />
               </CardContent>
             </Card>
           </TabsContent>
@@ -660,9 +599,7 @@ export function ProductPage({
                     getItemLabel={(item) => item.name}
                     items={menuItems}
                     label="Producto"
-                    onSelectionChange={(key) =>
-                      setMenuItemId(key ? String(key) : "")
-                    }
+                    onSelectionChange={(key) => setMenuItemId(key ? String(key) : '')}
                     placeholder="Buscar producto…"
                     selectedKey={menuItemId || null}
                   />
@@ -670,8 +607,8 @@ export function ProductPage({
                 <form
                   className="flex flex-wrap items-end gap-3"
                   onSubmit={(e) => {
-                    e.preventDefault();
-                    if (!recipeIngredientId) return;
+                    e.preventDefault()
+                    if (!recipeIngredientId) return
                     setRecipeLines([
                       ...recipeLines,
                       {
@@ -679,9 +616,9 @@ export function ProductPage({
                         quantity: Number(recipeQuantity),
                         wastePercent: 0,
                       },
-                    ]);
-                    setRecipeIngredientId("");
-                    setRecipeQuantity("");
+                    ])
+                    setRecipeIngredientId('')
+                    setRecipeQuantity('')
                   }}
                 >
                   <Field>
@@ -691,22 +628,20 @@ export function ProductPage({
                       getItemKey={(order) => order.id}
                       getItemLabel={(order) => `Pedido ${order.id.slice(0, 8)}`}
                       items={purchaseOrders.items.filter((order) =>
-                        ["approved", "sent"].includes(order.status),
+                        ['approved', 'sent'].includes(order.status),
                       )}
                       label="Pedido relacionado (opcional)"
                       onSelectionChange={(key) => {
-                        const id = key ? String(key) : "";
-                        setPurchaseOrderId(id);
-                        const order = purchaseOrders.items.find(
-                          (candidate) => candidate.id === id,
-                        );
-                        if (!order) return;
-                        setSupplierId(order.supplierId);
-                        const line = order.lines[0];
+                        const id = key ? String(key) : ''
+                        setPurchaseOrderId(id)
+                        const order = purchaseOrders.items.find((candidate) => candidate.id === id)
+                        if (!order) return
+                        setSupplierId(order.supplierId)
+                        const line = order.lines[0]
                         if (line) {
-                          setDeliveryIngredientId(line.ingredientId);
-                          setDeliveryQuantity(String(line.quantity));
-                          setDeliveryCost(String(line.unitCostCents));
+                          setDeliveryIngredientId(line.ingredientId)
+                          setDeliveryQuantity(String(line.quantity))
+                          setDeliveryCost(String(line.unitCostCents))
                         }
                       }}
                       placeholder="Buscar pedido…"
@@ -721,9 +656,7 @@ export function ProductPage({
                       getItemLabel={(item) => item.name}
                       items={ingredientItems}
                       label="Ingrediente"
-                      onSelectionChange={(key) =>
-                        setRecipeIngredientId(key ? String(key) : "")
-                      }
+                      onSelectionChange={(key) => setRecipeIngredientId(key ? String(key) : '')}
                       placeholder="Buscar ingrediente…"
                       selectedKey={recipeIngredientId || null}
                     />
@@ -745,35 +678,26 @@ export function ProductPage({
                 <ul className="text-sm">
                   {recipeLines.map((line, index) => (
                     <li key={`${line.ingredientId}-${index}`}>
-                      {
-                        ingredientItems.find(
-                          (item) => item.id === line.ingredientId,
-                        )?.name
-                      }
-                      : {line.quantity}
+                      {ingredientItems.find((item) => item.id === line.ingredientId)?.name}:{' '}
+                      {line.quantity}
                     </li>
                   ))}
                 </ul>
                 {recipeLines.length > 0 ? (
-                  <output
-                    className="bg-muted/40 block rounded-lg p-3 text-sm"
-                    aria-live="polite"
-                  >
+                  <output className="bg-muted/40 block rounded-lg p-3 text-sm" aria-live="polite">
                     <span className="font-medium">Vista previa de carta: </span>
-                    {recipePreview.isVegan ? "Vegano" : "No vegano"}
+                    {recipePreview.isVegan ? 'Vegano' : 'No vegano'}
                     {recipePreview.allergens.length > 0
-                      ? ` · Contiene ${recipePreview.allergens.map((item) => ALLERGEN_LABELS[item.name as (typeof ALLERGENS)[number]] ?? item.name).join(", ")}`
-                      : " · Sin alérgenos declarados"}
+                      ? ` · Contiene ${recipePreview.allergens.map((item) => ALLERGEN_LABELS[item.name as (typeof ALLERGENS)[number]] ?? item.name).join(', ')}`
+                      : ' · Sin alérgenos declarados'}
                   </output>
                 ) : null}
                 <Button
-                  disabled={
-                    feedback.pending || !menuItemId || recipeLines.length === 0
-                  }
+                  disabled={feedback.pending || !menuItemId || recipeLines.length === 0}
                   onClick={() => void saveRecipe()}
                   type="button"
                 >
-                  {feedback.pending ? "Guardando…" : "Guardar receta"}
+                  {feedback.pending ? 'Guardando…' : 'Guardar receta'}
                 </Button>
               </CardContent>
             </Card>
@@ -788,10 +712,10 @@ export function ProductPage({
                   aria-busy={feedback.pending}
                   className="grid gap-3 md:grid-cols-4"
                   onSubmit={(e) => {
-                    e.preventDefault();
+                    e.preventDefault()
                     void (async () => {
-                      if (feedback.pending) return;
-                      feedback.setPending();
+                      if (feedback.pending) return
+                      feedback.setPending()
                       try {
                         await addInventoryMovement({
                           data: {
@@ -799,23 +723,19 @@ export function ProductPage({
                             venueId,
                             ingredientId,
                             kind: movementKind,
-                            ...(movementKind === "waste"
-                              ? { wasteReason }
-                              : {}),
+                            ...(movementKind === 'waste' ? { wasteReason } : {}),
                             quantity: Number(movementQuantity),
                             reason,
                           },
-                        });
-                        setMovementQuantity("");
-                        setReason("");
-                        feedback.setSuccess("Movimiento registrado.");
-                        onDone();
+                        })
+                        setMovementQuantity('')
+                        setReason('')
+                        feedback.setSuccess('Movimiento registrado.')
+                        onDone()
                       } catch {
-                        feedback.setError(
-                          "No se ha podido registrar el movimiento.",
-                        );
+                        feedback.setError('No se ha podido registrar el movimiento.')
                       }
-                    })();
+                    })()
                   }}
                 >
                   <Field>
@@ -827,18 +747,14 @@ export function ProductPage({
                       isRequired
                       items={ingredientItems}
                       label="Ingrediente"
-                      onSelectionChange={(key) =>
-                        setIngredientId(key ? String(key) : "")
-                      }
+                      onSelectionChange={(key) => setIngredientId(key ? String(key) : '')}
                       placeholder="Buscar ingrediente…"
                       selectedKey={ingredientId || null}
                     />
                   </Field>
-                  {movementKind === "waste" ? (
+                  {movementKind === 'waste' ? (
                     <Field>
-                      <FieldLabel htmlFor="movement-waste-reason">
-                        Motivo de merma
-                      </FieldLabel>
+                      <FieldLabel htmlFor="movement-waste-reason">Motivo de merma</FieldLabel>
                       <Select
                         aria-label="Motivo de merma"
                         id="movement-waste-reason"
@@ -855,13 +771,9 @@ export function ProductPage({
                           <SelectList>
                             <SelectItem id="expiry">Caducidad</SelectItem>
                             <SelectItem id="breakage">Rotura</SelectItem>
-                            <SelectItem id="overproduction">
-                              Sobreproducción
-                            </SelectItem>
+                            <SelectItem id="overproduction">Sobreproducción</SelectItem>
                             <SelectItem id="return">Devolución</SelectItem>
-                            <SelectItem id="internal_consumption">
-                              Consumo interno
-                            </SelectItem>
+                            <SelectItem id="internal_consumption">Consumo interno</SelectItem>
                             <SelectItem id="other">Otro</SelectItem>
                           </SelectList>
                         </SelectContent>
@@ -892,9 +804,7 @@ export function ProductPage({
                     </Select>
                   </Field>
                   <Field>
-                    <FieldLabel htmlFor="movement-quantity">
-                      Cantidad (+/-)
-                    </FieldLabel>
+                    <FieldLabel htmlFor="movement-quantity">Cantidad (+/-)</FieldLabel>
                     <Input
                       id="movement-quantity"
                       onChange={(e) => setMovementQuantity(e.target.value)}
@@ -919,19 +829,15 @@ export function ProductPage({
                     disabled={feedback.pending}
                     type="submit"
                   >
-                    {feedback.pending ? "Registrando…" : "Registrar movimiento"}
+                    {feedback.pending ? 'Registrando…' : 'Registrar movimiento'}
                   </Button>
                 </form>
               </CardContent>
             </Card>
             <details className="group">
               <summary className="text-muted-foreground hover:text-foreground cursor-pointer list-none text-sm font-medium">
-                <span className="group-open:hidden">
-                  Registrar recepción de mercancía
-                </span>
-                <span className="hidden group-open:inline">
-                  Ocultar recepción de mercancía
-                </span>
+                <span className="group-open:hidden">Registrar recepción de mercancía</span>
+                <span className="hidden group-open:inline">Ocultar recepción de mercancía</span>
               </summary>
               <Card className="mt-3">
                 <CardHeader>
@@ -954,23 +860,17 @@ export function ProductPage({
                         getItemLabel={(supplier) => supplier.name}
                         items={suppliers.items}
                         label="Proveedor"
-                        onSelectionChange={(key) =>
-                          setSupplierId(key ? String(key) : "")
-                        }
+                        onSelectionChange={(key) => setSupplierId(key ? String(key) : '')}
                         placeholder="Nuevo proveedor o buscar uno existente…"
                         selectedKey={supplierId || null}
                       />
                     </Field>
                     {!supplierId ? (
                       <Field>
-                        <FieldLabel htmlFor="delivery-supplier-name">
-                          Nombre proveedor
-                        </FieldLabel>
+                        <FieldLabel htmlFor="delivery-supplier-name">Nombre proveedor</FieldLabel>
                         <Input
                           id="delivery-supplier-name"
-                          onChange={(event) =>
-                            setSupplierName(event.target.value)
-                          }
+                          onChange={(event) => setSupplierName(event.target.value)}
                           placeholder="Ej. Distribuciones García"
                           required
                           value={supplierName}
@@ -978,14 +878,10 @@ export function ProductPage({
                       </Field>
                     ) : null}
                     <Field>
-                      <FieldLabel htmlFor="delivery-reference">
-                        Referencia albarán
-                      </FieldLabel>
+                      <FieldLabel htmlFor="delivery-reference">Referencia albarán</FieldLabel>
                       <Input
                         id="delivery-reference"
-                        onChange={(event) =>
-                          setDeliveryReference(event.target.value)
-                        }
+                        onChange={(event) => setDeliveryReference(event.target.value)}
                         placeholder="Ej. ALB-2026-001"
                         required
                         value={deliveryReference}
@@ -999,23 +895,17 @@ export function ProductPage({
                         getItemLabel={(ingredient) => ingredient.name}
                         items={ingredientItems}
                         label="Ingrediente"
-                        onSelectionChange={(key) =>
-                          setDeliveryIngredientId(key ? String(key) : "")
-                        }
+                        onSelectionChange={(key) => setDeliveryIngredientId(key ? String(key) : '')}
                         placeholder="Buscar ingrediente…"
                         selectedKey={deliveryIngredientId || null}
                       />
                     </Field>
                     <Field>
-                      <FieldLabel htmlFor="delivery-quantity">
-                        Cantidad
-                      </FieldLabel>
+                      <FieldLabel htmlFor="delivery-quantity">Cantidad</FieldLabel>
                       <Input
                         id="delivery-quantity"
                         min="0.0001"
-                        onChange={(event) =>
-                          setDeliveryQuantity(event.target.value)
-                        }
+                        onChange={(event) => setDeliveryQuantity(event.target.value)}
                         placeholder="1"
                         required
                         type="number"
@@ -1023,15 +913,11 @@ export function ProductPage({
                       />
                     </Field>
                     <Field>
-                      <FieldLabel htmlFor="delivery-cost">
-                        Coste céntimos/unidad
-                      </FieldLabel>
+                      <FieldLabel htmlFor="delivery-cost">Coste céntimos/unidad</FieldLabel>
                       <Input
                         id="delivery-cost"
                         min="0"
-                        onChange={(event) =>
-                          setDeliveryCost(event.target.value)
-                        }
+                        onChange={(event) => setDeliveryCost(event.target.value)}
                         placeholder="125"
                         required
                         type="number"
@@ -1043,7 +929,7 @@ export function ProductPage({
                       disabled={feedback.pending}
                       type="submit"
                     >
-                      {feedback.pending ? "Recibiendo…" : "Recibir albarán"}
+                      {feedback.pending ? 'Recibiendo…' : 'Recibir albarán'}
                     </Button>
                   </form>
                 </CardContent>
@@ -1059,30 +945,20 @@ export function ProductPage({
                     className="bg-warning/15 text-warning-foreground mb-4 rounded-lg p-3 text-sm"
                     role="alert"
                   >
-                    <strong>
-                      {stock.lowStockIngredientIds.length} ingredientes bajo
-                      mínimo.
-                    </strong>{" "}
+                    <strong>{stock.lowStockIngredientIds.length} ingredientes bajo mínimo.</strong>{' '}
                     Revisa las compras antes del próximo servicio.
                   </div>
                 ) : (
-                  <output
-                    className="text-success mb-4 block text-sm"
-                    aria-live="polite"
-                  >
+                  <output className="text-success mb-4 block text-sm" aria-live="polite">
                     Stock por encima de los mínimos configurados.
                   </output>
                 )}
                 <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
                   <Field className="min-w-56">
-                    <FieldLabel htmlFor="ingredient-search">
-                      Buscar ingrediente
-                    </FieldLabel>
+                    <FieldLabel htmlFor="ingredient-search">Buscar ingrediente</FieldLabel>
                     <Input
                       id="ingredient-search"
-                      onChange={(event) =>
-                        setIngredientSearchInput(event.target.value)
-                      }
+                      onChange={(event) => setIngredientSearchInput(event.target.value)}
                       placeholder="Ej. tomate"
                       type="search"
                       value={ingredientSearchInput}
@@ -1091,16 +967,14 @@ export function ProductPage({
                   <div className="flex items-center gap-2" aria-live="polite">
                     <span className="text-muted-foreground text-sm">
                       {ingredientLoading
-                        ? "Actualizando inventario…"
+                        ? 'Actualizando inventario…'
                         : ingredientList.total === 0
-                          ? "Sin resultados"
+                          ? 'Sin resultados'
                           : `Página ${ingredientList.page} · ${ingredientList.total} ingredientes`}
                     </span>
                     <Button
                       disabled={ingredientList.page <= 1}
-                      onClick={() =>
-                        setIngredientPage((page) => Math.max(1, page - 1))
-                      }
+                      onClick={() => setIngredientPage((page) => Math.max(1, page - 1))}
                       size="sm"
                       type="button"
                       variant="outline"
@@ -1119,17 +993,12 @@ export function ProductPage({
                   </div>
                 </div>
                 {ingredientLoadError ? (
-                  <div
-                    className="mb-4 flex flex-wrap items-center gap-3"
-                    role="alert"
-                  >
+                  <div className="mb-4 flex flex-wrap items-center gap-3" role="alert">
                     <p className="text-destructive text-sm">
                       No se ha podido actualizar el inventario.
                     </p>
                     <Button
-                      onClick={() =>
-                        setIngredientRefresh((current) => current + 1)
-                      }
+                      onClick={() => setIngredientRefresh((current) => current + 1)}
                       size="sm"
                       type="button"
                       variant="outline"
@@ -1150,10 +1019,8 @@ export function ProductPage({
                   </TableHeader>
                   <TableBody>
                     {ingredientItems.map((ingredient) => {
-                      const current = stock.stock[ingredient.id] ?? 0;
-                      const low = stock.lowStockIngredientIds.includes(
-                        ingredient.id,
-                      );
+                      const current = stock.stock[ingredient.id] ?? 0
+                      const low = stock.lowStockIngredientIds.includes(ingredient.id)
                       return (
                         <TableRow key={ingredient.id}>
                           <TableCell>{ingredient.name}</TableCell>
@@ -1162,38 +1029,31 @@ export function ProductPage({
                           <TableCell>{ingredient.minimumStock}</TableCell>
                           <TableCell>
                             {low ? (
-                              <span className="text-destructive">
-                                Bajo mínimo
-                              </span>
+                              <span className="text-destructive">Bajo mínimo</span>
                             ) : (
-                              "Correcto"
+                              'Correcto'
                             )}
                           </TableCell>
                         </TableRow>
-                      );
+                      )
                     })}
                   </TableBody>
                 </Table>
                 {Object.keys(stock.recipeAvailability).length > 0 ? (
                   <div className="mt-5 border-t pt-4">
-                    <h3 className="font-medium">
-                      Capacidad de venta por receta
-                    </h3>
+                    <h3 className="font-medium">Capacidad de venta por receta</h3>
                     <ul className="mt-2 grid gap-2 sm:grid-cols-2">
                       {menuItems.map((item) => {
-                        const availability = stock.recipeAvailability[item.id];
-                        if (!availability) return null;
+                        const availability = stock.recipeAvailability[item.id]
+                        if (!availability) return null
                         return (
-                          <li
-                            className="bg-muted/30 rounded-lg p-3 text-sm"
-                            key={item.id}
-                          >
-                            <span className="font-medium">{item.name}</span> ·{" "}
+                          <li className="bg-muted/30 rounded-lg p-3 text-sm" key={item.id}>
+                            <span className="font-medium">{item.name}</span> ·{' '}
                             {availability.maxPortions === null
-                              ? "sin receta configurada"
+                              ? 'sin receta configurada'
                               : `${availability.maxPortions} raciones disponibles`}
                           </li>
-                        );
+                        )
                       })}
                     </ul>
                   </div>
@@ -1204,5 +1064,5 @@ export function ProductPage({
         </TabsPanels>
       </Tabs>
     </section>
-  );
+  )
 }

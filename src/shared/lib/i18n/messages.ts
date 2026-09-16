@@ -319,6 +319,9 @@ const es = {
   'communications.branding.preset.midnight': 'Medianoche · elegante',
   'communications.branding.preset.custom': 'Personalizado',
   'communications.branding.senderName': 'Nombre del remitente',
+  'communications.branding.logo': 'Logo',
+  'communications.branding.logoDescription':
+    'Elige una opción: sube un archivo o indica una URL pública.',
   'communications.branding.logoUpload': 'Subir logo',
   'communications.branding.logoUploading': 'Subiendo logo…',
   'communications.branding.logoUploaded':
@@ -331,7 +334,6 @@ const es = {
   'communications.branding.primaryColor': 'Color principal',
   'communications.branding.primaryColorPicker': 'Selector de color principal',
   'communications.branding.primaryColorValue': 'Código hexadecimal del color principal',
-  'communications.branding.preview': 'Vista previa del encabezado del correo.',
   'communications.branding.save': 'Guardar identidad',
   'communications.branding.saving': 'Guardando identidad…',
   'communications.branding.saveSuccess': 'Identidad de correo guardada.',
@@ -771,6 +773,9 @@ const ca: Record<MessageKey, string> = {
   'communications.branding.preset.midnight': 'Mitjanit · elegant',
   'communications.branding.preset.custom': 'Personalitzat',
   'communications.branding.senderName': 'Nom del remitent',
+  'communications.branding.logo': 'Logo',
+  'communications.branding.logoDescription':
+    'Tria una opció: puja un fitxer o indica una URL pública.',
   'communications.branding.logoUpload': 'Puja el logo',
   'communications.branding.logoUploading': 'Pujant el logo…',
   'communications.branding.logoUploaded': 'Logo pujat. Desa la identitat per aplicar el canvi.',
@@ -782,7 +787,6 @@ const ca: Record<MessageKey, string> = {
   'communications.branding.primaryColor': 'Color principal',
   'communications.branding.primaryColorPicker': 'Selector de color principal',
   'communications.branding.primaryColorValue': 'Codi hexadecimal del color principal',
-  'communications.branding.preview': 'Vista prèvia de la capçalera del correu.',
   'communications.branding.save': 'Desa la identitat',
   'communications.branding.saving': 'Desant la identitat…',
   'communications.branding.saveSuccess': 'Identitat de correu desada.',

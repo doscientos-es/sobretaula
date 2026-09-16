@@ -63,6 +63,7 @@ export function ReservationPage({
   locale,
   timezone,
   terms,
+  initialSection = 'agenda',
   agendaSearch,
   onAgendaSearchChange,
 }: {
@@ -72,6 +73,7 @@ export function ReservationPage({
   locale: Locale
   timezone: string
   terms: readonly ReservationTermsVersion[]
+  initialSection?: 'agenda' | 'turnos'
   agendaSearch?: ReservationAgendaSearch
   onAgendaSearchChange?: (search: ReservationAgendaSearch) => void
 }) {
@@ -265,7 +267,7 @@ export function ReservationPage({
 
   return (
     <section className="space-y-6">
-      <Tabs className="space-y-5" defaultSelectedKey="agenda">
+      <Tabs className="space-y-5" defaultSelectedKey={initialSection}>
         <PageHeader className="border-border/70 border-b pb-6">
           <div>
             <PageHeaderTitle>Reservas</PageHeaderTitle>
@@ -303,8 +305,8 @@ export function ReservationPage({
               }}
             />
           </TabsContent>
-          <TabsContent id="turnos">
-            <details className="group">
+          <TabsContent className="flex flex-col" id="turnos">
+            <details className="group order-2">
               <summary className="text-muted-foreground hover:text-foreground flex cursor-pointer list-none items-center gap-2 text-sm font-medium [&::-webkit-details-marker]:hidden">
                 <span className="text-lg leading-none transition-transform group-open:rotate-45">
                   +
@@ -471,12 +473,10 @@ export function ReservationPage({
                 </Card>
               </div>
             </details>
-            {serviceFormOpen ? (
-              <Card className="max-w-xl">
+            <DialogRoot onOpenChange={setServiceFormOpen} open={serviceFormOpen}>
+              <DialogContent className="max-w-xl">
                 <CardHeader>
-                  <CardTitle>
-                    {editingServiceId ? 'Editar turno' : 'Configura el primer turno'}
-                  </CardTitle>
+                  <CardTitle>{editingServiceId ? 'Editar turno' : 'Añadir turno'}</CardTitle>
                   <CardDescription>
                     Un turno es una regla semanal que se repite automáticamente. Por ejemplo, “Cena
                     · viernes” sirve para todos los viernes; no tienes que crear uno por cada fecha.
@@ -621,200 +621,186 @@ export function ReservationPage({
                     ) : null}
                   </form>
                 </CardContent>
-              </Card>
-            ) : (
-              <>
-                <Card>
-                  <CardHeader className="flex flex-row items-start justify-between gap-4">
-                    <div>
-                      <CardTitle>Turnos configurados</CardTitle>
-                      <CardDescription>
-                        Estas reglas se repiten cada semana y determinan cuándo se aceptan reservas
-                        y cuánta capacidad se ofrece en cada intervalo. Para cerrar una fecha
-                        concreta (festivo, vacaciones o evento), usa un bloqueo o cierre
-                        excepcional.
-                      </CardDescription>
-                    </div>
-                    <Button
-                      onClick={() => {
-                        setEditingServiceId(null)
-                        setServiceFormOpen(true)
-                      }}
-                      type="button"
-                    >
-                      Añadir turno
-                    </Button>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                      {weekdays.map((weekdayName, weekdayIndex) => {
-                        const weekdayServices = services.filter(
-                          (service) => service.weekday === weekdayIndex,
-                        )
+              </DialogContent>
+            </DialogRoot>
+            <Card className="order-1">
+              <CardHeader className="flex flex-row items-start justify-between gap-4">
+                <div>
+                  <CardTitle>Turnos configurados</CardTitle>
+                  <CardDescription>
+                    Estas reglas se repiten cada semana y determinan cuándo se aceptan reservas y
+                    cuánta capacidad se ofrece en cada intervalo. Para cerrar una fecha concreta
+                    (festivo, vacaciones o evento), usa un bloqueo o cierre excepcional.
+                  </CardDescription>
+                </div>
+                <Button
+                  onClick={() => {
+                    setEditingServiceId(null)
+                    setServiceFormOpen(true)
+                  }}
+                  type="button"
+                >
+                  Añadir turno
+                </Button>
+              </CardHeader>
+              <CardContent>
+                <ul className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                  {weekdays.map((weekdayName, weekdayIndex) => {
+                    const weekdayServices = services.filter(
+                      (service) => service.weekday === weekdayIndex,
+                    )
 
-                        return (
-                          <li
-                            className="bg-muted/20 min-h-32 rounded-lg border p-3"
-                            key={weekdayName}
-                          >
-                            <p className="font-medium">{weekdayName}</p>
-                            {weekdayServices.length > 0 ? (
-                              <ul className="mt-2 grid gap-2">
-                                {weekdayServices.map((service) => (
-                                  <li
-                                    className="bg-background rounded-md border p-3"
-                                    key={service.id}
-                                  >
-                                    <p className="font-medium">{service.name}</p>
-                                    <p className="text-muted-foreground mt-1 text-sm">
-                                      {service.startsAtTime.slice(0, 5)}–
-                                      {service.endsAtTime.slice(0, 5)}
-                                    </p>
-                                    <p className="text-muted-foreground mt-2 text-xs">
-                                      Cada {service.slotMinutes} min ·{' '}
-                                      {service.maxCoversPerSlot ?? 'Aforo flexible'} cubiertos ·{' '}
-                                      {service.maxReservationsPerSlot ?? 'Reservas flexibles'}{' '}
-                                      reservas
-                                    </p>
-                                    <Button
-                                      className="mt-3"
-                                      onClick={() => loadService(service)}
-                                      type="button"
-                                      variant="outline"
-                                    >
-                                      Editar
-                                    </Button>
-                                  </li>
-                                ))}
-                              </ul>
-                            ) : (
-                              <p className="text-muted-foreground mt-2 text-sm">Sin turnos</p>
-                            )}
-                          </li>
-                        )
-                      })}
-                    </ul>
-                  </CardContent>
-                </Card>
-                <DialogRoot onOpenChange={setNewReservationOpen} open={newReservationOpen}>
-                  <DialogContent className="max-w-xl">
-                    <CardHeader>
-                      <CardTitle>Nueva reserva</CardTitle>
-                      <CardDescription>
-                        La asignación busca la mesa libre más pequeña que admite al grupo.
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <form className="grid gap-4" onSubmit={(event) => void reserve(event)}>
-                        <Field>
-                          <FieldLabel htmlFor="reservation-service">Turno</FieldLabel>
-                          <select
-                            id="reservation-service"
-                            onChange={(event) => setServiceId(event.target.value)}
-                            required
-                            value={serviceId}
-                          >
-                            {services.map((service) => (
-                              <option
-                                key={service.id}
-                                value={service.id}
-                              >{`${service.name} · ${weekdays[service.weekday]}`}</option>
+                    return (
+                      <li className="bg-muted/20 min-h-32 rounded-lg border p-3" key={weekdayName}>
+                        <p className="font-medium">{weekdayName}</p>
+                        {weekdayServices.length > 0 ? (
+                          <ul className="mt-2 grid gap-2">
+                            {weekdayServices.map((service) => (
+                              <li className="bg-background rounded-md border p-3" key={service.id}>
+                                <p className="font-medium">{service.name}</p>
+                                <p className="text-muted-foreground mt-1 text-sm">
+                                  {service.startsAtTime.slice(0, 5)}–
+                                  {service.endsAtTime.slice(0, 5)}
+                                </p>
+                                <p className="text-muted-foreground mt-2 text-xs">
+                                  Cada {service.slotMinutes} min ·{' '}
+                                  {service.maxCoversPerSlot ?? 'Aforo flexible'} cubiertos ·{' '}
+                                  {service.maxReservationsPerSlot ?? 'Reservas flexibles'} reservas
+                                </p>
+                                <Button
+                                  className="mt-3"
+                                  onClick={() => loadService(service)}
+                                  type="button"
+                                  variant="outline"
+                                >
+                                  Editar
+                                </Button>
+                              </li>
                             ))}
-                          </select>
-                        </Field>
-                        <Field>
-                          <FieldLabel htmlFor="reservation-time">Fecha y hora</FieldLabel>
-                          <Input
-                            id="reservation-time"
-                            onChange={(event) => setStartsAt(event.target.value)}
-                            required
-                            type="datetime-local"
-                            value={startsAt}
-                          />
-                          {selectedService ? (
-                            <p className="text-muted-foreground mt-2 text-xs">
-                              {describeServiceRules(selectedService)}
-                            </p>
-                          ) : null}
-                        </Field>
-                        <Field>
-                          <FieldLabel htmlFor="reservation-party">Comensales</FieldLabel>
-                          <Input
-                            id="reservation-party"
-                            min={1}
-                            onChange={(event) => setPartySize(Number(event.target.value))}
-                            required
-                            type="number"
-                            value={partySize}
-                          />
-                        </Field>
-                        <Field>
-                          <FieldLabel htmlFor="reservation-guest">Nombre (opcional)</FieldLabel>
-                          <Input
-                            id="reservation-guest"
-                            onChange={(event) => setGuestName(event.target.value)}
-                            value={guestName}
-                          />
-                        </Field>
-                        <Field>
-                          <FieldLabel htmlFor="reservation-phone">Teléfono (opcional)</FieldLabel>
-                          <Input
-                            autoComplete="tel"
-                            id="reservation-phone"
-                            onChange={(event) => setGuestPhone(event.target.value)}
-                            value={guestPhone}
-                          />
-                        </Field>
-                        <FormFeedback
-                          pendingLabel="Buscando disponibilidad…"
-                          state={feedback.state}
-                        />
-                        <Button disabled={feedback.pending} type="submit">
-                          Crear reserva
-                        </Button>
-                      </form>
-                    </CardContent>
-                  </DialogContent>
-                </DialogRoot>
-                <DialogRoot onOpenChange={setExportOpen} open={exportOpen}>
-                  <DialogContent className="max-w-md">
-                    <CardHeader>
-                      <CardTitle>Exportar reservas</CardTitle>
-                      <CardDescription>Descarga un CSV del periodo seleccionado.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="grid gap-4">
-                      <div className="grid gap-4 sm:grid-cols-2">
-                        <Field>
-                          <FieldLabel htmlFor="reservation-export-from">Desde</FieldLabel>
-                          <Input
-                            id="reservation-export-from"
-                            onChange={(event) => setExportFrom(event.target.value)}
-                            type="date"
-                            value={exportFrom}
-                          />
-                        </Field>
-                        <Field>
-                          <FieldLabel htmlFor="reservation-export-to">Hasta</FieldLabel>
-                          <Input
-                            id="reservation-export-to"
-                            onChange={(event) => setExportTo(event.target.value)}
-                            type="date"
-                            value={exportTo}
-                          />
-                        </Field>
-                      </div>
-                      <Button
-                        disabled={exporting}
-                        onClick={() => void exportReservations()}
-                        type="button"
+                          </ul>
+                        ) : (
+                          <p className="text-muted-foreground mt-2 text-sm">Sin turnos</p>
+                        )}
+                      </li>
+                    )
+                  })}
+                </ul>
+              </CardContent>
+            </Card>
+            <DialogRoot onOpenChange={setNewReservationOpen} open={newReservationOpen}>
+              <DialogContent className="max-w-xl">
+                <CardHeader>
+                  <CardTitle>Nueva reserva</CardTitle>
+                  <CardDescription>
+                    La asignación busca la mesa libre más pequeña que admite al grupo.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form className="grid gap-4" onSubmit={(event) => void reserve(event)}>
+                    <Field>
+                      <FieldLabel htmlFor="reservation-service">Turno</FieldLabel>
+                      <select
+                        id="reservation-service"
+                        onChange={(event) => setServiceId(event.target.value)}
+                        required
+                        value={serviceId}
                       >
-                        {exporting ? 'Preparando…' : 'Descargar CSV'}
-                      </Button>
-                    </CardContent>
-                  </DialogContent>
-                </DialogRoot>
-              </>
-            )}
+                        {services.map((service) => (
+                          <option
+                            key={service.id}
+                            value={service.id}
+                          >{`${service.name} · ${weekdays[service.weekday]}`}</option>
+                        ))}
+                      </select>
+                    </Field>
+                    <Field>
+                      <FieldLabel htmlFor="reservation-time">Fecha y hora</FieldLabel>
+                      <Input
+                        id="reservation-time"
+                        onChange={(event) => setStartsAt(event.target.value)}
+                        required
+                        type="datetime-local"
+                        value={startsAt}
+                      />
+                      {selectedService ? (
+                        <p className="text-muted-foreground mt-2 text-xs">
+                          {describeServiceRules(selectedService)}
+                        </p>
+                      ) : null}
+                    </Field>
+                    <Field>
+                      <FieldLabel htmlFor="reservation-party">Comensales</FieldLabel>
+                      <Input
+                        id="reservation-party"
+                        min={1}
+                        onChange={(event) => setPartySize(Number(event.target.value))}
+                        required
+                        type="number"
+                        value={partySize}
+                      />
+                    </Field>
+                    <Field>
+                      <FieldLabel htmlFor="reservation-guest">Nombre (opcional)</FieldLabel>
+                      <Input
+                        id="reservation-guest"
+                        onChange={(event) => setGuestName(event.target.value)}
+                        value={guestName}
+                      />
+                    </Field>
+                    <Field>
+                      <FieldLabel htmlFor="reservation-phone">Teléfono (opcional)</FieldLabel>
+                      <Input
+                        autoComplete="tel"
+                        id="reservation-phone"
+                        onChange={(event) => setGuestPhone(event.target.value)}
+                        value={guestPhone}
+                      />
+                    </Field>
+                    <FormFeedback pendingLabel="Buscando disponibilidad…" state={feedback.state} />
+                    <Button disabled={feedback.pending} type="submit">
+                      Crear reserva
+                    </Button>
+                  </form>
+                </CardContent>
+              </DialogContent>
+            </DialogRoot>
+            <DialogRoot onOpenChange={setExportOpen} open={exportOpen}>
+              <DialogContent className="max-w-md">
+                <CardHeader>
+                  <CardTitle>Exportar reservas</CardTitle>
+                  <CardDescription>Descarga un CSV del periodo seleccionado.</CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-4">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <Field>
+                      <FieldLabel htmlFor="reservation-export-from">Desde</FieldLabel>
+                      <Input
+                        id="reservation-export-from"
+                        onChange={(event) => setExportFrom(event.target.value)}
+                        type="date"
+                        value={exportFrom}
+                      />
+                    </Field>
+                    <Field>
+                      <FieldLabel htmlFor="reservation-export-to">Hasta</FieldLabel>
+                      <Input
+                        id="reservation-export-to"
+                        onChange={(event) => setExportTo(event.target.value)}
+                        type="date"
+                        value={exportTo}
+                      />
+                    </Field>
+                  </div>
+                  <Button
+                    disabled={exporting}
+                    onClick={() => void exportReservations()}
+                    type="button"
+                  >
+                    {exporting ? 'Preparando…' : 'Descargar CSV'}
+                  </Button>
+                </CardContent>
+              </DialogContent>
+            </DialogRoot>
           </TabsContent>
         </TabsPanels>
         <DialogRoot onOpenChange={setNewReservationOpen} open={newReservationOpen}>

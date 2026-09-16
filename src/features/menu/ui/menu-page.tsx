@@ -410,7 +410,7 @@ export function MenuPage({
             <DialogTitle>Borrar categoría</DialogTitle>
             <DialogDescription>
               {deleteTarget &&
-                sections.find((section) => section.category.id === deleteTarget.id)?.items.length
+              sections.find((section) => section.category.id === deleteTarget.id)?.items.length
                 ? 'No puedes borrar esta categoría porque todavía tiene platos.'
                 : `Se borrará “${deleteTarget ? localizedText(deleteTarget.nameI18n, locale) : ''}”. Esta acción no se puede deshacer.`}
             </DialogDescription>
