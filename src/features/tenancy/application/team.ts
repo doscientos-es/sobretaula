@@ -209,7 +209,8 @@ export const inviteTenantMember = createServerFn({ method: 'POST' })
         email: data.email,
         options: { redirectTo: invitationRedirect(token) },
       })
-      if (linkError || !link.properties?.action_link) throw new Error('tenant_invitation_link_failed')
+      if (linkError || !link.properties?.action_link)
+        throw new Error('tenant_invitation_link_failed')
       return { actionLink: link.properties.action_link, kind: 'invitation_sent' as const }
     }
 

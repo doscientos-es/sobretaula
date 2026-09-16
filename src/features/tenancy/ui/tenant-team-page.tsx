@@ -161,8 +161,7 @@ export function TenantTeamPage({
         return result
       },
       (result) => teamInvitationSuccessMessage(result.kind),
-    )
-    .then((result) => {
+    ).then((result) => {
       if (result && 'actionLink' in result) setGeneratedInvitationLink(result.actionLink)
     })
   }
