@@ -255,6 +255,9 @@ test('@host @reservations @P0 conecta reserva pública con agenda', async ({ pag
   await expectHealthyPage(page, 'public reservation')
   await expect(page.getByRole('button', { name: /reservar mesa/i })).toBeVisible()
   await openOperationalPage(page, '/reservas', 'host reservations')
+  await expect(page.getByRole('heading', { name: 'Agenda semanal' })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Calendario semanal' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Semana siguiente' })).toBeVisible()
 })
 
 test('@host @service @P0 muestra la operación de sala', async ({ page }) => {

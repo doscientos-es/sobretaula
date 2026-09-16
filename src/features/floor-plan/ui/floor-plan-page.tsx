@@ -21,7 +21,17 @@ import {
   useFormFeedback,
 } from '@doscientos/ui'
 import { useQueryClient } from '@tanstack/react-query'
-import { Armchair, Bath, DoorOpen, Footprints, PanelTop, Plus, Soup, Square, Table2 } from 'lucide-react'
+import {
+  Armchair,
+  Bath,
+  DoorOpen,
+  Footprints,
+  PanelTop,
+  Plus,
+  Soup,
+  Square,
+  Table2,
+} from 'lucide-react'
 import { useEffect, useRef, useState, type KeyboardEvent, type DragEvent } from 'react'
 
 import { useAsyncEffect } from '@/shared/lib/react/use-async-effect'
@@ -590,11 +600,7 @@ export function FloorPlanPage({
           </PageHeaderDescription>
         </div>
       </PageHeader>
-      <FormFeedback
-        className="shrink-0"
-        pendingLabel="Guardando cambios…"
-        state={feedback.state}
-      />
+      <FormFeedback className="shrink-0" pendingLabel="Guardando cambios…" state={feedback.state} />
       {initializationFailed ? (
         <Card>
           <CardContent className="flex flex-wrap items-center justify-between gap-3 py-4">

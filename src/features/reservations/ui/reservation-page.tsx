@@ -278,45 +278,6 @@ export function ReservationPage({
         </TabsList>
         <TabsPanels>
           <TabsContent id="agenda">
-            <Card className="mb-5">
-              <CardContent className="flex flex-wrap items-end gap-3 py-4">
-                <div className="mr-auto min-w-44">
-                  <CardTitle className="text-base">Exportar agenda</CardTitle>
-                  <CardDescription className="mt-1 text-xs">
-                    Reservas del periodo seleccionado
-                  </CardDescription>
-                </div>
-                <Field>
-                  <FieldLabel className="text-xs" htmlFor="reservation-export-from">
-                    Desde
-                  </FieldLabel>
-                  <Input
-                    id="reservation-export-from"
-                    onChange={(event) => setExportFrom(event.target.value)}
-                    type="date"
-                    value={exportFrom}
-                  />
-                </Field>
-                <Field>
-                  <FieldLabel className="text-xs" htmlFor="reservation-export-to">
-                    Hasta
-                  </FieldLabel>
-                  <Input
-                    id="reservation-export-to"
-                    onChange={(event) => setExportTo(event.target.value)}
-                    type="date"
-                    value={exportTo}
-                  />
-                </Field>
-                <Button
-                  disabled={exporting}
-                  onClick={() => void exportReservations()}
-                  type="button"
-                >
-                  {exporting ? 'Preparando exportación…' : 'Descargar CSV'}
-                </Button>
-              </CardContent>
-            </Card>
             {services.length > 0 ? (
               <ReservationAgendaCard
                 {...(agendaSearch ? { agendaSearch } : {})}
@@ -329,6 +290,49 @@ export function ReservationPage({
                 onNewReservation={() => setNewReservationOpen(true)}
               />
             ) : null}
+            <Card className="mt-4">
+              <CardContent className="flex min-h-14 items-center gap-2 overflow-x-auto py-3 whitespace-nowrap">
+                <span className="mr-1 text-sm font-medium">Exportar CSV</span>
+                <Field className="shrink-0">
+                  <FieldLabel className="sr-only" htmlFor="reservation-export-from">
+                    Desde
+                  </FieldLabel>
+                  <Input
+                    aria-label="Exportar desde"
+                    className="h-9 w-36"
+                    id="reservation-export-from"
+                    onChange={(event) => setExportFrom(event.target.value)}
+                    type="date"
+                    value={exportFrom}
+                  />
+                </Field>
+                <span aria-hidden="true" className="text-muted-foreground">
+                  —
+                </span>
+                <Field className="shrink-0">
+                  <FieldLabel className="sr-only" htmlFor="reservation-export-to">
+                    Hasta
+                  </FieldLabel>
+                  <Input
+                    aria-label="Exportar hasta"
+                    className="h-9 w-36"
+                    id="reservation-export-to"
+                    onChange={(event) => setExportTo(event.target.value)}
+                    type="date"
+                    value={exportTo}
+                  />
+                </Field>
+                <Button
+                  className="shrink-0"
+                  disabled={exporting}
+                  onClick={() => void exportReservations()}
+                  size="sm"
+                  type="button"
+                >
+                  {exporting ? 'Preparando…' : 'Descargar'}
+                </Button>
+              </CardContent>
+            </Card>
           </TabsContent>
           <TabsContent id="turnos">
             <details className="group">

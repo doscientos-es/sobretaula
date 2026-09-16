@@ -227,12 +227,7 @@ export function FloorPlanCanvas({
             </ul>
           </div>
         )}
-          <div
-            className={cn(
-            'w-full min-w-0 overflow-hidden',
-            previewDeviceClasses[previewDevice],
-          )}
-        >
+        <div className={cn('w-full min-w-0 overflow-hidden', previewDeviceClasses[previewDevice])}>
           <svg
             aria-hidden="true"
             className="border-border bg-background h-[clamp(300px,calc(100dvh-450px),720px)] w-full touch-none overscroll-contain rounded-lg border select-none"
@@ -481,8 +476,24 @@ export function FloorPlanCanvas({
                   role="button"
                   tabIndex={0}
                 >
-                  <circle cx={element.xCm + element.widthCm - 18} cy={element.yCm + element.heightCm - 18} fill="var(--background)" r="14" stroke="var(--border)" strokeWidth="2" />
-                  <text fill="var(--foreground)" fontSize="16" pointerEvents="none" textAnchor="middle" x={element.xCm + element.widthCm - 18} y={element.yCm + element.heightCm - 13}>✎</text>
+                  <circle
+                    cx={element.xCm + element.widthCm - 18}
+                    cy={element.yCm + element.heightCm - 18}
+                    fill="var(--background)"
+                    r="14"
+                    stroke="var(--border)"
+                    strokeWidth="2"
+                  />
+                  <text
+                    fill="var(--foreground)"
+                    fontSize="16"
+                    pointerEvents="none"
+                    textAnchor="middle"
+                    x={element.xCm + element.widthCm - 18}
+                    y={element.yCm + element.heightCm - 13}
+                  >
+                    ✎
+                  </text>
                 </g>
               </g>
             ))}
@@ -549,8 +560,24 @@ export function FloorPlanCanvas({
                   role="button"
                   tabIndex={0}
                 >
-                  <circle cx={placement.xCm + placement.widthCm - 18} cy={placement.yCm + placement.heightCm - 18} fill="var(--background)" r="14" stroke="var(--border)" strokeWidth="2" />
-                  <text fill="var(--foreground)" fontSize="16" pointerEvents="none" textAnchor="middle" x={placement.xCm + placement.widthCm - 18} y={placement.yCm + placement.heightCm - 13}>✎</text>
+                  <circle
+                    cx={placement.xCm + placement.widthCm - 18}
+                    cy={placement.yCm + placement.heightCm - 18}
+                    fill="var(--background)"
+                    r="14"
+                    stroke="var(--border)"
+                    strokeWidth="2"
+                  />
+                  <text
+                    fill="var(--foreground)"
+                    fontSize="16"
+                    pointerEvents="none"
+                    textAnchor="middle"
+                    x={placement.xCm + placement.widthCm - 18}
+                    y={placement.yCm + placement.heightCm - 13}
+                  >
+                    ✎
+                  </text>
                 </g>
               </g>
             ))}
