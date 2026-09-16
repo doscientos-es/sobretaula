@@ -139,4 +139,17 @@ test.describe('authenticated restaurant smoke', () => {
       page.getByText('No hay pedidos en este estado.', { exact: true }).first(),
     ).toBeVisible()
   })
+
+  test('guest directory recovers from a search with no matches', async ({ page }) => {
+    await page.goto('/t/la-fonda-demo/l/principal/clientes')
+    await expect(page.getByRole('heading', { name: 'Clientes', exact: true })).toBeVisible()
+    const search = page.getByLabel('Buscar clientes')
+    await search.fill(`no-existe-e2e-${Date.now()}`)
+    await expect(page.getByText('No hay clientes que coincidan.', { exact: true })).toBeVisible({
+      timeout: 15000,
+    })
+    await page.getByRole('button', { name: 'Limpiar búsqueda', exact: true }).click()
+    await expect(search).toHaveValue('')
+    await expect(page.getByText('No hay clientes que coincidan.', { exact: true })).toBeHidden()
+  })
 })

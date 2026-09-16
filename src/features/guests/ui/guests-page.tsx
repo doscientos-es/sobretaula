@@ -111,7 +111,10 @@ export function GuestsPage({ tenantId, venueId }: { tenantId: string; venueId: s
     let active = true
     void searchGuests({ data: { tenantId, venueId, query, page: 1, pageSize: 25 } })
       .then((result) => {
-        if (active) setGuests(result.items)
+        if (active) {
+          setGuests(result.items)
+          setError(null)
+        }
       })
       .catch(() => {
         if (active) {
