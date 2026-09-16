@@ -278,28 +278,26 @@ export function ReservationPage({
         </TabsList>
         <TabsPanels>
           <TabsContent id="agenda">
-            {services.length > 0 ? (
-              <ReservationAgendaCard
-                {...(agendaSearch ? { agendaSearch } : {})}
-                locale={locale}
-                {...(onAgendaSearchChange ? { onSearchChange: onAgendaSearchChange } : {})}
-                refreshToken={agendaRefreshToken}
-                tenantId={tenantId}
-                timezone={timezone}
-                venueId={venueId}
-                onNewReservation={() => setNewReservationOpen(true)}
-              />
-            ) : null}
+            <ReservationAgendaCard
+              {...(agendaSearch ? { agendaSearch } : {})}
+              locale={locale}
+              {...(onAgendaSearchChange ? { onSearchChange: onAgendaSearchChange } : {})}
+              refreshToken={agendaRefreshToken}
+              tenantId={tenantId}
+              timezone={timezone}
+              venueId={venueId}
+              onNewReservation={() => setNewReservationOpen(true)}
+            />
             <Card className="mt-4">
-              <CardContent className="flex min-h-14 items-center gap-2 overflow-x-auto py-3 whitespace-nowrap">
-                <span className="mr-1 text-sm font-medium">Exportar CSV</span>
-                <Field className="shrink-0">
+              <CardContent className="grid items-center gap-2 py-3 sm:grid-cols-[auto_minmax(0,1fr)_auto_minmax(0,1fr)_auto]">
+                <span className="text-sm font-medium">Exportar CSV</span>
+                <Field className="min-w-0">
                   <FieldLabel className="sr-only" htmlFor="reservation-export-from">
                     Desde
                   </FieldLabel>
                   <Input
                     aria-label="Exportar desde"
-                    className="h-9 w-36"
+                    className="h-9 w-full min-w-0"
                     id="reservation-export-from"
                     onChange={(event) => setExportFrom(event.target.value)}
                     type="date"
@@ -309,13 +307,13 @@ export function ReservationPage({
                 <span aria-hidden="true" className="text-muted-foreground">
                   —
                 </span>
-                <Field className="shrink-0">
+                <Field className="min-w-0">
                   <FieldLabel className="sr-only" htmlFor="reservation-export-to">
                     Hasta
                   </FieldLabel>
                   <Input
                     aria-label="Exportar hasta"
-                    className="h-9 w-36"
+                    className="h-9 w-full min-w-0"
                     id="reservation-export-to"
                     onChange={(event) => setExportTo(event.target.value)}
                     type="date"
@@ -323,7 +321,6 @@ export function ReservationPage({
                   />
                 </Field>
                 <Button
-                  className="shrink-0"
                   disabled={exporting}
                   onClick={() => void exportReservations()}
                   size="sm"
