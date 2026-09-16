@@ -122,7 +122,13 @@ export function TenantTeamPage({
       const result = await action()
       feedback.setSuccess(typeof success === 'function' ? success(result) : success)
       setTeamRefresh((current) => current + 1)
-      await queryClient.invalidateQueries({ queryKey: ['tenant', tenantId, 'team'] })
+      // Do not hold the mutation feedback open while an active route query is
+      // refetched. The server action has already completed; the team loader
+      // below is responsible for painting the fresh list.
+      void queryClient.invalidateQueries({
+        queryKey: ['tenant', tenantId, 'team'],
+        refetchType: 'none',
+      })
       reload()
     } catch (error) {
       feedback.setError(teamErrorMessage(error))
@@ -352,47 +358,48 @@ export function TenantTeamPage({
                           </SelectList>
                         </SelectContent>
                       </Select>
-                      {member.status === 'active' &&
-                        (confirmingRemoval === member.userId ? (
-                          <div className="flex items-center gap-1.5">
-                            <span className="sr-only">Confirmar eliminación de {member.name}</span>
-                            <Button
-                              disabled={feedback.pending}
-                              onClick={() => {
-                                void run(
-                                  () =>
-                                    removeTenantMember({
-                                      data: { tenantId, userId: member.userId },
-                                    }),
-                                  'Acceso eliminado del restaurante.',
-                                ).finally(() => setConfirmingRemoval(null))
-                              }}
-                              size="sm"
-                              type="button"
-                              variant="destructive"
-                            >
-                              Confirmar
-                            </Button>
-                            <Button
-                              disabled={feedback.pending}
-                              onClick={() => setConfirmingRemoval(null)}
-                              size="sm"
-                              type="button"
-                              variant="ghost"
-                            >
-                              Cancelar
-                            </Button>
-                          </div>
-                        ) : (
+                      {confirmingRemoval === member.userId ? (
+                        <div className="flex items-center gap-1.5">
+                          <span className="sr-only">Confirmar eliminación de {member.name}</span>
                           <Button
                             disabled={feedback.pending}
-                            onClick={() => setConfirmingRemoval(member.userId)}
+                            onClick={() => {
+                              void run(
+                                () =>
+                                  removeTenantMember({
+                                    data: { tenantId, userId: member.userId },
+                                  }),
+                                'Trabajador eliminado del equipo.',
+                              ).finally(() => setConfirmingRemoval(null))
+                            }}
+                            size="sm"
                             type="button"
-                            variant="outline"
+                            variant="destructive"
                           >
-                            Eliminar acceso
+                            Confirmar
                           </Button>
-                        ))}
+                          <Button
+                            disabled={feedback.pending}
+                            onClick={() => setConfirmingRemoval(null)}
+                            size="sm"
+                            type="button"
+                            variant="ghost"
+                          >
+                            Cancelar
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button
+                          disabled={feedback.pending}
+                          onClick={() => setConfirmingRemoval(member.userId)}
+                          type="button"
+                          variant="outline"
+                        >
+                          {member.status === 'suspended'
+                            ? 'Eliminar del equipo'
+                            : 'Eliminar acceso'}
+                        </Button>
+                      )}
                     </div>
                   )}
                 </div>

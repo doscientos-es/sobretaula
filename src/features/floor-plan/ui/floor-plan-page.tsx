@@ -21,7 +21,7 @@ import {
 } from '@doscientos/ui'
 import { useQueryClient } from '@tanstack/react-query'
 import { Armchair, Bath, DoorOpen, Footprints, PanelTop, Soup, Square, Table2 } from 'lucide-react'
-import { useState, type KeyboardEvent, type DragEvent } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent, type DragEvent } from 'react'
 
 import { useAsyncEffect } from '@/shared/lib/react/use-async-effect'
 import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
@@ -33,12 +33,7 @@ import {
   updateFloorPlanTableCode,
   saveFloorPlanVersion,
 } from '../application/floor-plan'
-import {
-  commitEditorHistory,
-  createEditorHistory,
-  redoEditorHistory,
-  undoEditorHistory,
-} from '../domain/editor-history'
+import { commitEditorHistory, createEditorHistory } from '../domain/editor-history'
 import {
   selectFloorPlanVersion,
   type FloorPlanData,
@@ -185,6 +180,7 @@ export function FloorPlanPage({
     }),
   )
   const { elements, placements } = history.present
+  const autosaveReady = useRef(false)
   function selectItem(id: string, additive = false) {
     setSelectedId(id)
     setSelectedIds((current) =>
@@ -566,6 +562,16 @@ export function FloorPlanPage({
     }
   }
 
+  useEffect(() => {
+    if (!activeVersion) return
+    if (!autosaveReady.current) {
+      autosaveReady.current = true
+      return
+    }
+    const timeout = window.setTimeout(() => void savePlan(), 600)
+    return () => window.clearTimeout(timeout)
+  }, [elements, placements])
+
   return (
     <section className="space-y-6">
       <PageHeader className="border-border/70 border-b pb-6">
@@ -839,25 +845,9 @@ export function FloorPlanPage({
                 </div>
               </div>
               <div className="mt-6 border-t pt-6">
-                <div className="flex gap-2">
-                  <Button
-                    disabled={history.past.length === 0}
-                    onClick={() => setHistory(undoEditorHistory)}
-                    type="button"
-                  >
-                    Deshacer
-                  </Button>
-                  <Button
-                    disabled={history.future.length === 0}
-                    onClick={() => setHistory(redoEditorHistory)}
-                    type="button"
-                  >
-                    Rehacer
-                  </Button>
-                  <Button disabled={feedback.pending} onClick={() => void savePlan()} type="button">
-                    Guardar plano
-                  </Button>
-                </div>
+                <p className="text-muted-foreground text-xs">
+                  Los cambios se guardan automáticamente.
+                </p>
               </div>
             </CardContent>
           </Card>

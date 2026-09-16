@@ -79,16 +79,18 @@ export function FloorPlanCanvas({
   const suppressClick = useRef(false)
   const viewBox = `${Math.max(0, Math.min(activeVersion.widthCm * (1 - 1 / zoom), (activeVersion.widthCm * (1 - 1 / zoom)) / 2 + pan.x)).toFixed(2)} ${Math.max(0, Math.min(activeVersion.heightCm * (1 - 1 / zoom), (activeVersion.heightCm * (1 - 1 / zoom)) / 2 + pan.y)).toFixed(2)} ${(activeVersion.widthCm / zoom).toFixed(2)} ${(activeVersion.heightCm / zoom).toFixed(2)}`
   const dragging = dragPreview
-    ? placements.find((item) => item.id === dragPreview.id) ?? elements.find((item) => item.id === dragPreview.id)
+    ? (placements.find((item) => item.id === dragPreview.id) ??
+      elements.find((item) => item.id === dragPreview.id))
     : undefined
-  const dragGuides = dragging && dragPreview
-    ? [
-        { axis: 'x' as const, value: dragPreview.x },
-        { axis: 'x' as const, value: dragPreview.x + dragging.widthCm / 2 },
-        { axis: 'y' as const, value: dragPreview.y },
-        { axis: 'y' as const, value: dragPreview.y + dragging.heightCm / 2 },
-      ]
-    : []
+  const dragGuides =
+    dragging && dragPreview
+      ? [
+          { axis: 'x' as const, value: dragPreview.x },
+          { axis: 'x' as const, value: dragPreview.x + dragging.widthCm / 2 },
+          { axis: 'y' as const, value: dragPreview.y },
+          { axis: 'y' as const, value: dragPreview.y + dragging.heightCm / 2 },
+        ]
+      : []
 
   function finishDrag(event: PointerEvent<SVGSVGElement>) {
     if (!draggingItemId) return
@@ -126,7 +128,6 @@ export function FloorPlanCanvas({
     return point.matrixTransform(transform.inverse())
   }
 
-
   return (
     <Card>
       <CardHeader className="relative">
@@ -147,7 +148,10 @@ export function FloorPlanCanvas({
             <Settings2 className="size-3.5" />
           </Button>
         </div>
-        <div className="flex items-center gap-1.5 pt-1 lg:absolute lg:top-5 lg:right-5 lg:pt-0" aria-label="Controles del plano">
+        <div
+          className="flex items-center gap-1.5 pt-1 lg:absolute lg:top-5 lg:right-5 lg:pt-0"
+          aria-label="Controles del plano"
+        >
           <Button
             aria-label="Alejar plano"
             className="size-9 px-0"
@@ -374,9 +378,31 @@ export function FloorPlanCanvas({
             )}
             {dragGuides.map((guide, index) =>
               guide.axis === 'x' ? (
-                <line key={`drag-guide-${index}`} opacity="0.7" pointerEvents="none" stroke="var(--primary)" strokeDasharray="8 8" strokeWidth="1.5" x1={guide.value} x2={guide.value} y1={0} y2={activeVersion.heightCm} />
+                <line
+                  key={`drag-guide-${index}`}
+                  opacity="0.7"
+                  pointerEvents="none"
+                  stroke="var(--primary)"
+                  strokeDasharray="8 8"
+                  strokeWidth="1.5"
+                  x1={guide.value}
+                  x2={guide.value}
+                  y1={0}
+                  y2={activeVersion.heightCm}
+                />
               ) : (
-                <line key={`drag-guide-${index}`} opacity="0.7" pointerEvents="none" stroke="var(--primary)" strokeDasharray="8 8" strokeWidth="1.5" x1={0} x2={activeVersion.widthCm} y1={guide.value} y2={guide.value} />
+                <line
+                  key={`drag-guide-${index}`}
+                  opacity="0.7"
+                  pointerEvents="none"
+                  stroke="var(--primary)"
+                  strokeDasharray="8 8"
+                  strokeWidth="1.5"
+                  x1={0}
+                  x2={activeVersion.widthCm}
+                  y1={guide.value}
+                  y2={guide.value}
+                />
               ),
             )}
             {elements.map((element) => (
