@@ -306,10 +306,7 @@ export function AccountLines({
     const groups = groupAccountLines(lines)
     return (
       <Card className="rounded-none border-0 bg-transparent shadow-none xl:flex xl:h-full xl:min-h-0 xl:flex-col">
-        <CardHeader className="border-border/70 border-b px-0 py-0 pb-3">
-          <CardTitle className="text-base">Consumiciones</CardTitle>
-        </CardHeader>
-        <CardContent className="px-0 py-3 xl:min-h-0 xl:flex-1 xl:overflow-y-auto">
+        <CardContent className="px-0 py-0 xl:min-h-0 xl:flex-1 xl:overflow-y-auto">
           {groups.length === 0 ? (
             <p className="text-muted-foreground text-sm">Todavía no se ha apuntado nada.</p>
           ) : (
@@ -362,13 +359,24 @@ export function AccountLines({
                             </span>
                           ))}
                         </div>
-                        <span className="shrink-0 text-right font-medium tabular-nums">
-                          {line.status === 'cancelled' ? '—' : formatMoney(grossCents, locale)}
+                        <span className="flex shrink-0 items-center gap-1">
+                          <span className="text-right font-medium tabular-nums">
+                            {line.status === 'cancelled' ? '—' : formatMoney(grossCents, locale)}
+                          </span>
+                          {canRemove && line.status !== 'cancelled' && (
+                            <Button
+                              aria-label={`Quitar ${line.name}`}
+                              disabled={feedback.pending}
+                              onClick={() => void removeGroup(group)}
+                              size="icon"
+                              type="button"
+                              variant="ghost"
+                            >
+                              <Trash2 aria-hidden="true" className="text-destructive size-4" />
+                            </Button>
+                          )}
                         </span>
                       </div>
-                      {canRemove && line.status !== 'cancelled' && (
-                        <div className="mt-2">{renderGroupActions(group)}</div>
-                      )}
                     </div>
                   </li>
                 )

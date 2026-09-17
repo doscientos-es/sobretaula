@@ -65,7 +65,7 @@ export function AccountOrderWorkspace({
       <div className="grid items-start gap-4 xl:h-full xl:min-h-0 xl:grid-cols-[minmax(18rem,0.75fr)_minmax(0,1.25fr)] xl:items-stretch">
         <div className="flex min-w-0 flex-col gap-4 xl:min-h-0">
           <div className="xl:min-h-0 xl:flex-1">{lines}</div>
-          <div className="shrink-0">
+          <div className="bg-background sticky bottom-0 z-10 shrink-0 pb-1 xl:static xl:pb-0">
             {paymentSummary ?? (
               <div className="bg-surface-subtle rounded-xl border p-4">
                 <div className="flex items-center justify-between gap-4">

@@ -207,15 +207,13 @@ export function AccountAddItem({
 
   return (
     <Card className={quickAdd ? 'rounded-none border-0 bg-transparent shadow-none' : undefined}>
-      <CardHeader className={quickAdd ? 'border-border/70 border-b px-0 py-0 pb-3' : undefined}>
-        <CardTitle>Añadir a la cuenta</CardTitle>
-        <CardDescription className={quickAdd ? 'hidden' : undefined}>
-          {quickAdd
-            ? 'Pulsa un plato para añadirlo directamente. Los que tengan opciones te pedirán configurarlas.'
-            : 'Sólo aparecen los platos activos de la carta.'}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className={quickAdd ? 'px-0 pt-4' : undefined}>
+      {quickAdd ? null : (
+        <CardHeader>
+          <CardTitle>Añadir a la cuenta</CardTitle>
+          <CardDescription>Sólo aparecen los platos activos de la carta.</CardDescription>
+        </CardHeader>
+      )}
+      <CardContent className={quickAdd ? 'px-0 pt-0' : undefined}>
         <form className="grid gap-4" onSubmit={add}>
           <div aria-label="Categorías de la carta" className="flex flex-wrap gap-2">
             <Button
