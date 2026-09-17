@@ -21,7 +21,7 @@ import {
 } from '@doscientos/ui'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { ArrowUpRight } from 'lucide-react'
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
 
 import type { FloorPlanData } from '@/features/floor-plan'
 import { seatWalkIn, type ServiceBoard } from '@/features/service'
@@ -140,7 +140,7 @@ export function PosTerminalPage({
 
   const newTable = board.tables.find((table) => table.id === newTableId)
 
-  async function openTable(event: React.FormEvent<HTMLFormElement>) {
+  async function openTable(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!newTable || openingTable) return
     const covers = Number(newTableCovers)

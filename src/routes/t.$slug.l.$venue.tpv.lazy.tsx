@@ -76,9 +76,11 @@ function PosTerminalRoute() {
         : {})}
       {...(canManage ? { managementWorkspace: <PosTerminalManagementWorkspace /> } : {})}
       slug={slug}
+      tenantId={tenant.id}
       plan={floorPlan}
       selectedSessionId={sessionId}
       venue={venue.slug}
+      venueId={venue.id}
     />
   )
 }
