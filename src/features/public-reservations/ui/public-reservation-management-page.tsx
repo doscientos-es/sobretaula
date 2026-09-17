@@ -57,7 +57,6 @@ export function PublicReservationManagementPage({
   const [busy, setBusy] = useState(false)
   const [confirmingCancel, setConfirmingCancel] = useState(false)
   const [error, setError] = useState('')
-  const [dateError, setDateError] = useState('')
   const [success, setSuccess] = useState('')
   const dateInputRef = useRef<HTMLInputElement>(null)
   const [newDate, setNewDate] = useState(() =>
@@ -176,7 +175,6 @@ export function PublicReservationManagementPage({
             </label>
             <input
               aria-label={t('public.newDateTime')}
-              aria-describedby="new-reservation-time-help"
               className="w-full rounded-xl border border-[#292d34]/15 px-3 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#c34d3e]"
               id="new-reservation-time"
               ref={dateInputRef}
@@ -184,7 +182,7 @@ export function PublicReservationManagementPage({
                 const value = event.target.value
                 setNewDate(value)
                 const next = new Date(zonedLocalToIso(value, current.timezone))
-                setDateError(
+                setError(
                   value && (Number.isNaN(next.getTime()) || value < localNowValue(current.timezone))
                     ? t('public.rescheduleUnavailable')
                     : '',
@@ -194,15 +192,6 @@ export function PublicReservationManagementPage({
               type="datetime-local"
               value={newDate}
             />
-            {dateError && (
-              <p
-                aria-live="assertive"
-                className="text-destructive text-xs"
-                id="new-reservation-time-help"
-              >
-                {dateError}
-              </p>
-            )}
             <div className="flex flex-wrap gap-3">
               <Button
                 disabled={busy || !newDate}
