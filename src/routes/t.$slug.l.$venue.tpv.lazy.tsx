@@ -99,14 +99,16 @@ function PosTerminalAccountWorkspace({
         layout="pos"
         locale={locale}
         menu={menu}
-        tenantId={tenant.id}
-        venueId={venue.id}
-      />
-      <AccountPayments
-        account={account}
-        canManageAdjustments={['owner', 'manager'].includes(tenantMembership.role)}
-        locale={locale}
-        onDone={refresh}
+        paymentSummary={
+          <AccountPayments
+            account={account}
+            canManageAdjustments={['owner', 'manager'].includes(tenantMembership.role)}
+            locale={locale}
+            onDone={refresh}
+            tenantId={tenant.id}
+            venueId={venue.id}
+          />
+        }
         tenantId={tenant.id}
         venueId={venue.id}
       />

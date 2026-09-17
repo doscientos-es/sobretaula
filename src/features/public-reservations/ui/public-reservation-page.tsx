@@ -506,9 +506,6 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                 ) : null}
                 {step === 3 ? (
                   <>
-                    <Button onClick={() => setStep(2)} type="button" variant="outline">
-                      {t('public.back')}
-                    </Button>
                     <fieldset className="grid gap-4 border-0 border-t border-[#292d34]/10 pt-4">
                       <legend className="mb-1 text-sm font-semibold text-[#60656d]">
                         {t('public.stepDetails')}
@@ -600,16 +597,27 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                       </div>
                     ) : null}
                     <FormFeedback pendingLabel={t('public.checking')} state={feedback.state} />
-                    <Button
-                      className="w-full"
-                      disabled={
-                        feedback.pending || availabilityLoading || !serviceId || !date || !time
-                      }
-                      size="lg"
-                      type="submit"
-                    >
-                      {t('public.reserve')}
-                    </Button>
+                    <div className="flex items-center gap-3">
+                      <Button
+                        className="shrink-0"
+                        onClick={() => setStep(2)}
+                        size="sm"
+                        type="button"
+                        variant="outline"
+                      >
+                        {t('public.back')}
+                      </Button>
+                      <Button
+                        className="min-w-0 flex-1"
+                        disabled={
+                          feedback.pending || availabilityLoading || !serviceId || !date || !time
+                        }
+                        size="lg"
+                        type="submit"
+                      >
+                        {t('public.reserve')}
+                      </Button>
+                    </div>
                     <p className="m-0 text-xs leading-5 text-[#737983]">
                       {message('public.legalPrefix', { name: profile.name })}{' '}
                       <Link

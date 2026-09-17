@@ -16,6 +16,7 @@ import {
   TableRow,
   useFormFeedback,
 } from '@doscientos/ui'
+import { Check, Pencil, Trash2, X } from 'lucide-react'
 import { useState } from 'react'
 
 import type { Locale } from '@/shared/lib/i18n/locale'
@@ -36,6 +37,7 @@ const STATION_LABEL: Record<KitchenStation, string> = {
 export function AccountLines({
   canEdit,
   canRemove,
+  compact = false,
   lines,
   locale,
   onDone,
@@ -45,6 +47,7 @@ export function AccountLines({
 }: {
   canEdit: boolean
   canRemove: boolean
+  compact?: boolean
   lines: readonly AccountLine[]
   locale: Locale
   onDone: () => void
@@ -99,6 +102,167 @@ export function AccountLines({
     } catch {
       feedback.setError('No se ha podido anular. Si ya hay cobros, la cuenta queda fija.')
     }
+  }
+
+  function renderActions(line: AccountLine) {
+    if (editingId === line.id) {
+      return (
+        <span className="flex items-center justify-end gap-1">
+          <QuantityInput
+            aria-label="Cantidad editada"
+            minValue={1}
+            onChange={setEditQuantity}
+            value={editQuantity}
+          />
+          <Input
+            aria-label="Nota editada"
+            className="h-8 w-32"
+            onChange={(event) => setEditNotes(event.target.value)}
+            placeholder="Nota"
+            value={editNotes}
+          />
+          <Button
+            aria-label={`Guardar cambios de ${line.name}`}
+            disabled={feedback.pending}
+            onClick={() => void saveEdit(line.id)}
+            size="icon"
+            type="button"
+          >
+            <Check aria-hidden="true" className="size-4" />
+          </Button>
+          <Button
+            aria-label="Cancelar edición"
+            onClick={() => setEditingId(null)}
+            size="icon"
+            type="button"
+            variant="ghost"
+          >
+            <X aria-hidden="true" className="size-4" />
+          </Button>
+        </span>
+      )
+    }
+
+    if (removingId === line.id) {
+      return (
+        <span className="flex items-center justify-end gap-1">
+          <Input
+            aria-label={`Motivo para anular ${line.name}`}
+            className="h-8 w-40"
+            onChange={(event) => setRemovalReason(event.target.value)}
+            placeholder="Motivo obligatorio"
+            value={removalReason}
+          />
+          <Button
+            aria-label={`Confirmar anulación de ${line.name}`}
+            disabled={feedback.pending || !removalReason.trim()}
+            onClick={() => void remove(line.id)}
+            size="icon"
+            type="button"
+          >
+            <Check aria-hidden="true" className="size-4" />
+          </Button>
+          <Button
+            aria-label="Cancelar anulación"
+            onClick={() => {
+              setRemovingId(null)
+              setRemovalReason('')
+            }}
+            size="icon"
+            type="button"
+            variant="ghost"
+          >
+            <X aria-hidden="true" className="size-4" />
+          </Button>
+        </span>
+      )
+    }
+
+    return (
+      <span className="flex justify-end gap-1">
+        {canEdit && line.status !== 'cancelled' && line.status !== 'served' && (
+          <Button
+            aria-label={`Editar ${line.name}`}
+            onClick={() => beginEdit(line)}
+            size="icon"
+            type="button"
+            variant="ghost"
+          >
+            <Pencil aria-hidden="true" className="size-4" />
+          </Button>
+        )}
+        {canRemove && line.status !== 'cancelled' && (
+          <Button
+            aria-label={`Anular ${line.name}`}
+            disabled={feedback.pending}
+            onClick={() => {
+              setRemovingId(line.id)
+              setRemovalReason('')
+            }}
+            size="icon"
+            type="button"
+            variant="ghost"
+          >
+            <Trash2 aria-hidden="true" className="text-destructive size-4" />
+          </Button>
+        )}
+      </span>
+    )
+  }
+
+  if (compact) {
+    return (
+      <Card>
+        <CardHeader className="px-4 py-3">
+          <CardTitle className="text-base">Consumiciones</CardTitle>
+        </CardHeader>
+        <CardContent className="px-4 pb-4">
+          {lines.length === 0 ? (
+            <p className="text-muted-foreground text-sm">Todavía no se ha apuntado nada.</p>
+          ) : (
+            <ul className="divide-border/70 divide-y">
+              {lines.map((line) => (
+                <li className="flex items-start gap-3 py-3 first:pt-0 last:pb-0" key={line.id}>
+                  <span className="bg-muted flex size-7 shrink-0 items-center justify-center rounded-md text-sm font-semibold tabular-nums">
+                    {line.quantity}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="leading-tight font-medium">{line.name}</p>
+                        {line.status === 'cancelled' && (
+                          <span className="text-destructive text-xs font-medium">Anulada</span>
+                        )}
+                        <span className="text-muted-foreground block text-xs">
+                          {STATION_LABEL[line.kitchenStation ?? 'general']}
+                        </span>
+                        {line.notes && (
+                          <span className="text-muted-foreground block text-xs">{line.notes}</span>
+                        )}
+                        {line.modifiers?.map((modifier) => (
+                          <span className="text-muted-foreground block text-xs" key={modifier.id}>
+                            {`+ ${modifier.name}`}
+                          </span>
+                        ))}
+                      </div>
+                      <span className="shrink-0 text-right font-medium tabular-nums">
+                        {line.status === 'cancelled'
+                          ? '—'
+                          : formatMoney(lineGrossCents(line), locale)}
+                      </span>
+                    </div>
+                    {(canEdit || canRemove) && line.status !== 'cancelled' && (
+                      <div className="mt-2">{renderActions(line)}</div>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+          <FormFeedback pendingLabel="Guardando cambios…" state={feedback.state} />
+        </CardContent>
+      </Card>
+    )
   }
 
   return (
@@ -159,98 +323,7 @@ export function AccountLines({
                     </span>
                   </TableCell>
                   <TableCell>
-                    <span className="flex justify-end gap-2">
-                      {canEdit &&
-                        line.status !== 'cancelled' &&
-                        line.status !== 'served' &&
-                        (editingId === line.id ? (
-                          <span className="flex items-center gap-2">
-                            <QuantityInput
-                              aria-label="Cantidad editada"
-                              minValue={1}
-                              onChange={setEditQuantity}
-                              value={editQuantity}
-                            />
-                            <Input
-                              aria-label="Nota editada"
-                              className="h-8 w-32"
-                              onChange={(event) => setEditNotes(event.target.value)}
-                              placeholder="Nota para cocina"
-                              value={editNotes}
-                            />
-                            <Button
-                              disabled={feedback.pending}
-                              onClick={() => void saveEdit(line.id)}
-                              size="sm"
-                              type="button"
-                            >
-                              Guardar
-                            </Button>
-                            <Button
-                              onClick={() => setEditingId(null)}
-                              size="sm"
-                              type="button"
-                              variant="ghost"
-                            >
-                              Cancelar
-                            </Button>
-                          </span>
-                        ) : (
-                          <Button
-                            onClick={() => beginEdit(line)}
-                            size="sm"
-                            type="button"
-                            variant="ghost"
-                          >
-                            Editar
-                          </Button>
-                        ))}
-                      {canRemove &&
-                        line.status !== 'cancelled' &&
-                        (removingId === line.id ? (
-                          <span className="flex items-center gap-2">
-                            <Input
-                              aria-label={`Motivo para anular ${line.name}`}
-                              className="h-8 w-44"
-                              onChange={(event) => setRemovalReason(event.target.value)}
-                              placeholder="Motivo obligatorio"
-                              value={removalReason}
-                            />
-                            <Button
-                              disabled={feedback.pending || !removalReason.trim()}
-                              onClick={() => void remove(line.id)}
-                              size="sm"
-                              type="button"
-                            >
-                              Confirmar
-                            </Button>
-                            <Button
-                              onClick={() => {
-                                setRemovingId(null)
-                                setRemovalReason('')
-                              }}
-                              size="sm"
-                              type="button"
-                              variant="ghost"
-                            >
-                              Cancelar
-                            </Button>
-                          </span>
-                        ) : (
-                          <Button
-                            disabled={feedback.pending}
-                            onClick={() => {
-                              setRemovingId(line.id)
-                              setRemovalReason('')
-                            }}
-                            size="sm"
-                            type="button"
-                            variant="ghost"
-                          >
-                            Anular
-                          </Button>
-                        ))}
-                    </span>
+                    <span className="flex justify-end gap-2">{renderActions(line)}</span>
                   </TableCell>
                 </TableRow>
               ))}

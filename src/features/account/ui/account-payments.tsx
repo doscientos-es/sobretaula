@@ -5,6 +5,11 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogRoot,
+  DialogTitle,
   Field,
   FieldLabel,
   FormFeedback,
@@ -24,7 +29,6 @@ import { formatMoney, parsePriceToCents } from '@/shared/lib/money/money'
 
 import {
   applyDiscount,
-  recordMixedPayment,
   recordGiftCardPayment,
   recordPayment,
   refundPayment,
@@ -82,20 +86,11 @@ export function AccountPayments({
   const { payments, session, totals } = account
   const feedback = useFormFeedback()
   const singlePaymentOperationId = useRef<string | null>(null)
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false)
   const [method, setMethod] = useState<PaymentMethod>('cash')
   const [giftCardCode, setGiftCardCode] = useState('')
-  const [mixedMethodA, setMixedMethodA] = useState<PaymentMethod>('cash')
-  const [mixedMethodB, setMixedMethodB] = useState<PaymentMethod>('card')
   const [amountDraft, setAmountDraft] = useState((totals.balanceCents / 100).toFixed(2))
   const [tipDraft, setTipDraft] = useState('')
-  const [mixedAmountA, setMixedAmountA] = useState(
-    (Math.floor(totals.balanceCents / 2) / 100).toFixed(2),
-  )
-  const [mixedAmountB, setMixedAmountB] = useState(
-    (Math.ceil(totals.balanceCents / 2) / 100).toFixed(2),
-  )
-  const [mixedTipA, setMixedTipA] = useState('')
-  const [mixedTipB, setMixedTipB] = useState('')
   const [parts, setParts] = useState<number>(2)
   const [splitMode, setSplitMode] = useState<'equal' | 'percentage' | 'amount' | 'product'>('equal')
   const [splitValues, setSplitValues] = useState('50,50')
@@ -193,6 +188,7 @@ export function AccountPayments({
       })
         .then(() => {
           singlePaymentOperationId.current = null
+          setPaymentDialogOpen(false)
           onDone()
         })
         .catch((error: unknown) =>
@@ -216,6 +212,7 @@ export function AccountPayments({
     })
       .then(() => {
         singlePaymentOperationId.current = null
+        setPaymentDialogOpen(false)
         onDone()
       })
       .catch((error: unknown) =>
@@ -242,53 +239,6 @@ export function AccountPayments({
         onDone()
       })
       .catch(() => feedback.setError('No se ha podido registrar la devolución.'))
-  }
-
-  function mixedCharge(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    const amountA = parsePriceToCents(mixedAmountA)
-    const amountB = parsePriceToCents(mixedAmountB)
-    const tipA = mixedTipA.trim() === '' ? 0 : parsePriceToCents(mixedTipA)
-    const tipB = mixedTipB.trim() === '' ? 0 : parsePriceToCents(mixedTipB)
-    if (amountA === null || amountB === null || tipA === null || tipB === null) {
-      feedback.setError('Importes mixtos no válidos.')
-      return
-    }
-    if (amountA <= 0 || amountB <= 0) {
-      feedback.setError('Cada parte del pago mixto debe ser mayor que cero.')
-      return
-    }
-    if (mixedMethodA === mixedMethodB) {
-      feedback.setError('Elige dos métodos de pago diferentes.')
-      return
-    }
-    if (amountA + amountB > totals.balanceCents) {
-      feedback.setError(
-        `El importe supera el pendiente de ${formatMoney(totals.balanceCents, locale)}.`,
-      )
-      return
-    }
-    if (feedback.pending) return
-    feedback.setPending()
-    void recordMixedPayment({
-      data: {
-        lines: [
-          { amountCents: amountA, method: mixedMethodA, tipCents: tipA },
-          { amountCents: amountB, method: mixedMethodB, tipCents: tipB },
-        ],
-        operationId: crypto.randomUUID(),
-        sessionId: session.id,
-        tenantId,
-        venueId,
-      },
-    })
-      .then(() => {
-        feedback.setSuccess('Pago mixto registrado.')
-        onDone()
-      })
-      .catch((error: unknown) =>
-        feedback.setError(paymentErrorMessage(error, 'No se ha podido registrar el pago mixto.')),
-      )
   }
 
   function discount(event: FormEvent<HTMLFormElement>) {
@@ -321,405 +271,320 @@ export function AccountPayments({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Cobrar</CardTitle>
-        <CardDescription>
-          Tarjeta se registra manualmente tras confirmarla en el datáfono; no se encola sin red.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <dl className="bg-surface-subtle space-y-2 rounded-xl p-4 text-sm">
-          <div className="flex justify-between">
-            <dt className="text-muted-foreground">Neto</dt>
-            <dd className="tabular-nums">{formatMoney(totals.netCents, locale)}</dd>
-          </div>
-          <div className="flex justify-between">
-            <dt className="text-muted-foreground">IVA</dt>
-            <dd className="tabular-nums">{formatMoney(totals.vatCents, locale)}</dd>
-          </div>
-          <div className="flex justify-between font-semibold">
-            <dt>Total</dt>
-            <dd className="tabular-nums">{formatMoney(totals.grossCents, locale)}</dd>
-          </div>
-          <div className="flex justify-between">
-            <dt className="text-muted-foreground">Pagado</dt>
-            <dd className="tabular-nums">{formatMoney(totals.paidCents, locale)}</dd>
-          </div>
-          <div className="border-border/70 flex justify-between border-t pt-2 font-semibold">
-            <dt>Pendiente</dt>
-            <dd className="text-primary tabular-nums">
-              {formatMoney(totals.balanceCents, locale)}
-            </dd>
-          </div>
-        </dl>
-        {open && canManageAdjustments && (
-          <form className="grid gap-3 border-b pb-4 sm:grid-cols-2" onSubmit={discount}>
-            <Field>
-              <FieldLabel htmlFor="discount-amount">Descuento (€)</FieldLabel>
-              <Input
-                id="discount-amount"
-                min="0.01"
-                onChange={(event) => setDiscountDraft(event.target.value)}
-                placeholder="0,00"
-                required
-                value={discountDraft}
-              />
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="discount-reason">Motivo</FieldLabel>
-              <Input
-                id="discount-reason"
-                onChange={(event) => setDiscountReason(event.target.value)}
-                placeholder="Ej. Invitación o compensación"
-                required
-                value={discountReason}
-              />
-            </Field>
-            <Button className="sm:col-span-2" disabled={feedback.pending} size="sm" type="submit">
-              Aplicar descuento
+    <>
+      <Card>
+        <CardHeader className="px-4 py-3">
+          <CardTitle className="text-base">Total</CardTitle>
+          <CardDescription>Resumen de la cuenta y cobros registrados.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4 px-4 pb-4">
+          <dl className="bg-surface-subtle space-y-2 rounded-xl p-4 text-sm">
+            <div className="flex justify-between font-semibold">
+              <dt>Total</dt>
+              <dd className="tabular-nums">{formatMoney(totals.grossCents, locale)}</dd>
+            </div>
+            <div className="flex justify-between">
+              <dt className="text-muted-foreground">Pagado</dt>
+              <dd className="tabular-nums">{formatMoney(totals.paidCents, locale)}</dd>
+            </div>
+            <div className="border-border/70 flex justify-between border-t pt-2 font-semibold">
+              <dt>Pendiente</dt>
+              <dd className="text-primary tabular-nums">
+                {formatMoney(totals.balanceCents, locale)}
+              </dd>
+            </div>
+          </dl>
+          {!open && <p className="text-muted-foreground text-sm">La cuenta está cerrada.</p>}
+          {open && settled && (
+            <p className="text-success text-sm font-medium">Cuenta pagada por completo.</p>
+          )}
+          {open && !settled && (
+            <Button className="w-full" onClick={() => setPaymentDialogOpen(true)} type="button">
+              Cobrar {formatMoney(totals.balanceCents, locale)}
             </Button>
-          </form>
-        )}
-        {!open && <p className="text-muted-foreground text-sm">La cuenta está cerrada.</p>}
-        {open && settled && (
-          <p className="text-success text-sm font-medium">Cuenta pagada por completo.</p>
-        )}
-        {open && !settled && (
-          <form className="grid gap-4 border-t pt-4" onSubmit={charge}>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Field>
-                <FieldLabel htmlFor="payment-method">Método</FieldLabel>
-                <Select
-                  className="w-full"
-                  id="payment-method"
-                  onSelectionChange={(key) => setMethod(String(key) as PaymentMethod)}
-                  selectedKey={method}
-                >
-                  <SelectTrigger aria-label="Método de pago">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectList>
-                      {PAYMENT_METHODS.map((option) => (
-                        <SelectItem id={option} key={option}>
-                          {PAYMENT_METHOD_LABEL[option]}
-                        </SelectItem>
-                      ))}
-                    </SelectList>
-                  </SelectContent>
-                </Select>
-              </Field>
-              {method === 'gift_card' ? (
+          )}
+        </CardContent>
+      </Card>
+      <DialogRoot onOpenChange={setPaymentDialogOpen} open={paymentDialogOpen}>
+        <DialogContent className="max-h-[calc(100svh-2rem)] max-w-2xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Cobrar cuenta</DialogTitle>
+            <DialogDescription>
+              Elige un método y confirma el importe pendiente. Los detalles aparecen solo aquí.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {open && canManageAdjustments && (
+              <form className="grid gap-3 border-b pb-4 sm:grid-cols-2" onSubmit={discount}>
                 <Field>
-                  <FieldLabel htmlFor="gift-card-code">Código de tarjeta regalo</FieldLabel>
+                  <FieldLabel htmlFor="discount-amount">Descuento (€)</FieldLabel>
                   <Input
-                    id="gift-card-code"
-                    onChange={(event) => setGiftCardCode(event.target.value)}
-                    placeholder="Ej. ST-2026-ABCD"
+                    id="discount-amount"
+                    min="0.01"
+                    onChange={(event) => setDiscountDraft(event.target.value)}
+                    placeholder="0,00"
                     required
-                    value={giftCardCode}
+                    value={discountDraft}
                   />
                 </Field>
-              ) : null}
-              <Field>
-                <FieldLabel htmlFor="payment-parts">Dividir la cuenta</FieldLabel>
-                <Select
-                  className="w-full"
-                  id="payment-parts"
-                  onSelectionChange={(key) => setParts(Number(key))}
-                  selectedKey={String(parts)}
-                >
-                  <SelectTrigger aria-label="Número de partes">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectList>
-                      {SPLIT_OPTIONS.map((option) => (
-                        <SelectItem id={String(option)} key={option}>
-                          {`${option} partes`}
-                        </SelectItem>
-                      ))}
-                    </SelectList>
-                  </SelectContent>
-                </Select>
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="payment-split-mode">Tipo de división</FieldLabel>
-                <Select
-                  className="w-full"
-                  id="payment-split-mode"
-                  onSelectionChange={(key) => {
-                    const mode = String(key) as typeof splitMode
-                    setSplitMode(mode)
-                    if (mode === 'equal') setSplitValues('50,50')
-                  }}
-                  selectedKey={splitMode}
-                >
-                  <SelectTrigger aria-label="Tipo de división">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectList>
-                      <SelectItem id="equal">Partes iguales</SelectItem>
-                      <SelectItem id="percentage">Por porcentaje</SelectItem>
-                      <SelectItem id="amount">Por importe</SelectItem>
-                      <SelectItem id="product">Por producto/persona</SelectItem>
-                    </SelectList>
-                  </SelectContent>
-                </Select>
-              </Field>
-            </div>
-            {splitMode === 'product' ? (
-              <div className="grid gap-2 rounded-lg border p-3">
-                <p className="text-sm font-medium">Asigna cada línea a una persona</p>
-                {account.lines.map((line: AccountLine) => (
-                  <div
-                    className="flex flex-wrap items-center justify-between gap-2 text-sm"
-                    key={line.id}
-                  >
-                    <span>
-                      {line.quantity}× {line.name}
-                    </span>
-                    <div className="flex gap-1">
-                      {Array.from({ length: parts }, (_, person) => (
-                        <Button
-                          key={person}
-                          onClick={() =>
-                            setProductAssignments((current) => ({ ...current, [line.id]: person }))
-                          }
-                          size="sm"
-                          type="button"
-                          variant={productAssignments[line.id] === person ? 'default' : 'outline'}
-                        >
-                          P{person + 1}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : splitMode !== 'equal' ? (
-              <Field>
-                <FieldLabel htmlFor="payment-split-values">
-                  {splitMode === 'percentage'
-                    ? 'Porcentajes separados por comas (ej. 50,30,20)'
-                    : 'Importes en céntimos separados por comas'}
-                </FieldLabel>
-                <Input
-                  id="payment-split-values"
-                  inputMode="decimal"
-                  onChange={(event) => setSplitValues(event.target.value)}
-                  placeholder={splitMode === 'percentage' ? '50,30,20' : '10,00,20,00'}
-                  value={splitValues}
-                />
-              </Field>
-            ) : null}
-            <div className="grid gap-2 sm:grid-cols-2" aria-label="Importes sugeridos">
-              {shares.map((share, index) => (
+                <Field>
+                  <FieldLabel htmlFor="discount-reason">Motivo</FieldLabel>
+                  <Input
+                    id="discount-reason"
+                    onChange={(event) => setDiscountReason(event.target.value)}
+                    placeholder="Ej. Invitación o compensación"
+                    required
+                    value={discountReason}
+                  />
+                </Field>
                 <Button
-                  key={`${parts}-${index}`}
-                  onClick={() => {
-                    setSelectedShareIndex(index)
-                    setAmountDraft((share / 100).toFixed(2))
-                  }}
+                  className="sm:col-span-2"
+                  disabled={feedback.pending}
                   size="sm"
-                  type="button"
-                  variant="outline"
+                  type="submit"
                 >
-                  {`Parte ${index + 1}: ${formatMoney(share, locale)}`}
+                  Aplicar descuento
                 </Button>
-              ))}
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Field>
-                <FieldLabel htmlFor="payment-amount">Importe a cobrar (euros)</FieldLabel>
-                <Input
-                  id="payment-amount"
-                  inputMode="decimal"
-                  onChange={(event) => setAmountDraft(event.target.value)}
-                  placeholder="0,00"
-                  required
-                  value={amountDraft}
-                />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="payment-tip">Propina (opcional)</FieldLabel>
-                <Input
-                  id="payment-tip"
-                  inputMode="decimal"
-                  onChange={(event) => setTipDraft(event.target.value)}
-                  placeholder="0,00"
-                  value={tipDraft}
-                />
-              </Field>
-            </div>
-            <FormFeedback pendingLabel="Registrando cobro…" state={feedback.state} />
-            <Button disabled={feedback.pending} type="submit">
-              Registrar cobro
-            </Button>
-          </form>
-        )}
-        {open && !settled && (
-          <form className="grid gap-4 border-t pt-4" onSubmit={mixedCharge}>
-            <div>
-              <h3 className="font-medium">Pago mixto</h3>
-              <p className="text-muted-foreground text-sm">
-                Registra varios métodos en una sola operación atómica.
-              </p>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Field>
-                <FieldLabel htmlFor="mixed-method-a">Primer método</FieldLabel>
-                <Select
-                  className="w-full"
-                  id="mixed-method-a"
-                  onSelectionChange={(key) => setMixedMethodA(String(key) as PaymentMethod)}
-                  selectedKey={mixedMethodA}
-                >
-                  <SelectTrigger aria-label="Primer método de pago">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectList>
-                      {PAYMENT_METHODS.filter((option) => option !== 'gift_card').map((option) => (
-                        <SelectItem id={option} key={option}>
-                          {PAYMENT_METHOD_LABEL[option]}
-                        </SelectItem>
-                      ))}
-                    </SelectList>
-                  </SelectContent>
-                </Select>
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="mixed-amount-a">Importe (€)</FieldLabel>
-                <Input
-                  id="mixed-amount-a"
-                  inputMode="decimal"
-                  onChange={(event) => setMixedAmountA(event.target.value)}
-                  placeholder="0,00"
-                  required
-                  value={mixedAmountA}
-                />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="mixed-method-b">Segundo método</FieldLabel>
-                <Select
-                  className="w-full"
-                  id="mixed-method-b"
-                  onSelectionChange={(key) => setMixedMethodB(String(key) as PaymentMethod)}
-                  selectedKey={mixedMethodB}
-                >
-                  <SelectTrigger aria-label="Segundo método de pago">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectList>
-                      {PAYMENT_METHODS.filter((option) => option !== 'gift_card').map((option) => (
-                        <SelectItem id={option} key={option}>
-                          {PAYMENT_METHOD_LABEL[option]}
-                        </SelectItem>
-                      ))}
-                    </SelectList>
-                  </SelectContent>
-                </Select>
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="mixed-amount-b">Importe (€)</FieldLabel>
-                <Input
-                  id="mixed-amount-b"
-                  inputMode="decimal"
-                  onChange={(event) => setMixedAmountB(event.target.value)}
-                  placeholder="0,00"
-                  required
-                  value={mixedAmountB}
-                />
-              </Field>
-            </div>
-            <details className="text-sm">
-              <summary className="cursor-pointer">Propinas opcionales</summary>
-              <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                <Field>
-                  <FieldLabel htmlFor="mixed-tip-a">Propina primer método (€)</FieldLabel>
-                  <Input
-                    id="mixed-tip-a"
-                    inputMode="decimal"
-                    onChange={(event) => setMixedTipA(event.target.value)}
-                    placeholder="0,00"
-                    value={mixedTipA}
-                  />
-                </Field>
-                <Field>
-                  <FieldLabel htmlFor="mixed-tip-b">Propina segundo método (€)</FieldLabel>
-                  <Input
-                    id="mixed-tip-b"
-                    inputMode="decimal"
-                    onChange={(event) => setMixedTipB(event.target.value)}
-                    placeholder="0,00"
-                    value={mixedTipB}
-                  />
-                </Field>
-              </div>
-            </details>
-            <Button disabled={feedback.pending} type="submit">
-              Registrar pago mixto
-            </Button>
-          </form>
-        )}
-        {payments.length > 0 && (
-          <ul className="space-y-1 border-t pt-4 text-sm">
-            {payments.map((payment) => (
-              <li className="flex justify-between" key={payment.id}>
-                <span className="text-muted-foreground">
-                  {PAYMENT_METHOD_LABEL[payment.method]}
-                  <span className="ml-2 text-xs">
-                    {new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit' }).format(
-                      new Date(payment.paidAt),
-                    )}
-                  </span>
-                </span>
-                <span className="flex items-center gap-2 tabular-nums">
-                  {formatMoney(payment.amountCents, locale)}
-                  {(payment.refundedCents ?? 0) > 0 &&
-                    ` · devuelto ${formatMoney(payment.refundedCents ?? 0, locale)}`}
-                  {payment.tipCents > 0 && ` + ${formatMoney(payment.tipCents, locale)} propina`}
-                  {canManageAdjustments && refundPaymentId === payment.id ? (
-                    <span className="flex items-center gap-1">
-                      <Button
-                        disabled={feedback.pending}
-                        onClick={() => refund(payment.id, payment.amountCents)}
-                        size="sm"
-                        type="button"
+              </form>
+            )}
+            {open && !settled && (
+              <form className="grid gap-4" onSubmit={charge}>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <Field>
+                    <FieldLabel htmlFor="payment-method">Método</FieldLabel>
+                    <Select
+                      className="w-full"
+                      id="payment-method"
+                      onSelectionChange={(key) => setMethod(String(key) as PaymentMethod)}
+                      selectedKey={method}
+                    >
+                      <SelectTrigger aria-label="Método de pago">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectList>
+                          {PAYMENT_METHODS.map((option) => (
+                            <SelectItem id={option} key={option}>
+                              {PAYMENT_METHOD_LABEL[option]}
+                            </SelectItem>
+                          ))}
+                        </SelectList>
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                  {method === 'gift_card' ? (
+                    <Field>
+                      <FieldLabel htmlFor="gift-card-code">Código de tarjeta regalo</FieldLabel>
+                      <Input
+                        id="gift-card-code"
+                        onChange={(event) => setGiftCardCode(event.target.value)}
+                        placeholder="Ej. ST-2026-ABCD"
+                        required
+                        value={giftCardCode}
+                      />
+                    </Field>
+                  ) : null}
+                  <Field>
+                    <FieldLabel htmlFor="payment-parts">Dividir la cuenta</FieldLabel>
+                    <Select
+                      className="w-full"
+                      id="payment-parts"
+                      onSelectionChange={(key) => setParts(Number(key))}
+                      selectedKey={String(parts)}
+                    >
+                      <SelectTrigger aria-label="Número de partes">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectList>
+                          {SPLIT_OPTIONS.map((option) => (
+                            <SelectItem id={String(option)} key={option}>
+                              {`${option} partes`}
+                            </SelectItem>
+                          ))}
+                        </SelectList>
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="payment-split-mode">Tipo de división</FieldLabel>
+                    <Select
+                      className="w-full"
+                      id="payment-split-mode"
+                      onSelectionChange={(key) => {
+                        const mode = String(key) as typeof splitMode
+                        setSplitMode(mode)
+                        if (mode === 'equal') setSplitValues('50,50')
+                      }}
+                      selectedKey={splitMode}
+                    >
+                      <SelectTrigger aria-label="Tipo de división">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectList>
+                          <SelectItem id="equal">Partes iguales</SelectItem>
+                          <SelectItem id="percentage">Por porcentaje</SelectItem>
+                          <SelectItem id="amount">Por importe</SelectItem>
+                          <SelectItem id="product">Por producto/persona</SelectItem>
+                        </SelectList>
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                </div>
+                {splitMode === 'product' ? (
+                  <div className="grid gap-2 rounded-lg border p-3">
+                    <p className="text-sm font-medium">Asigna cada línea a una persona</p>
+                    {account.lines.map((line: AccountLine) => (
+                      <div
+                        className="flex flex-wrap items-center justify-between gap-2 text-sm"
+                        key={line.id}
                       >
-                        Confirmar devolución
-                      </Button>
-                      <Button
-                        disabled={feedback.pending}
-                        onClick={() => setRefundPaymentId(null)}
-                        size="sm"
-                        type="button"
-                        variant="ghost"
-                      >
-                        Cancelar
-                      </Button>
-                    </span>
-                  ) : canManageAdjustments ? (
+                        <span>
+                          {line.quantity}× {line.name}
+                        </span>
+                        <div className="flex gap-1">
+                          {Array.from({ length: parts }, (_, person) => (
+                            <Button
+                              key={person}
+                              onClick={() =>
+                                setProductAssignments((current) => ({
+                                  ...current,
+                                  [line.id]: person,
+                                }))
+                              }
+                              size="sm"
+                              type="button"
+                              variant={
+                                productAssignments[line.id] === person ? 'default' : 'outline'
+                              }
+                            >
+                              P{person + 1}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : splitMode !== 'equal' ? (
+                  <Field>
+                    <FieldLabel htmlFor="payment-split-values">
+                      {splitMode === 'percentage'
+                        ? 'Porcentajes separados por comas (ej. 50,30,20)'
+                        : 'Importes en céntimos separados por comas'}
+                    </FieldLabel>
+                    <Input
+                      id="payment-split-values"
+                      inputMode="decimal"
+                      onChange={(event) => setSplitValues(event.target.value)}
+                      placeholder={splitMode === 'percentage' ? '50,30,20' : '10,00,20,00'}
+                      value={splitValues}
+                    />
+                  </Field>
+                ) : null}
+                <div className="grid gap-2 sm:grid-cols-2" aria-label="Importes sugeridos">
+                  {shares.map((share, index) => (
                     <Button
-                      disabled={feedback.pending}
-                      onClick={() => setRefundPaymentId(payment.id)}
+                      key={`${parts}-${index}`}
+                      onClick={() => {
+                        setSelectedShareIndex(index)
+                        setAmountDraft((share / 100).toFixed(2))
+                      }}
                       size="sm"
                       type="button"
-                      variant="ghost"
+                      variant="outline"
                     >
-                      Devolver
+                      {`Parte ${index + 1}: ${formatMoney(share, locale)}`}
                     </Button>
-                  ) : null}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </CardContent>
-    </Card>
+                  ))}
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <Field>
+                    <FieldLabel htmlFor="payment-amount">Importe a cobrar (euros)</FieldLabel>
+                    <Input
+                      id="payment-amount"
+                      inputMode="decimal"
+                      onChange={(event) => setAmountDraft(event.target.value)}
+                      placeholder="0,00"
+                      required
+                      value={amountDraft}
+                    />
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="payment-tip">Propina (opcional)</FieldLabel>
+                    <Input
+                      id="payment-tip"
+                      inputMode="decimal"
+                      onChange={(event) => setTipDraft(event.target.value)}
+                      placeholder="0,00"
+                      value={tipDraft}
+                    />
+                  </Field>
+                </div>
+                <FormFeedback pendingLabel="Registrando cobro…" state={feedback.state} />
+                <Button disabled={feedback.pending} type="submit">
+                  Registrar cobro
+                </Button>
+              </form>
+            )}
+            {payments.length > 0 && (
+              <ul className="space-y-1 border-t pt-4 text-sm">
+                {payments.map((payment) => (
+                  <li className="flex justify-between" key={payment.id}>
+                    <span className="text-muted-foreground">
+                      {PAYMENT_METHOD_LABEL[payment.method]}
+                      <span className="ml-2 text-xs">
+                        {new Intl.DateTimeFormat(locale, {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        }).format(new Date(payment.paidAt))}
+                      </span>
+                    </span>
+                    <span className="flex items-center gap-2 tabular-nums">
+                      {formatMoney(payment.amountCents, locale)}
+                      {(payment.refundedCents ?? 0) > 0 &&
+                        ` · devuelto ${formatMoney(payment.refundedCents ?? 0, locale)}`}
+                      {payment.tipCents > 0 &&
+                        ` + ${formatMoney(payment.tipCents, locale)} propina`}
+                      {canManageAdjustments && refundPaymentId === payment.id ? (
+                        <span className="flex items-center gap-1">
+                          <Button
+                            disabled={feedback.pending}
+                            onClick={() => refund(payment.id, payment.amountCents)}
+                            size="sm"
+                            type="button"
+                          >
+                            Confirmar devolución
+                          </Button>
+                          <Button
+                            disabled={feedback.pending}
+                            onClick={() => setRefundPaymentId(null)}
+                            size="sm"
+                            type="button"
+                            variant="ghost"
+                          >
+                            Cancelar
+                          </Button>
+                        </span>
+                      ) : canManageAdjustments ? (
+                        <Button
+                          disabled={feedback.pending}
+                          onClick={() => setRefundPaymentId(payment.id)}
+                          size="sm"
+                          type="button"
+                          variant="ghost"
+                        >
+                          Devolver
+                        </Button>
+                      ) : null}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </DialogContent>
+      </DialogRoot>
+    </>
   )
 }
