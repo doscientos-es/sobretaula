@@ -4,6 +4,7 @@ export {
   isPlacementWithinBounds,
   movePlacement,
   placementsOverlap,
+  rotatePlacement,
   snapCoordinate,
 } from './domain/geometry'
 export {
@@ -15,9 +16,11 @@ export {
 export {
   createFloorPlanTable,
   createFloorPlanArea,
+  deleteFloorPlanArea,
   getFloorPlan,
   floorPlanQuery,
   saveFloorPlan,
+  updateFloorPlanArea,
 } from './application/floor-plan'
 export { FloorPlanPage } from './ui/floor-plan-page'
 export type {

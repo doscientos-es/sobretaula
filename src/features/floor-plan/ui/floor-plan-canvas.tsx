@@ -7,7 +7,7 @@ import {
   CardTitle,
   cn,
 } from '@doscientos/ui'
-import { Settings2 } from 'lucide-react'
+import { Pencil, Settings2, Trash2 } from 'lucide-react'
 import { useRef, useState, type PointerEvent } from 'react'
 
 import {
@@ -36,8 +36,10 @@ export function FloorPlanCanvas({
   onItemClick,
   onEditDimensions,
   onCreateTable,
+  onDeleteArea,
   onDropElement,
   onMoveItem,
+  onRenameArea,
   onSelectItem,
   placements,
   previewDevice,
@@ -53,8 +55,10 @@ export function FloorPlanCanvas({
   onItemClick: (id: string) => void
   onEditDimensions: () => void
   onCreateTable: (position: { x: number; y: number }) => void
+  onDeleteArea: () => void
   onDropElement: (kind: PlanElementKind, xCm: number, yCm: number) => void
   onMoveItem: (id: string, xCm: number, yCm: number) => void
+  onRenameArea: () => void
   onSelectItem: (id: string, additive?: boolean) => void
   placements: readonly FloorPlanTablePlacement[]
   previewDevice: FloorPlanPreviewDevice
@@ -126,16 +130,40 @@ export function FloorPlanCanvas({
   }
 
   return (
-    <Card>
-      <CardHeader className="relative">
-        <CardTitle>{activeArea.name}</CardTitle>
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <CardDescription>
+    <Card className="min-h-0">
+      <CardHeader className="relative flex flex-row flex-wrap items-center gap-2 p-3">
+        <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 items-center gap-1">
+            <CardTitle className="truncate text-base">{activeArea.name}</CardTitle>
+            <Button
+              aria-label={`Renombrar ${activeArea.name}`}
+              className="size-7 shrink-0 px-0"
+              onClick={onRenameArea}
+              size="icon"
+              type="button"
+              variant="ghost"
+            >
+              <Pencil className="size-3.5" />
+            </Button>
+            <Button
+              aria-label={`Eliminar ${activeArea.name}`}
+              className="text-destructive size-7 shrink-0 px-0"
+              onClick={onDeleteArea}
+              size="icon"
+              type="button"
+              variant="ghost"
+            >
+              <Trash2 className="size-3.5" />
+            </Button>
+          </div>
+          <CardDescription className="text-xs">
             {activeArea.widthCm / 100} m × {activeArea.heightCm / 100} m · {placements.length} mesas
           </CardDescription>
+        </div>
+        <div className="flex shrink-0 items-center gap-1" aria-label="Controles del plano">
           <Button
             aria-label="Editar medidas del plano"
-            className="size-7 px-0"
+            className="size-8 px-0"
             onClick={onEditDimensions}
             size="icon"
             type="button"
@@ -143,14 +171,9 @@ export function FloorPlanCanvas({
           >
             <Settings2 className="size-3.5" />
           </Button>
-        </div>
-        <div
-          className="flex flex-wrap items-center gap-1.5 pt-1 lg:static lg:mt-2 lg:pt-0"
-          aria-label="Controles del plano"
-        >
           <Button
             aria-label="Alejar plano"
-            className="size-9 px-0"
+            className="size-8 px-0"
             disabled={zoom <= 0.5}
             onClick={() => setZoom((current) => Math.max(0.5, current - 0.25))}
             type="button"
@@ -163,7 +186,7 @@ export function FloorPlanCanvas({
           </output>
           <Button
             aria-label="Acercar plano"
-            className="size-9 px-0"
+            className="size-8 px-0"
             disabled={zoom >= 3}
             onClick={() => setZoom((current) => Math.min(3, current + 0.25))}
             type="button"
@@ -183,10 +206,10 @@ export function FloorPlanCanvas({
           >
             Centrar
           </Button>
-          <span className="text-muted-foreground ml-1 text-xs">Grid 25 cm</span>
+          <span className="text-muted-foreground ml-1 hidden text-xs sm:inline">Grid 25 cm</span>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="min-h-0 p-3 pt-0">
         {layoutIssues.length > 0 && (
           <div
             className="border-destructive/40 bg-destructive/10 text-destructive mb-4 rounded-lg border p-3 text-sm"
@@ -224,7 +247,7 @@ export function FloorPlanCanvas({
         <div className={cn('w-full min-w-0 overflow-hidden', previewDeviceClasses[previewDevice])}>
           <svg
             aria-hidden="true"
-            className="border-border bg-background h-[clamp(300px,calc(100dvh-450px),720px)] w-full touch-none overscroll-contain rounded-lg border select-none"
+            className="border-border bg-background h-[clamp(360px,calc(100dvh-18rem),720px)] w-full touch-none overscroll-contain rounded-lg border select-none"
             focusable="false"
             onWheelCapture={(event) => {
               event.preventDefault()

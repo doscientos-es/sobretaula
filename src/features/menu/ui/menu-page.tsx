@@ -35,7 +35,6 @@ import { useState, type FormEvent } from 'react'
 
 import type { Locale } from '@/shared/lib/i18n/locale'
 import { createTranslator } from '@/shared/lib/i18n/messages'
-import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
 
 import { deleteMenuCategory, updateMenuCategory, type MenuCatalog } from '../application/menu'
 import {
@@ -66,7 +65,6 @@ export function MenuPage({
     items: catalog.items,
     locale,
   })
-  const reload = useLoaderReload()
   const queryClient = useQueryClient()
   const [query, setQuery] = useState('')
   const [visibility, setVisibility] = useState<'all' | 'active' | 'inactive'>('all')
@@ -95,7 +93,6 @@ export function MenuPage({
 
   function reloadMenu() {
     void queryClient.invalidateQueries({ queryKey: ['tenant', tenantId, 'menu-catalog'] })
-    void reload()
   }
 
   function openCategoryEditor(category: MenuCatalog['categories'][number]) {

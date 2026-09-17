@@ -10,6 +10,7 @@ import {
 import { CircleAlert, House, RefreshCw, Utensils } from 'lucide-react'
 import { lazy, Suspense, useState, useSyncExternalStore, type ReactNode } from 'react'
 
+import { isChunkLoadError } from '@/app/chunk-load-recovery'
 import { PwaRuntime } from '@/app/pwa-runtime'
 import { missingEnvironmentVariable, safeErrorDetails } from '@/app/root-error'
 import { isPasswordRecoveryHash } from '@/features/auth/domain/password-recovery'
@@ -88,6 +89,7 @@ function RootError({ error, reset }: { error: unknown; reset: () => void }) {
   const [incidentId] = useState(
     () => globalThis.crypto?.randomUUID?.() ?? `inc-${Math.random().toString(36).slice(2)}`,
   )
+  const chunkLoadError = isChunkLoadError(error)
 
   if (isPasswordRecovery) {
     return (
@@ -103,21 +105,29 @@ function RootError({ error, reset }: { error: unknown; reset: () => void }) {
       <span aria-hidden="true" className="st-error-orb st-error-orb--top" />
       <span aria-hidden="true" className="st-error-orb st-error-orb--bottom" />
       <section aria-live="polite" className="st-error-card">
-        <Link aria-label="SobreTaula, inicio" className="st-error-brand" to="/">
+        <a aria-label="SobreTaula, inicio" className="st-error-brand" href="/">
           <span className="st-brand-mark">
             <Utensils aria-hidden="true" className="size-5" />
           </span>
           <span>SobreTaula</span>
-        </Link>
+        </a>
         <div className="st-error-content">
           <div aria-hidden="true" className="st-error-icon">
             <CircleAlert className="size-7" />
           </div>
           <h1 id="error-title">
-            {missingVariable ? t('error.configuration.title') : t('error.title')}
+            {chunkLoadError
+              ? 'Estamos actualizando la aplicación'
+              : missingVariable
+                ? t('error.configuration.title')
+                : t('error.title')}
           </h1>
           <p id="error-description">
-            {missingVariable ? t('error.configuration.description') : t('error.description')}
+            {chunkLoadError
+              ? 'Se ha cargado una versión incompatible de la aplicación. Recarga para continuar.'
+              : missingVariable
+                ? t('error.configuration.description')
+                : t('error.description')}
           </p>
           {missingVariable && (
             <p className="st-error-reassurance" role="alert">
@@ -134,14 +144,17 @@ function RootError({ error, reset }: { error: unknown; reset: () => void }) {
             </div>
           </details>
           <div aria-describedby="error-description" className="st-error-actions">
-            <Button className="h-11 px-5" onPress={reset}>
+            <Button
+              className="h-11 px-5"
+              onPress={chunkLoadError ? () => window.location.reload() : reset}
+            >
               <RefreshCw aria-hidden="true" className="size-4" />
-              {t('error.retry')}
+              {chunkLoadError ? 'Recargar aplicación' : t('error.retry')}
             </Button>
-            <Link className="st-error-home-link" to="/">
+            <a className="st-error-home-link" href="/">
               <House aria-hidden="true" className="size-4" />
               {t('common.backHome')}
-            </Link>
+            </a>
           </div>
         </div>
         <aside aria-label={t('error.help.title')} className="st-error-help">

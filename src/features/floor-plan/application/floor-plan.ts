@@ -81,6 +81,11 @@ const updateTableCodeInput = venueInput.extend({
   tableId: z.string().uuid(),
   code: z.string().trim().min(1).max(20),
 })
+const updateAreaInput = venueInput.extend({
+  areaId: z.string().uuid(),
+  areaName: z.string().trim().min(1).max(100),
+})
+const deleteAreaInput = venueInput.extend({ areaId: z.string().uuid() })
 
 function isMissingColumnError(error: { code?: string } | null): boolean {
   return error?.code === '42703' || error?.code === 'PGRST204'
@@ -276,6 +281,58 @@ export const createFloorPlanArea = createServerFn({ method: 'POST' })
     if (areaError || !area)
       throw new Error(`floor_plan_area_create_failed:${areaError?.code ?? 'unknown'}`)
     return { areaId: area.id }
+  })
+
+export const updateFloorPlanArea = createServerFn({ method: 'POST' })
+  .middleware([authMiddleware, tenantMembershipMiddleware])
+  .validator(updateAreaInput)
+  .handler(async ({ context, data }) => {
+    requireManager(context.tenantMembership.role)
+    const { error } = await createRequestSupabaseClient(context.tenantMembership.accessToken)
+      .from('areas')
+      .update({ name: data.areaName })
+      .eq('id', data.areaId)
+      .eq('tenant_id', data.tenantId)
+      .eq('venue_id', data.venueId)
+    if (error) {
+      if (error.code === '23505') throw new Response('Area already exists', { status: 409 })
+      throw new Error(`floor_plan_area_update_failed:${error.code}`)
+    }
+  })
+
+export const deleteFloorPlanArea = createServerFn({ method: 'POST' })
+  .middleware([authMiddleware, tenantMembershipMiddleware])
+  .validator(deleteAreaInput)
+  .handler(async ({ context, data }) => {
+    requireManager(context.tenantMembership.role)
+    const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    const [tablesResult, elementsResult] = await Promise.all([
+      supabase
+        .from('tables')
+        .select('id', { count: 'exact', head: true })
+        .eq('area_id', data.areaId)
+        .eq('tenant_id', data.tenantId)
+        .eq('venue_id', data.venueId),
+      supabase
+        .from('plan_elements')
+        .select('id', { count: 'exact', head: true })
+        .eq('area_id', data.areaId)
+        .eq('tenant_id', data.tenantId),
+    ])
+    if (tablesResult.error || elementsResult.error)
+      throw new Error(
+        `floor_plan_area_delete_check_failed:${tablesResult.error?.code ?? elementsResult.error?.code}`,
+      )
+    if ((tablesResult.count ?? 0) > 0 || (elementsResult.count ?? 0) > 0)
+      throw new Response('Area is not empty', { status: 409 })
+
+    const { error } = await supabase
+      .from('areas')
+      .delete()
+      .eq('id', data.areaId)
+      .eq('tenant_id', data.tenantId)
+      .eq('venue_id', data.venueId)
+    if (error) throw new Error(`floor_plan_area_delete_failed:${error.code}`)
   })
 
 export const createFloorPlanTable = createServerFn({ method: 'POST' })

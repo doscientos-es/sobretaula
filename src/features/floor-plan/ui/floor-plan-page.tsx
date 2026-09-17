@@ -25,6 +25,7 @@ import {
   Footprints,
   PanelTop,
   Plus,
+  RotateCw,
   Soup,
   Square,
   Table2,
@@ -37,6 +38,8 @@ import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
 import {
   createFloorPlanTable,
   createFloorPlanArea,
+  deleteFloorPlanArea,
+  updateFloorPlanArea,
   updateFloorPlanTableCode,
   saveFloorPlan,
 } from '../application/floor-plan'
@@ -53,6 +56,7 @@ import {
   findBlockedAccesses,
   isPlacementWithinBounds,
   movePlacement,
+  rotatePlacement,
   validateLayout,
 } from '../domain/geometry'
 
@@ -98,6 +102,11 @@ export function FloorPlanPage({
   const [newAreaName, setNewAreaName] = useState('Terraza')
   const [newAreaWidth, setNewAreaWidth] = useState(800)
   const [newAreaHeight, setNewAreaHeight] = useState(600)
+  const [renameAreaOpen, setRenameAreaOpen] = useState(false)
+  const [areaName, setAreaName] = useState('')
+  const [renamingArea, setRenamingArea] = useState(false)
+  const [deleteAreaOpen, setDeleteAreaOpen] = useState(false)
+  const [deletingArea, setDeletingArea] = useState(false)
   const [planWidth, setPlanWidth] = useState(800)
   const [planHeight, setPlanHeight] = useState(600)
   const [resizedPlan, setResizedPlan] = useState<{
@@ -201,6 +210,22 @@ export function FloorPlanPage({
     }),
   )
   const { elements, placements } = history.present
+  useEffect(() => {
+    if (data.areas.some((area) => area.id === selectedAreaId)) return
+    const nextArea = data.areas[0]
+    setSelectedAreaId(nextArea?.id)
+    setResizedPlan(undefined)
+    setSelectedId(undefined)
+    setSelectedIds([])
+    setHistory(
+      createEditorHistory({
+        elements: nextArea ? data.elements.filter((element) => element.areaId === nextArea.id) : [],
+        placements: nextArea
+          ? data.placements.filter((placement) => placement.areaId === nextArea.id)
+          : [],
+      }),
+    )
+  }, [data.areas, data.elements, data.placements, selectedAreaId])
   const autosaveReady = useRef(false)
   const skipNextAutosave = useRef(false)
   function selectItem(id: string, additive = false) {
@@ -243,6 +268,58 @@ export function FloorPlanPage({
       feedback.setError('No se ha podido crear la nueva zona.')
     } finally {
       setCreatingArea(false)
+    }
+  }
+
+  function openRenameArea() {
+    if (!activeArea) return
+    setAreaName(activeArea.name)
+    setRenameAreaOpen(true)
+  }
+
+  async function renameArea() {
+    if (!activeArea) return
+    const nextName = areaName.trim()
+    if (!nextName) return
+    setRenamingArea(true)
+    feedback.setPending()
+    try {
+      await updateFloorPlanArea({
+        data: { areaId: activeArea.id, areaName: nextName, tenantId, venueId },
+      })
+      setRenameAreaOpen(false)
+      feedback.setSuccess('Zona renombrada.')
+      await reloadFloorPlan()
+    } catch (error) {
+      feedback.setError(
+        error instanceof Response && error.status === 409
+          ? 'Ya existe otra zona con ese nombre.'
+          : 'No se ha podido renombrar la zona.',
+      )
+    } finally {
+      setRenamingArea(false)
+    }
+  }
+
+  async function deleteArea() {
+    if (!activeArea) return
+    setDeletingArea(true)
+    feedback.setPending()
+    try {
+      await deleteFloorPlanArea({
+        data: { areaId: activeArea.id, tenantId, venueId },
+      })
+      setDeleteAreaOpen(false)
+      feedback.setSuccess('Zona eliminada.')
+      await reloadFloorPlan()
+    } catch (error) {
+      feedback.setError(
+        error instanceof Response && error.status === 409
+          ? 'Vacía la zona de mesas y elementos antes de eliminarla.'
+          : 'No se ha podido eliminar la zona.',
+      )
+    } finally {
+      setDeletingArea(false)
     }
   }
 
@@ -601,12 +678,12 @@ export function FloorPlanPage({
   return (
     <section
       aria-busy={initializing}
-      className="flex h-[calc(100dvh-8rem)] min-h-0 flex-col gap-4 overflow-x-hidden overflow-y-auto"
+      className="flex h-[calc(100dvh-7rem)] min-h-0 flex-col gap-2 overflow-x-hidden overflow-y-auto"
     >
-      <PageHeader className="border-border/70 shrink-0 border-b pb-4">
+      <PageHeader className="border-border/70 shrink-0 border-b pb-2">
         <div>
-          <PageHeaderTitle>Plano de sala</PageHeaderTitle>
-          <PageHeaderDescription>
+          <PageHeaderTitle className="text-lg">Plano de sala</PageHeaderTitle>
+          <PageHeaderDescription className="text-xs">
             Coloca las mesas y algunos puntos de referencia para orientarte durante el servicio.
           </PageHeaderDescription>
         </div>
@@ -641,16 +718,17 @@ export function FloorPlanPage({
           </CardContent>
         </Card>
       ) : (
-        <div className="flex min-h-0 flex-col gap-4">
+        <div className="flex min-h-0 flex-col gap-2">
           <div
-            className="relative z-20 flex h-10 shrink-0 items-center gap-2 overflow-x-auto"
+            className="relative z-20 flex min-h-9 shrink-0 items-center gap-1 overflow-x-auto"
             role="tablist"
             aria-label="Plantas y zonas"
           >
             {data.areas.map((area) => (
               <Button
-                key={area.id}
                 aria-selected={area.id === activeArea?.id}
+                className="h-8 shrink-0 px-2.5 text-xs"
+                key={area.id}
                 onClick={() => switchArea(area.id)}
                 type="button"
                 variant={area.id === activeArea?.id ? 'default' : 'outline'}
@@ -658,7 +736,12 @@ export function FloorPlanPage({
                 {area.name}
               </Button>
             ))}
-            <Button onClick={() => setCreateAreaOpen(true)} type="button" variant="outline">
+            <Button
+              className="h-8 shrink-0 px-2.5 text-xs"
+              onClick={() => setCreateAreaOpen(true)}
+              type="button"
+              variant="outline"
+            >
               + Añadir planta o zona
             </Button>
           </div>
@@ -683,6 +766,8 @@ export function FloorPlanPage({
                 setPropertiesDialogOpen(true)
               }}
               onEditDimensions={() => setDimensionsDialogOpen(true)}
+              onRenameArea={openRenameArea}
+              onDeleteArea={() => setDeleteAreaOpen(true)}
               onSelectItem={selectItem}
               placements={placements}
               previewDevice={previewDevice}
@@ -760,9 +845,8 @@ export function FloorPlanPage({
               </DialogHeader>
               {(() => {
                 const itemId = selectedId ?? dialogItemId
-                const selected =
-                  placements.find((item) => item.id === itemId) ??
-                  elements.find((item) => item.id === itemId)
+                const selectedElement = elements.find((item) => item.id === itemId)
+                const selected = placements.find((item) => item.id === itemId) ?? selectedElement
                 if (!selected) return null
                 return (
                   <div className="grid grid-cols-2 gap-3">
@@ -802,6 +886,16 @@ export function FloorPlanPage({
                         />
                       </Field>
                     ))}
+                    {selectedElement && (
+                      <Button
+                        className="col-span-2"
+                        onClick={() => updateSelected(rotatePlacement(selectedElement))}
+                        type="button"
+                        variant="outline"
+                      >
+                        <RotateCw className="size-4" /> Rotar 90°
+                      </Button>
+                    )}
                     <div className="col-span-2 flex justify-end border-t pt-3">
                       <Button
                         onClick={() => {
@@ -874,6 +968,85 @@ export function FloorPlanPage({
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </DialogRoot>
+      <DialogRoot
+        onOpenChange={(open) => {
+          setRenameAreaOpen(open)
+          if (!open) setAreaName('')
+        }}
+        open={renameAreaOpen}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Renombrar zona</DialogTitle>
+            <DialogDescription>
+              El nuevo nombre se aplicará a esta zona del local.
+            </DialogDescription>
+          </DialogHeader>
+          <form
+            className="grid gap-4"
+            onSubmit={(event) => {
+              event.preventDefault()
+              void renameArea()
+            }}
+          >
+            <Field>
+              <FieldLabel htmlFor="rename-area-name">Nombre</FieldLabel>
+              <Input
+                id="rename-area-name"
+                onChange={(event) => setAreaName(event.target.value)}
+                value={areaName}
+                required
+              />
+            </Field>
+            <DialogFooter>
+              <Button onClick={() => setRenameAreaOpen(false)} type="button" variant="outline">
+                Cancelar
+              </Button>
+              <Button disabled={renamingArea || feedback.pending} type="submit">
+                {renamingArea ? 'Guardando…' : 'Guardar nombre'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </DialogRoot>
+      <DialogRoot onOpenChange={setDeleteAreaOpen} open={deleteAreaOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Eliminar zona</DialogTitle>
+            <DialogDescription>
+              {activeArea
+                ? `Se eliminará “${activeArea.name}”. Esta acción no se puede deshacer.`
+                : 'Esta acción no se puede deshacer.'}
+            </DialogDescription>
+          </DialogHeader>
+          {activeArea && (placements.length > 0 || elements.length > 0) ? (
+            <p className="text-destructive text-sm" role="alert">
+              Esta zona contiene {placements.length} mesa{placements.length === 1 ? '' : 's'} y{' '}
+              {elements.length} elemento{elements.length === 1 ? '' : 's'}. Elimínalos antes de
+              borrar la zona.
+            </p>
+          ) : (
+            <p className="text-muted-foreground text-sm">
+              Solo se pueden eliminar zonas vacías, para evitar borrar su configuración por error.
+            </p>
+          )}
+          <DialogFooter>
+            <Button onClick={() => setDeleteAreaOpen(false)} type="button" variant="outline">
+              Cancelar
+            </Button>
+            <Button
+              disabled={
+                deletingArea || feedback.pending || placements.length > 0 || elements.length > 0
+              }
+              onClick={() => void deleteArea()}
+              type="button"
+              variant="destructive"
+            >
+              {deletingArea ? 'Eliminando…' : 'Eliminar zona'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </DialogRoot>
       <DialogRoot

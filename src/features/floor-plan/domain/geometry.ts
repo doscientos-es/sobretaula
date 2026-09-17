@@ -140,6 +140,14 @@ export function movePlacement(
   }
 }
 
+export function rotatePlacement(placement: PlanPlacement): PlanPlacement {
+  return {
+    ...placement,
+    heightCm: placement.widthCm,
+    widthCm: placement.heightCm,
+  }
+}
+
 /** Edges may touch: a collision requires overlapping usable floor surface. */
 export function placementsOverlap(first: PlanPlacement, second: PlanPlacement): boolean {
   return (

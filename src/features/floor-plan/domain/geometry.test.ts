@@ -6,6 +6,7 @@ import {
   isPlacementWithinBounds,
   movePlacement,
   placementsOverlap,
+  rotatePlacement,
   snapCoordinate,
   validateLayout,
   type PlanPlacement,
@@ -34,6 +35,13 @@ describe('floor plan geometry', () => {
   it('snaps a moved table to the nearest grid intersection', () => {
     expect(movePlacement(table, { xCm: 37, yCm: 63 })).toMatchObject({ xCm: 25, yCm: 75 })
     expect(snapCoordinate(49, 50)).toBe(50)
+  })
+
+  it('rotates a placement by exchanging its dimensions', () => {
+    expect(rotatePlacement({ ...table, heightCm: 25, widthCm: 250 })).toMatchObject({
+      heightCm: 250,
+      widthCm: 25,
+    })
   })
 
   it('rejects an invalid grid size', () => {
