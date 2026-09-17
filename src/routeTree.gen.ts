@@ -72,7 +72,6 @@ import { Route as TSlugLVenuePlanoRouteImport } from './routes/t.$slug.l.$venue.
 import { Route as TSlugLVenueProductosRouteImport } from './routes/t.$slug.l.$venue.productos'
 import { Route as TSlugLVenuePropinasRouteImport } from './routes/t.$slug.l.$venue.propinas'
 import { Route as TSlugLVenueReservasRouteImport } from './routes/t.$slug.l.$venue.reservas'
-import { Route as TSlugLVenueServicioRouteImport } from './routes/t.$slug.l.$venue.servicio'
 import { Route as TSlugLVenueTarjetasRegaloRouteImport } from './routes/t.$slug.l.$venue.tarjetas-regalo'
 import { Route as TSlugLVenueTpvRouteImport } from './routes/t.$slug.l.$venue.tpv'
 import { Route as TSlugLVenueCuentaSessionIdRouteImport } from './routes/t.$slug.l.$venue.cuenta.$sessionId'
@@ -430,13 +429,6 @@ const TSlugLVenueReservasRoute = TSlugLVenueReservasRouteImport.update({
 } as any).lazy(() =>
   import('./routes/t.$slug.l.$venue.reservas.lazy').then((d) => d.Route),
 )
-const TSlugLVenueServicioRoute = TSlugLVenueServicioRouteImport.update({
-  id: '/servicio',
-  path: '/servicio',
-  getParentRoute: () => TSlugLVenueRoute,
-} as any).lazy(() =>
-  import('./routes/t.$slug.l.$venue.servicio.lazy').then((d) => d.Route),
-)
 const TSlugLVenueTarjetasRegaloRoute =
   TSlugLVenueTarjetasRegaloRouteImport.update({
     id: '/tarjetas-regalo',
@@ -528,7 +520,6 @@ export interface FileRoutesByFullPath {
   '/t/$slug/l/$venue/productos': typeof TSlugLVenueProductosRoute
   '/t/$slug/l/$venue/propinas': typeof TSlugLVenuePropinasRoute
   '/t/$slug/l/$venue/reservas': typeof TSlugLVenueReservasRoute
-  '/t/$slug/l/$venue/servicio': typeof TSlugLVenueServicioRoute
   '/t/$slug/l/$venue/tarjetas-regalo': typeof TSlugLVenueTarjetasRegaloRoute
   '/t/$slug/l/$venue/tpv': typeof TSlugLVenueTpvRoute
   '/t/$slug/l/$venue/': typeof TSlugLVenueIndexRoute
@@ -594,7 +585,6 @@ export interface FileRoutesByTo {
   '/t/$slug/l/$venue/productos': typeof TSlugLVenueProductosRoute
   '/t/$slug/l/$venue/propinas': typeof TSlugLVenuePropinasRoute
   '/t/$slug/l/$venue/reservas': typeof TSlugLVenueReservasRoute
-  '/t/$slug/l/$venue/servicio': typeof TSlugLVenueServicioRoute
   '/t/$slug/l/$venue/tarjetas-regalo': typeof TSlugLVenueTarjetasRegaloRoute
   '/t/$slug/l/$venue/tpv': typeof TSlugLVenueTpvRoute
   '/t/$slug/l/$venue': typeof TSlugLVenueIndexRoute
@@ -664,7 +654,6 @@ export interface FileRoutesById {
   '/t/$slug/l/$venue/productos': typeof TSlugLVenueProductosRoute
   '/t/$slug/l/$venue/propinas': typeof TSlugLVenuePropinasRoute
   '/t/$slug/l/$venue/reservas': typeof TSlugLVenueReservasRoute
-  '/t/$slug/l/$venue/servicio': typeof TSlugLVenueServicioRoute
   '/t/$slug/l/$venue/tarjetas-regalo': typeof TSlugLVenueTarjetasRegaloRoute
   '/t/$slug/l/$venue/tpv': typeof TSlugLVenueTpvRoute
   '/t/$slug/l/$venue/': typeof TSlugLVenueIndexRoute
@@ -735,7 +724,6 @@ export interface FileRouteTypes {
     | '/t/$slug/l/$venue/productos'
     | '/t/$slug/l/$venue/propinas'
     | '/t/$slug/l/$venue/reservas'
-    | '/t/$slug/l/$venue/servicio'
     | '/t/$slug/l/$venue/tarjetas-regalo'
     | '/t/$slug/l/$venue/tpv'
     | '/t/$slug/l/$venue/'
@@ -801,7 +789,6 @@ export interface FileRouteTypes {
     | '/t/$slug/l/$venue/productos'
     | '/t/$slug/l/$venue/propinas'
     | '/t/$slug/l/$venue/reservas'
-    | '/t/$slug/l/$venue/servicio'
     | '/t/$slug/l/$venue/tarjetas-regalo'
     | '/t/$slug/l/$venue/tpv'
     | '/t/$slug/l/$venue'
@@ -870,7 +857,6 @@ export interface FileRouteTypes {
     | '/t/$slug/l/$venue/productos'
     | '/t/$slug/l/$venue/propinas'
     | '/t/$slug/l/$venue/reservas'
-    | '/t/$slug/l/$venue/servicio'
     | '/t/$slug/l/$venue/tarjetas-regalo'
     | '/t/$slug/l/$venue/tpv'
     | '/t/$slug/l/$venue/'
@@ -1348,13 +1334,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TSlugLVenueReservasRouteImport
       parentRoute: typeof TSlugLVenueRoute
     }
-    '/t/$slug/l/$venue/servicio': {
-      id: '/t/$slug/l/$venue/servicio'
-      path: '/servicio'
-      fullPath: '/t/$slug/l/$venue/servicio'
-      preLoaderRoute: typeof TSlugLVenueServicioRouteImport
-      parentRoute: typeof TSlugLVenueRoute
-    }
     '/t/$slug/l/$venue/tarjetas-regalo': {
       id: '/t/$slug/l/$venue/tarjetas-regalo'
       path: '/tarjetas-regalo'
@@ -1435,7 +1414,6 @@ interface TSlugLVenueRouteChildren {
   TSlugLVenueProductosRoute: typeof TSlugLVenueProductosRoute
   TSlugLVenuePropinasRoute: typeof TSlugLVenuePropinasRoute
   TSlugLVenueReservasRoute: typeof TSlugLVenueReservasRoute
-  TSlugLVenueServicioRoute: typeof TSlugLVenueServicioRoute
   TSlugLVenueTarjetasRegaloRoute: typeof TSlugLVenueTarjetasRegaloRoute
   TSlugLVenueTpvRoute: typeof TSlugLVenueTpvRoute
   TSlugLVenueIndexRoute: typeof TSlugLVenueIndexRoute
@@ -1456,7 +1434,6 @@ const TSlugLVenueRouteChildren: TSlugLVenueRouteChildren = {
   TSlugLVenueProductosRoute: TSlugLVenueProductosRoute,
   TSlugLVenuePropinasRoute: TSlugLVenuePropinasRoute,
   TSlugLVenueReservasRoute: TSlugLVenueReservasRoute,
-  TSlugLVenueServicioRoute: TSlugLVenueServicioRoute,
   TSlugLVenueTarjetasRegaloRoute: TSlugLVenueTarjetasRegaloRoute,
   TSlugLVenueTpvRoute: TSlugLVenueTpvRoute,
   TSlugLVenueIndexRoute: TSlugLVenueIndexRoute,

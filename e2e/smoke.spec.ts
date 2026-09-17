@@ -119,7 +119,6 @@ test.describe('authenticated restaurant smoke', () => {
     '/t/la-fonda-demo',
     '/t/la-fonda-demo/l/principal/tpv',
     '/t/la-fonda-demo/l/principal/plano',
-    '/t/la-fonda-demo/l/principal/servicio',
     '/t/la-fonda-demo/l/principal/reservas',
     '/t/la-fonda-demo/l/principal/bloques',
     '/t/la-fonda-demo/l/principal/caja',

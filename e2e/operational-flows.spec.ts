@@ -225,33 +225,6 @@ test('@owner @cash @P0 abre, mueve y arquea la caja', async ({ page }) => {
   await expect(page.getByText(/caja cerrada|histórico de cierres/i).first()).toBeVisible()
 })
 
-test('@manager @tpv @P0 opera una mesa y llega al TPV', async ({ page }) => {
-  await openOperationalPage(page, '/servicio', 'manager service')
-  await page.getByRole('button', { name: /vista lista/i }).click()
-  // The dedicated E2E database may carry a different seeded layout after a
-  // previous run. Select the first accessible free table instead of coupling
-  // this performance/flow check to one fixture label.
-  const freeTable = page.getByRole('button', { name: /Mesa .* · .*Libre/i }).first()
-  await expect(freeTable, 'manager service: debe existir una mesa libre').toBeVisible()
-  await freeTable.click()
-  await expect(
-    page.getByText(/1 mesa\(s\) seleccionada/i),
-    'manager service: la sugerencia debe seleccionar B01',
-  ).toBeVisible()
-  await page.getByLabel(/comensales sin reserva/i).fill('2')
-  await page.getByRole('button', { name: /sentar en las mesas seleccionadas/i }).click()
-  const feedback = page.locator('[aria-live], [role="status"], [role="alert"]')
-  await expect(feedback, 'manager service: walk-in debe confirmar').toContainText(
-    /sala actualizada|walk-in guardado/i,
-  )
-  await page.reload({ waitUntil: 'domcontentloaded' })
-  await page.getByRole('button', { name: /vista lista/i }).click()
-  await expect(
-    page.getByRole('button', { name: /Mesa .*Ocupada/i }).first(),
-    'manager service: la mesa debe persistir ocupada',
-  ).toBeVisible()
-})
-
 test('@manager @authorization @P0 ve los controles financieros protegidos', async ({ page }) => {
   await openOperationalPage(page, '/tpv', 'manager permissions')
   await expect(
@@ -274,11 +247,6 @@ test('@host @reservations @P0 conecta reserva pública con agenda', async ({ pag
       page.locator('html').evaluate((element) => element.scrollWidth <= element.clientWidth),
     )
     .toBe(true)
-})
-
-test('@host @service @P0 muestra la operación de sala', async ({ page }) => {
-  await openOperationalPage(page, '/servicio', 'host service')
-  await expect(page.getByText(/mesa|llegada|walk-in|servicio/i).first()).toBeVisible()
 })
 
 test('@waiter @mobile @tpv @P0 expone la comanda en móvil', async ({ page }) => {

@@ -18,7 +18,6 @@ export {
   seatingCapacity,
   suggestTableCombination,
 } from './domain/service-board'
-export { ServicePage } from './ui/service-page'
 export { KitchenQueue } from './ui/kitchen-queue'
 export type {
   ServiceBoard,

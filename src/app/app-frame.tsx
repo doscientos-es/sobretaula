@@ -13,7 +13,6 @@ import {
   BarChart3,
   CalendarDays,
   Clock3,
-  ConciergeBell,
   Coins,
   ExternalLink,
   FileText,
@@ -174,18 +173,6 @@ export function TenantAdminFrame({
                 >
                   <Map className="size-3" />
                   {t('nav.floorPlan')}
-                </Link>
-                <Link
-                  to="/t/$slug/l/$venue/servicio"
-                  params={{ slug, venue: activeVenue.slug }}
-                  activeProps={{
-                    className: `${navLinkClass} st-saas-nav-link--active`,
-                  }}
-                  className={navLinkClass}
-                  onClick={handleLockedNavigation}
-                >
-                  <ConciergeBell className="size-3" />
-                  {t('nav.service')}
                 </Link>
                 <Link
                   to="/t/$slug/l/$venue/reservas"

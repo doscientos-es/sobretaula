@@ -10,7 +10,7 @@ import {
 } from '@doscientos/ui'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { ArrowUpRight } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 
 import type { FloorPlanData } from '@/features/floor-plan'
 import type { ServiceBoard } from '@/features/service'
@@ -24,6 +24,25 @@ function TerminalMetric({ label, value }: { label: string; value: number }) {
       <p className="text-muted-foreground text-xs font-medium tracking-wide">{label}</p>
       <p className="mt-0.5 text-xl font-semibold tabular-nums">{value}</p>
     </div>
+  )
+}
+
+function SessionElapsed({ openedAt }: { openedAt: string }) {
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const interval = window.setInterval(() => setNow(Date.now()), 60_000)
+    return () => window.clearInterval(interval)
+  }, [])
+  const opened = new Date(openedAt).getTime()
+  const elapsedMinutes = Number.isFinite(opened)
+    ? Math.max(0, Math.floor((now - opened) / 60_000))
+    : 0
+  const hours = Math.floor(elapsedMinutes / 60)
+  const minutes = elapsedMinutes % 60
+  return (
+    <span className="text-muted-foreground text-xs">
+      {hours > 0 ? `${hours} h ${minutes} min` : `${minutes} min`} en mesa
+    </span>
   )
 }
 
@@ -55,6 +74,32 @@ export function PosTerminalPage({
   const tableCodes = new Map(board.tables.map((table) => [table.id, table.code]))
   const params = { slug, venue }
   const navigate = useNavigate()
+  const selectedSession = board.sessions.find((session) => session.id === selectedSessionId)
+  const selectedTableLabel = selectedSession?.tableIds
+    .map((id) => tableCodes.get(id) ?? id)
+    .join(' + ')
+
+  const mapWorkspace = (
+    <Card>
+      <CardHeader className="px-4 py-4 sm:px-6">
+        <CardTitle>Mapa de sala</CardTitle>
+        <CardDescription>
+          Pulsa una mesa ocupada para abrir su comanda y añadir recetas, bebidas o cualquier otro
+          producto.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="px-4 pt-0 sm:px-6">
+        <PosFloorMap
+          board={board}
+          onTableClick={handleTableClick}
+          plan={plan}
+          selectedSessionId={selectedSessionId}
+          slug={slug}
+          venue={venue}
+        />
+      </CardContent>
+    </Card>
+  )
 
   function handleTableClick(tableId: string) {
     if (!canAccessAccounts) return
@@ -65,9 +110,7 @@ export function PosTerminalPage({
         search: { sessionId: table.sessionId },
         to: '/t/$slug/l/$venue/tpv',
       })
-      return
     }
-    void navigate({ params, search: {}, to: '/t/$slug/l/$venue/servicio' })
   }
 
   return (
@@ -86,42 +129,41 @@ export function PosTerminalPage({
         <TerminalMetric label="Comandas pendientes" value={summary.pendingItems} />
         <TerminalMetric label="Listo para servir" value={summary.readyItems} />
       </div>
-      <Card>
-        <CardHeader className="px-4 py-4 sm:px-6">
-          <CardTitle>Mapa de sala</CardTitle>
-          <CardDescription>
-            Pulsa una mesa ocupada para abrir su comanda y añadir recetas, bebidas o cualquier otro
-            producto.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="px-4 pt-0 sm:px-6">
-          <PosFloorMap
-            board={board}
-            onTableClick={handleTableClick}
-            plan={plan}
-            selectedSessionId={selectedSessionId}
-            slug={slug}
-            venue={venue}
-          />
-        </CardContent>
-      </Card>
-      <div className="grid gap-2 lg:grid-cols-4">
-        <Link
-          className="group bg-card hover:bg-muted/40 focus-visible:outline-ring rounded-lg border p-3 shadow-none transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
-          params={params}
-          to="/t/$slug/l/$venue/servicio"
-        >
-          <span className="flex items-center justify-between gap-3 font-semibold">
-            Sala y mesas
-            <ArrowUpRight
-              aria-hidden="true"
-              className="text-muted-foreground size-4 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 motion-reduce:transform-none"
-            />
-          </span>
-          <span className="text-muted-foreground mt-1 block text-sm">
-            Abrir mesas, recibir reservas y gestionar cambios de sala.
-          </span>
-        </Link>
+      {accountWorkspace ? (
+        <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(24rem,32rem)]">
+          <div className="min-w-0">{mapWorkspace}</div>
+          <aside className="min-w-0 xl:sticky xl:top-4 xl:max-h-[calc(100dvh-2rem)] xl:overflow-y-auto">
+            <Card>
+              <CardHeader className="border-border/70 gap-3 border-b px-4 py-4 sm:px-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <CardTitle>{`Mesa ${selectedTableLabel ?? 'seleccionada'}`}</CardTitle>
+                    <CardDescription>Comanda, detalles y cobro</CardDescription>
+                  </div>
+                  <Link
+                    className="text-primary shrink-0 text-sm font-medium"
+                    params={params}
+                    search={{}}
+                    to="/t/$slug/l/$venue/tpv"
+                  >
+                    Cambiar
+                  </Link>
+                </div>
+                {selectedSession && (
+                  <div className="text-muted-foreground flex flex-wrap gap-x-4 gap-y-1 text-xs">
+                    <span>{selectedSession.covers} comensales</span>
+                    <SessionElapsed openedAt={selectedSession.openedAt} />
+                  </div>
+                )}
+              </CardHeader>
+              <CardContent className="px-3 pt-4 sm:px-4">{accountWorkspace}</CardContent>
+            </Card>
+          </aside>
+        </div>
+      ) : (
+        mapWorkspace
+      )}
+      <div className="grid gap-2 lg:grid-cols-3">
         <Link
           className="group bg-card hover:bg-muted/40 focus-visible:outline-ring rounded-lg border p-3 shadow-none transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
           params={params}
@@ -173,7 +215,7 @@ export function PosTerminalPage({
           </Link>
         )}
       </div>
-      <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_20rem]">
+      {!accountWorkspace && <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_20rem]">
         <Card>
           <CardHeader className="px-4 py-4">
             <CardTitle>{accountWorkspace ? 'Comanda seleccionada' : 'Cuentas activas'}</CardTitle>
@@ -257,7 +299,7 @@ export function PosTerminalPage({
             </p>
           </CardContent>
         </Card>
-      </div>
+      </div>}
       {kitchenWorkspace}
       {managementWorkspace}
     </section>

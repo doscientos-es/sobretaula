@@ -95,18 +95,18 @@ export function TenantHomePage({
           <PageHeaderDescription>
             {metrics.pendingReservationsToday > 0
               ? message(
-                  metrics.pendingReservationsToday === 1
-                    ? 'dashboard.pendingReservation.single'
-                    : 'dashboard.pendingReservation.multiple',
-                  { count: metrics.pendingReservationsToday },
-                )
+                metrics.pendingReservationsToday === 1
+                  ? 'dashboard.pendingReservation.single'
+                  : 'dashboard.pendingReservation.multiple',
+                { count: metrics.pendingReservationsToday },
+              )
               : metrics.openSessionCount > 0
                 ? message(
-                    metrics.openSessionCount === 1
-                      ? 'dashboard.openSession.single'
-                      : 'dashboard.openSession.multiple',
-                    { count: metrics.openSessionCount },
-                  )
+                  metrics.openSessionCount === 1
+                    ? 'dashboard.openSession.single'
+                    : 'dashboard.openSession.multiple',
+                  { count: metrics.openSessionCount },
+                )
                 : nextService
                   ? message('dashboard.nextService', { time: nextService })
                   : message('dashboard.allSystems', { name: tenant.name })}
@@ -177,7 +177,7 @@ export function TenantHomePage({
                 const isPendingReservation = item.kind === 'pending_reservation'
                 const actionLabel = isPendingReservation
                   ? message('dashboard.reviewReservation')
-                  : message('dashboard.openService')
+                  : message('nav.tpv')
                 const occurredAt = isPendingReservation ? item.startsAt : item.openedAt
                 const time = timeFormatter.format(new Date(occurredAt))
                 const detail = isPendingReservation
@@ -212,7 +212,7 @@ export function TenantHomePage({
                       to={
                         isPendingReservation
                           ? '/t/$slug/l/$venue/reservas'
-                          : '/t/$slug/l/$venue/servicio'
+                          : '/t/$slug/l/$venue/tpv'
                       }
                     >
                       {actionLabel}
@@ -391,10 +391,10 @@ export function TenantHomePage({
             </li>
           </ol>
           {venues[0] &&
-          setupStatus.hasFloorPlan &&
-          setupStatus.hasMenu &&
-          setupStatus.hasReservations &&
-          setupStatus.hasTeam ? (
+            setupStatus.hasFloorPlan &&
+            setupStatus.hasMenu &&
+            setupStatus.hasReservations &&
+            setupStatus.hasTeam ? (
             <div className="border-success/30 bg-success/5 mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border px-3 py-3">
               <div>
                 <p className="text-sm font-medium">Todo listo para abrir el servicio</p>

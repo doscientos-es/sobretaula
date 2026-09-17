@@ -108,7 +108,7 @@ function PosTerminalAccountWorkspace({
       .then(reload)
   }
   return (
-    <div className="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_22rem]">
+    <div className="space-y-4">
       <span className="sr-only">{`Mesa ${account.session.tableCodes.join(' + ')}`}</span>
       <AccountOrderWorkspace
         account={account}
