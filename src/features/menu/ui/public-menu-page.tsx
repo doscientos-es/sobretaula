@@ -7,7 +7,6 @@ import {
   PageHeaderDescription,
   PageHeaderTitle,
 } from '@doscientos/ui'
-import { useState } from 'react'
 
 import { ALLERGEN_LABELS, type Allergen } from '@/features/product/domain/product-costing'
 import type { Locale } from '@/shared/lib/i18n/locale'

@@ -63,7 +63,7 @@ export function PlatformOperatorsPage({
     try {
       await action()
       feedback.setSuccess(success)
-      reload()
+      await reload()
     } catch (error) {
       feedback.setError(
         isInvitationEmailRateLimited(error)

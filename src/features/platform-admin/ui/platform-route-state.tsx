@@ -49,7 +49,7 @@ export function PlatformRouteError({ error, reset }: { error: unknown; reset: ()
 
   function retry() {
     reset()
-    reload()
+    void reload()
   }
 
   return (

@@ -29,7 +29,7 @@ function BillingRoute() {
     <BillingPage
       locale={locale}
       isOwner={tenantMembership.role === 'owner'}
-      onDone={reload}
+      onDone={() => void reload()}
       overview={overviewQuery.data}
       tenantId={tenant.id}
     />

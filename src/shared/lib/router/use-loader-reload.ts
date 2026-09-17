@@ -6,9 +6,10 @@ import { useRouter } from '@tanstack/react-router'
  * Query y repite el bootstrap completo del documento (lo que la puerta de
  * adopción de ADR-0001 exige evitar).
  */
-export function useLoaderReload(): () => void {
+export function useLoaderReload(): () => Promise<void> {
   const router = useRouter()
-  return () => {
-    void router.invalidate().then(() => router.load())
+  return async () => {
+    await router.invalidate()
+    await router.load()
   }
 }

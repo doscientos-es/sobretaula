@@ -31,7 +31,7 @@ export function AccountOrderWorkspace({
         canRemove={open && account.payments.length === 0}
         lines={account.lines}
         locale={locale}
-        onDone={reload}
+        onDone={() => void reload()}
         sessionId={session.id}
         tenantId={tenantId}
         venueId={venueId}
@@ -40,7 +40,7 @@ export function AccountOrderWorkspace({
         <AccountAddItem
           locale={locale}
           menu={menu}
-          onDone={reload}
+          onDone={() => void reload()}
           sessionId={session.id}
           tenantId={tenantId}
           venueId={venueId}

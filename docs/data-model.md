@@ -61,14 +61,13 @@ efectivo se resuelve en servidor; el rol no se lee del cliente.
 
 ## Sala
 
-| Tabla                 | Contenido                                                                                                 |
-| --------------------- | --------------------------------------------------------------------------------------------------------- |
-| `areas`               | Planta baja, terraza, jardín, privado. Prioridad de asignación, si admite reserva online                  |
-| `floor_plan_versions` | Versión inmutable por área: nombre, rango de activación, autor                                            |
-| `plan_elements`       | Geometría no-mesa: paredes, aperturas, barra, decoración. `x`,`y`,`w`,`h`,`rotation` en cm/grados enteros |
-| `tables`              | Identidad estable de la mesa: `code` (número visible), forma, `min_seats`, `max_seats`, `is_bookable`     |
-| `table_placements`    | Posición de una mesa **en una versión** de plano                                                          |
-| `table_group_presets` | Combinaciones guardadas para grupos grandes                                                               |
+| Tabla              | Contenido                                                                                                 |
+| ------------------ | --------------------------------------------------------------------------------------------------------- |
+| `areas`            | Planta baja, terraza, jardín, privado. Prioridad de asignación, si admite reserva online                  |
+| `floor_plans`      | Plano operativo único por área: nombre, dimensiones y autor                                               |
+| `plan_elements`    | Geometría no-mesa: paredes, aperturas, barra, decoración. `x`,`y`,`w`,`h`,`rotation` en cm/grados enteros |
+| `tables`           | Identidad estable de la mesa: `code` (número visible), forma, `min_seats`, `max_seats`, `is_bookable`     |
+| `table_placements` | Posición de una mesa **en un plano**                                                                      |
 
 `tables` separa identidad de geometría a propósito: una reserva referencia la
 mesa, no su posición, y rediseñar el plano no invalida el histórico.

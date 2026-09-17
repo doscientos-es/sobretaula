@@ -65,7 +65,7 @@ export function PlatformSettingsPage({ settings }: { settings: PlatformFiscalSet
     })
       .then(() => {
         feedback.setSuccess('Ajustes fiscales guardados.')
-        reload()
+        void reload()
       })
       .catch(() => feedback.setError('No se han podido guardar los ajustes fiscales.'))
   }

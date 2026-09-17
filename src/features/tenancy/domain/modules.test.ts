@@ -4,6 +4,7 @@ import {
   canUseModule,
   hasModuleDependencies,
   isModuleEnabledForRole,
+  MODULE_KEYS,
   MODULE_DEFINITIONS,
 } from './modules'
 
@@ -30,6 +31,7 @@ describe('module catalog', () => {
   })
 
   it('defines every catalog key exactly once', () => {
-    expect(Object.keys(MODULE_DEFINITIONS)).toHaveLength(10)
+    expect(Object.keys(MODULE_DEFINITIONS)).toHaveLength(MODULE_KEYS.length)
+    expect(Object.keys(MODULE_DEFINITIONS).sort()).toEqual([...MODULE_KEYS].sort())
   })
 })

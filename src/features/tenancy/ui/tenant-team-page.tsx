@@ -129,7 +129,7 @@ export function TenantTeamPage({
         queryKey: ['tenant', tenantId, 'team'],
         refetchType: 'none',
       })
-      reload()
+      await reload()
       return result
     } catch (error) {
       feedback.setError(teamErrorMessage(error))
@@ -372,7 +372,7 @@ export function TenantTeamPage({
                                   removeTenantMember({
                                     data: { tenantId, userId: member.userId },
                                   }),
-                                'Trabajador eliminado del equipo.',
+                                'Acceso eliminado del restaurante.',
                               ).finally(() => setConfirmingRemoval(null))
                             }}
                             size="sm"

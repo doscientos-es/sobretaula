@@ -226,7 +226,7 @@ export function ReservationPage({
       await queryClient.invalidateQueries({
         queryKey: ['tenant', tenantId, 'venue', venueId, 'reservations-workspace'],
       })
-      reload()
+      await reload()
     } catch (error) {
       serviceFeedback.setError(reservationServiceErrorMessage(error))
     }
@@ -240,7 +240,7 @@ export function ReservationPage({
         data: { body: termsBody, tenantId, title: termsTitle, venueId },
       })
       feedback.setSuccess('Nueva versión de condiciones publicada.')
-      reload()
+      await reload()
     } catch {
       feedback.setError('No se han podido publicar las condiciones.')
     }
@@ -322,7 +322,6 @@ export function ReservationPage({
               tenantId={tenantId}
               timezone={timezone}
               venueId={venueId}
-              onNewReservation={() => setNewReservationOpen(true)}
               onCalendarSlotClick={(value) => {
                 setStartsAt(value)
                 setNewReservationOpen(true)
@@ -473,7 +472,7 @@ export function ReservationPage({
                               setReservationCsv('')
                               setReservationFileName('')
                               setReservationPreview(null)
-                              reload()
+                              void reload()
                             })
                             .catch(() =>
                               feedback.setError('No se han podido importar las reservas.'),

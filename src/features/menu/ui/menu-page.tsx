@@ -95,7 +95,7 @@ export function MenuPage({
 
   function reloadMenu() {
     void queryClient.invalidateQueries({ queryKey: ['tenant', tenantId, 'menu-catalog'] })
-    reload()
+    void reload()
   }
 
   function openCategoryEditor(category: MenuCatalog['categories'][number]) {

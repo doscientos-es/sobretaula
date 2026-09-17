@@ -2,7 +2,7 @@ import { useQueries } from '@tanstack/react-query'
 import { createLazyFileRoute } from '@tanstack/react-router'
 
 import { TenantRoutePending } from '@/app/tenant-route-loader'
-import { floorPlanQuery } from '@/features/floor-plan'
+import { floorPlanQuery, type FloorPlanData } from '@/features/floor-plan'
 import { ServicePage, serviceBoardQuery } from '@/features/service'
 
 export const Route = createLazyFileRoute('/t/$slug/l/$venue/servicio')({
@@ -15,13 +15,17 @@ function ServiceRoute() {
   const [boardQuery, planQuery] = useQueries({
     queries: [serviceBoardQuery(tenant.id, venue.id), floorPlanQuery(tenant.id, venue.id)],
   })
-  if (boardQuery.isPending || planQuery.isPending) return <TenantRoutePending />
+  if (boardQuery.isPending) return <TenantRoutePending />
   if (boardQuery.error) throw boardQuery.error
-  if (planQuery.error) throw planQuery.error
+  const plan: FloorPlanData = planQuery.data ?? {
+    areas: [],
+    elements: [],
+    placements: [],
+  }
   return (
     <ServicePage
       board={boardQuery.data}
-      plan={planQuery.data}
+      plan={plan}
       tenantId={tenant.id}
       venueId={venue.id}
       tenantSlug={tenantSlug}

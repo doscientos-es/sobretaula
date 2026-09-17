@@ -20,9 +20,9 @@ del diseñador y su uso diario.
 ### P0 · Base fiable (implementado; validación pendiente)
 
 - [x] Revisar modelo y editor SVG existentes.
-- [x] Mantener borrador, versión activa e historial.
+- [x] Mantener un plano operativo único por área.
 - [x] Validar dimensiones, límites y solapes antes de publicar.
-- [x] Detectar conflictos entre layouts temporales.
+- [x] Validar conflictos geométricos antes de guardar.
 - [x] Añadir pisos, zonas y tipo de espacio (interior, terraza cubierta,
       terraza exterior), incluyendo el estado operativo de terrazas.
 - [x] Documentar estados de carga, error, vacío, permisos y red inestable.
@@ -60,7 +60,7 @@ Los estados deben probarse en escritorio, tablet y móvil, con foco visible,
 - [x] Validación visual de solapes, límites, salidas bloqueadas y pasillos
       configurables (75 cm, 90 cm o 1,2 m) antes de publicar.
 - [x] Previsualización tablet/móvil en el lienzo (escritorio, tablet y móvil).
-- [x] Publicación programada con inicio y fin opcional de vigencia.
+- [x] Guardado completo del plano con dimensiones y geometría consistentes.
 - [x] Selección, duplicado, eliminación y edición de propiedades.
 
 ### P2 · Operación de turno

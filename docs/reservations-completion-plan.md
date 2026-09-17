@@ -105,8 +105,8 @@ probada contra un proyecto de Supabase dedicado.
 1. Crear RPC de reservar y RPC de modificar. Deben bloquear los recursos
    relevantes, excluir la reserva actual al editar y escribir reserva,
    asignaciones, holds y evento en una sola transacción.
-2. Admitir una o varias mesas y `table_group_presets`; la selección optimiza el
-   encaje sin superar aforo, pacing ni la regla de área.
+2. Admitir una o varias mesas mediante las asignaciones actuales; la selección
+   optimiza el encaje sin superar aforo, pacing ni la regla de área.
 3. Crear `reservation_events` append-only: reserva, actor interno/público, tipo,
    instante, cambio saneado y motivo. No guardar token ni payload de pago.
 4. Llevar todos los flujos internos al nuevo motor antes de exponer ningún flujo

@@ -19,6 +19,10 @@ export interface ServiceBoardQuery {
   venueId: string
 }
 
+function isMissingColumnError(error: { code?: string } | null): boolean {
+  return error?.code === '42703' || error?.code === 'PGRST204'
+}
+
 /**
  * Single read of everything the room shows right now. The mutations reuse it so
  * a move or a merge is validated against the same picture the host sees.
@@ -67,7 +71,7 @@ export async function loadServiceBoard(
     ])
   let tablesResult = initialTablesResult
 
-  if (tablesResult.error?.code === '42703') {
+  if (isMissingColumnError(tablesResult.error)) {
     const legacyTablesResult = await supabase
       .from('tables')
       .select(

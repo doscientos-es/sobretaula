@@ -2,9 +2,6 @@ import {
   Button,
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
   DialogContent,
   DialogDescription,
   DialogHeader,
@@ -32,21 +29,19 @@ import {
   Square,
   Table2,
 } from 'lucide-react'
-import { useEffect, useRef, useState, type KeyboardEvent, type DragEvent } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { useAsyncEffect } from '@/shared/lib/react/use-async-effect'
 import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
 
 import {
   createFloorPlanTable,
-  createInitialFloorPlan,
-  resizeFloorPlan,
+  createFloorPlanArea,
   updateFloorPlanTableCode,
-  saveFloorPlanVersion,
+  saveFloorPlan,
 } from '../application/floor-plan'
 import { commitEditorHistory, createEditorHistory } from '../domain/editor-history'
 import {
-  selectFloorPlanVersion,
   type FloorPlanData,
   type FloorPlanElement,
   type PlanElementKind,
@@ -104,85 +99,97 @@ export function FloorPlanPage({
   const [newAreaHeight, setNewAreaHeight] = useState(600)
   const [planWidth, setPlanWidth] = useState(800)
   const [planHeight, setPlanHeight] = useState(600)
+  const [resizedPlan, setResizedPlan] = useState<{
+    areaId: string
+    heightCm: number
+    widthCm: number
+  }>()
   const [creatingArea, setCreatingArea] = useState(false)
   const [addElementAt, setAddElementAt] = useState<{ x: number; y: number }>()
   const [propertiesDialogOpen, setPropertiesDialogOpen] = useState(false)
   const [dimensionsDialogOpen, setDimensionsDialogOpen] = useState(false)
-  function reloadFloorPlan() {
-    void queryClient.invalidateQueries({
+  const autosaveTimeoutRef = useRef<number | undefined>(undefined)
+  const loadedAutosaveAreaRef = useRef<string | undefined>(undefined)
+  const [dialogItemId, setDialogItemId] = useState<string>()
+  async function reloadFloorPlan() {
+    await queryClient.refetchQueries({
       queryKey: ['tenant', tenantId, 'venue', venueId, 'floor-plan'],
     })
-    reload()
+    await reload()
   }
-  const activeArea = data.areas.find((area) => area.id === selectedAreaId) ?? data.areas[0]
-  const activeVersion = activeArea
-    ? (selectFloorPlanVersion(data.versions, activeArea.id) ??
-      data.versions.find((version) => version.areaId === activeArea.id))
+  const loadedActiveArea = data.areas.find((area) => area.id === selectedAreaId) ?? data.areas[0]
+  const activeArea = loadedActiveArea
+    ? { ...loadedActiveArea, ...(resizedPlan?.areaId === loadedActiveArea.id ? resizedPlan : {}) }
     : undefined
+  const activeAreaId = activeArea?.id
   useAsyncEffect(() => {
-    if (activeVersion) {
-      setPlanWidth(activeVersion.widthCm)
-      setPlanHeight(activeVersion.heightCm)
+    if (activeArea) {
+      setPlanWidth(activeArea.widthCm)
+      setPlanHeight(activeArea.heightCm)
     }
-  }, [activeVersion?.id, activeVersion?.widthCm, activeVersion?.heightCm])
-  async function resizePlan() {
-    if (!activeVersion || planWidth < 100 || planHeight < 100) return
+  }, [activeArea?.id, activeArea?.widthCm, activeArea?.heightCm])
+  async function resizePlan(): Promise<boolean> {
+    if (!activeArea || planWidth < 100 || planHeight < 100) return false
     feedback.setPending()
     try {
-      await resizeFloorPlan({
+      await saveFloorPlan({
         data: {
-          heightCm: planHeight,
+          elements,
+          areaId: activeArea.id,
           tenantId,
           venueId,
-          versionId: activeVersion.id,
           widthCm: planWidth,
+          heightCm: planHeight,
+          placements,
         },
       })
       feedback.setSuccess('Tamaño del plano actualizado.')
-      reloadFloorPlan()
+      setResizedPlan({ areaId: activeArea.id, heightCm: planHeight, widthCm: planWidth })
+      // The explicit resize already persists the map. Do not let the editor
+      // autosave immediately save the old dimensions.
+      if (autosaveTimeoutRef.current !== undefined) {
+        window.clearTimeout(autosaveTimeoutRef.current)
+        autosaveTimeoutRef.current = undefined
+      }
+      skipNextAutosave.current = true
+      return true
     } catch {
       feedback.setError('No se ha podido cambiar el tamaño del plano.')
+      return false
     }
   }
-  useAsyncEffect(() => {
-    if (data.areas.length > 0 || initializing || initializationFailed) return
+  async function createInitialArea() {
+    if (initializing) return
     setInitializing(true)
     feedback.setPending()
-    void createInitialFloorPlan({
-      data: {
-        areaName: 'Sala principal',
-        floorNumber: 0,
-        heightCm: 600,
-        outdoorOpen: true,
-        spaceType: 'indoor',
-        tenantId,
-        venueId,
-        widthCm: 800,
-      },
-    })
-      .then(() => {
-        reloadFloorPlan()
-        feedback.setSuccess('Plano inicial preparado.')
+    try {
+      await createFloorPlanArea({
+        data: {
+          areaName: 'Sala principal',
+          floorNumber: 0,
+          heightCm: 600,
+          outdoorOpen: true,
+          spaceType: 'indoor',
+          tenantId,
+          venueId,
+          widthCm: 800,
+        },
       })
-      .catch(() => {
-        setInitializationFailed(true)
-        feedback.setError('No se ha podido preparar el plano inicial.')
-      })
-      .finally(() => setInitializing(false))
-  }, [
-    data.areas.length,
-    feedback,
-    initializationFailed,
-    initializing,
-    reloadFloorPlan,
-    tenantId,
-    venueId,
-  ])
-  const savedPlacements = activeVersion
-    ? data.placements.filter((placement) => placement.floorPlanVersionId === activeVersion.id)
+      await reloadFloorPlan()
+      feedback.setSuccess('Sala principal creada.')
+      setInitializationFailed(false)
+    } catch {
+      setInitializationFailed(true)
+      feedback.setError('No se ha podido crear la sala principal.')
+    } finally {
+      setInitializing(false)
+    }
+  }
+  const savedPlacements = activeArea
+    ? data.placements.filter((placement) => placement.areaId === activeArea.id)
     : []
-  const savedElements = activeVersion
-    ? data.elements.filter((element) => element.floorPlanVersionId === activeVersion.id)
+  const savedElements = activeArea
+    ? data.elements.filter((element) => element.areaId === activeArea.id)
     : []
   const [history, setHistory] = useState(() =>
     createEditorHistory({
@@ -203,7 +210,7 @@ export function FloorPlanPage({
         : [id],
     )
   }
-  const layoutIssues = activeVersion ? validateLayout(placements, activeVersion) : []
+  const layoutIssues = activeArea ? validateLayout(placements, activeArea) : []
   const blockedAccesses = findBlockedAccesses(placements, elements)
   async function createArea() {
     const areaName = newAreaName.trim()
@@ -211,7 +218,7 @@ export function FloorPlanPage({
     setCreatingArea(true)
     feedback.setPending()
     try {
-      await createInitialFloorPlan({
+      await createFloorPlanArea({
         data: {
           areaName,
           floorNumber: null,
@@ -225,10 +232,10 @@ export function FloorPlanPage({
           widthCm: newAreaWidth,
         },
       })
-      feedback.setSuccess(`${areaName} preparada.`)
+      feedback.setSuccess(`${areaName} creada.`)
       setCreateAreaOpen(false)
       setNewAreaName('Terraza')
-      reloadFloorPlan()
+      void reloadFloorPlan()
     } catch {
       feedback.setError('No se ha podido crear la nueva zona.')
     } finally {
@@ -242,13 +249,13 @@ export function FloorPlanPage({
       return
     }
     const element = elements.find((item) => item.id === id)
-    if (!element || !activeVersion) return
+    if (!element || !activeArea) return
     const next = {
       ...element,
       xCm: Math.round(xCm / gridSize) * gridSize,
       yCm: Math.round(yCm / gridSize) * gridSize,
     }
-    if (!isPlacementWithinBounds(next, activeVersion)) return
+    if (!isPlacementWithinBounds(next, activeArea)) return
     setHistory((current) =>
       commitEditorHistory(current, {
         ...current.present,
@@ -258,12 +265,12 @@ export function FloorPlanPage({
   }
 
   async function createTable(position: { x: number; y: number }, code: string) {
-    if (!activeArea || !activeVersion) return
+    if (!activeArea) return
     feedback.setPending()
     const optimisticId = `optimistic-${crypto.randomUUID()}`
     const optimisticPlacement = {
       code,
-      floorPlanVersionId: activeVersion.id,
+      areaId: activeArea.id,
       heightCm: 100,
       id: optimisticId,
       maxSeats: defaultTableSeats,
@@ -291,7 +298,6 @@ export function FloorPlanPage({
           isAccessible: false,
           tenantId,
           venueId,
-          versionId: activeVersion.id,
           widthCm: 100,
           xCm: position.x,
           yCm: position.y,
@@ -328,19 +334,19 @@ export function FloorPlanPage({
   }
 
   function createQuickTable(position: { x: number; y: number }) {
-    if (!activeVersion) return
-    const usedCodes = new Set(placements.map((placement) => placement.code))
+    if (!activeArea) return
+    const usedCodes = new Set(data.tableCodes ?? placements.map((placement) => placement.code))
     let number = 1
     while (usedCodes.has(String(number))) number += 1
     const tableSize = { heightCm: 100, widthCm: 100 }
     const requested = {
       xCm: Math.min(
         Math.max(0, Math.round(position.x / gridSize) * gridSize),
-        activeVersion.widthCm - tableSize.widthCm,
+        activeArea.widthCm - tableSize.widthCm,
       ),
       yCm: Math.min(
         Math.max(0, Math.round(position.y / gridSize) * gridSize),
-        activeVersion.heightCm - tableSize.heightCm,
+        activeArea.heightCm - tableSize.heightCm,
       ),
     }
     const candidate = Array.from({ length: 200 }, (_, index) => {
@@ -353,7 +359,7 @@ export function FloorPlanPage({
       }
     }).find(
       (item) =>
-        isPlacementWithinBounds(item, activeVersion) &&
+        isPlacementWithinBounds(item, activeArea) &&
         findPlacementCollisions(item, placements).length === 0,
     )
     if (!candidate) {
@@ -364,7 +370,7 @@ export function FloorPlanPage({
   }
 
   function changePlacement(id: string, xCm: number, yCm: number) {
-    if (!activeVersion) return
+    if (!activeArea) return
     const moving = placements.find((placement) => placement.id === id)
     if (!moving) return
     const others = placements.filter((placement) => placement.id !== id)
@@ -399,7 +405,7 @@ export function FloorPlanPage({
     const candidate = updated.find((placement) => placement.id === id)
     if (
       !candidate ||
-      !isPlacementWithinBounds(candidate, activeVersion) ||
+      !isPlacementWithinBounds(candidate, activeArea) ||
       findPlacementCollisions(candidate, updated).length > 0
     ) {
       feedback.setError('Ese movimiento deja la mesa fuera del plano o solapada.')
@@ -411,48 +417,22 @@ export function FloorPlanPage({
   }
 
   function switchArea(areaId: string) {
-    const version =
-      selectFloorPlanVersion(data.versions, areaId) ??
-      data.versions.find((candidate) => candidate.areaId === areaId)
     setSelectedAreaId(areaId)
+    setResizedPlan(undefined)
     setSelectedId(undefined)
     setSelectedIds([])
     setHistory(
       createEditorHistory({
-        elements: data.elements.filter((element) => element.floorPlanVersionId === version?.id),
-        placements: data.placements.filter(
-          (placement) => placement.floorPlanVersionId === version?.id,
-        ),
+        elements: data.elements.filter((element) => element.areaId === areaId),
+        placements: data.placements.filter((placement) => placement.areaId === areaId),
       }),
     )
   }
 
-  function moveWithKeyboard(event: KeyboardEvent<HTMLButtonElement>, id: string) {
-    const distance = event.shiftKey ? 5 : gridSize
-    const current = placements.find((placement) => placement.id === id)
-    const currentElement = elements.find((element) => element.id === id)
-    const movable = current ?? currentElement
-    if (!movable) return
-    const displacement = {
-      ArrowDown: { x: 0, y: distance },
-      ArrowLeft: { x: -distance, y: 0 },
-      ArrowRight: { x: distance, y: 0 },
-      ArrowUp: { x: 0, y: -distance },
-    }[event.key]
-    if (!displacement) return
-    event.preventDefault()
-    if (current) changePlacement(id, current.xCm + displacement.x, current.yCm + displacement.y)
-    else
-      updateSelected({
-        xCm: movable.xCm + displacement.x,
-        yCm: movable.yCm + displacement.y,
-      })
-  }
-
   function addElement(kind: PlanElementKind, position = { x: 0, y: 0 }) {
-    if (!activeVersion) return
+    if (!activeArea) return
     const element: FloorPlanElement = {
-      floorPlanVersionId: activeVersion.id,
+      areaId: activeArea.id,
       heightCm: elementDefaults[kind].heightCm,
       id: crypto.randomUUID(),
       kind,
@@ -510,9 +490,10 @@ export function FloorPlanPage({
       code?: string
     },
   ) {
-    if (!selectedId || !activeVersion) return
-    const selectedTable = placements.find((item) => item.id === selectedId)
-    const selectedElement = elements.find((item) => item.id === selectedId)
+    const itemId = selectedId ?? dialogItemId
+    if (!itemId || !activeArea) return
+    const selectedTable = placements.find((item) => item.id === itemId)
+    const selectedElement = elements.find((item) => item.id === itemId)
     const selected = selectedTable ?? selectedElement
     if (!selected) return
     const candidate = { ...selected, ...values }
@@ -520,7 +501,7 @@ export function FloorPlanPage({
       feedback.setError('El tamaño debe ser positivo.')
       return
     }
-    if (!isPlacementWithinBounds(candidate, activeVersion)) {
+    if (!isPlacementWithinBounds(candidate, activeArea)) {
       feedback.setError('El elemento debe quedar completamente dentro del plano.')
       return
     }
@@ -528,17 +509,17 @@ export function FloorPlanPage({
       selectedTable &&
       findPlacementCollisions(
         candidate,
-        placements.filter((item) => item.id !== selectedId),
+        placements.filter((item) => item.id !== itemId),
       ).length > 0
     ) {
       feedback.setError('La mesa se solapa con otra mesa.')
       return
     }
     const nextElements = elements.map((item) =>
-      item.id === selectedId ? { ...item, ...values } : item,
+      item.id === itemId ? { ...item, ...values } : item,
     )
     const nextPlacements = placements.map((item) =>
-      item.id === selectedId ? { ...item, ...values } : item,
+      item.id === itemId ? { ...item, ...values } : item,
     )
     setHistory((current) =>
       commitEditorHistory(current, {
@@ -549,35 +530,50 @@ export function FloorPlanPage({
   }
 
   async function savePlan() {
-    if (!activeVersion) return
+    if (!activeArea) return
     if (layoutIssues.length > 0) {
       feedback.setError('Corrige los problemas del plano antes de publicarlo.')
       return
     }
     feedback.setPending()
     try {
-      await saveFloorPlanVersion({
+      await saveFloorPlan({
         data: {
-          activeFrom: new Date().toISOString(),
-          activeTo: null,
           elements,
-          name: 'Plano',
+          areaId: activeArea.id,
           placements,
-          sourceVersionId: activeVersion.id,
           tenantId,
           venueId,
         },
       })
       feedback.setSuccess('Plano guardado.')
-      reloadFloorPlan()
+      await reloadFloorPlan()
     } catch {
       feedback.setError('No se ha podido guardar el plano.')
     }
   }
 
+  const savePlanRef = useRef(savePlan)
   useEffect(() => {
-    if (!activeVersion) return
-    if (placements.some((placement) => placement.id.startsWith('optimistic-'))) return
+    savePlanRef.current = savePlan
+    // This effect intentionally tracks the latest callback for the autosave timer.
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
+  }, [savePlan])
+
+  useEffect(() => {
+    if (!activeAreaId) return
+    if (propertiesDialogOpen) return
+    if (loadedAutosaveAreaRef.current !== activeAreaId) {
+      loadedAutosaveAreaRef.current = activeAreaId
+      autosaveReady.current = true
+      return
+    }
+    if (
+      placements.some(
+        (placement) => typeof placement.id === 'string' && placement.id.startsWith('optimistic-'),
+      )
+    )
+      return
     if (skipNextAutosave.current) {
       skipNextAutosave.current = false
       return
@@ -586,12 +582,23 @@ export function FloorPlanPage({
       autosaveReady.current = true
       return
     }
-    const timeout = window.setTimeout(() => void savePlan(), 600)
-    return () => window.clearTimeout(timeout)
-  }, [elements, placements])
+    autosaveTimeoutRef.current = window.setTimeout(() => {
+      autosaveTimeoutRef.current = undefined
+      void savePlanRef.current()
+    }, 600)
+    return () => {
+      if (autosaveTimeoutRef.current !== undefined) {
+        window.clearTimeout(autosaveTimeoutRef.current)
+        autosaveTimeoutRef.current = undefined
+      }
+    }
+  }, [activeAreaId, elements, placements, propertiesDialogOpen])
 
   return (
-    <section className="flex h-[calc(100dvh-8rem)] min-h-0 flex-col gap-4 overflow-hidden">
+    <section
+      aria-busy={initializing}
+      className="flex h-[calc(100dvh-8rem)] min-h-0 flex-col gap-4 overflow-x-hidden overflow-y-auto"
+    >
       <PageHeader className="border-border/70 shrink-0 border-b pb-4">
         <div>
           <PageHeaderTitle>Plano de sala</PageHeaderTitle>
@@ -605,12 +612,10 @@ export function FloorPlanPage({
         <Card>
           <CardContent className="flex flex-wrap items-center justify-between gap-3 py-4">
             <p className="text-destructive text-sm" role="alert">
-              No se ha podido preparar el plano inicial.
+              No se ha podido crear la sala principal.
             </p>
             <Button
-              onClick={() => {
-                setInitializationFailed(false)
-              }}
+              onClick={() => void createInitialArea()}
               size="sm"
               type="button"
               variant="outline"
@@ -620,18 +625,21 @@ export function FloorPlanPage({
           </CardContent>
         </Card>
       ) : null}
-      {!activeVersion ? (
+      {!activeArea ? (
         <Card className="border-dashed">
-          <CardContent className="flex min-h-48 items-center justify-center text-center">
+          <CardContent className="flex min-h-48 flex-col items-center justify-center gap-4 text-center">
             <p className="text-muted-foreground text-sm">
-              Preparando un espacio estándar de restaurante para que puedas editarlo…
+              Todavía no hay zonas configuradas en este local.
             </p>
+            <Button disabled={initializing} onClick={() => void createInitialArea()} type="button">
+              {initializing ? 'Creando sala…' : 'Crear sala principal'}
+            </Button>
           </CardContent>
         </Card>
       ) : (
-        <div className="grid min-h-0 gap-4">
+        <div className="flex min-h-0 flex-col gap-4">
           <div
-            className="flex items-center gap-2 overflow-x-auto lg:col-span-2"
+            className="relative z-20 flex h-10 shrink-0 items-center gap-2 overflow-x-auto"
             role="tablist"
             aria-label="Plantas y zonas"
           >
@@ -650,10 +658,9 @@ export function FloorPlanPage({
               + Añadir planta o zona
             </Button>
           </div>
-          <div className="relative">
+          <div className="relative z-0">
             <FloorPlanCanvas
               activeArea={activeArea}
-              activeVersion={activeVersion}
               blockedAccesses={blockedAccesses}
               elements={elements}
               gridSize={gridSize}
@@ -668,22 +675,22 @@ export function FloorPlanPage({
               onMoveItem={moveItem}
               onItemClick={(id) => {
                 selectItem(id)
+                setDialogItemId(id)
                 setPropertiesDialogOpen(true)
               }}
               onEditDimensions={() => setDimensionsDialogOpen(true)}
               onSelectItem={selectItem}
               placements={placements}
               previewDevice={previewDevice}
-              selectedId={selectedId}
               selectedIds={selectedIds}
             />
             <Button
               className="absolute right-6 bottom-6 z-10 rounded-full px-4 shadow-lg"
               onClick={() =>
-                activeVersion &&
+                activeArea &&
                 setAddElementAt({
-                  x: activeVersion.widthCm / 2,
-                  y: activeVersion.heightCm / 2,
+                  x: activeArea.widthCm / 2,
+                  y: activeArea.heightCm / 2,
                 })
               }
               type="button"
@@ -725,7 +732,9 @@ export function FloorPlanPage({
               <Button
                 disabled={feedback.pending}
                 onClick={() => {
-                  void resizePlan().then(() => setDimensionsDialogOpen(false))
+                  void resizePlan().then((updated) => {
+                    if (updated) setDimensionsDialogOpen(false)
+                  })
                 }}
                 type="button"
               >
@@ -733,16 +742,23 @@ export function FloorPlanPage({
               </Button>
             </DialogContent>
           </DialogRoot>
-          <DialogRoot onOpenChange={setPropertiesDialogOpen} open={propertiesDialogOpen}>
+          <DialogRoot
+            onOpenChange={(open) => {
+              setPropertiesDialogOpen(open)
+              if (!open) setDialogItemId(undefined)
+            }}
+            open={propertiesDialogOpen}
+          >
             <DialogContent className="max-w-lg">
               <DialogHeader>
                 <DialogTitle>Editar mesa o elemento</DialogTitle>
                 <DialogDescription>Ajusta sus medidas y posición en centímetros.</DialogDescription>
               </DialogHeader>
               {(() => {
+                const itemId = selectedId ?? dialogItemId
                 const selected =
-                  placements.find((item) => item.id === selectedId) ??
-                  elements.find((item) => item.id === selectedId)
+                  placements.find((item) => item.id === itemId) ??
+                  elements.find((item) => item.id === itemId)
                 if (!selected) return null
                 return (
                   <div className="grid grid-cols-2 gap-3">
@@ -799,101 +815,13 @@ export function FloorPlanPage({
               })()}
             </DialogContent>
           </DialogRoot>
-          <Card className="hidden">
-            <CardHeader className="px-4 pt-4 pb-3">
-              <CardTitle>Mesas y elementos</CardTitle>
-              <CardDescription>
-                Arrastra una mesa al plano o selecciona algo para editarlo.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="px-4 pt-0 pb-4">
-              {placements.length === 0 ? (
-                <p className="text-muted-foreground text-sm">Aún no hay mesas en esta área.</p>
-              ) : (
-                <ul className="space-y-1 text-sm">
-                  {placements.map((placement) => (
-                    <li key={placement.id}>
-                      <Button
-                        aria-label={`Mesa ${placement.code}. X ${placement.xCm}, Y ${placement.yCm}. Usa las flechas para moverla.`}
-                        onClick={() => {
-                          selectItem(placement.id)
-                          setPropertiesDialogOpen(true)
-                        }}
-                        onKeyDown={(event) => moveWithKeyboard(event, placement.id)}
-                        onFocus={() => selectItem(placement.id)}
-                        className="w-full justify-start px-2 py-1.5 text-left transition-transform duration-150 hover:translate-x-0.5"
-                        type="button"
-                      >
-                        {`Mesa ${placement.code} · ${placement.xCm}, ${placement.yCm}`}
-                      </Button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-              <div className="mt-4 space-y-2">
-                <p className="text-muted-foreground text-xs font-medium">Añadir al plano</p>
-                <div
-                  draggable
-                  onDragStart={(event: DragEvent<HTMLDivElement>) =>
-                    event.dataTransfer.setData('application/x-floor-table', 'table')
-                  }
-                >
-                  <Button
-                    className="border-primary/60 h-auto w-full justify-start gap-2 py-2.5 transition-transform duration-150 hover:-translate-y-0.5"
-                    onClick={() => createQuickTable({ x: 50, y: 50 })}
-                    type="button"
-                    variant="outline"
-                  >
-                    <Table2 className="size-4" /> Añadir mesa al plano
-                  </Button>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  {(
-                    [
-                      ['wall', 'Pared', Square],
-                      ['door', 'Puerta', DoorOpen],
-                      ['bar', 'Barra', PanelTop],
-                      ['stairs', 'Escalera', Footprints],
-                      ['plant', 'Planta', Armchair],
-                      ['bathroom', 'Baño', Bath],
-                      ['kitchen', 'Cocina', Soup],
-                    ] as const
-                  ).map(([kind, label, Icon]) => (
-                    <div
-                      draggable
-                      onDragStart={(event: DragEvent<HTMLDivElement>) =>
-                        event.dataTransfer.setData('application/x-floor-element', kind)
-                      }
-                      key={kind}
-                    >
-                      <Button
-                        className="h-auto w-full justify-start gap-2 py-2 transition-transform duration-150 hover:-translate-y-0.5"
-                        onClick={() => addElement(kind)}
-                        type="button"
-                        variant="outline"
-                      >
-                        <Icon className="size-4" /> {label}
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="mt-6 border-t pt-6">
-                <p className="text-muted-foreground text-xs">
-                  Los cambios se guardan automáticamente.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       )}
       <DialogRoot onOpenChange={setCreateAreaOpen} open={createAreaOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Nueva planta o zona</DialogTitle>
-            <DialogDescription>
-              Prepara un plano independiente para esta zona del local.
-            </DialogDescription>
+            <DialogDescription>Añade una zona al plano de este local.</DialogDescription>
           </DialogHeader>
           <form
             className="grid gap-4"
@@ -938,7 +866,7 @@ export function FloorPlanPage({
                 Cancelar
               </Button>
               <Button disabled={creatingArea || feedback.pending} type="submit">
-                {creatingArea ? 'Creando plano…' : 'Crear planta'}
+                {creatingArea ? 'Creando zona…' : 'Crear zona'}
               </Button>
             </DialogFooter>
           </form>

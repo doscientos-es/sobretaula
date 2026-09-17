@@ -13,12 +13,7 @@ import { Link } from '@tanstack/react-router'
 import { RefreshCw } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
-import {
-  describeSpaceType,
-  groupAreasByFloor,
-  selectFloorPlanVersion,
-  type FloorPlanData,
-} from '@/features/floor-plan'
+import { describeSpaceType, groupAreasByFloor, type FloorPlanData } from '@/features/floor-plan'
 import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
 import { createBrowserSupabaseClient } from '@/shared/lib/supabase/client'
 
@@ -72,7 +67,7 @@ export function ServicePage({
       const refreshedAt = new Date()
       setLastRefreshAt(refreshedAt)
       setClock(refreshedAt)
-      if (!realtimeReadyRef.current) reload()
+      if (!realtimeReadyRef.current) void reload()
     }
     const interval = window.setInterval(refresh, 30_000)
     return () => {
@@ -87,7 +82,7 @@ export function ServicePage({
     const client = createBrowserSupabaseClient()
     const refreshFromRealtime = () => {
       setLastRefreshAt(new Date())
-      reload()
+      void reload()
     }
     const channel = client
       .channel(`service-board-${venueId}`)
@@ -132,7 +127,7 @@ export function ServicePage({
     const online = () => {
       setIsOnline(true)
       setLastRefreshAt(new Date())
-      reload()
+      void reload()
     }
     const offline = () => setIsOnline(false)
     window.addEventListener('online', online)
@@ -142,18 +137,12 @@ export function ServicePage({
       window.removeEventListener('offline', offline)
     }
   }, [reload])
-  const activeVersion =
-    selectedAreaId === 'all'
-      ? undefined
-      : (selectFloorPlanVersion(plan.versions, selectedAreaId) ??
-        plan.versions.find((version) => version.areaId === selectedAreaId))
-  const placements = activeVersion
-    ? plan.placements.filter((placement) => placement.floorPlanVersionId === activeVersion.id)
-    : []
+  const activeArea =
+    selectedAreaId === 'all' ? undefined : plan.areas.find((area) => area.id === selectedAreaId)
   const visiblePlacements =
     selectedAreaId === 'all'
-      ? placements
-      : placements.filter((placement) => placement.floorPlanVersionId === activeVersion?.id)
+      ? plan.placements
+      : plan.placements.filter((placement) => placement.areaId === activeArea?.id)
   const visibleTableCodes = new Set(visiblePlacements.map((placement) => placement.code))
   const visibleTables =
     selectedAreaId === 'all'
@@ -161,22 +150,11 @@ export function ServicePage({
       : board.tables.filter((table) => visibleTableCodes.has(table.code))
   const handover = buildServiceHandover(board, clock)
   const pulse = buildServicePulse(board, clock)
-  const activeVersionIds = new Set(
-    plan.areas
-      .map((area) => selectFloorPlanVersion(plan.versions, area.id)?.id)
-      .filter((id): id is string => Boolean(id)),
-  )
   const tableAreaByCode = new Map(
-    plan.placements
-      .filter((placement) => activeVersionIds.has(placement.floorPlanVersionId))
-      .map((placement) => [
-        placement.code,
-        plan.areas.find((area) =>
-          plan.versions.some(
-            (version) => version.id === placement.floorPlanVersionId && version.areaId === area.id,
-          ),
-        ),
-      ]),
+    plan.placements.map((placement) => [
+      placement.code,
+      plan.areas.find((area) => area.id === placement.areaId),
+    ]),
   )
   const describeTableArea = (code: string) => {
     const area = tableAreaByCode.get(code)
@@ -195,10 +173,9 @@ export function ServicePage({
   function selectArea(areaId: string) {
     setSelectedAreaId(areaId)
     if (areaId === 'all') return
-    const version = selectFloorPlanVersion(plan.versions, areaId)
     const codes = new Set(
       plan.placements
-        .filter((placement) => placement.floorPlanVersionId === version?.id)
+        .filter((placement) => placement.areaId === areaId)
         .map((placement) => placement.code),
     )
     const allowed = new Set(
@@ -249,7 +226,7 @@ export function ServicePage({
           className="shrink-0"
           onClick={() => {
             setLastRefreshAt(new Date())
-            reload()
+            void reload()
           }}
           type="button"
           variant="outline"
@@ -339,10 +316,9 @@ export function ServicePage({
               <CardContent>
                 <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                   {plan.areas.map((area) => {
-                    const areaVersion = plan.versions.find((version) => version.areaId === area.id)
                     const codes = new Set(
                       plan.placements
-                        .filter((placement) => placement.floorPlanVersionId === areaVersion?.id)
+                        .filter((placement) => placement.areaId === area.id)
                         .map((placement) => placement.code),
                     )
                     const areaTables = board.tables.filter((table) => codes.has(table.code))
@@ -382,10 +358,26 @@ export function ServicePage({
               </CardContent>
             </Card>
           )}
-          {activeVersion && (
+          <div className="mb-4 flex gap-2" aria-label="Vista del servicio">
+            <Button
+              onClick={() => setServiceView('plan')}
+              type="button"
+              variant={serviceView === 'plan' ? 'default' : 'outline'}
+            >
+              Plano en vivo
+            </Button>
+            <Button
+              onClick={() => setServiceView('list')}
+              type="button"
+              variant={serviceView === 'list' ? 'default' : 'outline'}
+            >
+              Vista lista
+            </Button>
+          </div>
+          {activeArea && (
             <Card>
               <CardHeader>
-                <CardTitle>{activeVersion.name}</CardTitle>
+                <CardTitle>{plan.areas.find((area) => area.id === selectedAreaId)?.name}</CardTitle>
                 <CardDescription>
                   Selecciona una o varias mesas para ejecutar una acción. El estado se muestra con
                   color, icono y texto para que la sala se entienda de un vistazo.
@@ -441,22 +433,6 @@ export function ServicePage({
                     ● Limpieza
                   </li>
                 </ul>
-                <div className="mb-4 flex gap-2" aria-label="Vista del servicio">
-                  <Button
-                    onClick={() => setServiceView('plan')}
-                    type="button"
-                    variant={serviceView === 'plan' ? 'default' : 'outline'}
-                  >
-                    Plano en vivo
-                  </Button>
-                  <Button
-                    onClick={() => setServiceView('list')}
-                    type="button"
-                    variant={serviceView === 'list' ? 'default' : 'outline'}
-                  >
-                    Vista lista
-                  </Button>
-                </div>
                 {serviceView === 'plan' &&
                   (visiblePlacements.length === 0 ? (
                     <div className="text-muted-foreground rounded-lg border border-dashed p-6 text-center text-sm">
@@ -475,26 +451,9 @@ export function ServicePage({
                       placements={visiblePlacements}
                       selectedTableIds={selectedTableIds}
                       states={visibleTables}
-                      version={activeVersion}
+                      area={activeArea}
                     />
                   ))}
-              </CardContent>
-            </Card>
-          )}
-          {!activeVersion && selectedAreaId !== 'all' && (
-            <Card>
-              <CardContent className="pt-6">
-                <p className="text-muted-foreground text-sm">
-                  Esta zona no tiene una versión de plano activa. Activa un layout desde el
-                  diseñador para poder operar sus mesas.
-                </p>
-                <Link
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 mt-4 inline-flex items-center justify-center rounded-md px-3 py-2 text-sm font-medium"
-                  params={{ slug: tenantSlug, venue: venueSlug }}
-                  to="/t/$slug/l/$venue/plano"
-                >
-                  Abrir diseñador de planos
-                </Link>
               </CardContent>
             </Card>
           )}
@@ -758,7 +717,7 @@ export function ServicePage({
               plan.areas.find((area) => area.id === selectedAreaId)?.outdoorOpen !== false
             }
             board={board}
-            onDone={reload}
+            onDone={() => void reload()}
             onSuggest={selectSuggestedTables}
             isOnline={isOnline}
             selectedTableIds={selectedTableIds}
@@ -769,7 +728,7 @@ export function ServicePage({
           />
           <ServiceQueue
             board={board}
-            onDone={reload}
+            onDone={() => void reload()}
             selectedTableIds={selectedTableIds}
             isOnline={isOnline}
             now={clock}
@@ -780,7 +739,7 @@ export function ServicePage({
             tickets={board.kitchenTickets ?? []}
             tenantId={tenantId}
             venueId={venueId}
-            onDone={reload}
+            onDone={() => void reload()}
           />
         </aside>
       </div>

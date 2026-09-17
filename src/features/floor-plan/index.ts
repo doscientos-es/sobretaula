@@ -14,10 +14,10 @@ export {
 } from './domain/editor-history'
 export {
   createFloorPlanTable,
-  createInitialFloorPlan,
+  createFloorPlanArea,
   getFloorPlan,
   floorPlanQuery,
-  saveFloorPlanVersion,
+  saveFloorPlan,
 } from './application/floor-plan'
 export { FloorPlanPage } from './ui/floor-plan-page'
 export type {
@@ -26,15 +26,7 @@ export type {
   FloorPlanData,
   FloorPlanElement,
   FloorPlanTablePlacement,
-  FloorPlanVersion,
 } from './domain/floor-plan'
-export {
-  describeSpaceType,
-  findVersionScheduleConflicts,
-  isFloorPlanVersionScheduleValid,
-  groupAreasByFloor,
-  selectActiveFloorPlanVersion,
-  selectFloorPlanVersion,
-} from './domain/floor-plan'
+export { describeSpaceType, groupAreasByFloor } from './domain/floor-plan'
 export type { EditorHistory } from './domain/editor-history'
 export type { PlanBounds, PlanPlacement, Position } from './domain/geometry'

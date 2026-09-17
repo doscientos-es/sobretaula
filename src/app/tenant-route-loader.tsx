@@ -1,7 +1,19 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@doscientos/ui'
+import { useRouter } from '@tanstack/react-router'
+import { useEffect, useState } from 'react'
 
 /** Stable loading surface shared by tenant routes during direct navigation. */
 export function TenantRoutePending() {
+  const router = useRouter()
+  const [stalled, setStalled] = useState(false)
+  useEffect(() => {
+    const timeout = window.setTimeout(() => setStalled(true), 12_000)
+    return () => window.clearTimeout(timeout)
+  }, [])
+  async function retry(): Promise<void> {
+    await router.invalidate()
+    await router.load()
+  }
   return (
     <main
       aria-busy="true"
@@ -21,6 +33,18 @@ export function TenantRoutePending() {
         </CardHeader>
         <CardContent>
           <div className="bg-muted h-48 animate-pulse rounded-xl" />
+          {stalled && (
+            <div aria-live="assertive" className="mt-4 flex items-center justify-between gap-3">
+              <p className="text-sm">La carga está tardando más de lo habitual.</p>
+              <button
+                className="font-semibold underline underline-offset-2"
+                onClick={() => void retry()}
+                type="button"
+              >
+                Reintentar
+              </button>
+            </div>
+          )}
         </CardContent>
       </Card>
     </main>

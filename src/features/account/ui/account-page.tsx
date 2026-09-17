@@ -72,7 +72,7 @@ export function AccountPage({
             account={account}
             canManageAdjustments={canManageAdjustments}
             locale={locale}
-            onDone={reload}
+            onDone={() => void reload()}
             tenantId={tenantId}
             venueId={venueId}
           />

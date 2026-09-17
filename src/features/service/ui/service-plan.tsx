@@ -1,4 +1,4 @@
-import type { FloorPlanTablePlacement, FloorPlanVersion } from '@/features/floor-plan'
+import type { FloorPlanArea, FloorPlanTablePlacement } from '@/features/floor-plan'
 
 import type { ServiceTableState, ServiceTableStatus } from '../domain/service-board'
 
@@ -19,13 +19,13 @@ export function ServicePlan({
   placements,
   selectedTableIds,
   states,
-  version,
+  area,
 }: {
   onToggleTable: (tableId: string) => void
   placements: readonly FloorPlanTablePlacement[]
   selectedTableIds: readonly string[]
   states: readonly ServiceTableState[]
-  version: FloorPlanVersion
+  area: FloorPlanArea
 }) {
   return (
     <div>
@@ -33,7 +33,7 @@ export function ServicePlan({
         aria-label="Plano de mesas interactivo"
         className="border-border bg-background h-auto w-full rounded-lg border"
         focusable="false"
-        viewBox={`0 0 ${version.widthCm} ${version.heightCm}`}
+        viewBox={`0 0 ${area.widthCm} ${area.heightCm}`}
       >
         {placements.map((placement) => {
           const state = states.find((candidate) => candidate.id === placement.id)

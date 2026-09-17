@@ -65,6 +65,7 @@ export default defineConfig({
   projects: [
     {
       name: 'public',
+      dependencies: ['setup-auth'],
       testMatch: /smoke\.spec\.ts/,
       grep: /public reservation|cacheable|invalid reservation|team invitation|platform invitation/,
       use: { ...devices['Desktop Chrome'] },

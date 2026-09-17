@@ -169,10 +169,17 @@ async function main() {
   }
   console.log(`Reset E2E reservations: ${cancelledReservations} cancelled`)
 
+  // The floor-plan lifecycle test creates a timestamped area. Remove only
+  // those temporary areas in this dedicated tenant before reseeding it.
+  await request(
+    `/rest/v1/areas?tenant_id=eq.${tenantId}&venue_id=eq.${venueId}&name=like.E2E%20Terraza%20*`,
+    { method: 'DELETE', headers: { Prefer: 'return=minimal' } },
+  )
+
   const areaDefinitions = [
-    { name: 'Interior', assignment_priority: 10 },
-    { name: 'Terraza', assignment_priority: 20 },
-    { name: 'Barra', assignment_priority: 30 },
+    { name: 'Interior', assignment_priority: 10, width_cm: 900, height_cm: 600 },
+    { name: 'Terraza', assignment_priority: 20, width_cm: 900, height_cm: 600 },
+    { name: 'Barra', assignment_priority: 30, width_cm: 900, height_cm: 600 },
   ]
   const areas = []
   for (const area of areaDefinitions) {
@@ -193,12 +200,6 @@ async function main() {
       areas.push(created[0])
     }
   }
-  // Remove only versions created by previous E2E runs; operator layouts are
-  // never touched. This keeps the schedule deterministic between runs.
-  await request(
-    `/rest/v1/floor_plan_versions?tenant_id=eq.${tenantId}&name=like.${encodeURIComponent('E2E turno')}%25`,
-    { method: 'DELETE', headers: { Prefer: 'return=minimal' } },
-  )
   const tableDefinitions = [
     ['I01', 'round', 2, 2, 100, 100],
     ['I02', 'square', 2, 4, 350, 100],
@@ -230,34 +231,8 @@ async function main() {
           }),
         })
       )[0]
-    const versions = await request(
-      `/rest/v1/floor_plan_versions?tenant_id=eq.${tenantId}&area_id=eq.${area.id}&select=id&limit=1`,
-    )
-    const version =
-      versions[0] ??
-      (
-        await request('/rest/v1/floor_plan_versions', {
-          method: 'POST',
-          headers: { Prefer: 'return=representation' },
-          body: JSON.stringify({
-            tenant_id: tenantId,
-            area_id: area.id,
-            name: `${area.name} - servicio`,
-            width_cm: 900,
-            height_cm: 600,
-          }),
-        })
-      )[0]
-    await request(`/rest/v1/floor_plan_versions?id=eq.${version.id}`, {
-      method: 'PATCH',
-      headers: { Prefer: 'return=minimal' },
-      body: JSON.stringify({
-        active_from: '2020-01-01T00:00:00Z',
-        active_to: null,
-      }),
-    })
     const placements = await request(
-      `/rest/v1/table_placements?floor_plan_version_id=eq.${version.id}&table_id=eq.${table.id}&select=id&limit=1`,
+      `/rest/v1/table_placements?area_id=eq.${area.id}&table_id=eq.${table.id}&select=id&limit=1`,
     )
     if (!placements[0])
       await request('/rest/v1/table_placements', {
@@ -265,7 +240,7 @@ async function main() {
         headers: { Prefer: 'return=minimal' },
         body: JSON.stringify({
           tenant_id: tenantId,
-          floor_plan_version_id: version.id,
+          area_id: area.id,
           table_id: table.id,
           x_cm,
           y_cm,

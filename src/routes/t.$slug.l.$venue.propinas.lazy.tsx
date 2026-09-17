@@ -21,7 +21,7 @@ function TipsRoute() {
   if (overviewQuery.error) throw overviewQuery.error
   return (
     <TipsPage
-      onDone={reload}
+      onDone={() => void reload()}
       overview={overviewQuery.data}
       tenantId={tenant.id}
       venueId={venue.id}

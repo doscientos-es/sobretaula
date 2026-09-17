@@ -32,7 +32,7 @@ function TimekeepingRoute() {
       employeeId={tenantMembership.userId}
       tenantId={tenant.id}
       venueId={venue.id}
-      onDone={reload}
+      onDone={() => void reload()}
     />
   )
 }

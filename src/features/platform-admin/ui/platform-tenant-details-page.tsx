@@ -117,7 +117,7 @@ export function PlatformTenantDetailsPage({
       .then(() => {
         setIsEditingConfiguration(false)
         configurationFeedback.setSuccess('Configuración guardada y registrada en la auditoría.')
-        reload()
+        void reload()
       })
       .catch(() => configurationFeedback.setError('No se ha podido guardar la configuración.'))
   }
@@ -143,7 +143,7 @@ export function PlatformTenantDetailsPage({
       .then(() => {
         statusFeedback.setSuccess('Estado actualizado y registrado en la auditoría.')
         form.reset()
-        reload()
+        void reload()
       })
       .catch(() => statusFeedback.setError('No se ha podido actualizar el estado del tenant.'))
   }

@@ -34,7 +34,7 @@ memoizar por elemento, no cambiar de tecnología.
 **Dos modos, misma escena, distinto contrato:**
 
 - _Diseño_: rejilla, snap, medidas en metros, paredes y aperturas, capas por
-  área, alinear y distribuir, deshacer/rehacer, guardar como versión.
+  área, alinear y distribuir, deshacer/rehacer y guardar el plano operativo.
 - _Servicio_: sin arrastre accidental. Tap para sentar, estados por color +
   icono + texto, temporizador por mesa, arrastrar una mesa sobre otra propone
   unir.
@@ -44,9 +44,9 @@ ajustes. Es exactamente lo que la competencia resuelve mal con «table chains»
 preconfiguradas. Las combinaciones frecuentes se pueden guardar, pero guardarlas
 no es requisito para usarlas.
 
-**Layouts versionados** («Verano terraza», «Invierno», «Nochevieja») con
-activación por rango de fechas. Editar el layout activo no debe alterar
-retroactivamente reservas ya asignadas: las sesiones referencian la versión.
+Cada área mantiene un único plano operativo. Guardar reemplaza su configuración
+geométrica actual sin alterar la identidad de mesas, reservas ni sesiones
+históricas, que referencian las mesas y sus estados operativos.
 
 **Coordenadas** en centímetros enteros sobre un plano por área, origen arriba a
 la izquierda, rotación en grados enteros. Enteros, no flotantes: el snap y la
@@ -67,7 +67,7 @@ igualdad son exactos y el diff entre versiones es legible.
 
 - El estado del editor es un módulo puro y testeable (`domain/`), independiente
   de React: snap, colisiones, agrupación y deshacer se prueban sin renderizar.
-- El guardado es por versión completa e inmutable, no por parche incremental;
-  simplifica el conflicto entre dos dispositivos editando a la vez.
+- El guardado reemplaza la configuración completa del plano, no aplica parches
+  parciales; simplifica la consistencia del editor entre dispositivos.
 - La sincronía en vivo del modo servicio usa Supabase Realtime sobre estado de
   sesión, no sobre geometría.

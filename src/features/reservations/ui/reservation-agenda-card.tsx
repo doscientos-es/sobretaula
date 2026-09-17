@@ -96,7 +96,6 @@ export function ReservationAgendaCard({
   timezone,
   venueId,
   refreshToken = 0,
-  onNewReservation,
   onCalendarSlotClick,
 }: {
   agendaSearch?: ReservationAgendaSearch | undefined
@@ -106,7 +105,6 @@ export function ReservationAgendaCard({
   timezone: string
   venueId: string
   refreshToken?: number
-  onNewReservation?: () => void
   onCalendarSlotClick?: (value: string) => void
 }) {
   const feedback = useFormFeedback()
@@ -521,6 +519,10 @@ export function ReservationAgendaCard({
                         date === today && 'bg-primary/[0.03]',
                       )}
                       key={date}
+                      // The cell contains nested 15-minute buttons, so an outer button is invalid.
+                      // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
+                      role="gridcell"
+                      tabIndex={0}
                       style={{
                         backgroundImage:
                           'repeating-linear-gradient(to bottom, transparent 0, transparent 71px, hsl(var(--border) / 0.7) 72px)',
@@ -531,6 +533,19 @@ export function ReservationAgendaCard({
                         const bounds = event.currentTarget.getBoundingClientRect()
                         const { hour, minute } = calendarSlotFromY(
                           event.clientY - bounds.top,
+                          calendarStart,
+                          calendarHourCount,
+                        )
+                        onCalendarSlotClick(
+                          `${date}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`,
+                        )
+                      }}
+                      onKeyDown={(event) => {
+                        if (!onCalendarSlotClick || (event.key !== 'Enter' && event.key !== ' '))
+                          return
+                        event.preventDefault()
+                        const { hour, minute } = calendarSlotFromY(
+                          0,
                           calendarStart,
                           calendarHourCount,
                         )

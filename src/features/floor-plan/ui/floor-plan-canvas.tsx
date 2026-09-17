@@ -14,7 +14,6 @@ import {
   type FloorPlanArea,
   type FloorPlanElement,
   type FloorPlanTablePlacement,
-  type FloorPlanVersion,
   type PlanElementKind,
 } from '../domain/floor-plan'
 import type { LayoutIssue } from '../domain/geometry'
@@ -27,8 +26,7 @@ const previewDeviceClasses: Record<FloorPlanPreviewDevice, string> = {
 }
 
 export function FloorPlanCanvas({
-  activeArea: _activeArea,
-  activeVersion,
+  activeArea,
   blockedAccesses,
   elements,
   gridSize,
@@ -43,11 +41,9 @@ export function FloorPlanCanvas({
   onSelectItem,
   placements,
   previewDevice,
-  selectedId,
   selectedIds,
 }: {
-  activeArea: FloorPlanArea | undefined
-  activeVersion: FloorPlanVersion
+  activeArea: FloorPlanArea
   blockedAccesses: readonly { accessId: string; placementId: string }[]
   elements: readonly FloorPlanElement[]
   gridSize: number
@@ -62,7 +58,6 @@ export function FloorPlanCanvas({
   onSelectItem: (id: string, additive?: boolean) => void
   placements: readonly FloorPlanTablePlacement[]
   previewDevice: FloorPlanPreviewDevice
-  selectedId: string | undefined
   selectedIds: readonly string[]
 }) {
   const [zoom, setZoom] = useState(1)
@@ -77,7 +72,7 @@ export function FloorPlanCanvas({
     { id: string; pointerId: number; x: number; y: number; moved: boolean } | undefined
   >(undefined)
   const suppressClick = useRef(false)
-  const viewBox = `${Math.max(0, Math.min(activeVersion.widthCm * (1 - 1 / zoom), (activeVersion.widthCm * (1 - 1 / zoom)) / 2 + pan.x)).toFixed(2)} ${Math.max(0, Math.min(activeVersion.heightCm * (1 - 1 / zoom), (activeVersion.heightCm * (1 - 1 / zoom)) / 2 + pan.y)).toFixed(2)} ${(activeVersion.widthCm / zoom).toFixed(2)} ${(activeVersion.heightCm / zoom).toFixed(2)}`
+  const viewBox = `${Math.max(0, Math.min(activeArea.widthCm * (1 - 1 / zoom), (activeArea.widthCm * (1 - 1 / zoom)) / 2 + pan.x)).toFixed(2)} ${Math.max(0, Math.min(activeArea.heightCm * (1 - 1 / zoom), (activeArea.heightCm * (1 - 1 / zoom)) / 2 + pan.y)).toFixed(2)} ${(activeArea.widthCm / zoom).toFixed(2)} ${(activeArea.heightCm / zoom).toFixed(2)}`
   const dragging = dragPreview
     ? (placements.find((item) => item.id === dragPreview.id) ??
       elements.find((item) => item.id === dragPreview.id))
@@ -133,11 +128,10 @@ export function FloorPlanCanvas({
   return (
     <Card>
       <CardHeader className="relative">
-        <CardTitle>{activeVersion.name}</CardTitle>
+        <CardTitle>{activeArea.name}</CardTitle>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
           <CardDescription>
-            {activeVersion.widthCm / 100} m × {activeVersion.heightCm / 100} m · {placements.length}{' '}
-            mesas
+            {activeArea.widthCm / 100} m × {activeArea.heightCm / 100} m · {placements.length} mesas
           </CardDescription>
           <Button
             aria-label="Editar medidas del plano"
@@ -151,7 +145,7 @@ export function FloorPlanCanvas({
           </Button>
         </div>
         <div
-          className="flex items-center gap-1.5 pt-1 lg:absolute lg:top-5 lg:right-5 lg:pt-0"
+          className="flex flex-wrap items-center gap-1.5 pt-1 lg:static lg:mt-2 lg:pt-0"
           aria-label="Controles del plano"
         >
           <Button
@@ -284,10 +278,10 @@ export function FloorPlanCanvas({
               setPan((current) => ({
                 x:
                   current.x -
-                  ((event.clientX - start.x) / bounds.width) * (activeVersion.widthCm / zoom),
+                  ((event.clientX - start.x) / bounds.width) * (activeArea.widthCm / zoom),
                 y:
                   current.y -
-                  ((event.clientY - start.y) / bounds.height) * (activeVersion.heightCm / zoom),
+                  ((event.clientY - start.y) / bounds.height) * (activeArea.heightCm / zoom),
               }))
               panPointer.current = { ...start, x: event.clientX, y: event.clientY }
             }}
@@ -350,7 +344,7 @@ export function FloorPlanCanvas({
             </defs>
             <rect
               fill="url(#floor-plan-grid)"
-              height={activeVersion.heightCm}
+              height={activeArea.heightCm}
               onPointerDown={(event) => {
                 onClearSelection()
                 emptyPointer.current = { id: event.pointerId, x: event.clientX, y: event.clientY }
@@ -363,18 +357,18 @@ export function FloorPlanCanvas({
                 const point = planPointFromEvent(event)
                 if (point) onEmptyPlace(point.x, point.y)
               }}
-              width={activeVersion.widthCm}
+              width={activeArea.widthCm}
             />
             <rect
               aria-hidden="true"
               fill="none"
-              height={activeVersion.heightCm}
+              height={activeArea.heightCm}
               pointerEvents="none"
               rx="4"
               stroke="var(--foreground)"
               strokeOpacity="0.7"
               strokeWidth="6"
-              width={activeVersion.widthCm}
+              width={activeArea.widthCm}
               x="0"
               y="0"
             />
@@ -403,7 +397,7 @@ export function FloorPlanCanvas({
                   x1={guide.value}
                   x2={guide.value}
                   y1={0}
-                  y2={activeVersion.heightCm}
+                  y2={activeArea.heightCm}
                 />
               ) : (
                 <line
@@ -414,7 +408,7 @@ export function FloorPlanCanvas({
                   strokeDasharray="8 8"
                   strokeWidth="1.5"
                   x1={0}
-                  x2={activeVersion.widthCm}
+                  x2={activeArea.widthCm}
                   y1={guide.value}
                   y2={guide.value}
                 />
@@ -472,7 +466,15 @@ export function FloorPlanCanvas({
                 <g
                   aria-label={`Editar ${element.label ?? 'elemento'}`}
                   onClick={() => onItemClick(element.id)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault()
+                      onItemClick(element.id)
+                    }
+                  }}
                   onPointerDown={(event) => event.stopPropagation()}
+                  // SVG groups cannot be replaced with a native button without invalid nesting.
+                  // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
                   role="button"
                   tabIndex={0}
                 >
@@ -556,7 +558,15 @@ export function FloorPlanCanvas({
                 <g
                   aria-label={`Editar mesa ${placement.code}`}
                   onClick={() => onItemClick(placement.id)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault()
+                      onItemClick(placement.id)
+                    }
+                  }}
                   onPointerDown={(event) => event.stopPropagation()}
+                  // SVG groups cannot be replaced with a native button without invalid nesting.
+                  // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
                   role="button"
                   tabIndex={0}
                 >
