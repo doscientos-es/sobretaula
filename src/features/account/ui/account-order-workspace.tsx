@@ -6,6 +6,7 @@ import { formatMoney } from '@/shared/lib/money/money'
 import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
 
 import type { AccountView } from '../application/account'
+import type { AccountLine } from '../domain/account'
 import { AccountAddItem } from './account-add-item'
 import { AccountLines } from './account-lines'
 
@@ -15,6 +16,7 @@ export function AccountOrderWorkspace({
   locale,
   menu,
   layout = 'stacked',
+  onOptimisticAdd,
   paymentSummary,
   tenantId,
   venueId,
@@ -23,6 +25,7 @@ export function AccountOrderWorkspace({
   layout?: 'pos' | 'stacked'
   locale: Locale
   menu: MenuCatalog
+  onOptimisticAdd?: (line: AccountLine) => () => void
   paymentSummary?: ReactNode
   tenantId: string
   venueId: string
@@ -49,6 +52,7 @@ export function AccountOrderWorkspace({
       locale={locale}
       menu={menu}
       onDone={() => void reload()}
+      onOptimisticAdd={onOptimisticAdd}
       quickAdd={layout === 'pos'}
       sessionId={session.id}
       tenantId={tenantId}
@@ -58,27 +62,29 @@ export function AccountOrderWorkspace({
 
   if (layout === 'pos') {
     return (
-      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(22rem,0.85fr)]">
-        <div className="min-w-0 space-y-4">
-          {lines}
-          {paymentSummary ?? (
-            <div className="bg-surface-subtle rounded-xl border p-4">
-              <div className="flex items-center justify-between gap-4">
-                <span className="font-medium">Total de la cuenta</span>
-                <span className="text-xl font-semibold tabular-nums">
-                  {formatMoney(account.totals.grossCents, locale)}
-                </span>
+      <div className="grid items-start gap-4 xl:h-full xl:min-h-0 xl:grid-cols-[minmax(18rem,0.75fr)_minmax(0,1.25fr)] xl:items-stretch">
+        <div className="flex min-w-0 flex-col gap-4 xl:min-h-0">
+          <div className="xl:min-h-0 xl:flex-1">{lines}</div>
+          <div className="shrink-0">
+            {paymentSummary ?? (
+              <div className="bg-surface-subtle rounded-xl border p-4">
+                <div className="flex items-center justify-between gap-4">
+                  <span className="font-medium">Total de la cuenta</span>
+                  <span className="text-xl font-semibold tabular-nums">
+                    {formatMoney(account.totals.grossCents, locale)}
+                  </span>
+                </div>
+                <div className="text-muted-foreground mt-1 flex items-center justify-between gap-4 text-sm">
+                  <span>Pendiente</span>
+                  <span className="tabular-nums">
+                    {formatMoney(account.totals.balanceCents, locale)}
+                  </span>
+                </div>
               </div>
-              <div className="text-muted-foreground mt-1 flex items-center justify-between gap-4 text-sm">
-                <span>Pendiente</span>
-                <span className="tabular-nums">
-                  {formatMoney(account.totals.balanceCents, locale)}
-                </span>
-              </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
-        {addItem}
+        <div className="min-w-0 xl:min-h-0 xl:overflow-y-auto">{addItem}</div>
       </div>
     )
   }

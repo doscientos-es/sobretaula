@@ -13,7 +13,7 @@ import {
   QuantityInput,
   useFormFeedback,
 } from '@doscientos/ui'
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 
 import { buildMenuSections, type MenuCatalog } from '@/features/menu'
 import type { Locale } from '@/shared/lib/i18n/locale'
@@ -27,6 +27,7 @@ import {
   enqueueAccountOperation,
   flushAccountOperations,
 } from '../application/account-offline-operations'
+import type { AccountLine } from '../domain/account'
 
 function addItemErrorMessage(error: unknown) {
   const message = error instanceof Error ? error.message : ''
@@ -42,6 +43,7 @@ export function AccountAddItem({
   locale,
   menu,
   onDone,
+  onOptimisticAdd,
   quickAdd = false,
   sessionId,
   tenantId,
@@ -50,6 +52,7 @@ export function AccountAddItem({
   locale: Locale
   menu: MenuCatalog
   onDone: () => void
+  onOptimisticAdd?: (line: AccountLine) => () => void
   quickAdd?: boolean
   sessionId: string
   tenantId: string
@@ -67,7 +70,7 @@ export function AccountAddItem({
   const [quantity, setQuantity] = useState(1)
   const [notes, setNotes] = useState('')
   const [modifierOptionIds, setModifierOptionIds] = useState<string[]>([])
-  const [operationId, setOperationId] = useState(() => crypto.randomUUID())
+  const operationIdRef = useRef(crypto.randomUUID())
   const [isOnline, setIsOnline] = useState(() =>
     typeof navigator === 'undefined' ? true : navigator.onLine,
   )
@@ -111,7 +114,39 @@ export function AccountAddItem({
       feedback.setError('No hay platos activos en la carta.')
       return
     }
-    if (feedback.pending) return
+    if (feedback.pending && !quickAdd) return
+    const currentOperationId = operationIdRef.current
+    operationIdRef.current = crypto.randomUUID()
+    const item = allItems.find((candidate) => candidate.id === itemId)
+    if (!item) {
+      feedback.setError('No hay platos activos en la carta.')
+      return
+    }
+    const optimisticLine: AccountLine = {
+      id: `optimistic-${currentOperationId}`,
+      kitchenStation: item.kitchenStation ?? 'general',
+      modifiers: itemModifierOptionIds.flatMap(
+        (optionId) =>
+          item.modifierGroups?.flatMap((group) =>
+            group.options
+              .filter((option) => option.id === optionId)
+              .map((option) => ({
+                id: option.id,
+                name: localizedText(option.nameI18n, locale),
+                priceDeltaCents: option.priceDeltaCents,
+              })),
+          ) ?? [],
+      ),
+      name: localizedText(item.nameI18n, locale),
+      notes: itemNotes || null,
+      preparationMinutes: item.preparationMinutes,
+      quantity: itemQuantity,
+      status: 'pending',
+      unitPriceCents: item.priceCents,
+      vatRateBps: item.vatRateBps,
+    }
+    const rollback = onOptimisticAdd?.(optimisticLine)
+    if (rollback) feedback.setSuccess('Añadido')
     if (!isOnline) {
       enqueueAccountOperation(
         offlineStore,
@@ -119,7 +154,7 @@ export function AccountAddItem({
           menuItemId: itemId,
           modifierOptionIds: itemModifierOptionIds,
           ...(itemNotes ? { notes: itemNotes } : {}),
-          operationId,
+          operationId: currentOperationId,
           quantity: itemQuantity,
           sessionId,
           tenantId,
@@ -128,17 +163,16 @@ export function AccountAddItem({
       )
       setNotes('')
       setQuantity(1)
-      setOperationId(crypto.randomUUID())
       feedback.setSuccess('Comanda guardada. Se enviará al recuperar la conexión.')
       return
     }
-    feedback.setPending()
+    if (!rollback) feedback.setPending()
     void addOrderItem({
       data: {
         menuItemId: itemId,
         modifierOptionIds: itemModifierOptionIds,
         ...(itemNotes ? { notes: itemNotes } : {}),
-        operationId,
+        operationId: currentOperationId,
         quantity: itemQuantity,
         sessionId,
         tenantId,
@@ -148,10 +182,13 @@ export function AccountAddItem({
       .then(() => {
         setNotes('')
         setQuantity(1)
-        setOperationId(crypto.randomUUID())
+        if (!rollback) feedback.setSuccess('Plato apuntado.')
         onDone()
       })
-      .catch((error: unknown) => feedback.setError(addItemErrorMessage(error)))
+      .catch((error: unknown) => {
+        rollback?.()
+        feedback.setError(addItemErrorMessage(error))
+      })
   }
 
   function add(event: FormEvent<HTMLFormElement>) {
@@ -167,16 +204,16 @@ export function AccountAddItem({
   }
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className={quickAdd ? 'rounded-none border-0 bg-transparent shadow-none' : undefined}>
+      <CardHeader className={quickAdd ? 'border-border/70 border-b px-0 py-0 pb-3' : undefined}>
         <CardTitle>Añadir a la cuenta</CardTitle>
-        <CardDescription>
+        <CardDescription className={quickAdd ? 'hidden' : undefined}>
           {quickAdd
             ? 'Pulsa un plato para añadirlo directamente. Los que tengan opciones te pedirán configurarlas.'
             : 'Sólo aparecen los platos activos de la carta.'}
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className={quickAdd ? 'px-0 pt-4' : undefined}>
         <form className="grid gap-4" onSubmit={add}>
           <div aria-label="Categorías de la carta" className="flex flex-wrap gap-2">
             <Button

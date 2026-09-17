@@ -3,6 +3,7 @@ import { createLazyFileRoute, getRouteApi } from '@tanstack/react-router'
 
 import { TenantRoutePending } from '@/app/tenant-route-loader'
 import { AccountOrderWorkspace, AccountPayments, type AccountView } from '@/features/account'
+import { computeAccountTotals, type AccountLine } from '@/features/account/domain/account'
 import { floorPlanQuery, type FloorPlanData } from '@/features/floor-plan'
 import type { MenuCatalog } from '@/features/menu/application/menu'
 import { posAccountQuery, posBoardQuery, posMenuQuery, PosTerminalPage } from '@/features/pos'
@@ -90,19 +91,48 @@ function PosTerminalAccountWorkspace({
       })
       .then(reload)
   }
+  const onOptimisticAdd = (line: AccountLine) => {
+    const queryKey = posAccountQuery({
+      sessionId: account.session.id,
+      tenantId: tenant.id,
+      venueId: venue.id,
+    }).queryKey
+    queryClient.setQueryData<AccountView | undefined>(queryKey, (current) => {
+      if (!current) return current
+      const lines = [...current.lines, line]
+      return {
+        ...current,
+        lines,
+        totals: computeAccountTotals(lines, current.payments, current.session.discountCents),
+      }
+    })
+    return () => {
+      queryClient.setQueryData<AccountView | undefined>(queryKey, (current) => {
+        if (!current) return current
+        const lines = current.lines.filter((currentLine) => currentLine.id !== line.id)
+        return {
+          ...current,
+          lines,
+          totals: computeAccountTotals(lines, current.payments, current.session.discountCents),
+        }
+      })
+    }
+  }
 
   return (
-    <div className="space-y-4">
+    <div className="h-full min-h-0">
       <span className="sr-only">{`Mesa ${account.session.tableCodes.join(' + ')}`}</span>
       <AccountOrderWorkspace
         account={account}
         layout="pos"
         locale={locale}
         menu={menu}
+        onOptimisticAdd={onOptimisticAdd}
         paymentSummary={
           <AccountPayments
             account={account}
             canManageAdjustments={['owner', 'manager'].includes(tenantMembership.role)}
+            compact
             locale={locale}
             onDone={refresh}
             tenantId={tenant.id}

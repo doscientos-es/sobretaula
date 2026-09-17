@@ -297,12 +297,16 @@ export function PosTerminalPage({
         >
           <DialogContent
             className="flex max-h-[calc(100dvh-1rem)] flex-col gap-0 overflow-hidden p-0"
-            style={{ maxWidth: '90rem', width: 'calc(100vw - 2rem)' }}
+            style={{
+              height: 'min(48rem, calc(100dvh - 1rem))',
+              maxWidth: '90rem',
+              width: 'calc(100vw - 2rem)',
+            }}
           >
-            <DialogHeader className="border-border/70 bg-muted/20 shrink-0 border-b px-6 py-5">
+            <DialogHeader className="border-border/70 bg-muted/20 shrink-0 border-b px-5 py-3 sm:px-6">
               <DialogTitle>{`Mesa ${selectedTableLabel ?? 'seleccionada'}`}</DialogTitle>
-              <DialogDescription>
-                Añade platos, revisa el total y gestiona el cobro.
+              <DialogDescription className="sr-only">
+                Gestiona las consumiciones y el cobro de la mesa.
               </DialogDescription>
               {selectedSession && (
                 <div className="text-muted-foreground flex flex-wrap gap-x-4 gap-y-1 text-xs">
@@ -311,14 +315,9 @@ export function PosTerminalPage({
                 </div>
               )}
             </DialogHeader>
-            <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">{accountWorkspace}</div>
-            <DialogFooter className="border-border/70 shrink-0 border-t px-6 py-4">
-              <DialogClose asChild>
-                <Button type="button" variant="outline">
-                  Volver al mapa
-                </Button>
-              </DialogClose>
-            </DialogFooter>
+            <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 sm:px-6 xl:overflow-hidden">
+              {accountWorkspace}
+            </div>
           </DialogContent>
         </DialogRoot>
       )}

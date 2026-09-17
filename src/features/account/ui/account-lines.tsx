@@ -212,11 +212,11 @@ export function AccountLines({
 
   if (compact) {
     return (
-      <Card>
-        <CardHeader className="px-4 py-3">
+      <Card className="rounded-none border-0 bg-transparent shadow-none xl:flex xl:h-full xl:min-h-0 xl:flex-col">
+        <CardHeader className="border-border/70 border-b px-0 py-0 pb-3">
           <CardTitle className="text-base">Consumiciones</CardTitle>
         </CardHeader>
-        <CardContent className="px-4 pb-4">
+        <CardContent className="px-0 py-3 xl:min-h-0 xl:flex-1 xl:overflow-y-auto">
           {lines.length === 0 ? (
             <p className="text-muted-foreground text-sm">Todavía no se ha apuntado nada.</p>
           ) : (

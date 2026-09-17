@@ -71,6 +71,7 @@ function paymentErrorMessage(error: unknown, fallback: string) {
 export function AccountPayments({
   account,
   canManageAdjustments,
+  compact = false,
   locale,
   onDone,
   tenantId,
@@ -78,6 +79,7 @@ export function AccountPayments({
 }: {
   account: AccountView
   canManageAdjustments: boolean
+  compact?: boolean
   locale: Locale
   onDone: () => void
   tenantId: string
@@ -272,12 +274,14 @@ export function AccountPayments({
 
   return (
     <>
-      <Card>
-        <CardHeader className="px-4 py-3">
+      <Card className={compact ? 'rounded-none border-0 bg-transparent shadow-none' : undefined}>
+        <CardHeader className={compact ? 'border-border/70 border-b px-0 py-0 pb-3' : 'px-4 py-3'}>
           <CardTitle className="text-base">Total</CardTitle>
-          <CardDescription>Resumen de la cuenta y cobros registrados.</CardDescription>
+          <CardDescription className={compact ? 'hidden' : undefined}>
+            Resumen de la cuenta y cobros registrados.
+          </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4 px-4 pb-4">
+        <CardContent className={compact ? 'space-y-4 px-0 pt-4' : 'space-y-4 px-4 pb-4'}>
           <dl className="bg-surface-subtle space-y-2 rounded-xl p-4 text-sm">
             <div className="flex justify-between font-semibold">
               <dt>Total</dt>
