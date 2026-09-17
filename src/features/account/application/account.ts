@@ -481,8 +481,7 @@ export const reactivateOrderItem = createServerFn({ method: 'POST' })
       .update({ status: 'pending' })
       .eq('id', itemRow.id as string)
       .eq('tenant_id', data.tenantId)
-    if (activationError)
-      throw new Error(`account_item_reactivation_failed:${activationError.code}`)
+    if (activationError) throw new Error(`account_item_reactivation_failed:${activationError.code}`)
     return { orderItemId: data.orderItemId, status: 'pending' as const }
   })
 

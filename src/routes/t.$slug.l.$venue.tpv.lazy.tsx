@@ -147,6 +147,21 @@ function PosTerminalAccountWorkspace({
     })
     return () => queryClient.setQueryData(accountQueryKey, previous)
   }
+  const onOptimisticActivate = (lineId: string) => {
+    const previous = queryClient.getQueryData<AccountView>(accountQueryKey)
+    queryClient.setQueryData<AccountView | undefined>(accountQueryKey, (current) => {
+      if (!current) return current
+      const lines = current.lines.map((line) =>
+        line.id === lineId ? { ...line, status: 'pending' as const } : line,
+      )
+      return {
+        ...current,
+        lines,
+        totals: computeAccountTotals(lines, current.payments, current.session.discountCents),
+      }
+    })
+    return () => queryClient.setQueryData(accountQueryKey, previous)
+  }
   const onOptimisticRemove = (lineIds: readonly string[]) => {
     const previous = queryClient.getQueryData<AccountView>(accountQueryKey)
     const ids = new Set(lineIds)
@@ -173,6 +188,7 @@ function PosTerminalAccountWorkspace({
         locale={locale}
         menu={menu}
         onAccountChange={refreshAccountQuery}
+        onOptimisticActivate={onOptimisticActivate}
         onOptimisticAdd={onOptimisticAdd}
         onOptimisticRemove={onOptimisticRemove}
         onOptimisticQuantityChange={onOptimisticQuantityChange}

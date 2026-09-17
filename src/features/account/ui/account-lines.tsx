@@ -448,7 +448,9 @@ export function AccountLines({
                           {canRemove && (
                             <Button
                               aria-label={
-                                line.status === 'cancelled' ? `Activar ${line.name}` : `Quitar ${line.name}`
+                                line.status === 'cancelled'
+                                  ? `Activar ${line.name}`
+                                  : `Quitar ${line.name}`
                               }
                               disabled={
                                 feedback.pending || group.lines.some(isOptimisticAccountLine)
