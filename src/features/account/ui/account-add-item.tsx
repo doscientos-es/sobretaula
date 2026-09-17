@@ -59,9 +59,9 @@ export function AccountAddItem({
     items: menu.items.filter((item) => item.isActive && item.isAvailable !== false),
     locale,
   })
-  const [menuItemId, setMenuItemId] = useState(
-    sections.flatMap((section) => section.items)[0]?.id ?? '',
-  )
+  const allItems = sections.flatMap((section) => section.items)
+  const [selectedSectionId, setSelectedSectionId] = useState('all')
+  const [menuItemId, setMenuItemId] = useState(allItems[0]?.id ?? '')
   const [quantity, setQuantity] = useState(1)
   const [notes, setNotes] = useState('')
   const [modifierOptionIds, setModifierOptionIds] = useState<string[]>([])
@@ -73,9 +73,11 @@ export function AccountAddItem({
     () => createAccountOfflineStore(tenantId, venueId),
     [tenantId, venueId],
   )
-  const selectedItem = sections
-    .flatMap((section) => section.items)
-    .find((item) => item.id === menuItemId)
+  const visibleItems =
+    selectedSectionId === 'all'
+      ? allItems
+      : (sections.find((section) => section.category.id === selectedSectionId)?.items ?? [])
+  const selectedItem = allItems.find((item) => item.id === menuItemId)
 
   useEffect(() => {
     const flush = () => {
@@ -151,6 +153,56 @@ export function AccountAddItem({
       </CardHeader>
       <CardContent>
         <form className="grid gap-4" onSubmit={add}>
+          <div aria-label="Categorías de la carta" className="flex flex-wrap gap-2">
+            <Button
+              onClick={() => setSelectedSectionId('all')}
+              size="sm"
+              type="button"
+              variant={selectedSectionId === 'all' ? 'default' : 'outline'}
+            >
+              Todo
+            </Button>
+            {sections.map((section) => (
+              <Button
+                key={section.category.id}
+                onClick={() => {
+                  setSelectedSectionId(section.category.id)
+                  setMenuItemId(section.items[0]?.id ?? '')
+                  setModifierOptionIds([])
+                }}
+                size="sm"
+                type="button"
+                variant={selectedSectionId === section.category.id ? 'default' : 'outline'}
+              >
+                {localizedText(section.category.nameI18n, locale)}
+              </Button>
+            ))}
+          </div>
+          {visibleItems.length > 0 && (
+            <div aria-label="Productos de la categoría" className="grid grid-cols-2 gap-2">
+              {visibleItems.map((item) => (
+                <Button
+                  className="h-auto min-h-16 justify-start text-left whitespace-normal"
+                  key={item.id}
+                  onClick={() => {
+                    setMenuItemId(item.id)
+                    setModifierOptionIds([])
+                  }}
+                  type="button"
+                  variant={menuItemId === item.id ? 'secondary' : 'outline'}
+                >
+                  <span>
+                    <span className="block font-medium">
+                      {localizedText(item.nameI18n, locale)}
+                    </span>
+                    <span className="text-muted-foreground block text-xs">
+                      {formatMoney(item.priceCents, locale)}
+                    </span>
+                  </span>
+                </Button>
+              ))}
+            </div>
+          )}
           <Field>
             <AutocompleteCombobox
               aria-label="Plato"
@@ -159,7 +211,7 @@ export function AccountAddItem({
               getItemLabel={(item) =>
                 `${localizedText(item.nameI18n, locale)} · ${formatMoney(item.priceCents, locale)}`
               }
-              items={sections.flatMap((section) => section.items)}
+              items={visibleItems}
               label="Plato"
               onSelectionChange={(key) => {
                 setMenuItemId(key ? String(key) : '')

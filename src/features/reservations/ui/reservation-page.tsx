@@ -16,11 +16,6 @@ import {
   PageHeader,
   PageHeaderDescription,
   PageHeaderTitle,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsPanels,
-  TabsTrigger,
   Textarea,
   useFormFeedback,
 } from '@doscientos/ui'
@@ -62,16 +57,6 @@ function FieldInfo({ text }: { text: string }) {
   )
 }
 
-function describeServiceRules(service: ReservationService): string {
-  const covers = service.maxCoversPerSlot
-    ? `${service.maxCoversPerSlot} cubiertos`
-    : 'aforo flexible'
-  const reservations = service.maxReservationsPerSlot
-    ? `${service.maxReservationsPerSlot} reservas`
-    : 'reservas flexibles'
-  return `${service.slotMinutes} min · ${covers} · ${reservations} por hueco`
-}
-
 export function ReservationPage({
   services,
   tenantId,
@@ -79,7 +64,6 @@ export function ReservationPage({
   locale,
   timezone,
   terms,
-  initialSection = 'agenda',
   agendaSearch,
   onAgendaSearchChange,
 }: {
@@ -89,7 +73,6 @@ export function ReservationPage({
   locale: Locale
   timezone: string
   terms: readonly ReservationTermsVersion[]
-  initialSection?: 'agenda' | 'turnos'
   agendaSearch?: ReservationAgendaSearch
   onAgendaSearchChange?: (search: ReservationAgendaSearch) => void
 }) {
@@ -287,11 +270,10 @@ export function ReservationPage({
   }
 
   const reload = useLoaderReload()
-  const selectedService = services.find((service) => service.id === serviceId)
 
   return (
     <section className="space-y-6">
-      <Tabs className="space-y-5" defaultSelectedKey={initialSection}>
+      <div className="space-y-5">
         <PageHeader className="border-border/70 border-b pb-6">
           <div>
             <PageHeaderTitle>Reservas</PageHeaderTitle>
@@ -300,10 +282,6 @@ export function ReservationPage({
             </PageHeaderDescription>
           </div>
           <div className="flex items-center gap-3">
-            <TabsList aria-label="Secciones de reservas" className="w-fit">
-              <TabsTrigger id="agenda">Agenda</TabsTrigger>
-              <TabsTrigger id="turnos">Turnos</TabsTrigger>
-            </TabsList>
             <Button onClick={() => setNewReservationOpen(true)} type="button">
               + Crear reserva
             </Button>
@@ -312,8 +290,8 @@ export function ReservationPage({
             </Button>
           </div>
         </PageHeader>
-        <TabsPanels>
-          <TabsContent id="agenda">
+        <div className="space-y-5">
+          <div>
             <ReservationAgendaCard
               {...(agendaSearch ? { agendaSearch } : {})}
               locale={locale}
@@ -327,8 +305,8 @@ export function ReservationPage({
                 setNewReservationOpen(true)
               }}
             />
-          </TabsContent>
-          <TabsContent className="flex flex-col" id="turnos">
+          </div>
+          <div className="flex flex-col">
             <details className="group order-2">
               <summary className="text-muted-foreground hover:text-foreground flex cursor-pointer list-none items-center gap-2 text-sm font-medium [&::-webkit-details-marker]:hidden">
                 <span className="text-lg leading-none transition-transform group-open:rotate-45">
@@ -735,98 +713,6 @@ export function ReservationPage({
                 </ul>
               </CardContent>
             </Card>
-            <DialogRoot onOpenChange={setNewReservationOpen} open={newReservationOpen}>
-              <DialogContent className="max-w-xl">
-                <CardHeader>
-                  <CardTitle>Nueva reserva</CardTitle>
-                  <CardDescription>
-                    La asignación busca la mesa libre más pequeña que admite al grupo.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <form className="grid gap-4" onSubmit={(event) => void reserve(event)}>
-                    <Field>
-                      <FieldLabel htmlFor="reservation-service">Turno</FieldLabel>
-                      <select
-                        id="reservation-service"
-                        onChange={(event) => setServiceId(event.target.value)}
-                        required
-                        value={serviceId}
-                      >
-                        {services.map((service) => (
-                          <option
-                            key={service.id}
-                            value={service.id}
-                          >{`${service.name} · ${weekdays[service.weekday]}`}</option>
-                        ))}
-                      </select>
-                    </Field>
-                    <Field>
-                      <FieldLabel htmlFor="reservation-time">Fecha y hora</FieldLabel>
-                      <Input
-                        id="reservation-time"
-                        onChange={(event) => setStartsAt(event.target.value)}
-                        required
-                        type="datetime-local"
-                        value={startsAt}
-                      />
-                      {selectedService ? (
-                        <p className="text-muted-foreground mt-2 text-xs">
-                          {describeServiceRules(selectedService)}
-                        </p>
-                      ) : null}
-                    </Field>
-                    <Field>
-                      <FieldLabel htmlFor="reservation-party">Comensales</FieldLabel>
-                      <Input
-                        id="reservation-party"
-                        min={1}
-                        onChange={(event) => setPartySize(Number(event.target.value))}
-                        required
-                        type="number"
-                        value={partySize}
-                      />
-                    </Field>
-                    <Field>
-                      <FieldLabel htmlFor="reservation-duration">Duración prevista</FieldLabel>
-                      <Input
-                        id="reservation-duration"
-                        min={15}
-                        max={480}
-                        onChange={(event) => setDurationMinutes(Number(event.target.value))}
-                        required
-                        type="number"
-                        value={durationMinutes}
-                      />
-                      <FieldDescription>
-                        Tiempo estimado de ocupación de la mesa, en minutos.
-                      </FieldDescription>
-                    </Field>
-                    <Field>
-                      <FieldLabel htmlFor="reservation-guest">Nombre (opcional)</FieldLabel>
-                      <Input
-                        id="reservation-guest"
-                        onChange={(event) => setGuestName(event.target.value)}
-                        value={guestName}
-                      />
-                    </Field>
-                    <Field>
-                      <FieldLabel htmlFor="reservation-phone">Teléfono (opcional)</FieldLabel>
-                      <Input
-                        autoComplete="tel"
-                        id="reservation-phone"
-                        onChange={(event) => setGuestPhone(event.target.value)}
-                        value={guestPhone}
-                      />
-                    </Field>
-                    <FormFeedback pendingLabel="Buscando disponibilidad…" state={feedback.state} />
-                    <Button disabled={feedback.pending} type="submit">
-                      Crear reserva
-                    </Button>
-                  </form>
-                </CardContent>
-              </DialogContent>
-            </DialogRoot>
             <DialogRoot onOpenChange={setExportOpen} open={exportOpen}>
               <DialogContent className="max-w-md">
                 <CardHeader>
@@ -864,8 +750,8 @@ export function ReservationPage({
                 </CardContent>
               </DialogContent>
             </DialogRoot>
-          </TabsContent>
-        </TabsPanels>
+          </div>
+        </div>
         <DialogRoot onOpenChange={setNewReservationOpen} open={newReservationOpen}>
           <DialogContent className="max-w-xl">
             <CardHeader>
@@ -933,7 +819,7 @@ export function ReservationPage({
             </CardContent>
           </DialogContent>
         </DialogRoot>
-      </Tabs>
+      </div>
     </section>
   )
 }

@@ -1,4 +1,5 @@
 import {
+  Button,
   Card,
   CardContent,
   CardDescription,
@@ -7,13 +8,23 @@ import {
   PageHeader,
   PageHeaderDescription,
   PageHeaderTitle,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogRoot,
+  DialogTitle,
+  Field,
+  FieldLabel,
+  Input,
 } from '@doscientos/ui'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { ArrowUpRight } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
 
 import type { FloorPlanData } from '@/features/floor-plan'
-import type { ServiceBoard } from '@/features/service'
+import { seatWalkIn, type ServiceBoard } from '@/features/service'
 
 import { summarizePosTerminal } from '../domain/terminal-summary'
 import { PosFloorMap } from './pos-floor-map'
@@ -57,7 +68,9 @@ export function PosTerminalPage({
   plan,
   slug,
   selectedSessionId,
+  tenantId,
   venue,
+  venueId,
 }: {
   accountWorkspace?: ReactNode | undefined
   board: ServiceBoard
@@ -68,12 +81,18 @@ export function PosTerminalPage({
   plan: FloorPlanData
   selectedSessionId?: string | undefined
   slug: string
+  tenantId: string
   venue: string
+  venueId: string
 }) {
   const summary = summarizePosTerminal(board)
   const tableCodes = new Map(board.tables.map((table) => [table.id, table.code]))
   const params = { slug, venue }
   const navigate = useNavigate()
+  const [newTableId, setNewTableId] = useState<string | null>(null)
+  const [newTableCovers, setNewTableCovers] = useState('2')
+  const [openingTable, setOpeningTable] = useState(false)
+  const [openTableError, setOpenTableError] = useState<string | null>(null)
   const selectedSession = board.sessions.find((session) => session.id === selectedSessionId)
   const selectedTableLabel = selectedSession?.tableIds
     .map((id) => tableCodes.get(id) ?? id)
@@ -110,6 +129,47 @@ export function PosTerminalPage({
         search: { sessionId: table.sessionId },
         to: '/t/$slug/l/$venue/tpv',
       })
+      return
+    }
+    if (table?.status === 'free') {
+      setNewTableId(table.id)
+      setNewTableCovers(String(Math.max(1, table.minSeats)))
+      setOpenTableError(null)
+    }
+  }
+
+  const newTable = board.tables.find((table) => table.id === newTableId)
+
+  async function openTable(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!newTable || openingTable) return
+    const covers = Number(newTableCovers)
+    if (!Number.isInteger(covers) || covers < newTable.minSeats || covers > newTable.maxSeats) {
+      setOpenTableError(`Indica entre ${newTable.minSeats} y ${newTable.maxSeats} comensales.`)
+      return
+    }
+    setOpeningTable(true)
+    setOpenTableError(null)
+    try {
+      const result = await seatWalkIn({
+        data: {
+          covers,
+          operationId: crypto.randomUUID(),
+          tableIds: [newTable.id],
+          tenantId,
+          venueId,
+        },
+      })
+      setNewTableId(null)
+      await navigate({
+        params,
+        search: { sessionId: result.sessionId },
+        to: '/t/$slug/l/$venue/tpv',
+      })
+    } catch {
+      setOpenTableError('No se ha podido abrir la mesa. Actualiza el mapa e inténtalo de nuevo.')
+    } finally {
+      setOpeningTable(false)
     }
   }
 
@@ -215,93 +275,142 @@ export function PosTerminalPage({
           </Link>
         )}
       </div>
-      {!accountWorkspace && <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_20rem]">
-        <Card>
-          <CardHeader className="px-4 py-4">
-            <CardTitle>{accountWorkspace ? 'Comanda seleccionada' : 'Cuentas activas'}</CardTitle>
-            <CardDescription>
-              {accountWorkspace
-                ? 'Apunta, anula y consulta las líneas sin salir del TPV.'
-                : 'Selecciona una mesa para continuar su comanda o cobro.'}
-            </CardDescription>
-            {accountWorkspace && canAccessAccounts && (
-              <Link
-                className="text-primary text-sm font-medium"
-                params={params}
-                search={{}}
-                to="/t/$slug/l/$venue/tpv"
-              >
-                Cambiar mesa
-              </Link>
-            )}
-          </CardHeader>
-          <CardContent className="px-4 pt-0">
-            {accountWorkspace ??
-              (board.sessions.length === 0 ? (
-                <p className="text-muted-foreground text-sm">
-                  No hay cuentas abiertas en este momento.
-                </p>
-              ) : (
-                <ul className="grid gap-3 sm:grid-cols-2">
-                  {board.sessions.map((session) => {
-                    const label = session.tableIds.map((id) => tableCodes.get(id) ?? id).join(' + ')
-                    const content = (
-                      <>
-                        <span className="font-medium">Mesa {label}</span>
-                        <span className="text-muted-foreground text-sm">
-                          {session.covers} comensales · abierta
-                        </span>
-                      </>
-                    )
-                    return (
-                      <li key={session.id}>
-                        {canAccessAccounts ? (
-                          <Link
-                            className="group hover:bg-muted/40 hover:border-border-strong focus-visible:outline-ring flex flex-col rounded-lg border p-3 transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-[var(--ui-shadow-hairline)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transform-none"
-                            params={params}
-                            search={{ sessionId: session.id }}
-                            to="/t/$slug/l/$venue/tpv"
-                          >
-                            <span className="flex items-center justify-between gap-3">
-                              {content}
-                              <ArrowUpRight
-                                aria-hidden="true"
-                                className="text-muted-foreground size-4 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 motion-reduce:transform-none"
-                              />
-                            </span>
-                          </Link>
-                        ) : (
-                          <div className="flex flex-col rounded-md border p-3">{content}</div>
-                        )}
-                      </li>
-                    )
-                  })}
-                </ul>
-              ))}
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="px-4 py-4">
-            <CardTitle>Atención de sala</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 px-4 pt-0 text-sm">
-            <p>
-              <strong>{summary.reservedTables}</strong> mesas reservadas
-            </p>
-            <p>
-              <strong>{summary.cleaningTables}</strong> pendientes de limpiar
-            </p>
-            <p>
-              <strong>{summary.blockedTables}</strong> mesas bloqueadas
-            </p>
-            <p className="text-muted-foreground border-t pt-3">
-              Selecciona una cuenta para continuar con la comanda o el cobro.
-            </p>
-          </CardContent>
-        </Card>
-      </div>}
+      {!accountWorkspace && (
+        <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_20rem]">
+          <Card>
+            <CardHeader className="px-4 py-4">
+              <CardTitle>{accountWorkspace ? 'Comanda seleccionada' : 'Cuentas activas'}</CardTitle>
+              <CardDescription>
+                {accountWorkspace
+                  ? 'Apunta, anula y consulta las líneas sin salir del TPV.'
+                  : 'Selecciona una mesa para continuar su comanda o cobro.'}
+              </CardDescription>
+              {accountWorkspace && canAccessAccounts && (
+                <Link
+                  className="text-primary text-sm font-medium"
+                  params={params}
+                  search={{}}
+                  to="/t/$slug/l/$venue/tpv"
+                >
+                  Cambiar mesa
+                </Link>
+              )}
+            </CardHeader>
+            <CardContent className="px-4 pt-0">
+              {accountWorkspace ??
+                (board.sessions.length === 0 ? (
+                  <p className="text-muted-foreground text-sm">
+                    No hay cuentas abiertas en este momento.
+                  </p>
+                ) : (
+                  <ul className="grid gap-3 sm:grid-cols-2">
+                    {board.sessions.map((session) => {
+                      const label = session.tableIds
+                        .map((id) => tableCodes.get(id) ?? id)
+                        .join(' + ')
+                      const content = (
+                        <>
+                          <span className="font-medium">Mesa {label}</span>
+                          <span className="text-muted-foreground text-sm">
+                            {session.covers} comensales · abierta
+                          </span>
+                        </>
+                      )
+                      return (
+                        <li key={session.id}>
+                          {canAccessAccounts ? (
+                            <Link
+                              className="group hover:bg-muted/40 hover:border-border-strong focus-visible:outline-ring flex flex-col rounded-lg border p-3 transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-[var(--ui-shadow-hairline)] focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transform-none"
+                              params={params}
+                              search={{ sessionId: session.id }}
+                              to="/t/$slug/l/$venue/tpv"
+                            >
+                              <span className="flex items-center justify-between gap-3">
+                                {content}
+                                <ArrowUpRight
+                                  aria-hidden="true"
+                                  className="text-muted-foreground size-4 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 motion-reduce:transform-none"
+                                />
+                              </span>
+                            </Link>
+                          ) : (
+                            <div className="flex flex-col rounded-md border p-3">{content}</div>
+                          )}
+                        </li>
+                      )
+                    })}
+                  </ul>
+                ))}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="px-4 py-4">
+              <CardTitle>Atención de sala</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 px-4 pt-0 text-sm">
+              <p>
+                <strong>{summary.reservedTables}</strong> mesas reservadas
+              </p>
+              <p>
+                <strong>{summary.cleaningTables}</strong> pendientes de limpiar
+              </p>
+              <p>
+                <strong>{summary.blockedTables}</strong> mesas bloqueadas
+              </p>
+              <p className="text-muted-foreground border-t pt-3">
+                Selecciona una cuenta para continuar con la comanda o el cobro.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
       {kitchenWorkspace}
       {managementWorkspace}
+      {newTable && (
+        <DialogRoot
+          onOpenChange={(open) => {
+            if (!open && !openingTable) setNewTableId(null)
+          }}
+          open
+        >
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>{`Abrir Mesa ${newTable.code}`}</DialogTitle>
+              <DialogDescription>
+                Indica los comensales para abrir la cuenta y empezar a apuntar la comanda.
+              </DialogDescription>
+            </DialogHeader>
+            <form className="grid gap-4" onSubmit={(event) => void openTable(event)}>
+              <Field>
+                <FieldLabel htmlFor="new-table-covers">Comensales</FieldLabel>
+                <Input
+                  id="new-table-covers"
+                  max={newTable.maxSeats}
+                  min={newTable.minSeats}
+                  onChange={(event) => setNewTableCovers(event.target.value)}
+                  type="number"
+                  value={newTableCovers}
+                />
+              </Field>
+              {openTableError && (
+                <p className="text-destructive text-sm" role="alert">
+                  {openTableError}
+                </p>
+              )}
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button disabled={openingTable} type="button" variant="outline">
+                    Cancelar
+                  </Button>
+                </DialogClose>
+                <Button disabled={openingTable} type="submit">
+                  {openingTable ? 'Abriendo…' : 'Abrir mesa'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </DialogRoot>
+      )}
     </section>
   )
 }

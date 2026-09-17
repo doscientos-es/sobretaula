@@ -60,10 +60,10 @@ function PosTerminalRoute() {
       {...(account.data && tenantMembership.role !== 'host'
         ? menu.data
           ? {
-            accountWorkspace: (
-              <PosTerminalAccountWorkspace account={account.data} menu={menu.data} />
-            ),
-          }
+              accountWorkspace: (
+                <PosTerminalAccountWorkspace account={account.data} menu={menu.data} />
+              ),
+            }
           : {}
         : {})}
       board={serviceBoard}
@@ -71,8 +71,8 @@ function PosTerminalRoute() {
       canManageCash={canManage}
       {...(tenantMembership.role !== 'host'
         ? {
-          kitchenWorkspace: <PosTerminalKitchenWorkspace board={serviceBoard} />,
-        }
+            kitchenWorkspace: <PosTerminalKitchenWorkspace board={serviceBoard} />,
+          }
         : {})}
       {...(canManage ? { managementWorkspace: <PosTerminalManagementWorkspace /> } : {})}
       slug={slug}
