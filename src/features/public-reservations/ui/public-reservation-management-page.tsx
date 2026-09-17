@@ -57,6 +57,7 @@ export function PublicReservationManagementPage({
   const [busy, setBusy] = useState(false)
   const [confirmingCancel, setConfirmingCancel] = useState(false)
   const [error, setError] = useState('')
+  const [dateError, setDateError] = useState('')
   const [success, setSuccess] = useState('')
   const [newDate, setNewDate] = useState(() =>
     currentLocalValue(reservation.startsAt, reservation.timezone),
@@ -84,18 +85,27 @@ export function PublicReservationManagementPage({
   }
 
   async function reschedule() {
+    const nextStartsAt = zonedLocalToIso(newDate, current.timezone)
+    if (
+      Number.isNaN(new Date(nextStartsAt).getTime()) ||
+      newDate < localNowValue(current.timezone)
+    ) {
+      setError(t('public.rescheduleUnavailable'))
+      setSuccess('')
+      return
+    }
     setBusy(true)
     setError('')
     setSuccess('')
     try {
       const result = await reschedulePublicReservation({
-        data: { token, startsAt: zonedLocalToIso(newDate, current.timezone) },
+        data: { token, startsAt: nextStartsAt },
       })
       if (!result.rescheduled) {
         setError(t('public.rescheduleUnavailable'))
         return
       }
-      setCurrent({ ...current, startsAt: zonedLocalToIso(newDate, current.timezone) })
+      setCurrent({ ...current, startsAt: nextStartsAt })
       setSuccess(t('public.rescheduleSaved'))
     } catch {
       setError(t('public.rescheduleFailed'))
@@ -167,12 +177,26 @@ export function PublicReservationManagementPage({
               aria-label={t('public.newDateTime')}
               className="w-full rounded-xl border border-[#292d34]/15 px-3 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#c34d3e]"
               id="new-reservation-time"
-              onChange={(event) => setNewDate(event.target.value)}
+              onChange={(event) => {
+                const value = event.target.value
+                setNewDate(value)
+                const next = new Date(zonedLocalToIso(value, current.timezone))
+                setDateError(
+                  value && (Number.isNaN(next.getTime()) || value < localNowValue(current.timezone))
+                    ? t('public.rescheduleUnavailable')
+                    : '',
+                )
+              }}
               min={localNowValue(current.timezone)}
               step={900}
               type="datetime-local"
               value={newDate}
             />
+            {dateError && (
+              <p aria-live="assertive" className="text-destructive text-xs">
+                {dateError}
+              </p>
+            )}
             <div className="flex flex-wrap gap-3">
               <Button disabled={busy || !newDate} onClick={() => void reschedule()}>
                 {busy ? t('public.waitlist.busy') : t('public.saveChange')}
