@@ -1,3 +1,4 @@
+import fs from 'node:fs'
 import path from 'node:path'
 
 import { test, expect } from '@playwright/test'
@@ -65,12 +66,12 @@ test('public reservation gives accessible feedback for incomplete guest details'
 })
 
 test.describe('authenticated restaurant smoke', () => {
-  test.skip(
-    !process.env.E2E_STORAGE_STATE,
-    'Requires E2E_STORAGE_STATE from a non-production test account',
-  )
+  const storageState = process.env.E2E_STORAGE_STATE
+  const hasStorageState = Boolean(storageState && fs.existsSync(path.resolve(storageState)))
 
-  test.use({ storageState: process.env.E2E_STORAGE_STATE })
+  test.skip(!hasStorageState, 'Requires E2E_STORAGE_STATE from a non-production test account')
+
+  test.use({ storageState })
 
   test('tenant home does not render an error boundary', async ({ page }) => {
     const slug = process.env.E2E_TENANT_SLUG ?? 'la-fonda-demo'
@@ -254,7 +255,11 @@ test.describe('authenticated restaurant smoke', () => {
   test('team invitation lifecycle accepts, assigns every role and removes access', async ({
     browser,
     page,
-  }) => {
+  }, testInfo) => {
+    test.skip(
+      testInfo.project.name !== 'chromium',
+      'The invitation lifecycle needs the authenticated owner project',
+    )
     test.slow()
     const lifecycleContext = await browser.newContext({
       storageState: path.resolve('e2e/.auth/waiter.json'),

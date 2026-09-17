@@ -1,15 +1,15 @@
 # Auditoría de base de datos y escalabilidad
 
-Fecha: 2026-09-13
+Fecha: 2026-09-17
 
 ## Alcance y evidencia
 
-Esta revisión cubre los 151 ficheros de migración del repositorio, las tablas de negocio,
+Esta revisión cubre los 177 ficheros de migración del repositorio, las tablas de negocio,
 las restricciones, los índices declarados, las políticas RLS y los patrones de
 acceso visibles en el código. No sustituye una auditoría de rendimiento en
-producción. El proyecto Supabase autorizado fue identificado y su historial de
-migraciones se consultó sin leer datos operativos; no se han ejecutado
-`EXPLAIN ANALYZE`, advisors ni consultas sobre datos reales.
+producción. Los proyectos Supabase autorizados fueron identificados y sus
+historiales y advisors se consultaron sin leer datos operativos; no se han
+ejecutado `EXPLAIN ANALYZE` ni consultas sobre datos reales.
 
 El árbol local contiene migraciones posteriores al último nombre reconocido en
 el historial remoto. En particular, `20260913000047_payment_line_allocations.sql`
@@ -89,6 +89,40 @@ Después se deben guardar en esta auditoría los planes de las cinco consultas
 más caras y convertir solo las mejoras confirmadas en migraciones pequeñas,
 con `create index concurrently` cuando el entorno y la ventana de despliegue
 lo permitan.
+
+## Revisión remota de proyectos y advisors — 2026-09-17
+
+Se consultaron en modo lectura los proyectos `sobretaula-dev` y `sobretaula`.
+Ambos aparecen `ACTIVE_HEALTHY` y sus historiales llegan a
+`integrate_floor_maps`. No se aplicaron migraciones, cambios de configuración ni
+escrituras de datos durante esta revisión.
+
+El proyecto de pruebas devuelve estos avisos que requieren una decisión
+explícita, no un `db push` automático:
+
+- **Seguridad:** 4 tablas internas tienen RLS sin políticas
+  (`public_reservation_rate_limits`, `timekeeping_pin_attempts`,
+  `timekeeping_pins` y `timekeeping_terminal_attempts`). El comportamiento
+  actual es denegación por defecto y parece intencionado porque se accede a
+  ellas desde funciones protegidas; debe conservarse así o documentarse con
+  una prueba de contrato.
+- **Seguridad:** 19 funciones `SECURITY DEFINER` son invocables por `anon`,
+  incluidas las RPC públicas de reservas, disponibilidad y carta. La exposición
+  parece parte del producto, pero cada función debe tener límites por
+  slug/token y `search_path` fijo.
+- **Auth:** la protección contra contraseñas filtradas está desactivada en
+  Supabase; es un cambio de configuración por entorno pendiente de confirmación,
+  no una migración SQL.
+- **Rendimiento:** el advisor informa de 102 claves foráneas sin índice de
+  cobertura, 12 políticas con reevaluación por fila y múltiples políticas
+  permisivas. No se añadieron índices especulativos: primero hay que medir
+  p50/p95 y confirmar los paths operativos.
+
+El árbol local contiene 177 migraciones y dos comparten el prefijo
+`20260915000004` (`operational_read_indexes` y
+`platform_fiscal_invoice_documents`). Los historiales remotos contienen ambas
+operaciones bajo versiones distintas, por lo que no se deben renombrar ni
+reaplicar esos ficheros sin reconciliar antes la cadena de migraciones.
 
 ## Resultado
 

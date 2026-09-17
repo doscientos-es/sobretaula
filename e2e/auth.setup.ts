@@ -28,11 +28,16 @@ setup('authenticate E2E roles against Supabase-test', async ({ page }) => {
       password: process.env[`E2E_${key}_PASSWORD`] ?? defaultCredentials[role][1],
     }
   })
-  setup.skip(
-    !process.env.SUPABASE_TEST_URL,
-    'Requires SUPABASE_TEST_URL and dedicated E2E accounts',
+  const hasTestProject = Boolean(
+    process.env.SUPABASE_TEST_URL &&
+    process.env.SUPABASE_TEST_PUBLISHABLE_KEY &&
+    process.env.SUPABASE_TEST_SECRET_KEY,
   )
-  if (!process.env.SUPABASE_TEST_URL) return
+  setup.skip(
+    !hasTestProject,
+    'Requires the three SUPABASE_TEST_* variables and dedicated E2E accounts',
+  )
+  if (!hasTestProject) return
   // Reset only the dedicated E2E tenant before creating sessions. Without
   // this, a previous run can leave tables occupied and make P0 flows fail for
   // reasons unrelated to the UI under test.

@@ -16,26 +16,38 @@ function loadEnvFile(fileName: string) {
 loadEnvFile('.env.local')
 loadEnvFile('.env.test')
 
+const hasTestProject = Boolean(
+  process.env.SUPABASE_TEST_URL &&
+  process.env.SUPABASE_TEST_PUBLISHABLE_KEY &&
+  process.env.SUPABASE_TEST_SECRET_KEY,
+)
+
 // The application reads the canonical SUPABASE_* names while the E2E
 // environment deliberately stores isolated credentials under SUPABASE_TEST_*.
 // Bridge them only for this Playwright process so server actions cannot drift
 // to another project when the test server starts.
-for (const [testName, appName] of [
-  ['SUPABASE_TEST_URL', 'SUPABASE_URL'],
-  ['SUPABASE_TEST_PUBLISHABLE_KEY', 'SUPABASE_PUBLISHABLE_KEY'],
-  ['SUPABASE_TEST_SECRET_KEY', 'SUPABASE_SECRET_KEY'],
-] as const) {
-  if (process.env[testName]) process.env[appName] = process.env[testName]
+if (hasTestProject) {
+  for (const [testName, appName] of [
+    ['SUPABASE_TEST_URL', 'SUPABASE_URL'],
+    ['SUPABASE_TEST_PUBLISHABLE_KEY', 'SUPABASE_PUBLISHABLE_KEY'],
+    ['SUPABASE_TEST_SECRET_KEY', 'SUPABASE_SECRET_KEY'],
+  ] as const) {
+    process.env[appName] = process.env[testName]
+  }
 }
-process.env.E2E_TEST_MODE = 'true'
+process.env.E2E_TEST_MODE = hasTestProject ? 'true' : 'false'
 process.env.E2E_TEST_ROLE ??= 'owner'
-process.env.SUPABASE_URL = process.env.SUPABASE_TEST_URL
-process.env.SUPABASE_SECRET_KEY = process.env.SUPABASE_TEST_SECRET_KEY
-process.env.VITE_SUPABASE_URL = process.env.SUPABASE_TEST_URL
-process.env.VITE_SUPABASE_PUBLISHABLE_KEY = process.env.SUPABASE_TEST_PUBLISHABLE_KEY
+if (hasTestProject) process.env.VITE_SUPABASE_URL = process.env.SUPABASE_TEST_URL
+if (hasTestProject)
+  process.env.VITE_SUPABASE_PUBLISHABLE_KEY = process.env.SUPABASE_TEST_PUBLISHABLE_KEY
 
 const outputDir = process.env.PLAYWRIGHT_OUTPUT_DIR ?? 'test-results'
 const reportDir = process.env.PLAYWRIGHT_REPORT_DIR ?? 'playwright-report'
+const authStatePath = path.resolve(process.env.E2E_STORAGE_STATE ?? 'e2e/.auth/owner.json')
+const hasAuthenticatedSmoke = hasTestProject || fs.existsSync(authStatePath)
+const roles = ['owner', 'manager', 'host', 'waiter', 'accountant'] as const
+const hasRoleStates =
+  hasTestProject || roles.every((role) => fs.existsSync(path.resolve(`e2e/.auth/${role}.json`)))
 
 export default defineConfig({
   testDir: './e2e',
@@ -67,7 +79,7 @@ export default defineConfig({
       name: 'public',
       dependencies: ['setup-auth'],
       testMatch: /smoke\.spec\.ts/,
-      grep: /public reservation|cacheable|invalid reservation|team invitation|platform invitation/,
+      grep: /public reservation|cacheable|invalid reservation|team invitation requires|platform invitation/,
       use: { ...devices['Desktop Chrome'] },
     },
     {
@@ -75,23 +87,26 @@ export default defineConfig({
       testMatch: /auth\.setup\.ts/,
       use: { ...devices['Desktop Chrome'] },
     },
-    {
-      name: 'chromium',
-      dependencies: ['setup-auth'],
-      testMatch: /(?:authorization|smoke)\.spec\.ts/,
-      use: {
-        ...devices['Desktop Chrome'],
-        storageState: path.resolve(process.env.E2E_STORAGE_STATE ?? 'e2e/.auth/owner.json'),
-      },
-    },
-    ...['owner', 'manager', 'host', 'waiter', 'accountant'].map((role) => ({
-      name: role,
-      dependencies: ['setup-auth'],
-      use: {
-        ...devices['Desktop Chrome'],
-        storageState: path.resolve(`e2e/.auth/${role}.json`),
-      },
-      testMatch: /operational-flows\.spec\.ts/,
-    })),
+    ...(hasAuthenticatedSmoke
+      ? [
+          {
+            name: 'chromium',
+            dependencies: ['setup-auth'],
+            testMatch: /(?:authorization|smoke)\.spec\.ts/,
+            use: { ...devices['Desktop Chrome'], storageState: authStatePath },
+          },
+        ]
+      : []),
+    ...(hasRoleStates
+      ? roles.map((role) => ({
+          name: role,
+          dependencies: ['setup-auth'],
+          use: {
+            ...devices['Desktop Chrome'],
+            storageState: path.resolve(`e2e/.auth/${role}.json`),
+          },
+          testMatch: /operational-flows\.spec\.ts/,
+        }))
+      : []),
   ],
 })
