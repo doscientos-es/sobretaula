@@ -26,6 +26,7 @@ import {
   recordPaymentInput,
   recordGiftCardPaymentInput,
   recordMixedPaymentInput,
+  reactivateOrderItemInput,
   refundPaymentInput,
   applyDiscountInput,
   removeOrderItemInput,
@@ -422,6 +423,67 @@ export const removeOrderItem = createServerFn({ method: 'POST' })
     if (cancellationError)
       throw new Error(`account_item_cancellation_failed:${cancellationError.code}`)
     return { orderItemId: data.orderItemId }
+  })
+
+/** Reactivates a cancelled line and consumes its recipe stock again. */
+export const reactivateOrderItem = createServerFn({ method: 'POST' })
+  .middleware([authMiddleware, tenantMembershipMiddleware, operationalTenantMiddleware])
+  .validator(reactivateOrderItemInput)
+  .handler(async ({ context, data }) => {
+    requireAccountEditor(context.tenantMembership.role)
+    const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    const sessionId = await requireOpenSession(supabase, data)
+    const { count: paymentCount, error: paymentError } = await supabase
+      .from('payments')
+      .select('id', { count: 'exact', head: true })
+      .eq('tenant_id', data.tenantId)
+      .eq('session_id', sessionId)
+    if (paymentError) throw new Error(`account_payments_check_failed:${paymentError.code}`)
+    if ((paymentCount ?? 0) > 0) throw new Response('Payments recorded', { status: 409 })
+
+    const { data: itemRow, error: itemLookupError } = await supabase
+      .from('order_items')
+      .select('id, menu_item_id, order_id, quantity, status, orders!inner(session_id)')
+      .eq('id', data.orderItemId)
+      .eq('tenant_id', data.tenantId)
+      .eq('orders.session_id', sessionId)
+      .single()
+    if (itemLookupError || !itemRow) throw new Response('Not found', { status: 404 })
+    if (itemRow.status !== 'cancelled') return { orderItemId: data.orderItemId }
+
+    if (itemRow.menu_item_id) {
+      const { data: recipeLines, error: recipeError } = await supabase
+        .from('recipe_ingredients')
+        .select('ingredient_id, quantity, waste_percent')
+        .eq('tenant_id', data.tenantId)
+        .eq('menu_item_id', itemRow.menu_item_id as string)
+      if (recipeError && recipeError.code !== '42P01')
+        throw new Error(`recipe_load_failed:${recipeError.code}`)
+      if (recipeLines?.length) {
+        const { error: inventoryError } = await supabase.rpc('record_inventory_sale', {
+          p_lines: recipeLines.map((line) => ({
+            ingredient_id: line.ingredient_id,
+            quantity:
+              Number(line.quantity) *
+              Number(itemRow.quantity) *
+              (1 + Number(line.waste_percent ?? 0) / 100),
+          })),
+          p_reason: `Reactivación de comanda ${itemRow.order_id}`,
+          p_tenant_id: data.tenantId,
+          p_venue_id: data.venueId,
+        })
+        if (inventoryError) throw new Error(`inventory_sale_failed:${inventoryError.code}`)
+      }
+    }
+
+    const { error: activationError } = await supabase
+      .from('order_items')
+      .update({ status: 'pending' })
+      .eq('id', itemRow.id as string)
+      .eq('tenant_id', data.tenantId)
+    if (activationError)
+      throw new Error(`account_item_reactivation_failed:${activationError.code}`)
+    return { orderItemId: data.orderItemId, status: 'pending' as const }
   })
 
 /** Charges money against the session; never more than what is left to pay. */

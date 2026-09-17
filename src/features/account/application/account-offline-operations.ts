@@ -2,7 +2,7 @@ import { createOfflineOperation, type OfflineOperation } from '@/shared/lib/offl
 import { flushOfflineOperations } from '@/shared/lib/offline-operation-runner'
 import { createLocalStorageOperationStore } from '@/shared/lib/offline-operation-store'
 
-import { addOrderItem, removeOrderItem, updateOrderItem } from './account'
+import { addOrderItem, reactivateOrderItem, removeOrderItem, updateOrderItem } from './account'
 
 export interface AddOrderItemOperation {
   kind: 'add-order-item'
@@ -35,10 +35,19 @@ export interface RemoveOrderItemOperation {
   venueId: string
 }
 
+export interface ReactivateOrderItemOperation {
+  kind: 'reactivate-order-item'
+  orderItemId: string
+  sessionId: string
+  tenantId: string
+  venueId: string
+}
+
 export type AccountOfflineOperation =
   | AddOrderItemOperation
   | UpdateOrderItemOperation
   | RemoveOrderItemOperation
+  | ReactivateOrderItemOperation
 
 export function createAddOrderItemOperation(
   input: Omit<AddOrderItemOperation, 'kind'>,
@@ -65,6 +74,16 @@ export function createRemoveOrderItemOperation(
 ): OfflineOperation<RemoveOrderItemOperation> {
   return createOfflineOperation(`remove-order-item:${operationId}`, {
     kind: 'remove-order-item',
+    ...input,
+  })
+}
+
+export function createReactivateOrderItemOperation(
+  operationId: string,
+  input: Omit<ReactivateOrderItemOperation, 'kind'>,
+): OfflineOperation<ReactivateOrderItemOperation> {
+  return createOfflineOperation(`reactivate-order-item:${operationId}`, {
+    kind: 'reactivate-order-item',
     ...input,
   })
 }
@@ -101,6 +120,11 @@ export function flushAccountOperations(
         case 'remove-order-item': {
           const { kind: _, ...data } = payload
           await removeOrderItem({ data })
+          break
+        }
+        case 'reactivate-order-item': {
+          const { kind: _, ...data } = payload
+          await reactivateOrderItem({ data })
           break
         }
       }

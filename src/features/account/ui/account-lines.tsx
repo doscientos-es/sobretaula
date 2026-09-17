@@ -16,15 +16,16 @@ import {
   TableRow,
   useFormFeedback,
 } from '@doscientos/ui'
-import { Check, Pencil, Trash2, X } from 'lucide-react'
+import { Check, Pencil, RotateCcw, Trash2, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 
 import type { Locale } from '@/shared/lib/i18n/locale'
 import { formatMoney } from '@/shared/lib/money/money'
 
-import { removeOrderItem, updateOrderItem } from '../application/account'
+import { reactivateOrderItem, removeOrderItem, updateOrderItem } from '../application/account'
 import {
   createRemoveOrderItemOperation,
+  createReactivateOrderItemOperation,
   createUpdateOrderItemOperation,
   createAccountOfflineStore,
   enqueueAccountOperation,
@@ -57,6 +58,7 @@ export function AccountLines({
   lines,
   locale,
   onDone,
+  onOptimisticActivate,
   onOptimisticRemove,
   onOptimisticQuantityChange,
   sessionId,
@@ -69,6 +71,7 @@ export function AccountLines({
   lines: readonly AccountLine[]
   locale: Locale
   onDone: () => void
+  onOptimisticActivate?: (lineId: string) => () => void
   onOptimisticRemove?: (lineIds: readonly string[]) => () => void
   onOptimisticQuantityChange?: (lineIds: readonly string[], quantity: number) => () => void
   sessionId: string
@@ -252,6 +255,32 @@ export function AccountLines({
     }
   }
 
+  async function activate(line: AccountLine) {
+    if (feedback.pending || isOptimisticAccountLine(line)) return
+    if (!isOnline && !onOptimisticActivate) {
+      feedback.setError('Sin conexión: esta cuenta no puede modificarse todavía.')
+      return
+    }
+    const rollback = onOptimisticActivate?.(line.id)
+    feedback.setPending()
+    try {
+      const data = { orderItemId: line.id, sessionId, tenantId, venueId }
+      if (isOnline) {
+        await reactivateOrderItem({ data })
+        onDone()
+      } else {
+        enqueueAccountOperation(
+          offlineStore,
+          createReactivateOrderItemOperation(crypto.randomUUID(), data),
+        )
+      }
+      feedback.setSuccess(isOnline ? 'Activado' : 'Activado sin conexión')
+    } catch {
+      rollback?.()
+      feedback.setError('No se ha podido activar la línea.')
+    }
+  }
+
   function renderActions(line: AccountLine) {
     if (editingId === line.id) {
       return (
@@ -416,18 +445,28 @@ export function AccountLines({
                           <span className="text-right font-medium tabular-nums">
                             {line.status === 'cancelled' ? '—' : formatMoney(grossCents, locale)}
                           </span>
-                          {canRemove && line.status !== 'cancelled' && (
+                          {canRemove && (
                             <Button
-                              aria-label={`Quitar ${line.name}`}
+                              aria-label={
+                                line.status === 'cancelled' ? `Activar ${line.name}` : `Quitar ${line.name}`
+                              }
                               disabled={
                                 feedback.pending || group.lines.some(isOptimisticAccountLine)
                               }
-                              onClick={() => void removeGroup(group)}
+                              onClick={() =>
+                                void (line.status === 'cancelled'
+                                  ? activate(line)
+                                  : removeGroup(group))
+                              }
                               size="icon"
                               type="button"
                               variant="ghost"
                             >
-                              <Trash2 aria-hidden="true" className="text-destructive size-4" />
+                              {line.status === 'cancelled' ? (
+                                <RotateCcw aria-hidden="true" className="text-primary size-4" />
+                              ) : (
+                                <Trash2 aria-hidden="true" className="text-destructive size-4" />
+                              )}
                             </Button>
                           )}
                         </span>

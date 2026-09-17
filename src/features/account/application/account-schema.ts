@@ -27,6 +27,10 @@ export const removeOrderItemInput = accountSessionInput.extend({
   reason: z.string().trim().min(2).max(200),
 })
 
+export const reactivateOrderItemInput = accountSessionInput.extend({
+  orderItemId: z.string().uuid(),
+})
+
 export const updateOrderItemStatusInput = accountSessionInput.extend({
   orderItemId: z.string().uuid(),
   status: z.enum(ORDER_ITEM_STATUSES),

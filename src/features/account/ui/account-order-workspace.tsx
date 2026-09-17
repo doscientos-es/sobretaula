@@ -17,6 +17,7 @@ export function AccountOrderWorkspace({
   menu,
   layout = 'stacked',
   onAccountChange,
+  onOptimisticActivate,
   onOptimisticAdd,
   onOptimisticRemove,
   onOptimisticQuantityChange,
@@ -29,6 +30,7 @@ export function AccountOrderWorkspace({
   locale: Locale
   menu: MenuCatalog
   onAccountChange?: () => void
+  onOptimisticActivate?: (lineId: string) => () => void
   onOptimisticAdd?: (line: AccountLine) => () => void
   onOptimisticRemove?: (lineIds: readonly string[]) => () => void
   onOptimisticQuantityChange?: (lineIds: readonly string[], quantity: number) => () => void
@@ -49,6 +51,7 @@ export function AccountOrderWorkspace({
       compact={layout === 'pos'}
       locale={locale}
       onDone={handleAccountChange}
+      {...(onOptimisticActivate ? { onOptimisticActivate } : {})}
       {...(onOptimisticRemove ? { onOptimisticRemove } : {})}
       {...(onOptimisticQuantityChange ? { onOptimisticQuantityChange } : {})}
       sessionId={session.id}
