@@ -30,6 +30,7 @@ const createTableInput = venueInput
     minSeats: z.number().int().min(1).max(50),
     isAccessible: z.boolean().default(false),
     shape: z.enum(['square', 'rectangle', 'round', 'oval', 'custom']).default('square'),
+    tableId: z.string().uuid(),
     widthCm: z.number().int().min(25).max(500),
     xCm: z.number().int().min(0).max(10_000),
     yCm: z.number().int().min(0).max(10_000),
@@ -326,6 +327,7 @@ export const createFloorPlanTable = createServerFn({ method: 'POST' })
     const tablePayload = {
       area_id: data.areaId,
       code: data.code,
+      id: data.tableId,
       max_seats: data.maxSeats,
       min_seats: data.minSeats,
       normal_seats: data.normalSeats,

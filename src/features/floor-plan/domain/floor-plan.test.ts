@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { describeSpaceType, groupAreasByFloor } from './floor-plan'
+import { describeSpaceType, groupAreasByFloor, nextAvailableTableCode } from './floor-plan'
 
 describe('floor plan zones', () => {
   it('groups each map zone under its floor with stable labels', () => {
@@ -46,5 +46,11 @@ describe('floor plan space types', () => {
     expect(describeSpaceType('covered_terrace')).toBe('Terraza cubierta')
     expect(describeSpaceType('outdoor_terrace')).toBe('Terraza exterior')
     expect(describeSpaceType(undefined)).toBe('Zona')
+  })
+})
+
+describe('floor plan table codes', () => {
+  it('includes pending tables when selecting the next code', () => {
+    expect(nextAvailableTableCode(['1', '3'], ['2'])).toBe('4')
   })
 })

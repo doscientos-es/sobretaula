@@ -83,3 +83,13 @@ export interface FloorPlanData {
   /** All table codes in the venue, including tables in another area. */
   tableCodes?: readonly string[]
 }
+
+export function nextAvailableTableCode(
+  existingCodes: readonly string[],
+  pendingCodes: readonly string[] = [],
+): string {
+  const usedCodes = new Set([...existingCodes, ...pendingCodes])
+  let number = 1
+  while (usedCodes.has(String(number))) number += 1
+  return String(number)
+}

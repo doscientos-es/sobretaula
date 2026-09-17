@@ -45,6 +45,7 @@ import {
   type FloorPlanData,
   type FloorPlanElement,
   type PlanElementKind,
+  nextAvailableTableCode,
 } from '../domain/floor-plan'
 import {
   DEFAULT_GRID_SIZE_CM,
@@ -105,6 +106,8 @@ export function FloorPlanPage({
     widthCm: number
   }>()
   const [creatingArea, setCreatingArea] = useState(false)
+  const [pendingTableIds, setPendingTableIds] = useState<ReadonlySet<string>>(new Set())
+  const pendingTableCodesRef = useRef(new Set<string>())
   const [addElementAt, setAddElementAt] = useState<{ x: number; y: number }>()
   const [propertiesDialogOpen, setPropertiesDialogOpen] = useState(false)
   const [dimensionsDialogOpen, setDimensionsDialogOpen] = useState(false)
@@ -267,7 +270,9 @@ export function FloorPlanPage({
   async function createTable(position: { x: number; y: number }, code: string) {
     if (!activeArea) return
     feedback.setPending()
-    const optimisticId = `optimistic-${crypto.randomUUID()}`
+    const optimisticId = crypto.randomUUID()
+    pendingTableCodesRef.current.add(code)
+    setPendingTableIds((current) => new Set(current).add(optimisticId))
     const optimisticPlacement = {
       code,
       areaId: activeArea.id,
@@ -288,7 +293,7 @@ export function FloorPlanPage({
     )
 
     try {
-      const result = await createFloorPlanTable({
+      await createFloorPlanTable({
         data: {
           areaId: activeArea.id,
           code,
@@ -296,6 +301,7 @@ export function FloorPlanPage({
           maxSeats: defaultTableSeats,
           minSeats: 1,
           isAccessible: false,
+          tableId: optimisticId,
           tenantId,
           venueId,
           widthCm: 100,
@@ -303,17 +309,19 @@ export function FloorPlanPage({
           yCm: position.y,
         },
       })
-      setHistory((current) =>
-        commitEditorHistory(current, {
-          ...current.present,
-          placements: current.present.placements.map((placement) =>
-            placement.id === optimisticId ? { ...placement, id: result.tableId } : placement,
-          ),
-        }),
-      )
+      setPendingTableIds((current) => {
+        const next = new Set(current)
+        next.delete(optimisticId)
+        return next
+      })
       feedback.setSuccess('Mesa añadida.')
-      skipNextAutosave.current = true
     } catch (error) {
+      pendingTableCodesRef.current.delete(code)
+      setPendingTableIds((current) => {
+        const next = new Set(current)
+        next.delete(optimisticId)
+        return next
+      })
       skipNextAutosave.current = true
       setHistory((current) =>
         commitEditorHistory(current, {
@@ -335,9 +343,10 @@ export function FloorPlanPage({
 
   function createQuickTable(position: { x: number; y: number }) {
     if (!activeArea) return
-    const usedCodes = new Set(data.tableCodes ?? placements.map((placement) => placement.code))
-    let number = 1
-    while (usedCodes.has(String(number))) number += 1
+    const number = nextAvailableTableCode(
+      [...(data.tableCodes ?? []), ...placements.map((placement) => placement.code)],
+      [...pendingTableCodesRef.current],
+    )
     const tableSize = { heightCm: 100, widthCm: 100 }
     const requested = {
       xCm: Math.min(
@@ -568,12 +577,7 @@ export function FloorPlanPage({
       autosaveReady.current = true
       return
     }
-    if (
-      placements.some(
-        (placement) => typeof placement.id === 'string' && placement.id.startsWith('optimistic-'),
-      )
-    )
-      return
+    if (pendingTableIds.size > 0) return
     if (skipNextAutosave.current) {
       skipNextAutosave.current = false
       return
@@ -592,7 +596,7 @@ export function FloorPlanPage({
         autosaveTimeoutRef.current = undefined
       }
     }
-  }, [activeAreaId, elements, placements, propertiesDialogOpen])
+  }, [activeAreaId, elements, pendingTableIds, placements, propertiesDialogOpen])
 
   return (
     <section
