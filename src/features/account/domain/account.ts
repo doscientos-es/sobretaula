@@ -53,6 +53,56 @@ export interface AccountPayment {
   refundedCents?: MinorUnits
 }
 
+/** Lines still travelling to the server keep a client id until the reload. */
+export const OPTIMISTIC_LINE_ID_PREFIX = 'optimistic-'
+
+export function isOptimisticAccountLine(line: Pick<AccountLine, 'id'>): boolean {
+  return line.id.startsWith(OPTIMISTIC_LINE_ID_PREFIX)
+}
+
+/** The same dish apuntado varias veces: one entry with the accumulated count. */
+export interface AccountLineGroup {
+  key: string
+  line: AccountLine
+  lines: AccountLine[]
+  quantity: number
+}
+
+function accountLineGroupKey(line: AccountLine): string {
+  const modifiers = (line.modifiers ?? [])
+    .map((modifier) => modifier.id)
+    .sort()
+    .join(',')
+  return [
+    line.name,
+    line.notes ?? '',
+    line.unitPriceCents,
+    line.vatRateBps,
+    line.kitchenStation ?? 'general',
+    line.status ?? 'pending',
+    modifiers,
+  ].join('|')
+}
+
+/**
+ * Groups identical lines so repeating a dish raises a counter instead of
+ * filling the account with duplicated entries. Order of first appearance wins.
+ */
+export function groupAccountLines(lines: readonly AccountLine[]): AccountLineGroup[] {
+  const groups = new Map<string, AccountLineGroup>()
+  for (const line of lines) {
+    const key = accountLineGroupKey(line)
+    const current = groups.get(key)
+    if (current) {
+      current.lines.push(line)
+      current.quantity += line.quantity
+      continue
+    }
+    groups.set(key, { key, line, lines: [line], quantity: line.quantity })
+  }
+  return [...groups.values()]
+}
+
 export interface AccountTotals {
   /** What is left to collect: gross minus payments, tips never count here. */
   balanceCents: MinorUnits

@@ -27,7 +27,7 @@ import {
   enqueueAccountOperation,
   flushAccountOperations,
 } from '../application/account-offline-operations'
-import type { AccountLine } from '../domain/account'
+import { OPTIMISTIC_LINE_ID_PREFIX, type AccountLine } from '../domain/account'
 
 function addItemErrorMessage(error: unknown) {
   const message = error instanceof Error ? error.message : ''
@@ -123,7 +123,7 @@ export function AccountAddItem({
       return
     }
     const optimisticLine: AccountLine = {
-      id: `optimistic-${currentOperationId}`,
+      id: `${OPTIMISTIC_LINE_ID_PREFIX}${currentOperationId}`,
       kitchenStation: item.kitchenStation ?? 'general',
       modifiers: itemModifierOptionIds.flatMap(
         (optionId) =>
@@ -139,7 +139,9 @@ export function AccountAddItem({
       ),
       name: localizedText(item.nameI18n, locale),
       notes: itemNotes || null,
-      preparationMinutes: item.preparationMinutes,
+      ...(item.preparationMinutes === undefined
+        ? {}
+        : { preparationMinutes: item.preparationMinutes }),
       quantity: itemQuantity,
       status: 'pending',
       unitPriceCents: item.priceCents,

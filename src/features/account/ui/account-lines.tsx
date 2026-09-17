@@ -23,7 +23,17 @@ import type { Locale } from '@/shared/lib/i18n/locale'
 import { formatMoney } from '@/shared/lib/money/money'
 
 import { removeOrderItem, updateOrderItem } from '../application/account'
-import { lineGrossCents, type AccountLine, type KitchenStation } from '../domain/account'
+import {
+  groupAccountLines,
+  isOptimisticAccountLine,
+  lineGrossCents,
+  type AccountLine,
+  type AccountLineGroup,
+  type KitchenStation,
+} from '../domain/account'
+
+/** El TPV no pide motivo: quitar un plato debe ser un solo click. */
+const QUICK_REMOVAL_REASON = 'Quitado en el TPV'
 
 const STATION_LABEL: Record<KitchenStation, string> = {
   bar: 'Barra',
@@ -84,6 +94,7 @@ export function AccountLines({
       })
       setEditingId(null)
       onDone()
+      feedback.setSuccess('Cambios guardados')
     } catch {
       feedback.setError('No se ha podido editar la línea.')
     }
@@ -99,8 +110,89 @@ export function AccountLines({
       setRemovingId(null)
       setRemovalReason('')
       onDone()
+      feedback.setSuccess('Línea anulada')
     } catch {
       feedback.setError('No se ha podido anular. Si ya hay cobros, la cuenta queda fija.')
+    }
+  }
+
+  /** Raises or lowers the counter of a group reusing its already saved lines. */
+  async function changeGroupQuantity(group: AccountLineGroup, nextQuantity: number) {
+    if (feedback.pending) return
+    const saved = group.lines.filter((line) => !isOptimisticAccountLine(line))
+    const target = saved.at(-1)
+    let delta = nextQuantity - group.quantity
+    if (delta === 0 || !target) return
+    feedback.setPending()
+    try {
+      if (delta > 0) {
+        await updateOrderItem({
+          data: {
+            notes: target.notes,
+            orderItemId: target.id,
+            quantity: target.quantity + delta,
+            sessionId,
+            tenantId,
+            venueId,
+          },
+        })
+      } else {
+        for (const line of [...saved].reverse()) {
+          if (delta === 0) break
+          if (line.quantity + delta > 0) {
+            await updateOrderItem({
+              data: {
+                notes: line.notes,
+                orderItemId: line.id,
+                quantity: line.quantity + delta,
+                sessionId,
+                tenantId,
+                venueId,
+              },
+            })
+            delta = 0
+            break
+          }
+          await removeOrderItem({
+            data: {
+              orderItemId: line.id,
+              reason: 'Ajuste de cantidad',
+              sessionId,
+              tenantId,
+              venueId,
+            },
+          })
+          delta += line.quantity
+        }
+      }
+      onDone()
+      feedback.setSuccess('Cantidad actualizada')
+    } catch {
+      feedback.setError('No se ha podido cambiar la cantidad.')
+    }
+  }
+
+  /** Quita de golpe todas las líneas guardadas que comparten el contador. */
+  async function removeGroup(group: AccountLineGroup) {
+    if (feedback.pending) return
+    feedback.setPending()
+    try {
+      for (const line of group.lines) {
+        if (isOptimisticAccountLine(line)) continue
+        await removeOrderItem({
+          data: {
+            orderItemId: line.id,
+            reason: QUICK_REMOVAL_REASON,
+            sessionId,
+            tenantId,
+            venueId,
+          },
+        })
+      }
+      onDone()
+      feedback.setSuccess('Quitado')
+    } catch {
+      feedback.setError('No se ha podido quitar. Si ya hay cobros, la cuenta queda fija.')
     }
   }
 
@@ -211,52 +303,76 @@ export function AccountLines({
   }
 
   if (compact) {
+    const groups = groupAccountLines(lines)
     return (
       <Card className="rounded-none border-0 bg-transparent shadow-none xl:flex xl:h-full xl:min-h-0 xl:flex-col">
         <CardHeader className="border-border/70 border-b px-0 py-0 pb-3">
           <CardTitle className="text-base">Consumiciones</CardTitle>
         </CardHeader>
         <CardContent className="px-0 py-3 xl:min-h-0 xl:flex-1 xl:overflow-y-auto">
-          {lines.length === 0 ? (
+          {groups.length === 0 ? (
             <p className="text-muted-foreground text-sm">Todavía no se ha apuntado nada.</p>
           ) : (
             <ul className="divide-border/70 divide-y">
-              {lines.map((line) => (
-                <li className="flex items-start gap-3 py-3 first:pt-0 last:pb-0" key={line.id}>
-                  <span className="bg-muted flex size-7 shrink-0 items-center justify-center rounded-md text-sm font-semibold tabular-nums">
-                    {line.quantity}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="leading-tight font-medium">{line.name}</p>
-                        {line.status === 'cancelled' && (
-                          <span className="text-destructive text-xs font-medium">Anulada</span>
-                        )}
-                        <span className="text-muted-foreground block text-xs">
-                          {STATION_LABEL[line.kitchenStation ?? 'general']}
-                        </span>
-                        {line.notes && (
-                          <span className="text-muted-foreground block text-xs">{line.notes}</span>
-                        )}
-                        {line.modifiers?.map((modifier) => (
-                          <span className="text-muted-foreground block text-xs" key={modifier.id}>
-                            {`+ ${modifier.name}`}
-                          </span>
-                        ))}
-                      </div>
-                      <span className="shrink-0 text-right font-medium tabular-nums">
-                        {line.status === 'cancelled'
-                          ? '—'
-                          : formatMoney(lineGrossCents(line), locale)}
+              {groups.map((group) => {
+                const { line } = group
+                const grossCents = group.lines.reduce(
+                  (sum, groupLine) => sum + lineGrossCents(groupLine),
+                  0,
+                )
+                const canCount =
+                  canEdit &&
+                  line.status !== 'cancelled' &&
+                  line.status !== 'served' &&
+                  group.lines.some((groupLine) => !isOptimisticAccountLine(groupLine))
+                return (
+                  <li className="flex items-start gap-3 py-3 first:pt-0 last:pb-0" key={group.key}>
+                    {canCount ? (
+                      <QuantityInput
+                        aria-label={`Cantidad de ${line.name}`}
+                        className="shrink-0"
+                        isDisabled={feedback.pending}
+                        minValue={1}
+                        onChange={(value) => void changeGroupQuantity(group, value)}
+                        value={group.quantity}
+                      />
+                    ) : (
+                      <span className="bg-muted flex size-7 shrink-0 items-center justify-center rounded-md text-sm font-semibold tabular-nums">
+                        {group.quantity}
                       </span>
-                    </div>
-                    {(canEdit || canRemove) && line.status !== 'cancelled' && (
-                      <div className="mt-2">{renderActions(line)}</div>
                     )}
-                  </div>
-                </li>
-              ))}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="leading-tight font-medium">{line.name}</p>
+                          {line.status === 'cancelled' && (
+                            <span className="text-destructive text-xs font-medium">Anulada</span>
+                          )}
+                          <span className="text-muted-foreground block text-xs">
+                            {STATION_LABEL[line.kitchenStation ?? 'general']}
+                          </span>
+                          {line.notes && (
+                            <span className="text-muted-foreground block text-xs">
+                              {line.notes}
+                            </span>
+                          )}
+                          {line.modifiers?.map((modifier) => (
+                            <span className="text-muted-foreground block text-xs" key={modifier.id}>
+                              {`+ ${modifier.name}`}
+                            </span>
+                          ))}
+                        </div>
+                        <span className="shrink-0 text-right font-medium tabular-nums">
+                          {line.status === 'cancelled' ? '—' : formatMoney(grossCents, locale)}
+                        </span>
+                      </div>
+                      {canRemove && line.status !== 'cancelled' && (
+                        <div className="mt-2">{renderGroupActions(group)}</div>
+                      )}
+                    </div>
+                  </li>
+                )
+              })}
             </ul>
           )}
           <FormFeedback pendingLabel="Guardando cambios…" state={feedback.state} />

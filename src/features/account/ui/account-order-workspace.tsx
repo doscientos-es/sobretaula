@@ -52,7 +52,7 @@ export function AccountOrderWorkspace({
       locale={locale}
       menu={menu}
       onDone={() => void reload()}
-      onOptimisticAdd={onOptimisticAdd}
+      {...(onOptimisticAdd ? { onOptimisticAdd } : {})}
       quickAdd={layout === 'pos'}
       sessionId={session.id}
       tenantId={tenantId}
