@@ -171,6 +171,15 @@ async function main() {
 
   // The floor-plan lifecycle test creates a timestamped area. Remove only
   // those temporary areas in this dedicated tenant before reseeding it.
+  const temporaryAreas = await request(
+    `/rest/v1/areas?tenant_id=eq.${tenantId}&venue_id=eq.${venueId}&name=like.E2E%20Terraza%20*&select=id`,
+  )
+  for (const area of temporaryAreas) {
+    await request(
+      `/rest/v1/tables?tenant_id=eq.${tenantId}&venue_id=eq.${venueId}&area_id=eq.${area.id}`,
+      { method: 'DELETE', headers: { Prefer: 'return=minimal' } },
+    )
+  }
   await request(
     `/rest/v1/areas?tenant_id=eq.${tenantId}&venue_id=eq.${venueId}&name=like.E2E%20Terraza%20*`,
     { method: 'DELETE', headers: { Prefer: 'return=minimal' } },

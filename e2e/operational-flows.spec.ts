@@ -39,7 +39,7 @@ test('@owner @floor-plan @P0 crea y edita un plano completo', async ({ page }) =
       timeout: 20_000,
     })
   }
-  await page.getByRole('button', { name: /añadir planta o zona/i }).click()
+  await page.getByRole('button', { name: /añadir planta o zona/i }).click({ noWaitAfter: true })
   await expect(page.getByRole('dialog', { name: /nueva planta o zona/i })).toBeVisible()
   await page.getByLabel('Nombre', { exact: true }).fill(areaName)
   await page.getByLabel('Ancho (cm)').fill('1000')

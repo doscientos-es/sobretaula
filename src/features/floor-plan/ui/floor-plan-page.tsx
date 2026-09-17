@@ -233,9 +233,9 @@ export function FloorPlanPage({
         },
       })
       feedback.setSuccess(`${areaName} creada.`)
+      await reloadFloorPlan()
       setCreateAreaOpen(false)
       setNewAreaName('Terraza')
-      void reloadFloorPlan()
     } catch {
       feedback.setError('No se ha podido crear la nueva zona.')
     } finally {
