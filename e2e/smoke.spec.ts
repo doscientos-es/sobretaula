@@ -6,7 +6,7 @@ import { test, expect } from '@playwright/test'
 test('public reservation page renders the published booking flow', async ({ page }) => {
   await page.goto('/reservar/la-fonda-demo')
   await expect(page.getByRole('heading', { name: 'La Fonda Demo' })).toBeVisible()
-  await expect(page.locator('#public-service option:not([value=""])')).toHaveCount(2)
+  await expect(page.locator('#public-service button')).toHaveCount(2)
   await expect(page.getByRole('button', { name: 'Reservar mesa' })).toBeVisible()
 })
 
@@ -51,11 +51,11 @@ test('public reservation gives accessible feedback for incomplete guest details'
   await page.goto('/reservar/la-fonda-demo')
   await page.locator('#public-service').waitFor({ state: 'visible' })
   await page.waitForLoadState('networkidle')
-  await page.locator('#public-service').selectOption({ index: 1 })
-  await expect(page.locator('#public-date option:not([value=""])').first()).toBeAttached()
-  await page.locator('#public-date').selectOption({ index: 1 })
-  await expect(page.locator('#public-time option:not([value=""])').first()).toBeAttached()
-  await page.locator('#public-time').selectOption({ index: 1 })
+  await page.locator('#public-service button').first().click()
+  await expect(page.locator('#public-date button').first()).toBeAttached()
+  await page.locator('#public-date button').first().click()
+  await expect(page.locator('#public-time button').first()).toBeAttached()
+  await page.locator('#public-time button').first().click()
   for (const checkbox of await page.getByRole('checkbox').all()) await checkbox.check()
 
   await page.getByRole('button', { name: 'Reservar mesa' }).click()

@@ -5,6 +5,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  cn,
   PageHeader,
   PageHeaderDescription,
   PageHeaderTitle,
@@ -20,8 +21,8 @@ import {
   Input,
 } from '@doscientos/ui'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { ArrowUpRight } from 'lucide-react'
-import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
+import { ArrowUpRight, Maximize2, Minimize2 } from 'lucide-react'
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 
 import type { FloorPlanData } from '@/features/floor-plan'
 import { seatWalkIn, type ServiceBoard } from '@/features/service'
@@ -62,9 +63,7 @@ export function PosTerminalPage({
   accountWorkspace,
   board,
   canAccessAccounts,
-  canManageCash,
   kitchenWorkspace,
-  managementWorkspace,
   plan,
   slug,
   selectedSessionId,
@@ -75,9 +74,7 @@ export function PosTerminalPage({
   accountWorkspace?: ReactNode | undefined
   board: ServiceBoard
   canAccessAccounts: boolean
-  canManageCash: boolean
   kitchenWorkspace?: ReactNode | undefined
-  managementWorkspace?: ReactNode | undefined
   plan: FloorPlanData
   selectedSessionId?: string | undefined
   slug: string
@@ -93,52 +90,37 @@ export function PosTerminalPage({
   const [newTableCovers, setNewTableCovers] = useState('2')
   const [openingTable, setOpeningTable] = useState(false)
   const [openTableError, setOpenTableError] = useState<string | null>(null)
+  const mapFullscreenRef = useRef<HTMLDivElement>(null)
+  const [isMapFullscreen, setIsMapFullscreen] = useState(false)
   const selectedSession = board.sessions.find((session) => session.id === selectedSessionId)
   const selectedTableLabel = selectedSession?.tableIds
     .map((id) => tableCodes.get(id) ?? id)
     .join(' + ')
+  const newTable = board.tables.find((table) => table.id === newTableId)
 
-  const mapWorkspace = (
-    <Card>
-      <CardHeader className="px-4 py-4 sm:px-6">
-        <CardTitle>Mapa de sala</CardTitle>
-        <CardDescription>
-          Pulsa una mesa ocupada para abrir su comanda y añadir recetas, bebidas o cualquier otro
-          producto.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="px-4 pt-0 sm:px-6">
-        <PosFloorMap
-          board={board}
-          onTableClick={handleTableClick}
-          plan={plan}
-          selectedSessionId={selectedSessionId}
-          slug={slug}
-          venue={venue}
-        />
-      </CardContent>
-    </Card>
-  )
-
-  function handleTableClick(tableId: string) {
-    if (!canAccessAccounts) return
-    const table = board.tables.find((candidate) => candidate.id === tableId)
-    if (table?.sessionId) {
-      void navigate({
-        params,
-        search: { sessionId: table.sessionId },
-        to: '/t/$slug/l/$venue/tpv',
-      })
-      return
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsMapFullscreen(document.fullscreenElement === mapFullscreenRef.current)
     }
-    if (table?.status === 'free') {
-      setNewTableId(table.id)
-      setNewTableCovers(String(Math.max(1, table.minSeats)))
-      setOpenTableError(null)
+    document.addEventListener('fullscreenchange', handleFullscreenChange)
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
+  }, [])
+
+  async function toggleMapFullscreen() {
+    const element = mapFullscreenRef.current
+    if (!element) return
+    try {
+      if (document.fullscreenElement === element) {
+        await document.exitFullscreen()
+      } else if (element.requestFullscreen) {
+        await element.requestFullscreen()
+      } else {
+        setIsMapFullscreen((current) => !current)
+      }
+    } catch {
+      setIsMapFullscreen(false)
     }
   }
-
-  const newTable = board.tables.find((table) => table.id === newTableId)
 
   async function openTable(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -173,6 +155,121 @@ export function PosTerminalPage({
     }
   }
 
+  function renderMapWorkspace() {
+    return (
+      <div
+        className={cn(
+          'bg-background',
+          isMapFullscreen && 'fixed inset-0 z-50 min-h-screen overflow-y-auto p-4 sm:p-6',
+        )}
+        ref={mapFullscreenRef}
+      >
+        <Card className={isMapFullscreen ? 'mx-auto max-w-[1600px]' : undefined}>
+          <CardHeader className="flex flex-row items-start justify-between gap-3 px-4 py-4 sm:px-6">
+            <div>
+              <CardTitle>Mapa de sala</CardTitle>
+              <CardDescription>
+                Pulsa una mesa ocupada para abrir su comanda y añadir recetas, bebidas o cualquier
+                otro producto.
+              </CardDescription>
+            </div>
+            <Button
+              aria-label={
+                isMapFullscreen ? 'Salir de pantalla completa' : 'Ver mapa en pantalla completa'
+              }
+              onClick={() => void toggleMapFullscreen()}
+              size="sm"
+              type="button"
+              variant="outline"
+            >
+              {isMapFullscreen ? (
+                <Minimize2 aria-hidden="true" className="size-4" />
+              ) : (
+                <Maximize2 aria-hidden="true" className="size-4" />
+              )}
+              <span className="hidden sm:inline">
+                {isMapFullscreen ? 'Salir' : 'Pantalla completa'}
+              </span>
+            </Button>
+          </CardHeader>
+          <CardContent className="px-4 pt-0 sm:px-6">
+            <PosFloorMap
+              board={board}
+              onTableClick={handleTableClick}
+              plan={plan}
+              selectedSessionId={selectedSessionId}
+              slug={slug}
+              venue={venue}
+            />
+          </CardContent>
+        </Card>
+        {newTable && (
+          <DialogRoot
+            onOpenChange={(open) => {
+              if (!open && !openingTable) setNewTableId(null)
+            }}
+            open
+          >
+            <DialogContent className="max-w-sm">
+              <DialogHeader>
+                <DialogTitle>{`Abrir Mesa ${newTable.code}`}</DialogTitle>
+                <DialogDescription>
+                  Indica los comensales para abrir la cuenta y empezar a apuntar la comanda.
+                </DialogDescription>
+              </DialogHeader>
+              <form className="grid gap-4" onSubmit={(event) => void openTable(event)}>
+                <Field>
+                  <FieldLabel htmlFor="new-table-covers">Comensales</FieldLabel>
+                  <Input
+                    id="new-table-covers"
+                    max={newTable.maxSeats}
+                    min={newTable.minSeats}
+                    onChange={(event) => setNewTableCovers(event.target.value)}
+                    type="number"
+                    value={newTableCovers}
+                  />
+                </Field>
+                {openTableError && (
+                  <p className="text-destructive text-sm" role="alert">
+                    {openTableError}
+                  </p>
+                )}
+                <DialogFooter>
+                  <DialogClose asChild>
+                    <Button disabled={openingTable} type="button" variant="outline">
+                      Cancelar
+                    </Button>
+                  </DialogClose>
+                  <Button disabled={openingTable} type="submit">
+                    {openingTable ? 'Abriendo…' : 'Abrir mesa'}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </DialogRoot>
+        )}
+      </div>
+    )
+  }
+
+  function handleTableClick(tableId: string) {
+    if (!canAccessAccounts) return
+    const table = board.tables.find((candidate) => candidate.id === tableId)
+    if (table?.sessionId) {
+      void navigate({
+        params,
+        search: { sessionId: table.sessionId },
+        to: '/t/$slug/l/$venue/tpv',
+      })
+      return
+    }
+    if (table?.status === 'free') {
+      setNewTableId(table.id)
+      setNewTableCovers(String(Math.max(1, table.minSeats)))
+      setOpenTableError(null)
+    }
+  }
+
   return (
     <section className="space-y-4">
       <PageHeader className="border-border/70 border-b pb-4">
@@ -191,7 +288,7 @@ export function PosTerminalPage({
       </div>
       {accountWorkspace ? (
         <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(24rem,32rem)]">
-          <div className="min-w-0">{mapWorkspace}</div>
+          <div className="min-w-0">{renderMapWorkspace()}</div>
           <aside className="min-w-0 xl:sticky xl:top-4 xl:max-h-[calc(100dvh-2rem)] xl:overflow-y-auto">
             <Card>
               <CardHeader className="border-border/70 gap-3 border-b px-4 py-4 sm:px-5">
@@ -221,7 +318,7 @@ export function PosTerminalPage({
           </aside>
         </div>
       ) : (
-        mapWorkspace
+        renderMapWorkspace()
       )}
       <div className="grid gap-2 lg:grid-cols-3">
         <Link
@@ -256,24 +353,6 @@ export function PosTerminalPage({
             Registra entrada, pausas y salida antes de empezar el servicio.
           </span>
         </Link>
-        {canManageCash && (
-          <Link
-            className="group bg-card hover:bg-muted/40 focus-visible:outline-ring rounded-lg border p-3 shadow-none transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
-            params={params}
-            to="/t/$slug/l/$venue/caja"
-          >
-            <span className="flex items-center justify-between gap-3 font-semibold">
-              Caja
-              <ArrowUpRight
-                aria-hidden="true"
-                className="text-muted-foreground size-4 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 motion-reduce:transform-none"
-              />
-            </span>
-            <span className="text-muted-foreground mt-1 block text-sm">
-              Apertura, movimientos, arqueo y cierres del turno.
-            </span>
-          </Link>
-        )}
       </div>
       {!accountWorkspace && (
         <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_20rem]">
@@ -365,52 +444,6 @@ export function PosTerminalPage({
         </div>
       )}
       {kitchenWorkspace}
-      {managementWorkspace}
-      {newTable && (
-        <DialogRoot
-          onOpenChange={(open) => {
-            if (!open && !openingTable) setNewTableId(null)
-          }}
-          open
-        >
-          <DialogContent className="max-w-sm">
-            <DialogHeader>
-              <DialogTitle>{`Abrir Mesa ${newTable.code}`}</DialogTitle>
-              <DialogDescription>
-                Indica los comensales para abrir la cuenta y empezar a apuntar la comanda.
-              </DialogDescription>
-            </DialogHeader>
-            <form className="grid gap-4" onSubmit={(event) => void openTable(event)}>
-              <Field>
-                <FieldLabel htmlFor="new-table-covers">Comensales</FieldLabel>
-                <Input
-                  id="new-table-covers"
-                  max={newTable.maxSeats}
-                  min={newTable.minSeats}
-                  onChange={(event) => setNewTableCovers(event.target.value)}
-                  type="number"
-                  value={newTableCovers}
-                />
-              </Field>
-              {openTableError && (
-                <p className="text-destructive text-sm" role="alert">
-                  {openTableError}
-                </p>
-              )}
-              <DialogFooter>
-                <DialogClose asChild>
-                  <Button disabled={openingTable} type="button" variant="outline">
-                    Cancelar
-                  </Button>
-                </DialogClose>
-                <Button disabled={openingTable} type="submit">
-                  {openingTable ? 'Abriendo…' : 'Abrir mesa'}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </DialogRoot>
-      )}
     </section>
   )
 }

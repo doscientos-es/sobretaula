@@ -1,22 +1,12 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { createLazyFileRoute, getRouteApi } from '@tanstack/react-router'
-import { useState } from 'react'
 
 import { TenantRoutePending } from '@/app/tenant-route-loader'
 import { AccountOrderWorkspace, AccountPayments, type AccountView } from '@/features/account'
-import { CashRegisterPage } from '@/features/cash-register'
 import { floorPlanQuery, type FloorPlanData } from '@/features/floor-plan'
 import type { MenuCatalog } from '@/features/menu/application/menu'
-import {
-  posAccountQuery,
-  posBoardQuery,
-  posManagementQuery,
-  posMenuQuery,
-  PosTerminalPage,
-} from '@/features/pos'
-import { getSalesReport, ProductSalesSummary, SalesReportPage } from '@/features/reports'
+import { posAccountQuery, posBoardQuery, posMenuQuery, PosTerminalPage } from '@/features/pos'
 import { KitchenQueue, type ServiceBoard } from '@/features/service'
-import { getZonedWeekBounds } from '@/shared/lib/date/zoned-time'
 import { useLocale } from '@/shared/lib/i18n/locale-preference'
 import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
 
@@ -45,7 +35,6 @@ function PosTerminalRoute() {
     ...posMenuQuery({ tenantId: tenant.id, venueId: venue.id }),
     enabled: Boolean(sessionId),
   })
-  const canManage = ['owner', 'manager'].includes(tenantMembership.role)
   if (board.isPending) return <TenantRoutePending />
   if (board.error) throw board.error
   if (account.error) throw account.error
@@ -68,13 +57,11 @@ function PosTerminalRoute() {
         : {})}
       board={serviceBoard}
       canAccessAccounts={tenantMembership.role !== 'host'}
-      canManageCash={canManage}
       {...(tenantMembership.role !== 'host'
         ? {
             kitchenWorkspace: <PosTerminalKitchenWorkspace board={serviceBoard} />,
           }
         : {})}
-      {...(canManage ? { managementWorkspace: <PosTerminalManagementWorkspace /> } : {})}
       slug={slug}
       tenantId={tenant.id}
       plan={floorPlan}
@@ -150,71 +137,5 @@ function PosTerminalKitchenWorkspace({ board }: { board: ServiceBoard }) {
       tickets={board.kitchenTickets ?? []}
       venueId={venue.id}
     />
-  )
-}
-
-function PosTerminalManagementWorkspace() {
-  const { tenant } = tenantRoute.useLoaderData()
-  const { venue } = Route.useLoaderData()
-  const queryClient = useQueryClient()
-  const reload = useLoaderReload()
-  const [period] = useState(() => {
-    const bounds = getZonedWeekBounds(new Date(), tenant.timezone)
-    return { from: bounds.dayStartIso, to: bounds.dayEndIso }
-  })
-  const management = useQuery(
-    posManagementQuery({ ...period, tenantId: tenant.id, venueId: venue.id }),
-  )
-  if (management.isPending)
-    return (
-      <div
-        aria-live="polite"
-        className="border-border/70 text-muted-foreground rounded-xl border p-6 text-sm"
-      >
-        Cargando caja e informes…
-      </div>
-    )
-  if (management.error)
-    return (
-      <div
-        aria-live="polite"
-        className="border-destructive/40 text-destructive rounded-xl border p-6 text-sm"
-      >
-        No se ha podido cargar la gestión del turno.
-      </div>
-    )
-  const { history, register, report } = management.data
-  const refresh = () => {
-    void queryClient
-      .invalidateQueries({
-        queryKey: posManagementQuery({
-          ...period,
-          tenantId: tenant.id,
-          venueId: venue.id,
-        }).queryKey,
-      })
-      .then(reload)
-  }
-  return (
-    <div className="space-y-6">
-      <CashRegisterPage
-        history={history.items}
-        onDone={refresh}
-        register={register ?? null}
-        tenantId={tenant.id}
-        venueId={venue.id}
-      />
-      <SalesReportPage
-        initialPeriod={period}
-        onRange={(from, to) =>
-          getSalesReport({
-            data: { from, tenantId: tenant.id, to, venueId: venue.id },
-          })
-        }
-        report={report}
-        timeZone={tenant.timezone}
-      />
-      <ProductSalesSummary products={report.productSummary} />
-    </div>
   )
 }

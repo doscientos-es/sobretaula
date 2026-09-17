@@ -128,16 +128,20 @@ test('@owner @reservations @P0 crea y cancela una reserva pública', async ({ pa
   await page.locator('#public-service').waitFor({ state: 'visible' })
   await page.waitForLoadState('domcontentloaded')
 
-  const publicService = page.locator('#public-service')
-  const serviceValues = await publicService
-    .locator('option:not([value=""])')
-    .evaluateAll((options) => options.map((option) => (option as HTMLOptionElement).value))
+  const publicServices = page.locator('#public-service button')
+  const serviceCount = await publicServices.count()
   let availableService = false
-  for (const serviceValue of serviceValues) {
-    await publicService.selectOption(serviceValue)
+  for (let index = 0; index < serviceCount; index += 1) {
+    await publicServices.nth(index).click()
     try {
       await expect
-        .poll(() => page.locator('#public-date option:not([value=""])').count(), {
+        .poll(() => page.locator('#public-date button').count(), {
+          timeout: 5000,
+        })
+        .toBeGreaterThan(0)
+      await page.locator('#public-date button').first().click()
+      await expect
+        .poll(() => page.locator('#public-time button').count(), {
           timeout: 5000,
         })
         .toBeGreaterThan(0)
@@ -149,13 +153,12 @@ test('@owner @reservations @P0 crea y cancela una reserva pública', async ({ pa
   }
   expect(availableService, 'public reservation: debe existir un turno reservable').toBe(true)
   await expect(
-    page.locator('#public-date option:not([value=""])').first(),
+    page.locator('#public-date button').first(),
     'public reservation: el turno debe ofrecer fechas futuras',
   ).toBeAttached()
-  await page.locator('#public-date').selectOption({ index: 1 })
-  const time = page.locator('#public-time option:not([value=""])').first()
+  const time = page.locator('#public-time button').first()
   await expect(time, 'public reservation: debe haber una hora disponible').toBeAttached()
-  await page.locator('#public-time').selectOption({ index: 1 })
+  await time.click()
 
   const unique = Date.now().toString()
   await page.getByLabel(/tu nombre/i).fill(`E2E Reserva ${unique}`)

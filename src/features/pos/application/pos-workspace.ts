@@ -9,9 +9,7 @@ import {
   type AccountQuery,
 } from '@/features/account/infrastructure/server/account-repository'
 import { authMiddleware } from '@/features/auth/infrastructure/server/auth-middleware'
-import { getCashRegister, listClosedCashRegisters } from '@/features/cash-register'
 import { loadMenuCatalog, type MenuCatalog } from '@/features/menu/application/menu'
-import { getSalesReport } from '@/features/reports'
 import type { ServiceBoard } from '@/features/service'
 import { loadServiceBoard } from '@/features/service/infrastructure/server/service-board-repository'
 import {
@@ -162,36 +160,5 @@ export function posMenuQuery(data: { tenantId: string; venueId: string }) {
     queryKey: ['tenant', data.tenantId, 'venue', data.venueId, 'pos-menu'],
     staleTime: 30_000,
     refetchOnWindowFocus: false,
-  })
-}
-
-export function posManagementQuery(data: {
-  tenantId: string
-  venueId: string
-  from: string
-  to: string
-}) {
-  return queryOptions({
-    queryFn: async () => {
-      const venueData = { tenantId: data.tenantId, venueId: data.venueId }
-      const [register, history, report] = await Promise.all([
-        getCashRegister({ data: venueData }),
-        listClosedCashRegisters({ data: venueData }),
-        getSalesReport({
-          data: { ...venueData, from: data.from, to: data.to },
-        }),
-      ])
-      return { history, register, report }
-    },
-    queryKey: [
-      'tenant',
-      data.tenantId,
-      'venue',
-      data.venueId,
-      'pos-management',
-      data.from,
-      data.to,
-    ],
-    staleTime: 30_000,
   })
 }

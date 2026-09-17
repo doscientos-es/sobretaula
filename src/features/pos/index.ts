@@ -8,7 +8,6 @@ export {
   getPosWorkspace,
   posAccountQuery,
   posBoardQuery,
-  posManagementQuery,
   posMenuQuery,
   posWorkspaceQuery,
 } from './application/pos-workspace'
