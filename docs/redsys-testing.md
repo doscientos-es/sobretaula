@@ -11,7 +11,7 @@ oficiales de prueba:
 
 | Marca y flujo                 | Número                | Caducidad | CVV   |
 | ----------------------------- | --------------------- | --------- | ----- |
-| VISA EMV 3-D Secure 2.2       | ` `                   | `12/49`   | `123` |
+| VISA EMV 3-D Secure 2.2       | `4548 8100 0000 0003` | `12/49`   | `123` |
 | Mastercard EMV 3-D Secure 2.1 | `5576 4415 6304 5037` | `12/49`   | `123` |
 
 No se debe introducir una tarjeta real. Estas tarjetas sólo funcionan en el
