@@ -16,7 +16,10 @@ export function AccountOrderWorkspace({
   locale,
   menu,
   layout = 'stacked',
+  onAccountChange,
   onOptimisticAdd,
+  onOptimisticRemove,
+  onOptimisticQuantityChange,
   paymentSummary,
   tenantId,
   venueId,
@@ -25,7 +28,10 @@ export function AccountOrderWorkspace({
   layout?: 'pos' | 'stacked'
   locale: Locale
   menu: MenuCatalog
+  onAccountChange?: () => void
   onOptimisticAdd?: (line: AccountLine) => () => void
+  onOptimisticRemove?: (lineIds: readonly string[]) => () => void
+  onOptimisticQuantityChange?: (lineIds: readonly string[], quantity: number) => () => void
   paymentSummary?: ReactNode
   tenantId: string
   venueId: string
@@ -33,6 +39,7 @@ export function AccountOrderWorkspace({
   const reload = useLoaderReload()
   const { session } = account
   const open = session.status === 'open'
+  const handleAccountChange = onAccountChange ?? (() => void reload())
 
   const lines = (
     <AccountLines
@@ -41,7 +48,9 @@ export function AccountOrderWorkspace({
       lines={account.lines}
       compact={layout === 'pos'}
       locale={locale}
-      onDone={() => void reload()}
+      onDone={handleAccountChange}
+      {...(onOptimisticRemove ? { onOptimisticRemove } : {})}
+      {...(onOptimisticQuantityChange ? { onOptimisticQuantityChange } : {})}
       sessionId={session.id}
       tenantId={tenantId}
       venueId={venueId}
@@ -51,7 +60,7 @@ export function AccountOrderWorkspace({
     <AccountAddItem
       locale={locale}
       menu={menu}
-      onDone={() => void reload()}
+      onDone={handleAccountChange}
       {...(onOptimisticAdd ? { onOptimisticAdd } : {})}
       quickAdd={layout === 'pos'}
       sessionId={session.id}

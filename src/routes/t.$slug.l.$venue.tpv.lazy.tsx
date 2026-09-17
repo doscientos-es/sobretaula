@@ -80,24 +80,19 @@ function PosTerminalAccountWorkspace({
   const queryClient = useQueryClient()
   const reload = useLoaderReload()
   const locale = useLocale(tenant.defaultLocale)
+  const accountQueryKey = posAccountQuery({
+    sessionId: account.session.id,
+    tenantId: tenant.id,
+    venueId: venue.id,
+  }).queryKey
+  const refreshAccountQuery = () => {
+    void queryClient.invalidateQueries({ queryKey: accountQueryKey })
+  }
   const refresh = () => {
-    void queryClient
-      .invalidateQueries({
-        queryKey: posAccountQuery({
-          sessionId: account.session.id,
-          tenantId: tenant.id,
-          venueId: venue.id,
-        }).queryKey,
-      })
-      .then(reload)
+    void queryClient.invalidateQueries({ queryKey: accountQueryKey }).then(reload)
   }
   const onOptimisticAdd = (line: AccountLine) => {
-    const queryKey = posAccountQuery({
-      sessionId: account.session.id,
-      tenantId: tenant.id,
-      venueId: venue.id,
-    }).queryKey
-    queryClient.setQueryData<AccountView | undefined>(queryKey, (current) => {
+    queryClient.setQueryData<AccountView | undefined>(accountQueryKey, (current) => {
       if (!current) return current
       const lines = [...current.lines, line]
       return {
@@ -107,7 +102,7 @@ function PosTerminalAccountWorkspace({
       }
     })
     return () => {
-      queryClient.setQueryData<AccountView | undefined>(queryKey, (current) => {
+      queryClient.setQueryData<AccountView | undefined>(accountQueryKey, (current) => {
         if (!current) return current
         const lines = current.lines.filter((currentLine) => currentLine.id !== line.id)
         return {
@@ -118,6 +113,56 @@ function PosTerminalAccountWorkspace({
       })
     }
   }
+  const onOptimisticQuantityChange = (lineIds: readonly string[], quantity: number) => {
+    const previous = queryClient.getQueryData<AccountView>(accountQueryKey)
+    const ids = new Set(lineIds)
+    queryClient.setQueryData<AccountView | undefined>(accountQueryKey, (current) => {
+      if (!current) return current
+      const groupLines = current.lines.filter((line) => ids.has(line.id))
+      const currentQuantity = groupLines.reduce((sum, line) => sum + line.quantity, 0)
+      let delta = quantity - currentQuantity
+      const reversedIds = [...groupLines].reverse().map((line) => line.id)
+      const nextLines = current.lines.map((line) => {
+        if (!ids.has(line.id) || delta === 0) return line
+        if (delta > 0 && line.id === reversedIds[0]) {
+          delta = 0
+          return { ...line, quantity: line.quantity + quantity - currentQuantity }
+        }
+        if (delta < 0) {
+          const nextQuantity = line.quantity + delta
+          if (nextQuantity > 0) {
+            delta = 0
+            return { ...line, quantity: nextQuantity }
+          }
+          delta += line.quantity
+          return { ...line, status: 'cancelled' as const }
+        }
+        return line
+      })
+      return {
+        ...current,
+        lines: nextLines,
+        totals: computeAccountTotals(nextLines, current.payments, current.session.discountCents),
+      }
+    })
+    return () => queryClient.setQueryData(accountQueryKey, previous)
+  }
+  const onOptimisticRemove = (lineIds: readonly string[]) => {
+    const previous = queryClient.getQueryData<AccountView>(accountQueryKey)
+    const ids = new Set(lineIds)
+    queryClient.setQueryData<AccountView | undefined>(accountQueryKey, (current) => {
+      if (!current) return current
+      const lines = current.lines.map((line) =>
+        ids.has(line.id) ? { ...line, status: 'cancelled' as const } : line,
+      )
+      return {
+        ...current,
+        lines,
+        totals: computeAccountTotals(lines, current.payments, current.session.discountCents),
+      }
+    })
+    return () => queryClient.setQueryData(accountQueryKey, previous)
+  }
 
   return (
     <div className="h-full min-h-0">
@@ -127,7 +172,10 @@ function PosTerminalAccountWorkspace({
         layout="pos"
         locale={locale}
         menu={menu}
+        onAccountChange={refreshAccountQuery}
         onOptimisticAdd={onOptimisticAdd}
+        onOptimisticRemove={onOptimisticRemove}
+        onOptimisticQuantityChange={onOptimisticQuantityChange}
         paymentSummary={
           <AccountPayments
             account={account}

@@ -17,12 +17,18 @@ import {
   useFormFeedback,
 } from '@doscientos/ui'
 import { Check, Pencil, Trash2, X } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import type { Locale } from '@/shared/lib/i18n/locale'
 import { formatMoney } from '@/shared/lib/money/money'
 
 import { removeOrderItem, updateOrderItem } from '../application/account'
+import {
+  createRemoveOrderItemOperation,
+  createUpdateOrderItemOperation,
+  createAccountOfflineStore,
+  enqueueAccountOperation,
+} from '../application/account-offline-operations'
 import {
   groupAccountLines,
   isOptimisticAccountLine,
@@ -51,6 +57,8 @@ export function AccountLines({
   lines,
   locale,
   onDone,
+  onOptimisticRemove,
+  onOptimisticQuantityChange,
   sessionId,
   tenantId,
   venueId,
@@ -61,6 +69,8 @@ export function AccountLines({
   lines: readonly AccountLine[]
   locale: Locale
   onDone: () => void
+  onOptimisticRemove?: (lineIds: readonly string[]) => () => void
+  onOptimisticQuantityChange?: (lineIds: readonly string[], quantity: number) => () => void
   sessionId: string
   tenantId: string
   venueId: string
@@ -71,6 +81,24 @@ export function AccountLines({
   const [editNotes, setEditNotes] = useState('')
   const [removingId, setRemovingId] = useState<string | null>(null)
   const [removalReason, setRemovalReason] = useState('')
+  const [isOnline, setIsOnline] = useState(() =>
+    typeof navigator === 'undefined' ? true : navigator.onLine,
+  )
+  const offlineStore = useMemo(
+    () => createAccountOfflineStore(tenantId, venueId),
+    [tenantId, venueId],
+  )
+
+  useEffect(() => {
+    const online = () => setIsOnline(true)
+    const offline = () => setIsOnline(false)
+    window.addEventListener('online', online)
+    window.addEventListener('offline', offline)
+    return () => {
+      window.removeEventListener('online', online)
+      window.removeEventListener('offline', offline)
+    }
+  }, [])
 
   function beginEdit(line: AccountLine) {
     setEditingId(line.id)
@@ -123,51 +151,66 @@ export function AccountLines({
     const target = saved.at(-1)
     let delta = nextQuantity - group.quantity
     if (delta === 0 || !target) return
+    if (!isOnline && !onOptimisticQuantityChange) {
+      feedback.setError('Sin conexión: esta cuenta no puede editarse todavía.')
+      return
+    }
+    const rollback = onOptimisticQuantityChange?.(
+      saved.map((line) => line.id),
+      nextQuantity,
+    )
     feedback.setPending()
     try {
+      const update = async (line: AccountLine, quantity: number) => {
+        const data = {
+          notes: line.notes,
+          orderItemId: line.id,
+          quantity,
+          sessionId,
+          tenantId,
+          venueId,
+        }
+        if (isOnline) {
+          await updateOrderItem({ data })
+        } else {
+          enqueueAccountOperation(
+            offlineStore,
+            createUpdateOrderItemOperation(crypto.randomUUID(), data),
+          )
+        }
+      }
       if (delta > 0) {
-        await updateOrderItem({
-          data: {
-            notes: target.notes,
-            orderItemId: target.id,
-            quantity: target.quantity + delta,
-            sessionId,
-            tenantId,
-            venueId,
-          },
-        })
+        await update(target, target.quantity + delta)
       } else {
         for (const line of [...saved].reverse()) {
           if (delta === 0) break
           if (line.quantity + delta > 0) {
-            await updateOrderItem({
-              data: {
-                notes: line.notes,
-                orderItemId: line.id,
-                quantity: line.quantity + delta,
-                sessionId,
-                tenantId,
-                venueId,
-              },
-            })
+            await update(line, line.quantity + delta)
             delta = 0
             break
           }
-          await removeOrderItem({
-            data: {
-              orderItemId: line.id,
-              reason: 'Ajuste de cantidad',
-              sessionId,
-              tenantId,
-              venueId,
-            },
-          })
+          const data = {
+            orderItemId: line.id,
+            reason: 'Ajuste de cantidad',
+            sessionId,
+            tenantId,
+            venueId,
+          }
+          if (isOnline) {
+            await removeOrderItem({ data })
+          } else {
+            enqueueAccountOperation(
+              offlineStore,
+              createRemoveOrderItemOperation(crypto.randomUUID(), data),
+            )
+          }
           delta += line.quantity
         }
       }
-      onDone()
-      feedback.setSuccess('Cantidad actualizada')
+      if (isOnline) onDone()
+      feedback.setSuccess(isOnline ? 'Cantidad actualizada' : 'Cantidad guardada sin conexión')
     } catch {
+      rollback?.()
       feedback.setError('No se ha podido cambiar la cantidad.')
     }
   }
@@ -175,23 +218,36 @@ export function AccountLines({
   /** Quita de golpe todas las líneas guardadas que comparten el contador. */
   async function removeGroup(group: AccountLineGroup) {
     if (feedback.pending) return
+    const saved = group.lines.filter((line) => !isOptimisticAccountLine(line))
+    if (saved.length === 0) return
+    if (!isOnline && !onOptimisticRemove) {
+      feedback.setError('Sin conexión: esta cuenta no puede modificarse todavía.')
+      return
+    }
+    const rollback = onOptimisticRemove?.(saved.map((line) => line.id))
     feedback.setPending()
     try {
-      for (const line of group.lines) {
-        if (isOptimisticAccountLine(line)) continue
-        await removeOrderItem({
-          data: {
-            orderItemId: line.id,
-            reason: QUICK_REMOVAL_REASON,
-            sessionId,
-            tenantId,
-            venueId,
-          },
-        })
+      for (const line of saved) {
+        const data = {
+          orderItemId: line.id,
+          reason: QUICK_REMOVAL_REASON,
+          sessionId,
+          tenantId,
+          venueId,
+        }
+        if (isOnline) {
+          await removeOrderItem({ data })
+        } else {
+          enqueueAccountOperation(
+            offlineStore,
+            createRemoveOrderItemOperation(crypto.randomUUID(), data),
+          )
+        }
       }
-      onDone()
-      feedback.setSuccess('Quitado')
+      if (isOnline) onDone()
+      feedback.setSuccess(isOnline ? 'Quitado' : 'Quitado sin conexión')
     } catch {
+      rollback?.()
       feedback.setError('No se ha podido quitar. Si ya hay cobros, la cuenta queda fija.')
     }
   }
@@ -317,18 +373,15 @@ export function AccountLines({
                   (sum, groupLine) => sum + lineGrossCents(groupLine),
                   0,
                 )
-                const canCount =
-                  canEdit &&
-                  line.status !== 'cancelled' &&
-                  line.status !== 'served' &&
-                  group.lines.some((groupLine) => !isOptimisticAccountLine(groupLine))
+                const canCount = canEdit && line.status !== 'cancelled' && line.status !== 'served'
                 return (
                   <li className="flex items-start gap-3 py-3 first:pt-0 last:pb-0" key={group.key}>
                     {canCount ? (
                       <QuantityInput
                         aria-label={`Cantidad de ${line.name}`}
-                        className="shrink-0"
-                        isDisabled={feedback.pending}
+                        className="shrink-0 [&_[data-slot=quantity-input-decrement]]:size-7 [&_[data-slot=quantity-input-group]]:h-7 [&_[data-slot=quantity-input-increment]]:size-7"
+                        inputClassName="w-8 text-xs"
+                        isDisabled={feedback.pending || group.lines.some(isOptimisticAccountLine)}
                         minValue={1}
                         onChange={(value) => void changeGroupQuantity(group, value)}
                         value={group.quantity}
@@ -366,7 +419,9 @@ export function AccountLines({
                           {canRemove && line.status !== 'cancelled' && (
                             <Button
                               aria-label={`Quitar ${line.name}`}
-                              disabled={feedback.pending}
+                              disabled={
+                                feedback.pending || group.lines.some(isOptimisticAccountLine)
+                              }
                               onClick={() => void removeGroup(group)}
                               size="icon"
                               type="button"
