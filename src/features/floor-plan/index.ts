@@ -21,6 +21,7 @@ export {
   floorPlanQuery,
   saveFloorPlan,
   updateFloorPlanArea,
+  updateFloorPlanTableSeats,
 } from './application/floor-plan'
 export { FloorPlanPage } from './ui/floor-plan-page'
 export type {

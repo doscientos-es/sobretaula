@@ -41,12 +41,14 @@ import {
   deleteFloorPlanArea,
   updateFloorPlanArea,
   updateFloorPlanTableCode,
+  updateFloorPlanTableSeats,
   saveFloorPlan,
 } from '../application/floor-plan'
 import { commitEditorHistory, createEditorHistory } from '../domain/editor-history'
 import {
   type FloorPlanData,
   type FloorPlanElement,
+  type FloorPlanTablePlacement,
   type PlanElementKind,
   nextAvailableTableCode,
 } from '../domain/floor-plan'
@@ -464,7 +466,7 @@ export function FloorPlanPage({
       candidates.reduce(
         (best, candidate) =>
           Math.abs(value - candidate) <= gridSize / 2 &&
-          Math.abs(value - candidate) < Math.abs(value - best)
+            Math.abs(value - candidate) < Math.abs(value - best)
             ? candidate
             : best,
         value,
@@ -572,9 +574,10 @@ export function FloorPlanPage({
   }
 
   function updateSelected(
-    values: Partial<Pick<FloorPlanElement, 'heightCm' | 'label' | 'widthCm' | 'xCm' | 'yCm'>> & {
-      code?: string
-    },
+    values: Partial<Pick<FloorPlanElement, 'heightCm' | 'label' | 'widthCm' | 'xCm' | 'yCm'>> &
+      Partial<Pick<FloorPlanTablePlacement, 'maxSeats' | 'minSeats' | 'normalSeats'>> & {
+        code?: string
+      },
   ) {
     const itemId = selectedId ?? dialogItemId
     if (!itemId || !activeArea) return
@@ -582,6 +585,15 @@ export function FloorPlanPage({
     const selectedElement = elements.find((item) => item.id === itemId)
     const selected = selectedTable ?? selectedElement
     if (!selected) return
+    if (selectedTable) {
+      const minSeats = values.minSeats ?? selectedTable.minSeats ?? 1
+      const normalSeats = values.normalSeats ?? selectedTable.normalSeats ?? 4
+      const maxSeats = values.maxSeats ?? selectedTable.maxSeats ?? 4
+      if (minSeats > normalSeats || normalSeats > maxSeats) {
+        feedback.setError('El aforo debe cumplir mínimo ≤ habitual ≤ máximo.')
+        return
+      }
+    }
     const candidate = { ...selected, ...values }
     if (candidate.widthCm <= 0 || candidate.heightCm <= 0) {
       feedback.setError('El tamaño debe ser positivo.')
@@ -613,6 +625,27 @@ export function FloorPlanPage({
         placements: nextPlacements,
       }),
     )
+  }
+
+  async function saveTableSeats(table: FloorPlanTablePlacement) {
+    const minSeats = table.minSeats ?? 1
+    const normalSeats = table.normalSeats ?? 4
+    const maxSeats = table.maxSeats ?? 4
+    if (minSeats > normalSeats || normalSeats > maxSeats) return
+    try {
+      await updateFloorPlanTableSeats({
+        data: {
+          maxSeats,
+          minSeats,
+          normalSeats,
+          tableId: table.id,
+          tenantId,
+          venueId,
+        },
+      })
+    } catch {
+      feedback.setError('No se ha podido guardar el aforo de la mesa.')
+    }
   }
 
   async function savePlan() {
@@ -845,8 +878,9 @@ export function FloorPlanPage({
               </DialogHeader>
               {(() => {
                 const itemId = selectedId ?? dialogItemId
+                const selectedTable = placements.find((item) => item.id === itemId)
                 const selectedElement = elements.find((item) => item.id === itemId)
-                const selected = placements.find((item) => item.id === itemId) ?? selectedElement
+                const selected = selectedTable ?? selectedElement
                 if (!selected) return null
                 return (
                   <div className="grid grid-cols-2 gap-3">
@@ -869,6 +903,52 @@ export function FloorPlanPage({
                           value={selected.code}
                         />
                       </Field>
+                    )}
+                    {selectedTable && (
+                      <div className="col-span-2 grid grid-cols-3 gap-3">
+                        <Field>
+                          <FieldLabel htmlFor="dialog-table-min-seats">Mínimo</FieldLabel>
+                          <Input
+                            id="dialog-table-min-seats"
+                            max={50}
+                            min={1}
+                            onBlur={() => void saveTableSeats(selectedTable)}
+                            onChange={(event) =>
+                              updateSelected({ minSeats: Number(event.target.value) })
+                            }
+                            type="number"
+                            value={selectedTable.minSeats ?? 1}
+                          />
+                        </Field>
+                        <Field>
+                          <FieldLabel htmlFor="dialog-table-normal-seats">Habitual</FieldLabel>
+                          <Input
+                            id="dialog-table-normal-seats"
+                            max={50}
+                            min={1}
+                            onBlur={() => void saveTableSeats(selectedTable)}
+                            onChange={(event) =>
+                              updateSelected({ normalSeats: Number(event.target.value) })
+                            }
+                            type="number"
+                            value={selectedTable.normalSeats ?? 4}
+                          />
+                        </Field>
+                        <Field>
+                          <FieldLabel htmlFor="dialog-table-max-seats">Máximo</FieldLabel>
+                          <Input
+                            id="dialog-table-max-seats"
+                            max={50}
+                            min={1}
+                            onBlur={() => void saveTableSeats(selectedTable)}
+                            onChange={(event) =>
+                              updateSelected({ maxSeats: Number(event.target.value) })
+                            }
+                            type="number"
+                            value={selectedTable.maxSeats ?? 4}
+                          />
+                        </Field>
+                      </div>
                     )}
                     {(['xCm', 'yCm', 'widthCm', 'heightCm'] as const).map((key) => (
                       <Field key={key}>

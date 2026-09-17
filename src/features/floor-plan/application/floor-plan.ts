@@ -81,6 +81,16 @@ const updateTableCodeInput = venueInput.extend({
   tableId: z.string().uuid(),
   code: z.string().trim().min(1).max(20),
 })
+const updateTableSeatsInput = venueInput
+  .extend({
+    tableId: z.string().uuid(),
+    maxSeats: z.number().int().min(1).max(50),
+    minSeats: z.number().int().min(1).max(50),
+    normalSeats: z.number().int().min(1).max(50),
+  })
+  .refine((table) => table.minSeats <= table.normalSeats && table.normalSeats <= table.maxSeats, {
+    message: 'table_seat_range_invalid',
+  })
 const updateAreaInput = venueInput.extend({
   areaId: z.string().uuid(),
   areaName: z.string().trim().min(1).max(100),
@@ -435,6 +445,34 @@ export const updateFloorPlanTableCode = createServerFn({ method: 'POST' })
       .eq('tenant_id', data.tenantId)
       .eq('venue_id', data.venueId)
     if (error) throw new Error(`floor_plan_table_code_update_failed:${error.code}`)
+  })
+
+export const updateFloorPlanTableSeats = createServerFn({ method: 'POST' })
+  .middleware([authMiddleware, tenantMembershipMiddleware])
+  .validator(updateTableSeatsInput)
+  .handler(async ({ context, data }) => {
+    requireManager(context.tenantMembership.role)
+    const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    let tableUpdate = await supabase
+      .from('tables')
+      .update({
+        max_seats: data.maxSeats,
+        min_seats: data.minSeats,
+        normal_seats: data.normalSeats,
+      })
+      .eq('id', data.tableId)
+      .eq('tenant_id', data.tenantId)
+      .eq('venue_id', data.venueId)
+    if (isMissingColumnError(tableUpdate.error)) {
+      tableUpdate = await supabase
+        .from('tables')
+        .update({ max_seats: data.maxSeats, min_seats: data.minSeats })
+        .eq('id', data.tableId)
+        .eq('tenant_id', data.tenantId)
+        .eq('venue_id', data.venueId)
+    }
+    if (tableUpdate.error)
+      throw new Error(`floor_plan_table_seats_update_failed:${tableUpdate.error.code}`)
   })
 
 /** Saves the single operational map for an area after validating its content. */
