@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { TenantRoutePending } from '@/app/tenant-route-loader'
 import { AccountOrderWorkspace, AccountPayments, type AccountView } from '@/features/account'
 import { CashRegisterPage } from '@/features/cash-register'
+import { floorPlanQuery, type FloorPlanData } from '@/features/floor-plan'
 import type { MenuCatalog } from '@/features/menu/application/menu'
 import {
   posAccountQuery,
@@ -31,6 +32,7 @@ function PosTerminalRoute() {
   const { tenant } = tenantRoute.useLoaderData()
   const { slug } = Route.useParams()
   const board = useQuery(posBoardQuery({ tenantId: tenant.id, venueId: venue.id }))
+  const plan = useQuery(floorPlanQuery(tenant.id, venue.id))
   const account = useQuery({
     ...posAccountQuery({
       tenantId: tenant.id,
@@ -48,15 +50,20 @@ function PosTerminalRoute() {
   if (board.error) throw board.error
   if (account.error) throw account.error
   const serviceBoard = board.data
+  const floorPlan: FloorPlanData = plan.data ?? {
+    areas: [],
+    elements: [],
+    placements: [],
+  }
   return (
     <PosTerminalPage
       {...(account.data && tenantMembership.role !== 'host'
         ? menu.data
           ? {
-              accountWorkspace: (
-                <PosTerminalAccountWorkspace account={account.data} menu={menu.data} />
-              ),
-            }
+            accountWorkspace: (
+              <PosTerminalAccountWorkspace account={account.data} menu={menu.data} />
+            ),
+          }
           : {}
         : {})}
       board={serviceBoard}
@@ -64,11 +71,13 @@ function PosTerminalRoute() {
       canManageCash={canManage}
       {...(tenantMembership.role !== 'host'
         ? {
-            kitchenWorkspace: <PosTerminalKitchenWorkspace board={serviceBoard} />,
-          }
+          kitchenWorkspace: <PosTerminalKitchenWorkspace board={serviceBoard} />,
+        }
         : {})}
       {...(canManage ? { managementWorkspace: <PosTerminalManagementWorkspace /> } : {})}
       slug={slug}
+      plan={floorPlan}
+      selectedSessionId={sessionId}
       venue={venue.slug}
     />
   )

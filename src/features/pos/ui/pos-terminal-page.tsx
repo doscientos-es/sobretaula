@@ -8,13 +8,15 @@ import {
   PageHeaderDescription,
   PageHeaderTitle,
 } from '@doscientos/ui'
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import { ArrowUpRight } from 'lucide-react'
 import type { ReactNode } from 'react'
 
+import type { FloorPlanData } from '@/features/floor-plan'
 import type { ServiceBoard } from '@/features/service'
 
 import { summarizePosTerminal } from '../domain/terminal-summary'
+import { PosFloorMap } from './pos-floor-map'
 
 function TerminalMetric({ label, value }: { label: string; value: number }) {
   return (
@@ -33,7 +35,9 @@ export function PosTerminalPage({
   canManageCash,
   kitchenWorkspace,
   managementWorkspace,
+  plan,
   slug,
+  selectedSessionId,
   venue,
 }: {
   accountWorkspace?: ReactNode | undefined
@@ -42,12 +46,29 @@ export function PosTerminalPage({
   canManageCash: boolean
   kitchenWorkspace?: ReactNode | undefined
   managementWorkspace?: ReactNode | undefined
+  plan: FloorPlanData
+  selectedSessionId?: string | undefined
   slug: string
   venue: string
 }) {
   const summary = summarizePosTerminal(board)
   const tableCodes = new Map(board.tables.map((table) => [table.id, table.code]))
   const params = { slug, venue }
+  const navigate = useNavigate()
+
+  function handleTableClick(tableId: string) {
+    if (!canAccessAccounts) return
+    const table = board.tables.find((candidate) => candidate.id === tableId)
+    if (table?.sessionId) {
+      void navigate({
+        params,
+        search: { sessionId: table.sessionId },
+        to: '/t/$slug/l/$venue/tpv',
+      })
+      return
+    }
+    void navigate({ params, search: {}, to: '/t/$slug/l/$venue/servicio' })
+  }
 
   return (
     <section className="space-y-4">
@@ -65,6 +86,25 @@ export function PosTerminalPage({
         <TerminalMetric label="Comandas pendientes" value={summary.pendingItems} />
         <TerminalMetric label="Listo para servir" value={summary.readyItems} />
       </div>
+      <Card>
+        <CardHeader className="px-4 py-4 sm:px-6">
+          <CardTitle>Mapa de sala</CardTitle>
+          <CardDescription>
+            Pulsa una mesa ocupada para abrir su comanda y añadir recetas, bebidas o cualquier otro
+            producto.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="px-4 pt-0 sm:px-6">
+          <PosFloorMap
+            board={board}
+            onTableClick={handleTableClick}
+            plan={plan}
+            selectedSessionId={selectedSessionId}
+            slug={slug}
+            venue={venue}
+          />
+        </CardContent>
+      </Card>
       <div className="grid gap-2 lg:grid-cols-4">
         <Link
           className="group bg-card hover:bg-muted/40 focus-visible:outline-ring rounded-lg border p-3 shadow-none transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"

@@ -29,6 +29,7 @@ import {
   timekeepingTermInput,
   timekeepingVenueAssignmentInput,
   workforceShiftInput,
+  workforceShiftsInput,
   workforceShiftStatusInput,
   workforceAvailabilityInput,
   workforceAbsenceInput,
@@ -603,6 +604,73 @@ export const createWorkforceShift = createServerFn({ method: 'POST' })
     })
     if (error) throw new Error(`workforce_shift_create_failed:${error.code}`)
     return { saved: true }
+  })
+
+export const createWorkforceShifts = createServerFn({ method: 'POST' })
+  .middleware(middleware)
+  .validator(workforceShiftsInput)
+  .handler(async ({ context, data }) => {
+    requireTimekeepingManager(context.tenantMembership.role)
+    const periods = data.shifts.map((shift) => ({
+      employeeId: data.employeeId,
+      startsAt: shift.startsAt,
+      endsAt: shift.endsAt,
+      status: 'draft' as const,
+    }))
+    if (
+      periods.some(
+        (shift) =>
+          !Number.isFinite(new Date(shift.startsAt).getTime()) ||
+          !Number.isFinite(new Date(shift.endsAt).getTime()) ||
+          new Date(shift.endsAt) <= new Date(shift.startsAt),
+      )
+    )
+      throw new Response('Invalid period', { status: 422 })
+
+    const supabase = createRequestSupabaseClient(context.tenantMembership.accessToken)
+    const earliestStart = periods.reduce(
+      (earliest, shift) => (shift.startsAt < earliest ? shift.startsAt : earliest),
+      periods[0]?.startsAt ?? '',
+    )
+    const latestEnd = periods.reduce(
+      (latest, shift) => (shift.endsAt > latest ? shift.endsAt : latest),
+      periods[0]?.endsAt ?? '',
+    )
+    const existing = await supabase
+      .from('workforce_shifts')
+      .select('employee_id, starts_at, ends_at, status')
+      .eq('tenant_id', data.tenantId)
+      .eq('venue_id', data.venueId)
+      .neq('status', 'cancelled')
+      .lt('starts_at', latestEnd)
+      .gt('ends_at', earliestStart)
+    if (existing.error) throw new Error(`workforce_shift_check_failed:${existing.error.code}`)
+    const existingShifts = (existing.data ?? []).map((shift) => ({
+      employeeId: shift.employee_id as string,
+      startsAt: shift.starts_at as string,
+      endsAt: shift.ends_at as string,
+      status: shift.status as WorkforceShift['status'],
+    }))
+    for (const [index, period] of periods.entries()) {
+      if (
+        hasShiftOverlap(existingShifts, period) ||
+        hasShiftOverlap(periods.slice(0, index), period)
+      )
+        throw new Error('workforce_shift_overlap')
+    }
+    const { error } = await supabase.from('workforce_shifts').insert(
+      data.shifts.map((shift) => ({
+        tenant_id: data.tenantId,
+        venue_id: data.venueId,
+        employee_id: data.employeeId,
+        starts_at: shift.startsAt,
+        ends_at: shift.endsAt,
+        note: shift.note ?? null,
+        created_by: context.tenantMembership.userId,
+      })),
+    )
+    if (error) throw new Error(`workforce_shift_create_failed:${error.code}`)
+    return { saved: true, count: periods.length }
   })
 
 export const updateWorkforceShiftStatus = createServerFn({ method: 'POST' })

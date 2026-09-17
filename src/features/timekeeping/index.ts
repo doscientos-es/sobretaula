@@ -13,6 +13,7 @@ export {
   setMyTimekeepingPin,
   saveTimekeepingVenueAssignments,
   createWorkforceShift,
+  createWorkforceShifts,
   updateWorkforceShiftStatus,
   saveWorkforceAvailability,
   createWorkforceAbsence,

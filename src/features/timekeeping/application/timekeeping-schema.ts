@@ -49,6 +49,19 @@ export const workforceShiftInput = timekeepingInput.extend({
   startsAt: z.string().datetime(),
   note: z.string().trim().max(500).optional(),
 })
+export const workforceShiftsInput = timekeepingInput.extend({
+  employeeId: z.string().uuid(),
+  shifts: z
+    .array(
+      z.object({
+        endsAt: z.string().datetime(),
+        startsAt: z.string().datetime(),
+        note: z.string().trim().max(500).optional(),
+      }),
+    )
+    .min(1)
+    .max(7),
+})
 export const workforceShiftStatusInput = timekeepingInput.extend({
   shiftId: z.string().uuid(),
   status: z.enum(['draft', 'published', 'confirmed', 'cancelled']),

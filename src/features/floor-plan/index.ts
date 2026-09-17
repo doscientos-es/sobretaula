@@ -30,6 +30,7 @@ export type {
   FloorPlanData,
   FloorPlanElement,
   FloorPlanTablePlacement,
+  PlanElementKind,
 } from './domain/floor-plan'
 export { describeSpaceType, groupAreasByFloor } from './domain/floor-plan'
 export type { EditorHistory } from './domain/editor-history'

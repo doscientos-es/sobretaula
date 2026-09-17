@@ -23,7 +23,7 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import {
   getTimekeepingAdvancedReport,
   exportTimekeepingCsv,
-  createWorkforceShift,
+  createWorkforceShifts,
   saveWorkforceAvailability,
   createWorkforceAbsence,
   updateWorkforceShiftStatus,
@@ -44,6 +44,7 @@ import {
 } from '../application/timekeeping-offline-operations'
 import { recommendStaffing } from '../domain/staffing-recommendation'
 import { allowedNextEvent, type TimeEventType } from '../domain/timekeeping'
+import { buildWeeklyShiftPeriods } from '../domain/workforce'
 
 const labels: Record<TimeEventType, string> = {
   clock_in: 'Entrar',
@@ -384,19 +385,37 @@ function TimekeepingManagement({
   async function saveShift(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const values = new FormData(event.currentTarget)
+    const periods = buildWeeklyShiftPeriods({
+      endsAt: formText(values, 'shiftEndsAt'),
+      referenceDate: formText(values, 'shiftWeekDate'),
+      startsAt: formText(values, 'shiftStartsAt'),
+      weekdays: values.getAll('shiftWeekdays').flatMap((value) => {
+        const weekday = Number(value)
+        return Number.isInteger(weekday) ? [weekday] : []
+      }),
+    })
+    if (periods.length === 0) {
+      feedback.setError('Indica una semana, un horario y al menos un día válido.')
+      return
+    }
     feedback.setPending()
     try {
-      await createWorkforceShift({
+      await createWorkforceShifts({
         data: {
           employeeId,
-          endsAt: new Date(formText(values, 'shiftEndsAt')).toISOString(),
-          note: formText(values, 'shiftNote') || undefined,
-          startsAt: new Date(formText(values, 'shiftStartsAt')).toISOString(),
+          shifts: periods.map((period) => ({
+            ...period,
+            note: formText(values, 'shiftNote') || undefined,
+          })),
           tenantId,
           venueId,
         },
       })
-      feedback.setSuccess('Turno guardado en borrador.')
+      feedback.setSuccess(
+        periods.length === 1
+          ? 'Turno guardado en borrador.'
+          : `${periods.length} turnos guardados en borrador.`,
+      )
       setShiftDialogOpen(false)
       onSaved()
     } catch (error) {
@@ -717,18 +736,45 @@ function TimekeepingManagement({
                 <DialogHeader>
                   <DialogTitle>Añadir turno</DialogTitle>
                   <DialogDescription>
-                    Los turnos se guardan como borrador para que puedas revisarlos antes de
-                    publicarlos.
+                    Selecciona una fecha de la semana y los días en los que quieres repetir el mismo
+                    horario. Los turnos se guardan como borrador.
                   </DialogDescription>
                 </DialogHeader>
                 <form className="grid gap-3" onSubmit={(event) => void saveShift(event)}>
                   <Field>
+                    <FieldLabel htmlFor="shift-week-date">Semana de referencia</FieldLabel>
+                    <Input id="shift-week-date" name="shiftWeekDate" required type="date" />
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="shift-weekdays">Días de la semana</FieldLabel>
+                    <select
+                      aria-describedby="shift-weekdays-help"
+                      className="border-input min-h-32 w-full rounded-md border bg-transparent px-3 py-2"
+                      defaultValue={['1', '2', '3', '4', '5']}
+                      id="shift-weekdays"
+                      multiple
+                      name="shiftWeekdays"
+                      required
+                    >
+                      <option value="1">Lunes</option>
+                      <option value="2">Martes</option>
+                      <option value="3">Miércoles</option>
+                      <option value="4">Jueves</option>
+                      <option value="5">Viernes</option>
+                      <option value="6">Sábado</option>
+                      <option value="0">Domingo</option>
+                    </select>
+                    <p className="text-muted-foreground text-xs" id="shift-weekdays-help">
+                      Mantén Ctrl o Cmd para seleccionar varios días.
+                    </p>
+                  </Field>
+                  <Field>
                     <FieldLabel htmlFor="shift-start">Inicio</FieldLabel>
-                    <Input id="shift-start" name="shiftStartsAt" required type="datetime-local" />
+                    <Input id="shift-start" name="shiftStartsAt" required type="time" />
                   </Field>
                   <Field>
                     <FieldLabel htmlFor="shift-end">Fin</FieldLabel>
-                    <Input id="shift-end" name="shiftEndsAt" required type="datetime-local" />
+                    <Input id="shift-end" name="shiftEndsAt" required type="time" />
                   </Field>
                   <Field>
                     <FieldLabel htmlFor="shift-note">Nota</FieldLabel>
