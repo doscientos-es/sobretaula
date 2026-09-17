@@ -112,10 +112,10 @@ export function FloorPlanPage({
   const loadedAutosaveAreaRef = useRef<string | undefined>(undefined)
   const [dialogItemId, setDialogItemId] = useState<string>()
   async function reloadFloorPlan() {
+    await reload()
     await queryClient.refetchQueries({
       queryKey: ['tenant', tenantId, 'venue', venueId, 'floor-plan'],
     })
-    await reload()
   }
   const loadedActiveArea = data.areas.find((area) => area.id === selectedAreaId) ?? data.areas[0]
   const activeArea = loadedActiveArea
