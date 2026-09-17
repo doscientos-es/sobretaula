@@ -25,6 +25,23 @@ const previewDeviceClasses: Record<FloorPlanPreviewDevice, string> = {
   tablet: 'max-w-[768px]',
 }
 
+const TABLE_FILL = 'var(--muted-foreground)'
+const ELEMENT_FILL: Record<PlanElementKind, string> = {
+  bathroom: 'var(--muted)',
+  bar: 'var(--accent)',
+  door: 'var(--background)',
+  exit: 'var(--background)',
+  kitchen: 'var(--accent)',
+  label: 'var(--muted)',
+  obstacle: 'var(--muted)',
+  other: 'var(--muted)',
+  pillar: 'var(--muted)',
+  plant: 'var(--success)',
+  stairs: 'var(--muted)',
+  wall: 'var(--muted-foreground)',
+  window: 'var(--background)',
+}
+
 export function FloorPlanCanvas({
   activeArea,
   blockedAccesses,
@@ -387,10 +404,9 @@ export function FloorPlanCanvas({
               fill="none"
               height={activeArea.heightCm}
               pointerEvents="none"
-              rx="4"
-              stroke="var(--foreground)"
-              strokeOpacity="0.7"
-              strokeWidth="6"
+              rx="24"
+              stroke="var(--border)"
+              strokeWidth="8"
               width={activeArea.widthCm}
               x="0"
               y="0"
@@ -399,10 +415,12 @@ export function FloorPlanCanvas({
               <rect
                 aria-hidden="true"
                 fill="var(--primary)"
+                fillOpacity="0.35"
                 height={dropGhost.kind === 'wall' ? 25 : 100}
-                opacity="0.35"
                 pointerEvents="none"
                 rx="8"
+                stroke="var(--border)"
+                strokeWidth="3"
                 width={dropGhost.kind === 'wall' ? 250 : 100}
                 x={dropGhost.x}
                 y={dropGhost.y}
@@ -447,7 +465,8 @@ export function FloorPlanCanvas({
                 }
               >
                 <rect
-                  fill={element.kind === 'wall' ? 'var(--foreground)' : 'var(--muted-foreground)'}
+                  fill={ELEMENT_FILL[element.kind]}
+                  fillOpacity={element.kind === 'wall' ? 0.55 : 0.35}
                   height={element.heightCm}
                   onPointerDown={(event) =>
                     (() => {
@@ -473,16 +492,23 @@ export function FloorPlanCanvas({
                     if (itemPointer.current?.id === element.id && !itemPointer.current.moved)
                       onItemClick(element.id)
                   }}
-                  opacity={0.65}
-                  rx="4"
-                  stroke={selectedIds.includes(element.id) ? 'var(--ring)' : 'transparent'}
-                  strokeWidth={selectedIds.includes(element.id) ? 4 : 0}
+                  rx="8"
+                  stroke={selectedIds.includes(element.id) ? 'var(--ring)' : 'var(--border)'}
+                  strokeWidth={selectedIds.includes(element.id) ? 8 : 3}
                   width={element.widthCm}
                   x={element.xCm}
                   y={element.yCm}
                 />
                 {element.label && (
-                  <text pointerEvents="none" fontSize="20" x={element.xCm + 8} y={element.yCm + 28}>
+                  <text
+                    dominantBaseline="middle"
+                    fill="var(--muted-foreground)"
+                    fontSize={Math.max(18, Math.min(30, element.heightCm / 3))}
+                    pointerEvents="none"
+                    textAnchor="middle"
+                    x={element.xCm + element.widthCm / 2}
+                    y={element.yCm + element.heightCm / 2}
+                  >
                     {element.label}
                   </text>
                 )}
@@ -535,7 +561,7 @@ export function FloorPlanCanvas({
                   fill={
                     layoutIssues.some((issue) => issue.placementId === placement.id)
                       ? 'var(--destructive)'
-                      : 'var(--primary)'
+                      : TABLE_FILL
                   }
                   height={placement.heightCm}
                   onPointerDown={(event) => {
@@ -560,17 +586,18 @@ export function FloorPlanCanvas({
                     if (itemPointer.current?.id === placement.id && !itemPointer.current.moved)
                       onItemClick(placement.id)
                   }}
-                  opacity={0.85}
-                  rx="12"
-                  stroke={selectedIds.includes(placement.id) ? 'var(--ring)' : 'transparent'}
-                  strokeWidth={selectedIds.includes(placement.id) ? 4 : 0}
+                  rx={Math.min(placement.widthCm, placement.heightCm) / 5}
+                  stroke={selectedIds.includes(placement.id) ? 'var(--ring)' : 'var(--background)'}
+                  strokeWidth={selectedIds.includes(placement.id) ? 12 : 6}
                   width={placement.widthCm}
                   x={placement.xCm}
                   y={placement.yCm}
                 />
                 <text
-                  fill="var(--primary-foreground)"
-                  fontSize="32"
+                  dominantBaseline="middle"
+                  fill="var(--background)"
+                  fontSize={Math.max(28, Math.min(58, placement.widthCm / 3))}
+                  fontWeight="700"
                   pointerEvents="none"
                   textAnchor="middle"
                   x={placement.xCm + placement.widthCm / 2}

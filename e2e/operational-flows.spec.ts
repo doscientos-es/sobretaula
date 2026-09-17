@@ -125,36 +125,36 @@ test('@owner @cash @P0 abre la caja y conserva el estado', async ({ page }) => {
 test('@owner @reservations @P0 crea y cancela una reserva pública', async ({ page }) => {
   await page.goto(`/reservar/${tenant}`, { waitUntil: 'domcontentloaded' })
   await expectHealthyPage(page, 'public reservation lifecycle')
-  await page.locator('#public-service').waitFor({ state: 'visible' })
-  await page.waitForLoadState('domcontentloaded')
+  await page.locator('#public-date').waitFor({ state: 'visible' })
+  await page.waitForLoadState('networkidle')
 
-  const publicServices = page.locator('#public-service button')
-  const serviceCount = await publicServices.count()
-  let availableService = false
-  for (let index = 0; index < serviceCount; index += 1) {
-    await publicServices.nth(index).click()
+  const dateCount = await page.locator('#public-date button').count()
+  let availableDate = false
+  for (let index = 0; index < dateCount; index += 1) {
+    if (index > 0) {
+      await page.goto(`/reservar/${tenant}`, { waitUntil: 'domcontentloaded' })
+      await expectHealthyPage(page, 'public reservation date retry')
+      await page.locator('#public-date').waitFor({ state: 'visible' })
+      await page.waitForLoadState('networkidle')
+    }
+    await page.locator('#public-date button').nth(index).click()
+    await page.getByRole('button', { name: 'Continuar', exact: true }).click()
     try {
       await expect
-        .poll(() => page.locator('#public-date button').count(), {
-          timeout: 5000,
-        })
-        .toBeGreaterThan(0)
-      await page.locator('#public-date button').first().click()
-      await expect
         .poll(() => page.locator('#public-time button').count(), {
-          timeout: 5000,
+          timeout: 10_000,
         })
         .toBeGreaterThan(0)
-      availableService = true
+      availableDate = true
       break
     } catch {
-      // This configured service has no slot in the current booking horizon.
+      // This date has no available time; reload before trying the next one.
     }
   }
-  expect(availableService, 'public reservation: debe existir un turno reservable').toBe(true)
+  expect(availableDate, 'public reservation: debe existir una fecha reservable').toBe(true)
   await expect(
-    page.locator('#public-date button').first(),
-    'public reservation: el turno debe ofrecer fechas futuras',
+    page.locator('#public-time button').first(),
+    'public reservation: la fecha debe ofrecer horas futuras',
   ).toBeAttached()
   const time = page.locator('#public-time button').first()
   await expect(time, 'public reservation: debe haber una hora disponible').toBeAttached()

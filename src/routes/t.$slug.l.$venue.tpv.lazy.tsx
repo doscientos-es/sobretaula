@@ -6,7 +6,6 @@ import { AccountOrderWorkspace, AccountPayments, type AccountView } from '@/feat
 import { floorPlanQuery, type FloorPlanData } from '@/features/floor-plan'
 import type { MenuCatalog } from '@/features/menu/application/menu'
 import { posAccountQuery, posBoardQuery, posMenuQuery, PosTerminalPage } from '@/features/pos'
-import { KitchenQueue, type ServiceBoard } from '@/features/service'
 import { useLocale } from '@/shared/lib/i18n/locale-preference'
 import { useLoaderReload } from '@/shared/lib/router/use-loader-reload'
 
@@ -57,11 +56,6 @@ function PosTerminalRoute() {
         : {})}
       board={serviceBoard}
       canAccessAccounts={tenantMembership.role !== 'host'}
-      {...(tenantMembership.role !== 'host'
-        ? {
-            kitchenWorkspace: <PosTerminalKitchenWorkspace board={serviceBoard} />,
-          }
-        : {})}
       slug={slug}
       tenantId={tenant.id}
       plan={floorPlan}
@@ -96,11 +90,13 @@ function PosTerminalAccountWorkspace({
       })
       .then(reload)
   }
+
   return (
     <div className="space-y-4">
       <span className="sr-only">{`Mesa ${account.session.tableCodes.join(' + ')}`}</span>
       <AccountOrderWorkspace
         account={account}
+        layout="pos"
         locale={locale}
         menu={menu}
         tenantId={tenant.id}
@@ -115,27 +111,5 @@ function PosTerminalAccountWorkspace({
         venueId={venue.id}
       />
     </div>
-  )
-}
-
-function PosTerminalKitchenWorkspace({ board }: { board: ServiceBoard }) {
-  const { venue } = Route.useLoaderData()
-  const { tenant } = tenantRoute.useLoaderData()
-  const queryClient = useQueryClient()
-  const reload = useLoaderReload()
-  const refresh = () => {
-    void queryClient
-      .invalidateQueries({
-        queryKey: ['tenant', tenant.id, 'venue', venue.id, 'pos-workspace'],
-      })
-      .then(reload)
-  }
-  return (
-    <KitchenQueue
-      onDone={refresh}
-      tenantId={tenant.id}
-      tickets={board.kitchenTickets ?? []}
-      venueId={venue.id}
-    />
   )
 }

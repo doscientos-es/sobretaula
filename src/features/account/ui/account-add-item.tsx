@@ -42,6 +42,7 @@ export function AccountAddItem({
   locale,
   menu,
   onDone,
+  quickAdd = false,
   sessionId,
   tenantId,
   venueId,
@@ -49,6 +50,7 @@ export function AccountAddItem({
   locale: Locale
   menu: MenuCatalog
   onDone: () => void
+  quickAdd?: boolean
   sessionId: string
   tenantId: string
   venueId: string
@@ -78,6 +80,9 @@ export function AccountAddItem({
       ? allItems
       : (sections.find((section) => section.category.id === selectedSectionId)?.items ?? [])
   const selectedItem = allItems.find((item) => item.id === menuItemId)
+  const selectedItemRequiresModifiers =
+    selectedItem?.modifierGroups?.some((group) => group.selectionMin > 0) ?? false
+  const showCustomization = !quickAdd || selectedItemRequiresModifiers
 
   useEffect(() => {
     const flush = () => {
@@ -96,9 +101,13 @@ export function AccountAddItem({
     }
   }, [isOnline, offlineStore, onDone])
 
-  function add(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    if (!menuItemId) {
+  function addItem(
+    itemId: string,
+    itemQuantity: number,
+    itemNotes: string,
+    itemModifierOptionIds: string[],
+  ) {
+    if (!itemId) {
       feedback.setError('No hay platos activos en la carta.')
       return
     }
@@ -107,11 +116,11 @@ export function AccountAddItem({
       enqueueAccountOperation(
         offlineStore,
         createAddOrderItemOperation({
-          menuItemId,
-          modifierOptionIds,
-          ...(notes ? { notes } : {}),
+          menuItemId: itemId,
+          modifierOptionIds: itemModifierOptionIds,
+          ...(itemNotes ? { notes: itemNotes } : {}),
           operationId,
-          quantity,
+          quantity: itemQuantity,
           sessionId,
           tenantId,
           venueId,
@@ -126,11 +135,11 @@ export function AccountAddItem({
     feedback.setPending()
     void addOrderItem({
       data: {
-        menuItemId,
-        modifierOptionIds,
-        ...(notes ? { notes } : {}),
+        menuItemId: itemId,
+        modifierOptionIds: itemModifierOptionIds,
+        ...(itemNotes ? { notes: itemNotes } : {}),
         operationId,
-        quantity,
+        quantity: itemQuantity,
         sessionId,
         tenantId,
         venueId,
@@ -145,11 +154,27 @@ export function AccountAddItem({
       .catch((error: unknown) => feedback.setError(addItemErrorMessage(error)))
   }
 
+  function add(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    addItem(menuItemId, quantity, notes, modifierOptionIds)
+  }
+
+  function selectMenuItem(item: (typeof allItems)[number]) {
+    setMenuItemId(item.id)
+    setModifierOptionIds([])
+    const requiresModifiers = item.modifierGroups?.some((group) => group.selectionMin > 0) ?? false
+    if (quickAdd && !requiresModifiers) addItem(item.id, 1, '', [])
+  }
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>Añadir a la cuenta</CardTitle>
-        <CardDescription>Sólo aparecen los platos activos de la carta.</CardDescription>
+        <CardDescription>
+          {quickAdd
+            ? 'Pulsa un plato para añadirlo directamente. Los que tengan opciones te pedirán configurarlas.'
+            : 'Sólo aparecen los platos activos de la carta.'}
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <form className="grid gap-4" onSubmit={add}>
@@ -184,10 +209,7 @@ export function AccountAddItem({
                 <Button
                   className="h-auto min-h-16 justify-start text-left whitespace-normal"
                   key={item.id}
-                  onClick={() => {
-                    setMenuItemId(item.id)
-                    setModifierOptionIds([])
-                  }}
+                  onClick={() => selectMenuItem(item)}
                   type="button"
                   variant={menuItemId === item.id ? 'secondary' : 'outline'}
                 >
@@ -203,83 +225,89 @@ export function AccountAddItem({
               ))}
             </div>
           )}
-          <Field>
-            <AutocompleteCombobox
-              aria-label="Plato"
-              emptyState="No hay platos activos que coincidan."
-              getItemKey={(item) => item.id}
-              getItemLabel={(item) =>
-                `${localizedText(item.nameI18n, locale)} · ${formatMoney(item.priceCents, locale)}`
-              }
-              items={visibleItems}
-              label="Plato"
-              onSelectionChange={(key) => {
-                setMenuItemId(key ? String(key) : '')
-                setModifierOptionIds([])
-              }}
-              placeholder="Buscar plato…"
-              selectedKey={menuItemId || null}
-            />
-          </Field>
-          {selectedItem?.modifierGroups?.map((group) => (
-            <fieldset className="grid gap-2" key={group.id}>
-              <legend className="text-sm font-medium">
-                {`${localizedText(group.nameI18n, locale)}${group.selectionMin > 0 ? ' (obligatorio)' : ''}`}
-              </legend>
-              {group.options.map((option) => {
-                const checked = modifierOptionIds.includes(option.id)
-                const disabled =
-                  !checked &&
-                  group.selectionMax === 1 &&
-                  modifierOptionIds.some((id) => group.options.some((entry) => entry.id === id))
-                return (
-                  <label className="flex items-center gap-2 text-sm" key={option.id}>
-                    <input
-                      checked={checked}
-                      disabled={disabled}
-                      onChange={() =>
-                        setModifierOptionIds((current) =>
-                          checked
-                            ? current.filter((id) => id !== option.id)
-                            : [...current, option.id],
-                        )
-                      }
-                      type="checkbox"
-                    />
-                    <span>{localizedText(option.nameI18n, locale)}</span>
-                    {option.priceDeltaCents !== 0 && (
-                      <span className="text-muted-foreground">
-                        {option.priceDeltaCents > 0 ? '+' : ''}
-                        {formatMoney(option.priceDeltaCents, locale)}
-                      </span>
-                    )}
-                  </label>
-                )
-              })}
-            </fieldset>
-          ))}
-          <Field>
-            <FieldLabel htmlFor="account-quantity">Cantidad</FieldLabel>
-            <QuantityInput
-              aria-label="Cantidad"
-              minValue={1}
-              onChange={(value) => setQuantity(value)}
-              value={quantity}
-            />
-          </Field>
-          <Field>
-            <FieldLabel htmlFor="account-notes">Nota para cocina (opcional)</FieldLabel>
-            <Input
-              id="account-notes"
-              onChange={(event) => setNotes(event.target.value)}
-              placeholder="Sin cebolla, punto fuerte…"
-              value={notes}
-            />
-          </Field>
+          {showCustomization && (
+            <>
+              <Field>
+                <AutocompleteCombobox
+                  aria-label="Plato"
+                  emptyState="No hay platos activos que coincidan."
+                  getItemKey={(item) => item.id}
+                  getItemLabel={(item) =>
+                    `${localizedText(item.nameI18n, locale)} · ${formatMoney(item.priceCents, locale)}`
+                  }
+                  items={visibleItems}
+                  label="Plato"
+                  onSelectionChange={(key) => {
+                    setMenuItemId(key ? String(key) : '')
+                    setModifierOptionIds([])
+                  }}
+                  placeholder="Buscar plato…"
+                  selectedKey={menuItemId || null}
+                />
+              </Field>
+              {selectedItem?.modifierGroups?.map((group) => (
+                <fieldset className="grid gap-2" key={group.id}>
+                  <legend className="text-sm font-medium">
+                    {`${localizedText(group.nameI18n, locale)}${group.selectionMin > 0 ? ' (obligatorio)' : ''}`}
+                  </legend>
+                  {group.options.map((option) => {
+                    const checked = modifierOptionIds.includes(option.id)
+                    const disabled =
+                      !checked &&
+                      group.selectionMax === 1 &&
+                      modifierOptionIds.some((id) => group.options.some((entry) => entry.id === id))
+                    return (
+                      <label className="flex items-center gap-2 text-sm" key={option.id}>
+                        <input
+                          checked={checked}
+                          disabled={disabled}
+                          onChange={() =>
+                            setModifierOptionIds((current) =>
+                              checked
+                                ? current.filter((id) => id !== option.id)
+                                : [...current, option.id],
+                            )
+                          }
+                          type="checkbox"
+                        />
+                        <span>{localizedText(option.nameI18n, locale)}</span>
+                        {option.priceDeltaCents !== 0 && (
+                          <span className="text-muted-foreground">
+                            {option.priceDeltaCents > 0 ? '+' : ''}
+                            {formatMoney(option.priceDeltaCents, locale)}
+                          </span>
+                        )}
+                      </label>
+                    )
+                  })}
+                </fieldset>
+              ))}
+              <Field>
+                <FieldLabel htmlFor="account-quantity">Cantidad</FieldLabel>
+                <QuantityInput
+                  aria-label="Cantidad"
+                  minValue={1}
+                  onChange={(value) => setQuantity(value)}
+                  value={quantity}
+                />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="account-notes">Nota para cocina (opcional)</FieldLabel>
+                <Input
+                  id="account-notes"
+                  onChange={(event) => setNotes(event.target.value)}
+                  placeholder="Sin cebolla, punto fuerte…"
+                  value={notes}
+                />
+              </Field>
+            </>
+          )}
           <FormFeedback pendingLabel="Apuntando…" state={feedback.state} />
-          <Button disabled={feedback.pending || !menuItemId} type="submit">
-            Apuntar en la cuenta
-          </Button>
+          {showCustomization && (
+            <Button disabled={feedback.pending || !menuItemId} type="submit">
+              Apuntar en la cuenta
+            </Button>
+          )}
         </form>
       </CardContent>
     </Card>

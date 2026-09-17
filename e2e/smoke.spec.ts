@@ -5,9 +5,9 @@ import { test, expect } from '@playwright/test'
 
 test('public reservation page renders the published booking flow', async ({ page }) => {
   await page.goto('/reservar/la-fonda-demo')
-  await expect(page.getByRole('heading', { name: 'La Fonda Demo' })).toBeVisible()
-  await expect(page.locator('#public-service button')).toHaveCount(2)
-  await expect(page.getByRole('button', { name: 'Reservar mesa' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Reserva en La Fonda Demo' })).toBeVisible()
+  await expect(page.locator('#public-date button').first()).toBeVisible()
+  await expect(page.getByText('1. Personas y día', { exact: true })).toBeVisible()
 })
 
 test('tokenized reservation management is never cacheable', async ({ request }) => {
@@ -49,11 +49,10 @@ test('public reservation gives accessible feedback for incomplete guest details'
   page,
 }) => {
   await page.goto('/reservar/la-fonda-demo')
-  await page.locator('#public-service').waitFor({ state: 'visible' })
+  await page.locator('#public-date').waitFor({ state: 'visible' })
   await page.waitForLoadState('networkidle')
-  await page.locator('#public-service button').first().click()
-  await expect(page.locator('#public-date button').first()).toBeAttached()
   await page.locator('#public-date button').first().click()
+  await page.getByRole('button', { name: 'Continuar', exact: true }).click()
   await expect(page.locator('#public-time button').first()).toBeAttached()
   await page.locator('#public-time button').first().click()
   for (const checkbox of await page.getByRole('checkbox').all()) await checkbox.check()

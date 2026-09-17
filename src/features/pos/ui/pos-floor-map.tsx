@@ -1,8 +1,7 @@
-import { Button, cn } from '@doscientos/ui'
+import { cn } from '@doscientos/ui'
 import { Link } from '@tanstack/react-router'
-import { useState } from 'react'
 
-import type { FloorPlanArea, FloorPlanData, PlanElementKind } from '@/features/floor-plan'
+import type { FloorPlanData, PlanElementKind } from '@/features/floor-plan'
 import type { ServiceBoard, ServiceTableStatus } from '@/features/service'
 
 const TABLE_FILL: Record<ServiceTableStatus, string> = {
@@ -37,28 +36,25 @@ function tableStatusLabel(status: ServiceTableStatus | undefined): string {
   return 'Libre'
 }
 
-function areaLabel(area: FloorPlanArea): string {
-  if (area.floorNumber === 0) return `${area.name} · Planta baja`
-  if (area.floorNumber) return `${area.name} · Planta ${area.floorNumber}`
-  return area.name
-}
-
 export function PosFloorMap({
   board,
+  fullscreen,
   plan,
+  selectedAreaId,
   selectedSessionId,
   onTableClick,
   slug,
   venue,
 }: {
   board: ServiceBoard
+  fullscreen?: boolean
   plan: FloorPlanData
+  selectedAreaId: string
   selectedSessionId?: string | undefined
   onTableClick: (tableId: string) => void
   slug: string
   venue: string
 }) {
-  const [selectedAreaId, setSelectedAreaId] = useState(plan.areas[0]?.id ?? '')
   const activeArea = plan.areas.find((area) => area.id === selectedAreaId) ?? plan.areas[0]
   const placements = activeArea
     ? plan.placements.filter((placement) => placement.areaId === activeArea.id)
@@ -69,22 +65,7 @@ export function PosFloorMap({
   const tableById = new Map(board.tables.map((table) => [table.id, table]))
 
   return (
-    <div className="space-y-4">
-      {plan.areas.length > 1 && (
-        <div aria-label="Zonas del restaurante" className="flex flex-wrap gap-2">
-          {plan.areas.map((area) => (
-            <Button
-              key={area.id}
-              onClick={() => setSelectedAreaId(area.id)}
-              type="button"
-              variant={activeArea?.id === area.id ? 'default' : 'outline'}
-            >
-              {areaLabel(area)}
-            </Button>
-          ))}
-        </div>
-      )}
-
+    <div className={cn('space-y-4', fullscreen && 'flex min-h-0 flex-1 flex-col')}>
       {!activeArea ? (
         <div className="text-muted-foreground rounded-xl border border-dashed p-10 text-center text-sm">
           <p>Este local todavía no tiene un plano configurado.</p>
@@ -109,10 +90,18 @@ export function PosFloorMap({
         </div>
       ) : (
         <>
-          <div className="bg-muted/20 overflow-hidden rounded-2xl border p-2 shadow-[var(--ui-shadow-hairline)] sm:p-4">
+          <div
+            className={cn(
+              'bg-muted/20 overflow-hidden rounded-2xl border p-2 shadow-[var(--ui-shadow-hairline)] sm:p-4',
+              fullscreen && 'min-h-0 flex-1',
+            )}
+          >
             <svg
               aria-label={`Mapa interactivo de ${activeArea.name}`}
-              className="bg-background h-[clamp(28rem,62dvh,48rem)] min-h-[420px] w-full rounded-xl"
+              className={cn(
+                'bg-background w-full rounded-xl',
+                fullscreen ? 'h-full min-h-0' : 'h-[clamp(28rem,62dvh,48rem)] min-h-[420px]',
+              )}
               preserveAspectRatio="xMidYMid meet"
               viewBox={`0 0 ${activeArea.widthCm} ${activeArea.heightCm}`}
             >
@@ -199,40 +188,6 @@ export function PosFloorMap({
               })}
             </svg>
           </div>
-          <ul aria-label="Mesas del mapa" className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {placements.map((placement) => {
-              const table = tableById.get(placement.id)
-              const status = table?.status ?? 'free'
-              const selected = table?.sessionId === selectedSessionId
-              return (
-                <li key={`table-${placement.id}`}>
-                  <button
-                    aria-label={`Mesa ${placement.code}: ${tableStatusLabel(status)}${table?.covers ? `, ${table.covers} comensales` : ''}`}
-                    aria-pressed={selected}
-                    className={cn(
-                      'hover:bg-muted/50 focus-visible:outline-ring flex w-full items-center gap-3 rounded-lg border px-3 py-2 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2',
-                      selected && 'border-foreground bg-muted/50',
-                    )}
-                    onClick={() => onTableClick(placement.id)}
-                    type="button"
-                  >
-                    <span
-                      aria-hidden="true"
-                      className="size-3 shrink-0 rounded-full"
-                      style={{ backgroundColor: TABLE_FILL[status] }}
-                    />
-                    <span className="min-w-0">
-                      <span className="block font-medium">Mesa {placement.code}</span>
-                      <span className="text-muted-foreground block text-xs">
-                        {tableStatusLabel(status)}
-                        {table?.covers ? ` · ${table.covers} pax` : ''}
-                      </span>
-                    </span>
-                  </button>
-                </li>
-              )
-            })}
-          </ul>
           <ul
             aria-label="Leyenda del mapa"
             className="text-muted-foreground flex flex-wrap gap-2 text-xs"

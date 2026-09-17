@@ -2,8 +2,8 @@ import {
   Button,
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
-  CardTitle,
   Field,
   FieldLabel,
   FormFeedback,
@@ -11,7 +11,7 @@ import {
   useFormFeedback,
 } from '@doscientos/ui'
 import { Link } from '@tanstack/react-router'
-import { CalendarDays, Check, MapPin, Minus, Plus, Users } from 'lucide-react'
+import { ArrowRight, CalendarDays, Check, MapPin, Minus, Plus, Users } from 'lucide-react'
 import { useMemo, useRef, useState, type FormEvent } from 'react'
 
 import { LanguageSwitcher } from '@/shared/lib/i18n/language-switcher'
@@ -31,14 +31,18 @@ function localDateKey(date: Date, timeZone: string): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone }).format(date)
 }
 
-function nextDates(weekday: number, timeZone: string): string[] {
+function nextDates(
+  services: readonly PublicReservationProfile['services'][number][],
+  timeZone: string,
+): string[] {
   const today = localDateKey(new Date(), timeZone)
   const localDate = new Date(`${today}T12:00:00.000Z`)
+  const weekdays = new Set(services.map((service) => service.weekday))
   const result: string[] = []
   for (let offset = 0; offset < 30 && result.length < 8; offset += 1) {
     const date = new Date(localDate)
     date.setUTCDate(localDate.getUTCDate() + offset)
-    if (date.getUTCDay() === weekday) result.push(date.toISOString().slice(0, 10))
+    if (weekdays.has(date.getUTCDay())) result.push(date.toISOString().slice(0, 10))
   }
   return result
 }
@@ -67,6 +71,11 @@ function restaurantTime(value: string, timezone: string, locale: string): string
   }).format(new Date(value))
 }
 
+interface AvailableSlot {
+  serviceId: string
+  time: string
+}
+
 export function PublicReservationPage({ profile }: { profile: PublicReservationProfile }) {
   const locale = useLocale()
   const t = createTranslator(locale)
@@ -76,9 +85,9 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
   ) => formatMessage(locale, key, values)
   const feedback = useFormFeedback()
   const [serviceId, setServiceId] = useState('')
-  const [areaId, setAreaId] = useState('')
   const [date, setDate] = useState('')
   const [time, setTime] = useState('')
+  const [step, setStep] = useState<1 | 2 | 3>(1)
   const [partySize, setPartySize] = useState(2)
   const [adultCount, setAdultCount] = useState(2)
   const [childCount, setChildCount] = useState(0)
@@ -90,70 +99,66 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
   const [termsAccepted, setTermsAccepted] = useState(!profile.terms)
   const [confirmed, setConfirmed] = useState(false)
   const [managementToken, setManagementToken] = useState('')
-  const [availableSlots, setAvailableSlots] = useState<string[]>([])
-  const [alternativeSlots, setAlternativeSlots] = useState<string[]>([])
+  const [availableSlots, setAvailableSlots] = useState<AvailableSlot[]>([])
   const [availabilityLoading, setAvailabilityLoading] = useState(false)
   const [availabilityError, setAvailabilityError] = useState(false)
   const availabilityRequestRef = useRef(0)
-  const service = profile.services.find((candidate) => candidate.id === serviceId)
   const dates = useMemo(
-    () => (service ? nextDates(service.weekday, profile.timezone) : []),
-    [profile.timezone, service],
+    () => nextDates(profile.services, profile.timezone),
+    [profile.services, profile.timezone],
   )
 
-  function selectService(id: string) {
-    availabilityRequestRef.current += 1
-    setServiceId(id)
-    setDate('')
+  function chooseDate(value: string) {
+    setDate(value)
     setTime('')
-    setAlternativeSlots([])
+    setServiceId('')
     setAvailableSlots([])
     setAvailabilityError(false)
-    setAvailabilityLoading(false)
   }
 
-  async function selectDate(value: string, size = partySize, selectedArea = areaId) {
+  async function selectDate(value: string, size = partySize) {
     const requestId = availabilityRequestRef.current + 1
     availabilityRequestRef.current = requestId
     setDate(value)
     setTime('')
-    setAlternativeSlots([])
+    setServiceId('')
+    setStep(2)
+    setAvailableSlots([])
     setAvailabilityError(false)
-    if (!value || !service) {
+    const services = profile.services.filter(
+      (candidate) => candidate.weekday === new Date(`${value}T12:00:00.000Z`).getUTCDay(),
+    )
+    if (!value || services.length === 0) {
       setAvailableSlots([])
       return
     }
     setAvailabilityLoading(true)
     try {
-      const result = await getPublicReservationAvailability({
-        data: {
-          ...(selectedArea ? { areaId: selectedArea } : {}),
-          date: value,
-          partySize: size,
-          serviceId: service.id,
-          slug: profile.slug,
-        },
-      })
-      if (requestId !== availabilityRequestRef.current) return
-      const normalized = result.map((slot) =>
-        slot.includes('T') ? restaurantTime(slot, profile.timezone, locale) : slot.slice(0, 5),
+      const results = await Promise.all(
+        services.map(async (candidate) => ({
+          result: await getPublicReservationAvailability({
+            data: {
+              date: value,
+              partySize: size,
+              serviceId: candidate.id,
+              slug: profile.slug,
+            },
+          }),
+          serviceId: candidate.id,
+        })),
       )
-      setAvailableSlots(normalized)
-      if (selectedArea && result.length === 0) {
-        const fallback = await getPublicReservationAvailability({
-          data: { date: value, partySize: size, serviceId: service.id, slug: profile.slug },
-        })
-        if (requestId !== availabilityRequestRef.current) return
-        setAlternativeSlots(
-          fallback
-            .slice(0, 3)
-            .map((slot) =>
-              slot.includes('T')
-                ? restaurantTime(slot, profile.timezone, locale)
-                : slot.slice(0, 5),
-            ),
+      if (requestId !== availabilityRequestRef.current) return
+      const normalized = results
+        .flatMap(({ result, serviceId: candidateServiceId }) =>
+          result.map((slot) => ({
+            serviceId: candidateServiceId,
+            time: slot.includes('T')
+              ? restaurantTime(slot, profile.timezone, locale)
+              : slot.slice(0, 5),
+          })),
         )
-      }
+        .sort((left, right) => left.time.localeCompare(right.time))
+      setAvailableSlots(normalized)
     } catch {
       if (requestId === availabilityRequestRef.current) {
         setAvailableSlots([])
@@ -169,12 +174,17 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
     setAdultCount(adults)
     setChildCount(children)
     setPartySize(nextSize)
-    if (date) void selectDate(date, nextSize)
+  }
+
+  function selectTime(slot: AvailableSlot) {
+    setTime(slot.time)
+    setServiceId(slot.serviceId)
+    setStep(3)
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!service || !date || !time) {
+    if (!serviceId || !date || !time) {
       feedback.setError(t('public.chooseTime'))
       return
     }
@@ -189,7 +199,6 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
     const data = {
       email,
       ...(phone ? { phone } : {}),
-      ...(areaId ? { areaId } : {}),
       guestName,
       ...(notes ? { notes } : {}),
       partySize,
@@ -285,31 +294,35 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
   }
 
   return (
-    <main
-      style={theme}
-      className="relative grid min-h-svh place-items-center overflow-hidden bg-[#fbfaf8] p-[clamp(1rem,4vw,3.5rem)]"
-    >
+    <main style={theme} className="st-auth-shell st-auth-shell--orange">
+      <span aria-hidden="true" className="st-auth-orb st-auth-orb--lime" />
+      <span aria-hidden="true" className="st-auth-orb st-auth-orb--mint" />
       <div className="absolute top-4 right-4 z-20">
         <LanguageSwitcher />
       </div>
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 bg-[url('/abstract-restaurant-image.avif')] bg-cover bg-center opacity-60"
-      />
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-white/60" />
       <section className="relative z-10 w-full max-w-[34rem]">
-        <Card className="w-full border-[#292d34]/10 bg-[#f7f7f7]/95 shadow-[0_1.5rem_4rem_rgb(66_48_35_/_22%)] backdrop-blur-[12px]">
-          <CardHeader className="items-center pb-3 text-center">
-            {profile.logoUrl ? (
-              <img
-                alt={`Logo de ${profile.name}`}
-                className="mb-1 h-10 max-w-40 object-contain"
-                src={profile.logoUrl}
-              />
-            ) : null}
-            <CardTitle className="text-2xl tracking-[-0.04em]">
+        <Card className="st-auth-card w-full border-0">
+          <CardHeader className="pb-5">
+            <div className="mb-4 flex items-center gap-3">
+              {profile.logoUrl ? (
+                <img
+                  alt={`Logo de ${profile.name}`}
+                  className="size-10 rounded-xl border object-contain p-1"
+                  src={profile.logoUrl}
+                />
+              ) : (
+                <span className="grid size-10 place-items-center rounded-xl bg-[color-mix(in_srgb,var(--public-primary)_10%,transparent)] text-[var(--public-primary)]">
+                  <CalendarDays aria-hidden="true" className="size-5" />
+                </span>
+              )}
+              <span className="text-sm font-semibold tracking-[-0.02em]">{profile.name}</span>
+            </div>
+            <h1 className="m-0 text-2xl font-semibold tracking-[-0.04em]">
               {message('public.reserveAt', { name: profile.name })}
-            </CardTitle>
+            </h1>
+            <CardDescription className="text-sm leading-6">
+              {t('public.bookingInMinute')}
+            </CardDescription>
             <p className="m-0 flex items-center gap-1.5 text-sm text-[#60656d]">
               <MapPin aria-hidden="true" className="size-3.5" /> {profile.venueName}
             </p>
@@ -330,338 +343,298 @@ export function PublicReservationPage({ profile }: { profile: PublicReservationP
                 noValidate
                 onSubmit={(event) => void submit(event)}
               >
-                <fieldset className="grid gap-2 border-0 p-0">
-                  <legend className="text-center text-sm font-semibold text-[#60656d]">
-                    {t('public.moment')}
-                  </legend>
-                  <div className="grid gap-2 sm:grid-cols-2" id="public-service">
-                    {profile.services.map((candidate) => (
-                      <button
-                        aria-pressed={serviceId === candidate.id}
-                        className={`rounded-md border px-4 py-3 text-sm font-semibold transition ${
-                          serviceId === candidate.id
-                            ? 'border-[var(--public-primary)] bg-[var(--public-primary)] text-white shadow-sm'
-                            : 'border-[#d6d7d8] bg-white text-[#292d34] hover:border-[var(--public-primary)]'
-                        }`}
-                        key={candidate.id}
-                        onClick={() => selectService(candidate.id)}
-                        type="button"
-                      >
-                        {candidate.name}
-                      </button>
-                    ))}
-                  </div>
-                </fieldset>
-                <fieldset className="grid gap-2 border-0 p-0">
-                  <legend className="text-center text-sm font-semibold text-[#60656d]">
-                    {t('public.people')}
-                  </legend>
-                  <div className="grid gap-2 rounded-xl border border-[#292d34]/10 bg-white p-2">
-                    {[
-                      { label: t('public.adults'), value: adultCount },
-                      { label: t('public.children'), value: childCount },
-                    ].map(({ label, value }, index) => {
-                      const adults = index === 0
-                      const decrementDisabled = adults ? adultCount <= 1 : childCount <= 0
-                      const incrementDisabled = partySize >= 50
-                      return (
-                        <div
-                          className="flex items-center justify-between gap-4 px-2 py-1"
-                          key={label}
-                        >
-                          <span className="inline-flex items-center gap-2 text-sm text-[#292d34]">
-                            <Users aria-hidden="true" className="size-4 text-[#737983]" />
-                            {label}
-                          </span>
-                          <div className="flex items-center overflow-hidden rounded-md border border-[#cfd0d2]">
-                            <button
-                              aria-label={`${label} -`}
-                              className="st-compact-control grid size-9 place-items-center bg-[#f3f3f3] text-[#292d34] transition hover:bg-[#e8e8e9] disabled:cursor-not-allowed disabled:opacity-40"
-                              disabled={decrementDisabled || feedback.pending}
-                              onClick={() =>
-                                updateGuests(
-                                  adults ? adultCount - 1 : adultCount,
-                                  adults ? childCount : childCount - 1,
-                                )
-                              }
-                              type="button"
+                {step === 1 ? (
+                  <>
+                    <p className="m-0 text-center text-xs font-semibold tracking-wide text-[#737983] uppercase">
+                      {t('public.stepDate')}
+                    </p>
+                    <fieldset className="grid gap-2 border-0 p-0">
+                      <legend className="text-center text-sm font-semibold text-[#60656d]">
+                        {t('public.people')}
+                      </legend>
+                      <div className="grid gap-2 rounded-xl border border-[#292d34]/10 bg-white p-2">
+                        {[
+                          { label: t('public.adults'), value: adultCount },
+                          { label: t('public.children'), value: childCount },
+                        ].map(({ label, value }, index) => {
+                          const adults = index === 0
+                          const decrementDisabled = adults ? adultCount <= 1 : childCount <= 0
+                          const incrementDisabled = partySize >= 50
+                          return (
+                            <div
+                              className="flex items-center justify-between gap-4 px-2 py-1"
+                              key={label}
                             >
-                              <Minus aria-hidden="true" className="size-4" />
-                            </button>
-                            <output
-                              aria-live="polite"
-                              className="grid min-w-12 place-items-center px-2 text-sm font-semibold"
-                            >
-                              {value}
-                            </output>
-                            <button
-                              aria-label={`${label} +`}
-                              className="st-compact-control grid size-9 place-items-center bg-[#f3f3f3] text-[#292d34] transition hover:bg-[#e8e8e9] disabled:cursor-not-allowed disabled:opacity-40"
-                              disabled={incrementDisabled || feedback.pending}
-                              onClick={() =>
-                                updateGuests(
-                                  adults ? adultCount + 1 : adultCount,
-                                  adults ? childCount : childCount + 1,
-                                )
-                              }
-                              type="button"
-                            >
-                              <Plus aria-hidden="true" className="size-4" />
-                            </button>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </fieldset>
-                {profile.areas.length ? (
-                  <Field>
-                    <FieldLabel htmlFor="public-area">{t('public.optionalArea')}</FieldLabel>
-                    <select
-                      id="public-area"
-                      className="min-h-12 bg-white"
-                      name="areaId"
-                      onChange={(event) => {
-                        setAreaId(event.target.value)
-                        if (date) void selectDate(date, partySize, event.target.value)
-                      }}
-                      value={areaId}
-                    >
-                      <option value="">{t('public.anyArea')}</option>
-                      {profile.areas.map((area) => (
-                        <option key={area.id} value={area.id}>
-                          {area.name}
-                        </option>
-                      ))}
-                    </select>
-                  </Field>
-                ) : null}
-                <fieldset className="grid gap-2 border-0 p-0">
-                  <legend className="flex items-center gap-1.5 text-sm font-semibold text-[#60656d]">
-                    <CalendarDays aria-hidden="true" className="size-4" /> {t('public.day')}
-                  </legend>
-                  <div className="grid grid-cols-4 gap-2 sm:grid-cols-6" id="public-date">
-                    {dates.slice(0, 6).map((candidate) => {
-                      const option = formatDateOption(candidate, locale)
-                      const isToday = candidate === localDateKey(new Date(), profile.timezone)
-                      return (
-                        <button
-                          aria-pressed={date === candidate}
-                          className={`grid min-h-16 place-items-center rounded-md border px-1 py-2 text-center transition ${
-                            date === candidate
-                              ? 'border-[var(--public-primary)] bg-[var(--public-primary)] text-white shadow-sm'
-                              : 'border-[#d6d7d8] bg-white text-[#60656d] hover:border-[var(--public-primary)]'
-                          }`}
-                          key={candidate}
-                          onClick={() => void selectDate(candidate)}
-                          type="button"
-                        >
-                          <span className="text-[0.62rem] font-bold uppercase">
-                            {isToday ? t('public.today') : option.weekday}
-                          </span>
-                          <strong className="text-lg leading-5">{option.day}</strong>
-                          <span className="text-[0.62rem] uppercase">{option.month}</span>
-                        </button>
-                      )
-                    })}
-                  </div>
-                  {!service ? (
-                    <p className="m-0 text-xs text-[#737983]">{t('public.selectMoment')}</p>
-                  ) : null}
-                </fieldset>
-                <fieldset className="grid gap-2 border-0 p-0">
-                  <legend className="text-sm font-semibold text-[#60656d]">
-                    {t('public.time')}
-                  </legend>
-                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3" id="public-time">
-                    {availableSlots.map((candidate) => (
-                      <button
-                        aria-pressed={time === candidate}
-                        className={`rounded-md border px-3 py-2.5 text-sm font-semibold transition ${
-                          time === candidate
-                            ? 'border-[var(--public-primary)] bg-[var(--public-primary)] text-white shadow-sm'
-                            : 'border-[#d6d7d8] bg-white text-[#292d34] hover:border-[var(--public-primary)]'
-                        }`}
-                        key={candidate}
-                        onClick={() => setTime(candidate)}
-                        type="button"
-                      >
-                        {candidate}
-                      </button>
-                    ))}
-                  </div>
-                  <div aria-live="polite" className="text-xs" id="public-availability-status">
-                    {availabilityLoading ? (
-                      <p className="text-muted-foreground flex items-center gap-2">
-                        <span
-                          aria-hidden="true"
-                          className="size-2 animate-pulse rounded-full bg-[var(--public-accent)] motion-reduce:animate-none"
-                        />
-                        {t('public.searching')}
-                      </p>
-                    ) : availabilityError ? (
-                      <div className="flex flex-wrap items-center gap-2 text-[var(--public-accent)]">
-                        <span>{t('public.availabilityFailed')}</span>
-                        <button
-                          className="font-semibold underline underline-offset-2"
-                          onClick={() => void selectDate(date)}
-                          type="button"
-                        >
-                          {t('error.retry')}
-                        </button>
+                              <span className="inline-flex items-center gap-2 text-sm text-[#292d34]">
+                                <Users aria-hidden="true" className="size-4 text-[#737983]" />
+                                {label}
+                              </span>
+                              <div className="flex items-center overflow-hidden rounded-md border border-[#cfd0d2]">
+                                <button
+                                  aria-label={`${label} -`}
+                                  className="st-compact-control grid size-9 place-items-center bg-[#f3f3f3] text-[#292d34] transition hover:bg-[#e8e8e9] disabled:cursor-not-allowed disabled:opacity-40"
+                                  disabled={decrementDisabled || feedback.pending}
+                                  onClick={() =>
+                                    updateGuests(
+                                      adults ? adultCount - 1 : adultCount,
+                                      adults ? childCount : childCount - 1,
+                                    )
+                                  }
+                                  type="button"
+                                >
+                                  <Minus aria-hidden="true" className="size-4" />
+                                </button>
+                                <output
+                                  aria-live="polite"
+                                  className="grid min-w-12 place-items-center px-2 text-sm font-semibold"
+                                >
+                                  {value}
+                                </output>
+                                <button
+                                  aria-label={`${label} +`}
+                                  className="st-compact-control grid size-9 place-items-center bg-[#f3f3f3] text-[#292d34] transition hover:bg-[#e8e8e9] disabled:cursor-not-allowed disabled:opacity-40"
+                                  disabled={incrementDisabled || feedback.pending}
+                                  onClick={() =>
+                                    updateGuests(
+                                      adults ? adultCount + 1 : adultCount,
+                                      adults ? childCount : childCount + 1,
+                                    )
+                                  }
+                                  type="button"
+                                >
+                                  <Plus aria-hidden="true" className="size-4" />
+                                </button>
+                              </div>
+                            </div>
+                          )
+                        })}
                       </div>
-                    ) : date && availableSlots.length === 0 ? (
-                      <p className="text-[var(--public-accent)]">
-                        {areaId ? t('public.noSlotsInArea') : t('public.noSlots')}
-                      </p>
-                    ) : alternativeSlots.length ? (
-                      <p className="text-[#5b6470]">
-                        {t('public.alternativeSlots')}{' '}
-                        {alternativeSlots.map((slot) => (
+                    </fieldset>
+                    <fieldset className="grid gap-2 border-0 p-0">
+                      <legend className="flex items-center gap-1.5 text-sm font-semibold text-[#60656d]">
+                        <CalendarDays aria-hidden="true" className="size-4" /> {t('public.day')}
+                      </legend>
+                      <div className="grid grid-cols-4 gap-2 sm:grid-cols-6" id="public-date">
+                        {dates.slice(0, 6).map((candidate) => {
+                          const option = formatDateOption(candidate, locale)
+                          const isToday = candidate === localDateKey(new Date(), profile.timezone)
+                          return (
+                            <button
+                              aria-pressed={date === candidate}
+                              className={`grid min-h-16 place-items-center rounded-md border px-1 py-2 text-center transition ${
+                                date === candidate
+                                  ? 'border-[var(--public-primary)] bg-[var(--public-primary)] text-white shadow-sm'
+                                  : 'border-[#d6d7d8] bg-white text-[#60656d] hover:border-[var(--public-primary)]'
+                              }`}
+                              key={candidate}
+                              onClick={() => chooseDate(candidate)}
+                              type="button"
+                            >
+                              <span className="text-[0.62rem] font-bold uppercase">
+                                {isToday ? t('public.today') : option.weekday}
+                              </span>
+                              <strong className="text-lg leading-5">{option.day}</strong>
+                              <span className="text-[0.62rem] uppercase">{option.month}</span>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </fieldset>
+                    <Button
+                      className="w-full"
+                      disabled={!date}
+                      onClick={() => void selectDate(date)}
+                      size="lg"
+                      type="button"
+                    >
+                      {t('public.continue')} <ArrowRight aria-hidden="true" className="size-4" />
+                    </Button>
+                  </>
+                ) : null}
+                {step === 2 ? (
+                  <fieldset className="grid gap-2 border-0 p-0">
+                    <legend className="text-center text-sm font-semibold text-[#60656d]">
+                      {t('public.stepTime')}
+                    </legend>
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3" id="public-time">
+                      {availableSlots.map((candidate) => (
+                        <button
+                          aria-pressed={
+                            time === candidate.time && serviceId === candidate.serviceId
+                          }
+                          className={`rounded-md border px-3 py-2.5 text-sm font-semibold transition ${
+                            time === candidate.time && serviceId === candidate.serviceId
+                              ? 'border-[var(--public-primary)] bg-[var(--public-primary)] text-white shadow-sm'
+                              : 'border-[#d6d7d8] bg-white text-[#292d34] hover:border-[var(--public-primary)]'
+                          }`}
+                          key={`${candidate.serviceId}-${candidate.time}`}
+                          onClick={() => selectTime(candidate)}
+                          type="button"
+                        >
+                          {candidate.time}
+                        </button>
+                      ))}
+                    </div>
+                    <div aria-live="polite" className="text-xs" id="public-availability-status">
+                      {availabilityLoading ? (
+                        <p className="text-muted-foreground flex items-center gap-2">
+                          <span
+                            aria-hidden="true"
+                            className="size-2 animate-pulse rounded-full bg-[var(--public-accent)] motion-reduce:animate-none"
+                          />
+                          {t('public.searching')}
+                        </p>
+                      ) : availabilityError ? (
+                        <div className="flex flex-wrap items-center gap-2 text-[var(--public-accent)]">
+                          <span>{t('public.availabilityFailed')}</span>
                           <button
-                            className="ml-2 font-semibold underline underline-offset-2"
-                            key={slot}
-                            onClick={() => {
-                              setAreaId('')
-                              setAvailableSlots([slot])
-                              setTime(slot)
-                            }}
+                            className="font-semibold underline underline-offset-2"
+                            onClick={() => void selectDate(date)}
                             type="button"
                           >
-                            {slot}
+                            {t('error.retry')}
                           </button>
-                        ))}
-                      </p>
-                    ) : null}
-                  </div>
-                </fieldset>
-                <fieldset className="grid gap-4 border-0 border-t border-[#292d34]/10 pt-4">
-                  <legend className="mb-1 text-sm font-semibold text-[#60656d]">
-                    {t('public.guestDetails')}
-                  </legend>
-                  <div className="grid gap-4 sm:grid-cols-2">
+                        </div>
+                      ) : date && availableSlots.length === 0 ? (
+                        <p className="text-[var(--public-accent)]">{t('public.noSlots')}</p>
+                      ) : null}
+                    </div>
+                    <Button onClick={() => setStep(1)} type="button" variant="outline">
+                      {t('public.back')}
+                    </Button>
+                  </fieldset>
+                ) : null}
+                {step === 3 ? (
+                  <>
+                    <Button onClick={() => setStep(2)} type="button" variant="outline">
+                      {t('public.back')}
+                    </Button>
+                    <fieldset className="grid gap-4 border-0 border-t border-[#292d34]/10 pt-4">
+                      <legend className="mb-1 text-sm font-semibold text-[#60656d]">
+                        {t('public.stepDetails')}
+                      </legend>
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <Field>
+                          <FieldLabel htmlFor="public-name">{t('public.name')}</FieldLabel>
+                          <Input
+                            autoComplete="name"
+                            id="public-name"
+                            name="guestName"
+                            maxLength={200}
+                            minLength={2}
+                            onChange={(event) => setGuestName(event.target.value)}
+                            placeholder="Ej. Ana García"
+                            required
+                            value={guestName}
+                          />
+                        </Field>
+                        <Field>
+                          <FieldLabel htmlFor="public-phone">{t('public.phone')}</FieldLabel>
+                          <Input
+                            autoComplete="tel"
+                            id="public-phone"
+                            name="phone"
+                            inputMode="tel"
+                            maxLength={40}
+                            minLength={6}
+                            onChange={(event) => setPhone(event.target.value)}
+                            placeholder="Ej. 600 123 456"
+                            value={phone}
+                          />
+                        </Field>
+                      </div>
+                      <Field>
+                        <FieldLabel htmlFor="public-email">{t('public.email')}</FieldLabel>
+                        <Input
+                          autoComplete="email"
+                          id="public-email"
+                          name="email"
+                          maxLength={200}
+                          onChange={(event) => setEmail(event.target.value)}
+                          placeholder="ana@ejemplo.com"
+                          required
+                          type="email"
+                          value={email}
+                        />
+                      </Field>
+                    </fieldset>
                     <Field>
-                      <FieldLabel htmlFor="public-name">{t('public.name')}</FieldLabel>
-                      <Input
-                        autoComplete="name"
-                        id="public-name"
-                        name="guestName"
-                        maxLength={200}
-                        minLength={2}
-                        onChange={(event) => setGuestName(event.target.value)}
-                        placeholder="Ej. Ana García"
-                        required
-                        value={guestName}
+                      <FieldLabel htmlFor="public-notes">{t('public.notes')}</FieldLabel>
+                      <textarea
+                        className="min-h-20 w-full rounded-md border bg-white px-3 py-2"
+                        id="public-notes"
+                        name="notes"
+                        maxLength={1000}
+                        onChange={(event) => setNotes(event.target.value)}
+                        placeholder="Alergias, carrito de bebé, ocasión especial…"
+                        value={notes}
                       />
                     </Field>
-                    <Field>
-                      <FieldLabel htmlFor="public-phone">{t('public.phone')}</FieldLabel>
-                      <Input
-                        autoComplete="tel"
-                        id="public-phone"
-                        name="phone"
-                        inputMode="tel"
-                        maxLength={40}
-                        minLength={6}
-                        onChange={(event) => setPhone(event.target.value)}
-                        placeholder="Ej. 600 123 456"
-                        value={phone}
-                      />
-                    </Field>
-                  </div>
-                  <Field>
-                    <FieldLabel htmlFor="public-email">{t('public.email')}</FieldLabel>
-                    <Input
-                      autoComplete="email"
-                      id="public-email"
-                      name="email"
-                      maxLength={200}
-                      onChange={(event) => setEmail(event.target.value)}
-                      placeholder="ana@ejemplo.com"
-                      required
-                      type="email"
-                      value={email}
-                    />
-                  </Field>
-                </fieldset>
-                <Field>
-                  <FieldLabel htmlFor="public-notes">{t('public.notes')}</FieldLabel>
-                  <textarea
-                    className="min-h-20 w-full rounded-md border bg-white px-3 py-2"
-                    id="public-notes"
-                    name="notes"
-                    maxLength={1000}
-                    onChange={(event) => setNotes(event.target.value)}
-                    placeholder="Alergias, carrito de bebé, ocasión especial…"
-                    value={notes}
-                  />
-                </Field>
-                <label className="flex items-start gap-2 text-xs leading-5 text-[#737983]">
-                  <input
-                    checked={privacyAccepted}
-                    onChange={(event) => setPrivacyAccepted(event.target.checked)}
-                    required
-                    type="checkbox"
-                  />
-                  <span>{t('public.privacyConsent')}</span>
-                </label>
-                {profile.terms ? (
-                  <div className="grid gap-2 rounded-md border border-[#292d34]/10 bg-[#fbfaf8] p-3 text-xs leading-5 text-[#60656d]">
-                    <p className="font-semibold text-[#292d34]">
-                      {profile.terms.title} ·{' '}
-                      {message('public.termsVersion', { version: profile.terms.version })}
-                    </p>
-                    <p className="max-h-28 overflow-y-auto whitespace-pre-wrap">
-                      {profile.terms.body}
-                    </p>
-                    <label className="flex items-start gap-2">
+                    <label className="flex items-start gap-2 text-xs leading-5 text-[#737983]">
                       <input
-                        checked={termsAccepted}
-                        onChange={(event) => setTermsAccepted(event.target.checked)}
+                        checked={privacyAccepted}
+                        onChange={(event) => setPrivacyAccepted(event.target.checked)}
                         required
                         type="checkbox"
                       />
-                      <span>{t('public.acceptTerms')}</span>
+                      <span>{t('public.privacyConsent')}</span>
                     </label>
-                  </div>
+                    {profile.terms ? (
+                      <div className="grid gap-2 rounded-md border border-[#292d34]/10 bg-[#fbfaf8] p-3 text-xs leading-5 text-[#60656d]">
+                        <p className="font-semibold text-[#292d34]">
+                          {profile.terms.title} ·{' '}
+                          {message('public.termsVersion', { version: profile.terms.version })}
+                        </p>
+                        <p className="max-h-28 overflow-y-auto whitespace-pre-wrap">
+                          {profile.terms.body}
+                        </p>
+                        <label className="flex items-start gap-2">
+                          <input
+                            checked={termsAccepted}
+                            onChange={(event) => setTermsAccepted(event.target.checked)}
+                            required
+                            type="checkbox"
+                          />
+                          <span>{t('public.acceptTerms')}</span>
+                        </label>
+                      </div>
+                    ) : null}
+                    <FormFeedback pendingLabel={t('public.checking')} state={feedback.state} />
+                    <Button
+                      className="w-full"
+                      disabled={
+                        feedback.pending || availabilityLoading || !serviceId || !date || !time
+                      }
+                      size="lg"
+                      type="submit"
+                    >
+                      {t('public.reserve')}
+                    </Button>
+                    <p className="m-0 text-xs leading-5 text-[#737983]">
+                      {message('public.legalPrefix', { name: profile.name })}{' '}
+                      <Link
+                        className="underline underline-offset-2"
+                        params={{ slug: profile.slug }}
+                        rel="noreferrer"
+                        target="_blank"
+                        to="/reservar/$slug/privacidad"
+                      >
+                        {t('public.privacyPolicy')}
+                      </Link>{' '}
+                      {t('public.andTerms')}{' '}
+                      <Link
+                        className="underline underline-offset-2"
+                        params={{ slug: profile.slug }}
+                        rel="noreferrer"
+                        target="_blank"
+                        to="/reservar/$slug/condiciones"
+                      >
+                        {t('public.bookingTerms')}
+                      </Link>
+                      .
+                    </p>
+                  </>
                 ) : null}
-                <FormFeedback pendingLabel={t('public.checking')} state={feedback.state} />
-                <Button
-                  className="w-full"
-                  disabled={
-                    feedback.pending ||
-                    availabilityLoading ||
-                    profile.services.length === 0 ||
-                    Boolean(date && availableSlots.length === 0)
-                  }
-                  size="lg"
-                  type="submit"
-                >
-                  {t('public.reserve')}
-                </Button>
-                <p className="m-0 text-xs leading-5 text-[#737983]">
-                  {message('public.legalPrefix', { name: profile.name })}{' '}
-                  <Link
-                    className="underline underline-offset-2"
-                    params={{ slug: profile.slug }}
-                    rel="noreferrer"
-                    target="_blank"
-                    to="/reservar/$slug/privacidad"
-                  >
-                    {t('public.privacyPolicy')}
-                  </Link>{' '}
-                  {t('public.andTerms')}{' '}
-                  <Link
-                    className="underline underline-offset-2"
-                    params={{ slug: profile.slug }}
-                    rel="noreferrer"
-                    target="_blank"
-                    to="/reservar/$slug/condiciones"
-                  >
-                    {t('public.bookingTerms')}
-                  </Link>
-                  .
-                </p>
               </form>
             )}
           </CardContent>
