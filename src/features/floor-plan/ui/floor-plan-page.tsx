@@ -466,7 +466,7 @@ export function FloorPlanPage({
       candidates.reduce(
         (best, candidate) =>
           Math.abs(value - candidate) <= gridSize / 2 &&
-            Math.abs(value - candidate) < Math.abs(value - best)
+          Math.abs(value - candidate) < Math.abs(value - best)
             ? candidate
             : best,
         value,
